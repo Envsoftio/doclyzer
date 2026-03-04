@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Doclyzer — Design direction showcase</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; background: #f5f5f5; }
+    h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
+    .meta { color: #666; font-size: 0.875rem; margin-bottom: 1.5rem; }
+    section { max-width: 420px; margin: 2rem auto; padding: 1rem; }
+    .card { border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
+    .btn { display: inline-block; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500; text-decoration: none; border: none; cursor: pointer; font-size: 0.875rem; }
+    .nav-bar { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; margin-bottom: 1rem; font-size: 0.875rem; }
+    .tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; }
+    .tabs button { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-size: 0.875rem; }
+    .tabs button.active { background: #333; color: #fff; border-color: #333; }
+    .dir { margin-bottom: 3rem; }
+    .dir h2 { font-size: 1.125rem; margin: 0 0 0.5rem; }
+    .dir .tag { font-size: 0.75rem; color: #666; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <div style="max-width: 900px; margin: 0 auto; padding: 1.5rem;">
+    <h1>Doclyzer — Design direction showcase</h1>
+    <p class="meta">Compare visual directions (calm default, warm minimal, higher contrast). Same content; different palette and density.</p>
+
+    <div class="tabs">
+      <button class="active" onclick="showDir('a')">A — Calm default</button>
+      <button onclick="showDir('b')">B — Warm minimal</button>
+      <button onclick="showDir('c')">C — Higher contrast</button>
+    </div>
+
+    <!-- Direction A: Calm default -->
+    <div id="dir-a" class="dir">
+      <h2>Direction A — Calm default</h2>
+      <p class="tag">Soft primary, neutral surfaces, single accent. Chosen direction.</p>
+      <section style="background: #fff; border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+        <div class="nav-bar" style="color: #475569;">
+          <span style="font-weight: 600;">Me</span> · Timeline
+        </div>
+        <div class="card" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+          <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">15 Jan 2025</div>
+          <div style="font-weight: 500; color: #0f172a;">CBC — Complete Blood Count</div>
+          <div style="font-size: 0.875rem; color: #475569; margin-top: 0.25rem;">Hb 12.4 g/dL · Summary available</div>
+        </div>
+        <div class="card" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+          <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">10 Dec 2024</div>
+          <div style="font-weight: 500; color: #0f172a;">Thyroid panel</div>
+          <div style="font-size: 0.875rem; color: #475569; margin-top: 0.25rem;">TSH 2.1 mIU/L · Summary available</div>
+        </div>
+        <a href="#" class="btn" style="background: #0d9488; color: #fff; margin-top: 0.5rem;">Share Me's reports</a>
+      </section>
+    </div>
+
+    <!-- Direction B: Warm minimal -->
+    <div id="dir-b" class="dir" style="display: none;">
+      <h2>Direction B — Warm minimal</h2>
+      <p class="tag">Warmer neutrals, same single accent; slightly more approachable.</p>
+      <section style="background: #fafaf8; border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <div class="nav-bar" style="color: #5c5346;">
+          <span style="font-weight: 600;">Me</span> · Timeline
+        </div>
+        <div class="card" style="background: #f5f3ef; border: 1px solid #e8e4dc;">
+          <div style="font-size: 0.75rem; color: #78716c; margin-bottom: 0.25rem;">15 Jan 2025</div>
+          <div style="font-weight: 500; color: #1c1917;">CBC — Complete Blood Count</div>
+          <div style="font-size: 0.875rem; color: #57534e; margin-top: 0.25rem;">Hb 12.4 g/dL · Summary available</div>
+        </div>
+        <div class="card" style="background: #f5f3ef; border: 1px solid #e8e4dc;">
+          <div style="font-size: 0.75rem; color: #78716c; margin-bottom: 0.25rem;">10 Dec 2024</div>
+          <div style="font-weight: 500; color: #1c1917;">Thyroid panel</div>
+          <div style="font-size: 0.875rem; color: #57534e; margin-top: 0.25rem;">TSH 2.1 mIU/L · Summary available</div>
+        </div>
+        <a href="#" class="btn" style="background: #0d9488; color: #fff; margin-top: 0.5rem;">Share Me's reports</a>
+      </section>
+    </div>
+
+    <!-- Direction C: Higher contrast -->
+    <div id="dir-c" class="dir" style="display: none;">
+      <h2>Direction C — Higher contrast</h2>
+      <p class="tag">Darker text, stronger CTA; emphasis on readability.</p>
+      <section style="background: #fff; border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+        <div class="nav-bar" style="color: #374151;">
+          <span style="font-weight: 600;">Me</span> · Timeline
+        </div>
+        <div class="card" style="background: #f9fafb; border: 1px solid #e5e7eb;">
+          <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">15 Jan 2025</div>
+          <div style="font-weight: 600; color: #111827;">CBC — Complete Blood Count</div>
+          <div style="font-size: 0.875rem; color: #374151; margin-top: 0.25rem;">Hb 12.4 g/dL · Summary available</div>
+        </div>
+        <div class="card" style="background: #f9fafb; border: 1px solid #e5e7eb;">
+          <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">10 Dec 2024</div>
+          <div style="font-weight: 600; color: #111827;">Thyroid panel</div>
+          <div style="font-size: 0.875rem; color: #374151; margin-top: 0.25rem;">TSH 2.1 mIU/L · Summary available</div>
+        </div>
+        <a href="#" class="btn" style="background: #0569a0; color: #fff; margin-top: 0.5rem;">Share Me's reports</a>
+      </section>
+    </div>
+  </div>
+  <script>
+    function showDir(id) {
+      ['a','b','c'].forEach(function(d) {
+        document.getElementById('dir-' + d).style.display = d === id ? 'block' : 'none';
+      });
+      document.querySelectorAll('.tabs button').forEach(function(btn, i) {
+        btn.classList.toggle('active', ['a','b','c'][i] === id);
+      });
+    }
+  </script>
+</body>
+</html>

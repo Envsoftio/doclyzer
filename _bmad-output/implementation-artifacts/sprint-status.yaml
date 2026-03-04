@@ -1,0 +1,124 @@
+# generated: 2026-03-03
+# project: doclyzer
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog -> in-progress: Automatically when first story is created (via create-story)
+#   - in-progress -> done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-03-03
+project: doclyzer
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  epic-1: in-progress
+  1-1-account-registration-login-logout: review
+  1-2-password-recovery-and-secure-session-rotation: ready-for-dev
+  1-3-account-profile-management-view-update-basic-info: backlog
+  1-4-policy-acceptance-with-version-tracking: backlog
+  1-5-multi-profile-create-edit-switch: backlog
+  1-6-profile-deletion-with-confirmation-and-impact-messaging: backlog
+  1-7-active-session-device-list-and-revoke: backlog
+  1-8-communication-preferences-management: backlog
+  1-9-data-export-and-account-closure-requests: backlog
+  1-10-restriction-visibility-rationale-and-user-next-steps: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-upload-report-to-active-profile: backlog
+  2-2-parsing-status-lifecycle-visibility: backlog
+  2-3-parse-failure-recovery-retry-keep-file-anyway: backlog
+  2-4-original-pdf-viewing-parsed-and-unparsed: backlog
+  2-5-duplicate-report-detection-and-user-choice: backlog
+  2-6-timeline-view-scoped-to-active-profile: backlog
+  2-7-structured-lab-extraction-display: backlog
+  2-8-trend-chart-rendering-for-chartable-parameters: backlog
+  2-9-report-level-summary-display-with-safe-framing: backlog
+  2-10-profile-level-consolidated-health-history: backlog
+  2-11-processing-attempt-history-per-report: backlog
+  2-12-post-upload-report-reassignment-to-correct-profile: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-create-share-link-for-active-profile-scope: backlog
+  3-2-share-link-expiry-and-revocation-controls: backlog
+  3-3-default-share-policy-settings-for-new-links: backlog
+  3-4-copy-distribute-share-link-ux: backlog
+  3-5-recipient-access-via-valid-link-no-account: backlog
+  3-6-doctor-friendly-share-page-timeline-trends-print-friendly: backlog
+  3-7-share-access-event-history-for-link-owner: backlog
+  3-8-enforce-profile-isolation-in-shared-output: backlog
+  3-9-landing-seo-mvp-metadata-canonical-sitemap-robots-structured-data: backlog
+  3-10-route-isolation-rules-indexable-landing-vs-non-indexable-share: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-credit-balance-and-entitlement-summary-view: backlog
+  4-2-credit-pack-purchase-flow: backlog
+  4-3-subscription-purchase-flow: backlog
+  4-4-promo-code-apply-validate-at-checkout: backlog
+  4-5-usage-limit-enforcement-free-paid-tiers: backlog
+  4-6-billing-outcome-states-pending-failed-reconciled: backlog
+  4-7-entitlement-change-reason-visibility: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-superadmin-authentication-hardening-mfa-role-guard-baseline: backlog
+  5-2-plan-definition-and-limit-configuration-management: backlog
+  5-3-promo-code-crud-and-lifecycle-management: backlog
+  5-4-promo-redemption-and-revenue-impact-analytics: backlog
+  5-5-core-product-analytics-dashboard-signups-usage-monetization-behavior: backlog
+  5-6-phi-safe-analytics-taxonomy-and-governance-controls: backlog
+  5-7-auditable-superadmin-action-logging: backlog
+  5-8-access-share-consent-policy-records-query-console: backlog
+  5-9-suspicious-activity-detection-and-review-queue: backlog
+  5-10-share-link-account-suspension-and-restore-controls: backlog
+  5-11-temporary-protective-restriction-and-restricted-review-mode: backlog
+  5-12-time-bound-override-actions-with-expiry: backlog
+  5-13-restricted-account-resolution-documentation-workflow: backlog
+  5-14-emergency-containment-actions-with-mandatory-audit-notes: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-notification-event-delivery-for-account-report-billing-updates: backlog
+  6-2-notification-preference-controls-by-category: backlog
+  6-3-consistent-in-app-success-failure-recovery-messaging-patterns: backlog
+  6-4-major-service-incident-status-communication-to-users: backlog
+  6-5-in-product-support-requests-linked-to-failed-critical-actions: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-ai-informational-only-disclaimer-enforcement-across-surfaces: backlog
+  7-2-phi-safe-telemetry-and-operational-logging-enforcement: backlog
+  7-3-compliance-guardrail-test-gates-ci-cd-policy-checks: backlog
+  7-4-cross-epic-guardrail-conformance-checklist-and-audit-evidence: backlog
+  epic-7-retrospective: optional
