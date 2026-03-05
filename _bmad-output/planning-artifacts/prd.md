@@ -28,6 +28,18 @@ classification:
 
 **Free vs paid:** Free tier gives limited use; paid (credits + optional subscription) is for "everything in one place, shareable, with trends and AI," with a clear upgrade moment when they hit the cap or want to share.
 
+### Free vs Paid Tier Matrix
+
+| Limit / Feature | Free | Paid |
+|-----------------|------|------|
+| **Patient profiles** | 1 per account | Multiple |
+| **Reports / files** | ~5 total (configurable) | Higher cap or credits |
+| **Share links** | 1 per account | Higher cap |
+| **Timeline, lab trends, charts** | Yes | Yes |
+| **Basic per-report summary** | Yes | Yes |
+| **AI chat / lifestyle suggestions** | No | Yes |
+| **Profile create/edit/switch** | Create 1, edit; no switch (only 1) | Create/edit/switch multiple |
+
 ### What Makes This Special
 
 - **Recipient-first share:** The share link is built for whoever opens it (doctor/family): readable, scannable, print-friendly—so "I sent the link" turns into "they actually used it."
@@ -368,7 +380,7 @@ Mitigation: strict MVP boundaries, defer advanced AI/features to Phase 2, keep c
 
 ### Patient Profile Management
 
-- FR6: Account holders can create multiple patient profiles.
+- FR6: Account holders can create patient profiles; free tier allows one profile per account; paid tier allows multiple profiles.
 - FR7: Account holders can edit profile details for each patient profile.
 - FR8: Account holders can switch active profile context at any time.
 - FR9: Users can assign each uploaded report to a specific patient profile.

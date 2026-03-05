@@ -150,7 +150,7 @@ FR2: Epic 1 - Secure sign in and sign out
 FR3: Epic 1 - Account recovery
 FR4: Epic 1 - Account profile management
 FR5: Epic 1 - Policy visibility and acceptance
-FR6: Epic 1 - Multi-profile creation
+FR6: Epic 1 - Multi-profile creation (free: 1 profile; paid: multiple)
 FR7: Epic 1 - Multi-profile editing
 FR8: Epic 1 - Active profile switching
 FR9: Epic 2 - Report assignment to profile
@@ -320,6 +320,10 @@ So that I can manage self/family safely.
 **Given** multiple profiles exist
 **When** I switch active profile
 **Then** all subsequent views/actions are scoped to that profile.
+
+**Given** I am on the free tier and already have 1 profile
+**When** I attempt to create another profile
+**Then** creation is blocked with clear upgrade guidance (API returns 403 PROFILE_LIMIT_EXCEEDED; app shows upgrade CTA).
 
 ### Story 1.6: Profile Deletion with Confirmation and Impact Messaging
 
@@ -722,6 +726,8 @@ So that actions are predictably allowed/blocked.
 **When** evaluated
 **Then** action follows entitlement policy with clear guidance.
 
+**Governed limits:** profile creation (free: 1; paid: multiple), reports (free: cap; paid: credits), share links (free: 1; paid: higher).
+
 ### Story 4.6: Billing Outcome States (Pending/Failed/Reconciled)
 
 As an authenticated user,
@@ -773,6 +779,8 @@ So that entitlements can be managed operationally.
 **Given** plan config changes
 **When** saved
 **Then** validated changes persist with audit trace.
+
+**Configurable limits:** maxProfilesPerPlan (free: 1; paid: multiple or unlimited), report cap, share-link limit.
 
 ### Story 5.3: Promo Code CRUD and Lifecycle Management
 

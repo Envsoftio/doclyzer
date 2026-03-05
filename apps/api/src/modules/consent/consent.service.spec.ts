@@ -76,7 +76,10 @@ describe('ConsentService', () => {
       // Replace the array element rather than mutating its properties so
       // the original object is preserved and restored atomically.
       const originalTerms = ConsentService.CURRENT_POLICIES[0];
-      ConsentService.CURRENT_POLICIES[0] = { ...originalTerms, version: '1.1.0' };
+      ConsentService.CURRENT_POLICIES[0] = {
+        ...originalTerms,
+        version: '1.1.0',
+      };
 
       try {
         const status = service.getStatus('user-4');

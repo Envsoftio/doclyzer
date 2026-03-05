@@ -63,7 +63,8 @@ describe('AccountService', () => {
       const user = { ...baseUser, displayName: 'Alice' };
       authService.findUserById.mockReturnValue(user);
       authService.updateUser.mockImplementation((_, patch) => {
-        if (patch.displayName !== undefined) user.displayName = patch.displayName;
+        if (patch.displayName !== undefined)
+          user.displayName = patch.displayName;
       });
 
       const updated = service.updateProfile('user-1', { displayName: null });

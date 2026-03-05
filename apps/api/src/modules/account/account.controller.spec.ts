@@ -31,7 +31,9 @@ function makeReq(overrides: Partial<Request> = {}): Request {
 
 describe('AccountController', () => {
   let controller: AccountController;
-  let accountService: jest.Mocked<Pick<AccountService, 'getProfile' | 'updateProfile'>>;
+  let accountService: jest.Mocked<
+    Pick<AccountService, 'getProfile' | 'updateProfile'>
+  >;
 
   beforeEach(() => {
     accountService = {
@@ -57,7 +59,10 @@ describe('AccountController', () => {
 
     it('propagates NotFoundException from service', () => {
       accountService.getProfile.mockImplementation(() => {
-        throw new NotFoundException({ code: 'ACCOUNT_NOT_FOUND', message: 'Account not found' });
+        throw new NotFoundException({
+          code: 'ACCOUNT_NOT_FOUND',
+          message: 'Account not found',
+        });
       });
       expect(() => controller.getProfile(makeReq())).toThrow(NotFoundException);
     });
@@ -91,7 +96,10 @@ describe('AccountController', () => {
 
     it('propagates NotFoundException from service', () => {
       accountService.updateProfile.mockImplementation(() => {
-        throw new NotFoundException({ code: 'ACCOUNT_NOT_FOUND', message: 'Account not found' });
+        throw new NotFoundException({
+          code: 'ACCOUNT_NOT_FOUND',
+          message: 'Account not found',
+        });
       });
       expect(() =>
         controller.updateProfile({ displayName: 'X' }, makeReq()),

@@ -14,6 +14,10 @@ import 'features/auth/screens/verification_screen.dart';
 import 'features/consent/consent_repository.dart';
 import 'features/consent/in_memory_consent_repository.dart';
 import 'features/consent/screens/policy_acceptance_screen.dart';
+import 'features/profiles/in_memory_profiles_repository.dart';
+import 'features/profiles/profiles_repository.dart';
+import 'features/profiles/screens/create_edit_profile_screen.dart';
+import 'features/profiles/screens/profile_list_screen.dart';
 
 void main() {
   runApp(const DoclyzerApp());
@@ -28,6 +32,9 @@ enum _AuthView {
   resetPassword,
   accountProfile,
   policyAcceptance,
+  profileList,
+  createProfile,
+  editProfile,
 }
 
 class DoclyzerApp extends StatefulWidget {
@@ -36,13 +43,16 @@ class DoclyzerApp extends StatefulWidget {
     AuthRepository? authRepository,
     AccountRepository? accountRepository,
     ConsentRepository? consentRepository,
+    ProfilesRepository? profilesRepository,
   })  : _authRepository = authRepository,
         _accountRepository = accountRepository,
-        _consentRepository = consentRepository;
+        _consentRepository = consentRepository,
+        _profilesRepository = profilesRepository;
 
   final AuthRepository? _authRepository;
   final AccountRepository? _accountRepository;
   final ConsentRepository? _consentRepository;
+  final ProfilesRepository? _profilesRepository;
 
   @override
   State<DoclyzerApp> createState() => _DoclyzerAppState();
@@ -52,8 +62,10 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
   late final AuthRepository _authRepository;
   late final AccountRepository _accountRepository;
   late final ConsentRepository _consentRepository;
+  late final ProfilesRepository _profilesRepository;
   _AuthView _authView = _AuthView.login;
   String? _prefillEmail;
+  Profile? _editingProfile;
 
   @override
   void initState() {
@@ -63,6 +75,8 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
         widget._accountRepository ?? InMemoryAccountRepository();
     _consentRepository =
         widget._consentRepository ?? InMemoryConsentRepository();
+    _profilesRepository =
+        widget._profilesRepository ?? InMemoryProfilesRepository();
   }
 
   Future<void> _register(
@@ -166,6 +180,11 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
                 _authView = _AuthView.accountProfile;
               });
             },
+            onGoToProfiles: () {
+              setState(() {
+                _authView = _AuthView.profileList;
+              });
+            },
           ),
         _AuthView.accountProfile => AccountProfileScreen(
             accountRepository: _accountRepository,
@@ -201,6 +220,55 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
             onComplete: () {
               setState(() {
                 _authView = _AuthView.home;
+              });
+            },
+          ),
+        _AuthView.profileList => ProfileListScreen(
+            profilesRepository: _profilesRepository,
+            onCreateProfile: () {
+              setState(() {
+                _editingProfile = null;
+                _authView = _AuthView.createProfile;
+              });
+            },
+            onEditProfile: (profile) {
+              setState(() {
+                _editingProfile = profile;
+                _authView = _AuthView.editProfile;
+              });
+            },
+            onBack: () {
+              setState(() {
+                _authView = _AuthView.home;
+              });
+            },
+          ),
+        _AuthView.createProfile => CreateEditProfileScreen(
+            profilesRepository: _profilesRepository,
+            onComplete: () {
+              setState(() {
+                _authView = _AuthView.profileList;
+              });
+            },
+            onBack: () {
+              setState(() {
+                _authView = _AuthView.profileList;
+              });
+            },
+          ),
+        _AuthView.editProfile => CreateEditProfileScreen(
+            profilesRepository: _profilesRepository,
+            existingProfile: _editingProfile,
+            onComplete: () {
+              setState(() {
+                _editingProfile = null;
+                _authView = _AuthView.profileList;
+              });
+            },
+            onBack: () {
+              setState(() {
+                _editingProfile = null;
+                _authView = _AuthView.profileList;
               });
             },
           ),

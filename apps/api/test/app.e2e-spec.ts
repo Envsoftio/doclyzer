@@ -16,6 +16,7 @@ describe('AuthController (e2e)', () => {
   let recoveryService: PasswordRecoveryService;
 
   beforeAll(async () => {
+    process.env.E2E_MAX_PROFILES = '2';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -581,6 +582,202 @@ describe('AuthController (e2e)', () => {
       }>) {
         expect(policy.accepted).toBe(true);
       }
+    });
+  });
+
+  describe('Profiles', () => {
+    const profilesEmail = 'profiles@example.com';
+    const profilesPassword = 'StrongPass123!';
+    let profilesToken: string;
+    let firstProfileId: string;
+    let secondProfileId: string;
+
+    beforeAll(async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .send({
+          email: profilesEmail,
+          password: profilesPassword,
+          policyAccepted: true,
+        })
+        .expect(201);
+
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({ email: profilesEmail, password: profilesPassword })
+        .expect(200);
+
+      profilesToken = loginRes.body.data.accessToken as string;
+    });
+
+    it('GET /profiles without token → 401 AUTH_UNAUTHORIZED', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/profiles')
+        .expect(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+    });
+
+    it('GET /profiles with valid token → 200, empty array', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/profiles')
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .expect(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toEqual([]);
+      expect(typeof res.body.correlationId).toBe('string');
+    });
+
+    it('POST /profiles creates first profile and auto-activates it', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/v1/profiles')
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .send({ name: 'Vishnu' })
+        .expect(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.name).toBe('Vishnu');
+      expect(res.body.data.isActive).toBe(true);
+      expect(res.body.data.id).toBeTruthy();
+      expect(typeof res.body.correlationId).toBe('string');
+      firstProfileId = res.body.data.id as string;
+    });
+
+    it('GET /profiles after first create → one profile, isActive: true', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/profiles')
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .expect(200);
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0].isActive).toBe(true);
+    });
+
+    it('POST /profiles creates second profile, isActive: false', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/v1/profiles')
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .send({ name: 'Amma', relation: 'parent' })
+        .expect(201);
+      expect(res.body.data.name).toBe('Amma');
+      expect(res.body.data.isActive).toBe(false);
+      secondProfileId = res.body.data.id as string;
+    });
+
+    it('POST /profiles/:id/activate switches active profile', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/v1/profiles/${secondProfileId}/activate`)
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .expect(200);
+      expect(res.body.success).toBe(true);
+      const profiles = res.body.data as Array<{
+        id: string;
+        isActive: boolean;
+      }>;
+      const second = profiles.find((p) => p.id === secondProfileId)!;
+      const first = profiles.find((p) => p.id === firstProfileId)!;
+      expect(second.isActive).toBe(true);
+      expect(first.isActive).toBe(false);
+    });
+
+    it('PATCH /profiles/:id updates profile name', async () => {
+      const res = await request(app.getHttpServer())
+        .patch(`/v1/profiles/${secondProfileId}`)
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .send({ name: 'Amma Edited' })
+        .expect(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.name).toBe('Amma Edited');
+    });
+
+    it('GET /profiles after update → name change reflected', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/profiles')
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .expect(200);
+      const amma = (res.body.data as Array<{ id: string; name: string }>).find(
+        (p) => p.id === secondProfileId,
+      )!;
+      expect(amma.name).toBe('Amma Edited');
+    });
+
+    it('PATCH /profiles/nonexistent-id → 404 PROFILE_NOT_FOUND', async () => {
+      const res = await request(app.getHttpServer())
+        .patch('/v1/profiles/nonexistent-id')
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .send({ name: 'X' })
+        .expect(404);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
+    });
+
+    it('POST /profiles/nonexistent-id/activate → 404 PROFILE_NOT_FOUND', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/v1/profiles/nonexistent-id/activate')
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .expect(404);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
+    });
+  });
+
+  describe('Profiles limit (free tier)', () => {
+    let limitApp: INestApplication;
+    const limitEmail = 'profiles-limit@example.com';
+    const limitPassword = 'StrongPass123!';
+    let limitToken: string;
+
+    beforeAll(async () => {
+      delete process.env.E2E_MAX_PROFILES;
+
+      const moduleFixture = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      limitApp = moduleFixture.createNestApplication();
+      limitApp.use(correlationIdMiddleware);
+      limitApp.useGlobalFilters(new ApiExceptionFilter());
+      limitApp.useGlobalPipes(
+        new ValidationPipe({ whitelist: true, transform: true }),
+      );
+      limitApp.setGlobalPrefix('v1');
+      await limitApp.init();
+
+      await request(limitApp.getHttpServer())
+        .post('/v1/auth/register')
+        .send({
+          email: limitEmail,
+          password: limitPassword,
+          policyAccepted: true,
+        })
+        .expect(201);
+
+      const loginRes = await request(limitApp.getHttpServer())
+        .post('/v1/auth/login')
+        .send({ email: limitEmail, password: limitPassword })
+        .expect(200);
+
+      limitToken = loginRes.body.data.accessToken as string;
+    });
+
+    afterAll(async () => {
+      await limitApp.close();
+    });
+
+    it('POST /profiles when free tier and already 1 profile → 403 PROFILE_LIMIT_EXCEEDED', async () => {
+      await request(limitApp.getHttpServer())
+        .post('/v1/profiles')
+        .set('Authorization', `Bearer ${limitToken}`)
+        .send({ name: 'Me' })
+        .expect(201);
+
+      const res = await request(limitApp.getHttpServer())
+        .post('/v1/profiles')
+        .set('Authorization', `Bearer ${limitToken}`)
+        .send({ name: 'Second' })
+        .expect(403);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('PROFILE_LIMIT_EXCEEDED');
+      expect(res.body.error.message).toContain('Free plan');
     });
   });
 
