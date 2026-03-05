@@ -1,6 +1,6 @@
 # Story 1.1: Account Registration, Login, Logout
 
-Status: review
+Status: done (reviewed + fixes applied)
 
 ## Story
 
@@ -232,10 +232,14 @@ GPT-5 Codex
 - apps/api/src/common/api-exception.filter.ts
 - apps/api/src/common/correlation-id.middleware.ts
 - apps/api/src/common/response-envelope.ts
+- apps/api/src/common/notification/notification.service.ts
+- apps/api/src/common/notification/in-memory-notification.service.ts
 - apps/api/src/types/express.d.ts
 - apps/api/src/modules/auth/auth.module.ts
 - apps/api/src/modules/auth/auth.controller.ts
 - apps/api/src/modules/auth/auth.service.ts
+- apps/api/src/modules/auth/auth.types.ts
+- apps/api/src/modules/auth/auth.dto.ts
 - apps/api/src/modules/auth/auth.service.spec.ts
 - apps/api/test/app.e2e-spec.ts
 - apps/mobile/lib/main.dart
@@ -246,8 +250,12 @@ GPT-5 Codex
 - apps/mobile/lib/features/auth/screens/verification_screen.dart
 - apps/mobile/lib/features/auth/screens/home_screen.dart
 - apps/mobile/test/widget_test.dart
+- apps/mobile/pubspec.yaml
+- apps/mobile/pubspec.lock
 - _bmad-output/implementation-artifacts/sprint-status.yaml
 
 ## Change Log
 
 - 2026-03-05: Implemented Story 1.1 auth API + Flutter auth flow, added tests, and moved story to review.
+- 2026-03-05: Code review fixes applied — added /auth/refresh endpoint with rotating refresh token support; enforced access token expiry server-side in logout(); purged unbounded rate limit Map on each call; added X-Forwarded-For proxy-aware IP extraction; added Express trust proxy config; added rate limit unit + e2e tests; added refresh token rotation e2e test; fixed InMemoryAuthRepository to use SHA-256 password hashing and Random.secure() token generation; added crypto package to mobile pubspec; added auth.types.ts to File List.
+- 2026-03-05: Adversarial code review fixes — logout() now revokes sessions regardless of expiry (H1); policyAccepted enforces strict === true (H2); password validation requires uppercase+lowercase+digit+special char (H3); added class-validator DTOs + ValidationPipe with whitelist:true (M1); NotificationService abstraction created for email/SMS delivery stub (C1-1.2); per-account rate limiting added to forgot-password (H1-1.2); getLastResetTokenForTest moved to InMemoryNotificationService (H2-1.2); auth.dto.ts and notification/ added to File List; pubspec.yaml and pubspec.lock added to File List.

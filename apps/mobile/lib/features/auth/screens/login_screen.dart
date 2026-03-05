@@ -7,11 +7,13 @@ class LoginScreen extends StatefulWidget {
     super.key,
     required this.onLogin,
     required this.onGoToSignup,
+    required this.onGoToForgotPassword,
     this.initialEmail,
   });
 
   final Future<void> Function(String email, String password) onLogin;
   final VoidCallback onGoToSignup;
+  final VoidCallback onGoToForgotPassword;
   final String? initialEmail;
 
   @override
@@ -104,6 +106,11 @@ class _LoginScreenState extends State<LoginScreen> {
               key: const Key('go-to-signup'),
               onPressed: widget.onGoToSignup,
               child: const Text('Create account'),
+            ),
+            TextButton(
+              key: const Key('go-to-forgot-password'),
+              onPressed: widget.onGoToForgotPassword,
+              child: const Text('Forgot password?'),
             ),
           ],
         ),

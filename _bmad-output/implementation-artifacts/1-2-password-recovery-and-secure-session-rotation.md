@@ -1,6 +1,6 @@
 # Story 1.2: Password Recovery and Secure Session Rotation
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -17,29 +17,29 @@ so that I can regain access without compromising security.
 
 ## Tasks / Subtasks
 
-- [ ] Implement password recovery request + reset APIs in auth module (AC: 1)
-  - [ ] Add forgot-password request endpoint in `apps/api/src/modules/auth` using enumeration-safe responses.
-  - [ ] Generate cryptographically secure, single-use, expiring reset tokens and store them securely.
-  - [ ] Deliver reset challenge via side-channel (email/SMS abstraction), without leaking account existence.
-  - [ ] Add reset-password confirm endpoint validating token, expiry, and new password policy.
-  - [ ] On successful reset, rotate/revoke active auth sessions/tokens per policy.
-- [ ] Implement secure session rotation/revocation behavior (AC: 1)
-  - [ ] Invalidate existing refresh sessions for the account on successful password reset.
-  - [ ] Ensure subsequent API calls with revoked sessions fail deterministically.
-  - [ ] Keep login flow explicit after reset (do not auto-login via reset flow).
-- [ ] Implement Flutter recovery UX in `features/auth` (AC: 1)
-  - [ ] Add “Forgot Password” entry point from sign-in.
-  - [ ] Add recovery request screen and reset screen with clear validation and non-enumerating copy.
-  - [ ] Show trust-preserving status messages and next steps for expired/invalid tokens.
-- [ ] Implement security guardrails and observability (AC: 1)
-  - [ ] Add per-account/per-IP rate limiting for forgot-password requests.
-  - [ ] Use consistent response body and timing characteristics to reduce account enumeration risk.
-  - [ ] Ensure no PHI or credential artifacts are written to logs/analytics.
-  - [ ] Emit auditable security events for reset request, reset success, and session revocation.
-- [ ] Add comprehensive tests (AC: 1)
-  - [ ] Unit tests: token generation/expiry/single-use behavior, reset validation, session invalidation.
-  - [ ] API integration/e2e: forgot-password flow, invalid/expired token, reset success, revoked-session denial.
-  - [ ] UI tests: forgot-password request and reset forms, error and recovery states.
+- [x] Implement password recovery request + reset APIs in auth module (AC: 1)
+  - [x] Add forgot-password request endpoint in `apps/api/src/modules/auth` using enumeration-safe responses.
+  - [x] Generate cryptographically secure, single-use, expiring reset tokens and store them securely.
+  - [x] Deliver reset challenge via side-channel (email/SMS abstraction), without leaking account existence.
+  - [x] Add reset-password confirm endpoint validating token, expiry, and new password policy.
+  - [x] On successful reset, rotate/revoke active auth sessions/tokens per policy.
+- [x] Implement secure session rotation/revocation behavior (AC: 1)
+  - [x] Invalidate existing refresh sessions for the account on successful password reset.
+  - [x] Ensure subsequent API calls with revoked sessions fail deterministically.
+  - [x] Keep login flow explicit after reset (do not auto-login via reset flow).
+- [x] Implement Flutter recovery UX in `features/auth` (AC: 1)
+  - [x] Add “Forgot Password” entry point from sign-in.
+  - [x] Add recovery request screen and reset screen with clear validation and non-enumerating copy.
+  - [x] Show trust-preserving status messages and next steps for expired/invalid tokens.
+- [x] Implement security guardrails and observability (AC: 1)
+  - [x] Add per-account/per-IP rate limiting for forgot-password requests.
+  - [x] Use consistent response body and timing characteristics to reduce account enumeration risk.
+  - [x] Ensure no PHI or credential artifacts are written to logs/analytics.
+  - [x] Emit auditable security events for reset request, reset success, and session revocation.
+- [x] Add comprehensive tests (AC: 1)
+  - [x] Unit tests: token generation/expiry/single-use behavior, reset validation, session invalidation.
+  - [x] API integration/e2e: forgot-password flow, invalid/expired token, reset success, revoked-session denial.
+  - [x] UI tests: forgot-password request and reset forms, error and recovery states.
 
 ## Story Requirements
 
@@ -230,21 +230,55 @@ Sources:
 
 ### Agent Model Used
 
-GPT-5 Codex
+claude-4.6-sonnet-medium-thinking
 
 ### Debug Log References
 
-- create-story workflow execution (2026-03-05)
-- artifact discovery and synthesis from planning docs
-- latest-tech verification from official release/security sources
+- dev-story workflow execution (2026-03-05)
+- `npm run lint` (apps/api) passed
+- `npm test -- --runInBand` (apps/api) passed — 19/19 unit tests
+- `npm run test:e2e -- --runInBand` (apps/api) passed — 14/14 e2e tests
+- `flutter test` (apps/mobile) passed — 7/7 widget tests
 
 ### Completion Notes List
 
-- Story selected from sprint status first backlog item: `1-2-password-recovery-and-secure-session-rotation`
-- Previous story intelligence incorporated from Story 1.1 context file
-- Git intelligence section omitted because repository metadata (`.git`) is not present in this workspace
-- Validation task file `_bmad/core/tasks/validate-workflow.xml` not present; manual checklist-aligned validation applied
+- Implemented `PasswordRecoveryService` with SHA-256 token hashing, 1-hour expiry, single-use enforcement, and enumeration-safe `requestReset` path
+- Added `POST /auth/forgot-password` (rate-limited, enumeration-safe generic response) and `POST /auth/reset-password` (validates token, resets password, revokes all sessions)
+- Extended `AuthService` with `findUserByEmail`, `updatePasswordHash`, `revokeAllSessionsForUser`, `validatePasswordStrength` for use by recovery service
+- `PasswordRecoveryService.pendingDeliveries` Map simulates side-channel delivery for in-memory/test environment; production implementation hooks here
+- Added `ForgotPasswordScreen` and `ResetPasswordScreen` Flutter screens; added "Forgot password?" entry point to `LoginScreen`
+- Extended `AuthRepository` abstract class and `InMemoryAuthRepository` with `requestPasswordReset` / `confirmPasswordReset` methods; `InMemoryAuthRepository` exposes `getLastResetTokenForTest()` utility for widget tests
+- `DoclyzerApp` accepts injectable `AuthRepository` parameter to enable widget test isolation
+- Session revocation on reset: `revokeAllSessionsForUser` marks all sessions `revokedAt`; subsequent API calls with revoked tokens return `AUTH_SESSION_REVOKED`
+- Login is required after reset; no auto-login side effect
+- Confirmed no PHI or token values in any log statements
 
 ### File List
 
 - _bmad-output/implementation-artifacts/1-2-password-recovery-and-secure-session-rotation.md
+- apps/api/src/modules/auth/auth.types.ts
+- apps/api/src/modules/auth/auth.dto.ts
+- apps/api/src/modules/auth/auth.service.ts
+- apps/api/src/modules/auth/auth.module.ts
+- apps/api/src/modules/auth/auth.controller.ts
+- apps/api/src/modules/auth/password-recovery.service.ts
+- apps/api/src/modules/auth/password-recovery.service.spec.ts
+- apps/api/src/modules/auth/auth.service.spec.ts
+- apps/api/src/common/notification/notification.service.ts
+- apps/api/src/common/notification/in-memory-notification.service.ts
+- apps/api/src/main.ts
+- apps/api/test/app.e2e-spec.ts
+- apps/mobile/lib/features/auth/auth_repository.dart
+- apps/mobile/lib/features/auth/in_memory_auth_repository.dart
+- apps/mobile/lib/features/auth/forgot_password/forgot_password_screen.dart
+- apps/mobile/lib/features/auth/reset_password/reset_password_screen.dart
+- apps/mobile/lib/features/auth/screens/login_screen.dart
+- apps/mobile/lib/main.dart
+- apps/mobile/test/widget_test.dart
+- apps/mobile/pubspec.yaml
+- apps/mobile/pubspec.lock
+
+## Change Log
+
+- 2026-03-05: Implemented Story 1.2 — password recovery + reset APIs, session revocation, Flutter recovery UX, security guardrails, and comprehensive test suite. Story moved to review.
+- 2026-03-05: Adversarial code review fixes — NotificationService abstraction created (notification.service.ts + in-memory-notification.service.ts) replacing pendingDeliveries Map stub; getLastResetTokenForTest() removed from PasswordRecoveryService, now lives on InMemoryNotificationService.getLastTokenForEmail(); per-account rate limiting added to forgot-password endpoint (5/min per account, 20/min per IP); expired token purge added to resetTokensByHash; expired token e2e test added; InMemoryAuthRepository refactored to track reset tokens per-email (Map) instead of single field; ForgotPasswordScreen title fixed to "Forgot Password"; ResetPasswordScreen copy updated from "code" to "token"; pubspec.lock added to File List. Story status: done.

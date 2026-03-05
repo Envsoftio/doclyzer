@@ -1,0 +1,38 @@
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import type { Request } from 'express';
+import type { AuthUser } from '../auth/auth.types';
+import { AuthGuard } from '../../common/guards/auth.guard';
+import { getCorrelationId } from '../../common/correlation-id.middleware';
+import { successResponse } from '../../common/response-envelope';
+import { AcceptPoliciesDto } from './consent.dto';
+import { ConsentService } from './consent.service';
+
+@Controller('consent')
+@UseGuards(AuthGuard)
+export class ConsentController {
+  constructor(private readonly consentService: ConsentService) {}
+
+  @Get('status')
+  getStatus(@Req() req: Request): object {
+    const { id: userId } = req.user as AuthUser;
+    const data = this.consentService.getStatus(userId);
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Post('accept')
+  @HttpCode(HttpStatus.OK)
+  accept(@Body() body: AcceptPoliciesDto, @Req() req: Request): object {
+    const { id: userId } = req.user as AuthUser;
+    const data = this.consentService.acceptPolicies(userId, body.policyTypes);
+    return successResponse(data, getCorrelationId(req));
+  }
+}

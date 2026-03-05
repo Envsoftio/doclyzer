@@ -4,9 +4,11 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
     required this.onLogout,
+    required this.onGoToAccount,
   });
 
   final Future<void> Function() onLogout;
+  final VoidCallback onGoToAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +24,12 @@ class HomeScreen extends StatelessWidget {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
+            FilledButton(
+              key: const Key('go-to-account'),
+              onPressed: onGoToAccount,
+              child: const Text('Account'),
+            ),
+            const SizedBox(height: 8),
             FilledButton(
               key: const Key('logout-submit'),
               onPressed: () async {
