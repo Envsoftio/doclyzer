@@ -1,6 +1,6 @@
 # Story 1.6: Profile Deletion with Confirmation and Impact Messaging
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -46,30 +46,30 @@ so that I avoid accidental data-context loss.
 
 ## Tasks / Subtasks
 
-- [ ] Add delete to ProfilesService and API (AC: 1, 2, 3)
-  - [ ] Reuse `PROFILE_NOT_FOUND` from `profiles.types.ts` (already defined in 1.5) — no change needed to types
-  - [ ] In `profiles.service.ts` — add `deleteProfile(userId: string, profileId: string): ProfileWithActive[]`; remove profile from in-memory store; if deleted profile was active, set `activeProfileId` to another profile in the list or clear; return `getProfiles(userId)` after delete
-  - [ ] In `profiles.controller.ts` — add `@Delete(':id')` route (AuthGuard already at class level); extract userId from `req.user`, call `profilesService.deleteProfile(userId, params.id)`, return `successResponse(data, getCorrelationId(req))` with updated list; HTTP 200
-  - [ ] Unauthenticated or not-found behavior: same as 1.5 (401 via AuthGuard, 404 via ProfileNotFoundException)
+- [x] Add delete to ProfilesService and API (AC: 1, 2, 3)
+  - [x] Reuse `PROFILE_NOT_FOUND` from `profiles.types.ts` (already defined in 1.5) — no change needed to types
+  - [x] In `profiles.service.ts` — add `deleteProfile(userId: string, profileId: string): ProfileWithActive[]`; remove profile from in-memory store; if deleted profile was active, set `activeProfileId` to another profile in the list or clear; return `getProfiles(userId)` after delete
+  - [x] In `profiles.controller.ts` — add `@Delete(':id')` route (AuthGuard already at class level); extract userId from `req.user`, call `profilesService.deleteProfile(userId, params.id)`, return `successResponse(data, getCorrelationId(req))` with updated list; HTTP 200
+  - [x] Unauthenticated or not-found behavior: same as 1.5 (401 via AuthGuard, 404 via ProfileNotFoundException)
 
-- [ ] Unit test ProfilesService.deleteProfile (AC: 1, 2)
-  - [ ] In `profiles.service.spec.ts` — delete removes profile and returns updated list; delete of active profile switches active to another; delete of last profile returns empty list and clears active; delete of non-existent or wrong user throws `ProfileNotFoundException`
+- [x] Unit test ProfilesService.deleteProfile (AC: 1, 2)
+  - [x] In `profiles.service.spec.ts` — delete removes profile and returns updated list; delete of active profile switches active to another; delete of last profile returns empty list and clears active; delete of non-existent or wrong user throws `ProfileNotFoundException`
 
-- [ ] Unit test ProfilesController delete (AC: 1, 3)
-  - [ ] In `profiles.controller.spec.ts` — DELETE delegates to service and returns success envelope with list; exceptions propagate
+- [x] Unit test ProfilesController delete (AC: 1, 3)
+  - [x] In `profiles.controller.spec.ts` — DELETE delegates to service and returns success envelope with list; exceptions propagate
 
-- [ ] E2E tests for DELETE /profiles/:id (AC: 1, 2, 3)
-  - [ ] In `apps/api/test/app.e2e-spec.ts` — extend Profiles describe or add: DELETE with valid token and owned profile → 200, list no longer contains that profile; DELETE with valid token for non-existent id → 404 PROFILE_NOT_FOUND; DELETE without token → 401 AUTH_UNAUTHORIZED; if deleted was active, next GET /profiles shows new active or empty
+- [x] E2E tests for DELETE /profiles/:id (AC: 1, 2, 3)
+  - [x] In `apps/api/test/app.e2e-spec.ts` — extend Profiles describe or add: DELETE with valid token and owned profile → 200, list no longer contains that profile; DELETE with valid token for non-existent id → 404 PROFILE_NOT_FOUND; DELETE without token → 401 AUTH_UNAUTHORIZED; if deleted was active, next GET /profiles shows new active or empty
 
-- [ ] Flutter: repository and UI (AC: 4, 5, 6)
-  - [ ] In `profiles_repository.dart` — add `Future<void> deleteProfile(String id);` to abstract and implement in `in_memory_profiles_repository.dart` (remove from list; clear or reassign `_activeProfileId` if deleted was active)
-  - [ ] In `profile_list_screen.dart` — add delete control per profile (e.g. IconButton with Icons.delete); on tap show confirmation dialog (AlertDialog) with title, impact message, Delete (destructive) and Cancel; on confirm call `profilesRepository.deleteProfile(profile.id)`, then `_loadProfiles()`, stay on list
-  - [ ] Widget keys for tests: delete button `Key('profile-delete-${profile.id}')`; dialog confirm `Key('profile-delete-confirm')`, cancel `Key('profile-delete-cancel')`
-  - [ ] Use Material 3 destructive styling for the confirm button (e.g. `ButtonStyle(foregroundColor: Theme.of(context).colorScheme.error)`)
-  - [ ] No stacking modals per UX; single confirmation dialog
+- [x] Flutter: repository and UI (AC: 4, 5, 6)
+  - [x] In `profiles_repository.dart` — add `Future<void> deleteProfile(String id);` to abstract and implement in `in_memory_profiles_repository.dart` (remove from list; clear or reassign `_activeProfileId` if deleted was active)
+  - [x] In `profile_list_screen.dart` — add delete control per profile (e.g. IconButton with Icons.delete); on tap show confirmation dialog (AlertDialog) with title, impact message, Delete (destructive) and Cancel; on confirm call `profilesRepository.deleteProfile(profile.id)`, then `_loadProfiles()`, stay on list
+  - [x] Widget keys for tests: delete button `Key('profile-delete-${profile.id}')`; dialog confirm `Key('profile-delete-confirm')`, cancel `Key('profile-delete-cancel')`
+  - [x] Use Material 3 destructive styling for the confirm button (e.g. `ButtonStyle(foregroundColor: Theme.of(context).colorScheme.error)`)
+  - [x] No stacking modals per UX; single confirmation dialog
 
-- [ ] Flutter widget tests (AC: 4, 5, 6)
-  - [ ] In `profile_list_test.dart` (or new tests) — delete control present; tapping delete shows dialog with expected title/copy; tapping Cancel closes dialog and does not call delete; tapping Delete calls `deleteProfile(id)` and refreshes list (mock repository)
+- [x] Flutter widget tests (AC: 4, 5, 6)
+  - [x] In `profile_list_test.dart` (or new tests) — delete control present; tapping delete shows dialog with expected title/copy; tapping Cancel closes dialog and does not call delete; tapping Delete calls `deleteProfile(id)` and refreshes list (mock repository)
 
 ## Dev Notes
 
@@ -150,10 +150,48 @@ so that I avoid accidental data-context loss.
 
 ### Agent Model Used
 
-(To be filled by dev agent)
+claude-4.6-sonnet-medium-thinking
 
 ### Debug Log References
 
+No blocking issues encountered. All tasks completed in single pass.
+
 ### Completion Notes List
 
+- `ProfilesService.deleteProfile` — synchronous (no await), splices profile from array, uses `activeProfileId.delete()` to clear key when last profile is removed, falls back to `userProfiles[0].id` when remaining profiles exist. Returns full updated list via `getProfiles(userId)`.
+- `ProfilesController.deleteProfile` — `@Delete(':id')`, HTTP 200 (default), delegates to service, wraps in `successResponse`. `Delete` decorator imported alongside existing NestJS imports.
+- E2E suite extended within existing `Profiles` describe block; 5 new tests covering 401/404/200/state-after-delete flows. All 42 E2E tests pass.
+- Flutter: `deleteProfile(String id)` added to abstract class and `InMemoryProfilesRepository`. `_showDeleteConfirm` method on `_ProfileListScreenState` uses `showDialog` + `AlertDialog`; Delete button styled with `TextButton.styleFrom(foregroundColor: colorScheme.error)`.
+- Widget keys match spec: `Key('profile-delete-${profile.id}')`, `Key('profile-delete-confirm')`, `Key('profile-delete-cancel')`.
+- All tests: API unit 80/80, E2E 42/42, Flutter widget 12/12. Zero regressions.
+
 ### File List
+
+**Modified (API):**
+- `apps/api/src/modules/profiles/profiles.service.ts`
+- `apps/api/src/modules/profiles/profiles.controller.ts`
+- `apps/api/src/modules/profiles/profiles.service.spec.ts`
+- `apps/api/src/modules/profiles/profiles.controller.spec.ts`
+- `apps/api/test/app.e2e-spec.ts`
+
+**Modified (Flutter):**
+- `apps/mobile/lib/features/profiles/profiles_repository.dart`
+- `apps/mobile/lib/features/profiles/in_memory_profiles_repository.dart`
+- `apps/mobile/lib/features/profiles/screens/profile_list_screen.dart`
+- `apps/mobile/test/profile_list_test.dart`
+
+### Senior Developer Review (AI)
+
+**Date:** 2026-03-06  
+**Outcome:** Changes Requested → Resolved
+
+**Action Items:**
+- [x] [Med] No try/catch around `deleteProfile` in Flutter `_showDeleteConfirm` — added error handling with `_error` state
+- [x] [Low] Widget tests using `find.text` instead of keys — replaced all instances with key-based finders; added `Key('profile-active-chip-${id}')` and `Key('profile-delete-dialog')` to screen
+- [x] [Low] E2E test name misleading: "DELETE active profile → remaining profile becomes active" → renamed to "DELETE last profile → empty list returned"
+- [x] [Low] `Theme.of(context)` used inside dialog builder — corrected to `Theme.of(ctx)`
+
+### Change Log
+
+- 2026-03-06: Implemented story 1.6 — `DELETE /profiles/:id` endpoint with 401/404/200 flows; Flutter delete button with confirmation dialog and destructive styling; full unit, E2E, and widget test coverage.
+- 2026-03-06: Code review fixes — Flutter delete error handling; all `find.text` replaced with key finders; new widget keys (`profile-active-chip`, `profile-delete-dialog`); E2E test name corrected; `Theme.of(ctx)` fix.

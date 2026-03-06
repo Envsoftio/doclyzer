@@ -54,6 +54,44 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
     await _loadProfiles();
   }
 
+  Future<void> _showDeleteConfirm(Profile profile) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        key: const Key('profile-delete-dialog'),
+        title: const Text('Delete profile?'),
+        content: const Text(
+          'This profile will be removed. Any data linked to it will be affected.',
+        ),
+        actions: [
+          TextButton(
+            key: const Key('profile-delete-cancel'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            key: const Key('profile-delete-confirm'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      try {
+        await widget.profilesRepository.deleteProfile(profile.id);
+        await _loadProfiles();
+      } catch (e) {
+        setState(() {
+          _error = 'Failed to delete profile. Please try again.';
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,7 +122,10 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (profile.isActive)
-                            const Chip(label: Text('Active'))
+                            Chip(
+                              key: Key('profile-active-chip-${profile.id}'),
+                              label: const Text('Active'),
+                            )
                           else
                             OutlinedButton(
                               key: Key('profile-activate-${profile.id}'),
@@ -95,6 +136,14 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
                             key: Key('profile-edit-${profile.id}'),
                             icon: const Icon(Icons.edit),
                             onPressed: () => widget.onEditProfile(profile),
+                          ),
+                          IconButton(
+                            key: Key('profile-delete-${profile.id}'),
+                            icon: Icon(
+                              Icons.delete,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            onPressed: () => _showDeleteConfirm(profile),
                           ),
                         ],
                       ),

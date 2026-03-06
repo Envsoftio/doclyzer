@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -54,6 +55,13 @@ export class ProfilesController {
   activateProfile(@Param('id') profileId: string, @Req() req: Request): object {
     const { id: userId } = req.user as AuthUser;
     const data = this.profilesService.activateProfile(userId, profileId);
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Delete(':id')
+  deleteProfile(@Param('id') profileId: string, @Req() req: Request): object {
+    const { id: userId } = req.user as AuthUser;
+    const data = this.profilesService.deleteProfile(userId, profileId);
     return successResponse(data, getCorrelationId(req));
   }
 }

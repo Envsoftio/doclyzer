@@ -69,6 +69,18 @@ class InMemoryProfilesRepository implements ProfilesRepository {
     _activeProfileId = id;
   }
 
+  @override
+  Future<void> deleteProfile(String id) async {
+    final index = _profiles.indexWhere((p) => p.id == id);
+    if (index == -1) {
+      throw ProfileNotFoundException(id);
+    }
+    _profiles.removeAt(index);
+    if (_activeProfileId == id) {
+      _activeProfileId = _profiles.isNotEmpty ? _profiles.first.id : null;
+    }
+  }
+
   Profile _toProfile(_InternalProfile p) {
     return Profile(
       id: p.id,

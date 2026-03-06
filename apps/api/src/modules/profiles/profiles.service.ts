@@ -88,4 +88,26 @@ export class ProfilesService {
     this.activeProfileId.set(userId, profileId);
     return this.getProfiles(userId);
   }
+
+  deleteProfile(userId: string, profileId: string): ProfileWithActive[] {
+    const userProfiles = this.profiles.get(userId) ?? [];
+    const index = userProfiles.findIndex((p) => p.id === profileId);
+
+    if (index === -1) {
+      throw new ProfileNotFoundException();
+    }
+
+    userProfiles.splice(index, 1);
+    this.profiles.set(userId, userProfiles);
+
+    if (this.activeProfileId.get(userId) === profileId) {
+      if (userProfiles.length > 0) {
+        this.activeProfileId.set(userId, userProfiles[0].id);
+      } else {
+        this.activeProfileId.delete(userId);
+      }
+    }
+
+    return this.getProfiles(userId);
+  }
 }

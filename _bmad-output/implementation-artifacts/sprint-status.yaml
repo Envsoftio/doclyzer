@@ -46,7 +46,7 @@ development_status:
   1-3-account-profile-management-view-update-basic-info: done
   1-4-policy-acceptance-with-version-tracking: done
   1-5-multi-profile-create-edit-switch: done
-  1-6-profile-deletion-with-confirmation-and-impact-messaging: ready-for-dev
+  1-6-profile-deletion-with-confirmation-and-impact-messaging: done
   1-7-active-session-device-list-and-revoke: backlog
   1-8-communication-preferences-management: backlog
   1-9-data-export-and-account-closure-requests: backlog

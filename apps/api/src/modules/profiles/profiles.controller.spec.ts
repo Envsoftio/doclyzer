@@ -36,7 +36,11 @@ describe('ProfilesController', () => {
   let profilesService: jest.Mocked<
     Pick<
       ProfilesService,
-      'getProfiles' | 'createProfile' | 'updateProfile' | 'activateProfile'
+      | 'getProfiles'
+      | 'createProfile'
+      | 'updateProfile'
+      | 'activateProfile'
+      | 'deleteProfile'
     >
   >;
 
@@ -46,6 +50,7 @@ describe('ProfilesController', () => {
       createProfile: jest.fn(),
       updateProfile: jest.fn(),
       activateProfile: jest.fn(),
+      deleteProfile: jest.fn(),
     };
     controller = new ProfilesController(
       profilesService as unknown as ProfilesService,
@@ -142,6 +147,31 @@ describe('ProfilesController', () => {
         throw new Error('not found');
       });
       expect(() => controller.activateProfile('bad-id', makeReq())).toThrow();
+    });
+  });
+
+  describe('deleteProfile', () => {
+    it('delegates to ProfilesService.deleteProfile and returns updated list', () => {
+      profilesService.deleteProfile.mockReturnValue([]);
+      const result = controller.deleteProfile('profile-1', makeReq()) as {
+        success: boolean;
+        data: ProfileWithActive[];
+        correlationId: string;
+      };
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual([]);
+      expect(result.correlationId).toBe('test-cid');
+      expect(profilesService.deleteProfile).toHaveBeenCalledWith(
+        'user-1',
+        'profile-1',
+      );
+    });
+
+    it('propagates exceptions from service', () => {
+      profilesService.deleteProfile.mockImplementation(() => {
+        throw new Error('not found');
+      });
+      expect(() => controller.deleteProfile('bad-id', makeReq())).toThrow();
     });
   });
 });

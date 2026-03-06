@@ -104,6 +104,53 @@ describe('ProfilesService', () => {
     });
   });
 
+  describe('deleteProfile', () => {
+    it('deletes a profile and returns updated list without it', () => {
+      const first = service.createProfile('user-1', { name: 'Vishnu' });
+      const second = service.createProfile('user-1', { name: 'Amma' });
+      const result = service.deleteProfile('user-1', second.id);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(first.id);
+    });
+
+    it('deleting the active profile sets another profile as active', () => {
+      const first = service.createProfile('user-1', { name: 'Vishnu' });
+      service.createProfile('user-1', { name: 'Amma' });
+      const result = service.deleteProfile('user-1', first.id);
+      expect(result).toHaveLength(1);
+      expect(result[0].isActive).toBe(true);
+    });
+
+    it('deleting the only profile returns empty list and clears active', () => {
+      const only = service.createProfile('user-1', { name: 'Vishnu' });
+      const result = service.deleteProfile('user-1', only.id);
+      expect(result).toHaveLength(0);
+      const after = service.getProfiles('user-1');
+      expect(after).toHaveLength(0);
+    });
+
+    it('deleting a non-active profile preserves the existing active profile', () => {
+      const first = service.createProfile('user-1', { name: 'Vishnu' });
+      const second = service.createProfile('user-1', { name: 'Amma' });
+      const result = service.deleteProfile('user-1', second.id);
+      const active = result.find((p) => p.id === first.id)!;
+      expect(active.isActive).toBe(true);
+    });
+
+    it('throws ProfileNotFoundException for non-existent profile id', () => {
+      expect(() =>
+        service.deleteProfile('user-1', 'nonexistent-id'),
+      ).toThrow(ProfileNotFoundException);
+    });
+
+    it('throws ProfileNotFoundException when profile belongs to a different user', () => {
+      const profile = service.createProfile('user-1', { name: 'Vishnu' });
+      expect(() => service.deleteProfile('user-2', profile.id)).toThrow(
+        ProfileNotFoundException,
+      );
+    });
+  });
+
   describe('updateProfile', () => {
     it('updates name and reflects in getProfiles', () => {
       const profile = service.createProfile('user-1', { name: 'Vishnu' });

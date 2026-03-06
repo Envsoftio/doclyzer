@@ -717,6 +717,52 @@ describe('AuthController (e2e)', () => {
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
     });
+
+    it('DELETE /profiles without token → 401 AUTH_UNAUTHORIZED', async () => {
+      const res = await request(app.getHttpServer())
+        .delete(`/v1/profiles/${firstProfileId}`)
+        .expect(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+    });
+
+    it('DELETE /profiles/nonexistent-id → 404 PROFILE_NOT_FOUND', async () => {
+      const res = await request(app.getHttpServer())
+        .delete('/v1/profiles/nonexistent-id')
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .expect(404);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
+    });
+
+    it('DELETE /profiles/:id removes profile and returns updated list', async () => {
+      const res = await request(app.getHttpServer())
+        .delete(`/v1/profiles/${secondProfileId}`)
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .expect(200);
+      expect(res.body.success).toBe(true);
+      const ids = (res.body.data as Array<{ id: string }>).map((p) => p.id);
+      expect(ids).not.toContain(secondProfileId);
+      expect(ids).toContain(firstProfileId);
+    });
+
+    it('GET /profiles after delete → deleted profile absent', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/profiles')
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .expect(200);
+      const ids = (res.body.data as Array<{ id: string }>).map((p) => p.id);
+      expect(ids).not.toContain(secondProfileId);
+    });
+
+    it('DELETE last profile → empty list returned', async () => {
+      const res = await request(app.getHttpServer())
+        .delete(`/v1/profiles/${firstProfileId}`)
+        .set('Authorization', `Bearer ${profilesToken}`)
+        .expect(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveLength(0);
+    });
   });
 
   describe('Profiles limit (free tier)', () => {

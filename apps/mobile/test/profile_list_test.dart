@@ -34,26 +34,26 @@ void main() {
 
   testWidgets('renders profile list after create', (WidgetTester tester) async {
     final repo = InMemoryProfilesRepository();
-    await repo.createProfile(name: 'Vishnu');
+    final profile = await repo.createProfile(name: 'Vishnu');
 
     await tester.pumpWidget(_wrap(repo));
     await tester.pumpAndSettle();
 
-    expect(find.text('Vishnu'), findsOneWidget);
+    expect(find.byKey(Key('profile-list-item-${profile.id}')), findsOneWidget);
   });
 
   testWidgets('active profile shows Active chip, inactive shows Set Active button',
       (WidgetTester tester) async {
     final repo = InMemoryProfilesRepository(maxProfiles: 2);
     final first = await repo.createProfile(name: 'Vishnu');
-    await repo.createProfile(name: 'Amma');
+    final second = await repo.createProfile(name: 'Amma');
 
     await tester.pumpWidget(_wrap(repo));
     await tester.pumpAndSettle();
 
-    expect(find.text('Active'), findsOneWidget);
+    expect(find.byKey(Key('profile-active-chip-${first.id}')), findsOneWidget);
     expect(find.byKey(Key('profile-activate-${first.id}')), findsNothing);
-    expect(find.text('Set Active'), findsOneWidget);
+    expect(find.byKey(Key('profile-activate-${second.id}')), findsOneWidget);
   });
 
   testWidgets('tapping Set Active activates that profile',
@@ -72,7 +72,7 @@ void main() {
     final activatedSecond = profiles.firstWhere((p) => p.id == second.id);
     expect(activatedSecond.isActive, isTrue);
 
-    expect(find.text('Active'), findsOneWidget);
+    expect(find.byKey(Key('profile-active-chip-${second.id}')), findsOneWidget);
   });
 
   testWidgets('tapping Add Profile calls onCreateProfile',
@@ -127,5 +127,72 @@ void main() {
 
     expect(find.byKey(const Key('profile-upgrade-cta')), findsOneWidget);
     expect(find.byKey(const Key('profile-create-new')), findsNothing);
+  });
+
+  testWidgets('delete icon button is present for each profile',
+      (WidgetTester tester) async {
+    final repo = InMemoryProfilesRepository();
+    final profile = await repo.createProfile(name: 'Vishnu');
+
+    await tester.pumpWidget(_wrap(repo));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(Key('profile-delete-${profile.id}')), findsOneWidget);
+  });
+
+  testWidgets('tapping delete shows confirmation dialog',
+      (WidgetTester tester) async {
+    final repo = InMemoryProfilesRepository();
+    final profile = await repo.createProfile(name: 'Vishnu');
+
+    await tester.pumpWidget(_wrap(repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(Key('profile-delete-${profile.id}')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('profile-delete-dialog')), findsOneWidget);
+    expect(find.byKey(const Key('profile-delete-confirm')), findsOneWidget);
+    expect(find.byKey(const Key('profile-delete-cancel')), findsOneWidget);
+  });
+
+  testWidgets('tapping Cancel in delete dialog does not delete profile',
+      (WidgetTester tester) async {
+    final repo = InMemoryProfilesRepository();
+    final profile = await repo.createProfile(name: 'Vishnu');
+
+    await tester.pumpWidget(_wrap(repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(Key('profile-delete-${profile.id}')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('profile-delete-cancel')));
+    await tester.pumpAndSettle();
+
+    final profiles = await repo.getProfiles();
+    expect(profiles, hasLength(1));
+    expect(find.byKey(Key('profile-list-item-${profile.id}')), findsOneWidget);
+  });
+
+  testWidgets('tapping Delete in dialog removes profile from list',
+      (WidgetTester tester) async {
+    final repo = InMemoryProfilesRepository(maxProfiles: 2);
+    final first = await repo.createProfile(name: 'Vishnu');
+    final second = await repo.createProfile(name: 'Amma');
+
+    await tester.pumpWidget(_wrap(repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(Key('profile-delete-${first.id}')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('profile-delete-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(Key('profile-list-item-${first.id}')), findsNothing);
+    expect(find.byKey(Key('profile-list-item-${second.id}')), findsOneWidget);
+    final profiles = await repo.getProfiles();
+    expect(profiles, hasLength(1));
   });
 }

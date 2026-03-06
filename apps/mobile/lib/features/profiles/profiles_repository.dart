@@ -67,4 +67,6 @@ abstract class ProfilesRepository {
   });
 
   Future<void> activateProfile(String id);
+
+  Future<void> deleteProfile(String id);
 }
