@@ -22,17 +22,17 @@ export class ConsentController {
   constructor(private readonly consentService: ConsentService) {}
 
   @Get('status')
-  getStatus(@Req() req: Request): object {
+  async getStatus(@Req() req: Request): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.consentService.getStatus(userId);
+    const data = await this.consentService.getStatus(userId);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Post('accept')
   @HttpCode(HttpStatus.OK)
-  accept(@Body() body: AcceptPoliciesDto, @Req() req: Request): object {
+  async accept(@Body() body: AcceptPoliciesDto, @Req() req: Request): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.consentService.acceptPolicies(userId, body.policyTypes);
+    const data = await this.consentService.acceptPolicies(userId, body.policyTypes);
     return successResponse(data, getCorrelationId(req));
   }
 }

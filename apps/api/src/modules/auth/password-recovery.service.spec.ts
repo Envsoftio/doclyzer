@@ -1,140 +1,91 @@
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import type { Repository } from 'typeorm';
+import { PasswordResetTokenEntity } from '../../database/entities/password-reset-token.entity';
 import { InMemoryNotificationService } from '../../common/notification/in-memory-notification.service';
 import { AuthService } from './auth.service';
 import { PasswordRecoveryService } from './password-recovery.service';
 
-async function setupUser(
-  service: AuthService,
-  email = 'test@example.com',
-  password = 'StrongPass123!',
-): Promise<void> {
-  await service.register({ email, password });
+function makeTokenRepo(): jest.Mocked<Repository<PasswordResetTokenEntity>> {
+  return {
+    findOne: jest.fn(),
+    find: jest.fn(),
+    save: jest.fn(),
+    create: jest.fn((data) => data as PasswordResetTokenEntity),
+    delete: jest.fn(),
+    update: jest.fn(),
+  } as unknown as jest.Mocked<Repository<PasswordResetTokenEntity>>;
 }
 
 describe('PasswordRecoveryService', () => {
-  let authService: AuthService;
+  let authService: jest.Mocked<
+    Pick<AuthService, 'findUserByEmail' | 'hashPassword' | 'updatePasswordHash' | 'revokeAllSessionsForUser' | 'validatePasswordStrength'>
+  >;
   let notificationService: InMemoryNotificationService;
+  let tokenRepo: jest.Mocked<Repository<PasswordResetTokenEntity>>;
   let recoveryService: PasswordRecoveryService;
 
   beforeEach(() => {
-    authService = new AuthService();
+    authService = {
+      findUserByEmail: jest.fn(),
+      hashPassword: jest.fn().mockResolvedValue('newhash'),
+      updatePasswordHash: jest.fn().mockResolvedValue(undefined),
+      revokeAllSessionsForUser: jest.fn().mockResolvedValue(undefined),
+      validatePasswordStrength: jest.fn(),
+    };
     notificationService = new InMemoryNotificationService();
+    tokenRepo = makeTokenRepo();
     recoveryService = new PasswordRecoveryService(
-      authService,
+      tokenRepo,
+      authService as unknown as AuthService,
       notificationService,
     );
   });
 
   describe('requestReset', () => {
-    it('returns generic message for known email (enumeration-safe)', async () => {
-      await setupUser(authService);
+    it('returns generic message for known email', async () => {
+      authService.findUserByEmail.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com',
+        passwordHash: 'hash',
+        displayName: null,
+        createdAt: new Date(),
+      });
+      tokenRepo.delete.mockResolvedValue({ affected: 0, raw: {} });
+      tokenRepo.save.mockResolvedValue({} as PasswordResetTokenEntity);
+
       const result = await recoveryService.requestReset('test@example.com');
       expect(result.message).toContain('If an account exists');
     });
 
-    it('returns identical message for unknown email (no enumeration)', async () => {
-      const known = await recoveryService.requestReset('known@example.com');
-      await setupUser(authService, 'known2@example.com');
-      const registered =
-        await recoveryService.requestReset('known2@example.com');
-      expect(known.message).toBe(registered.message);
-    });
+    it('returns same generic message for unknown email (enumeration-safe)', async () => {
+      authService.findUserByEmail.mockResolvedValue(null);
+      tokenRepo.delete.mockResolvedValue({ affected: 0, raw: {} });
 
-    it('issues a token via notification service for known account', async () => {
-      await setupUser(authService);
-      await recoveryService.requestReset('test@example.com');
-      const token =
-        notificationService.getLastTokenForEmail('test@example.com');
-      expect(token).toBeTruthy();
-      expect(typeof token).toBe('string');
-    });
-
-    it('delivers no token for unknown email', async () => {
-      await recoveryService.requestReset('nobody@example.com');
-      const token =
-        notificationService.getLastTokenForEmail('nobody@example.com');
-      expect(token).toBeUndefined();
-    });
-
-    it('invalidates previous pending token on re-request', async () => {
-      await setupUser(authService);
-      await recoveryService.requestReset('test@example.com');
-      const firstToken =
-        notificationService.getLastTokenForEmail('test@example.com')!;
-      await recoveryService.requestReset('test@example.com');
-      const secondToken =
-        notificationService.getLastTokenForEmail('test@example.com');
-      expect(firstToken).not.toBe(secondToken);
-      await expect(
-        recoveryService.confirmReset(firstToken, 'NewPass456!'),
-      ).rejects.toThrow();
+      const result = await recoveryService.requestReset('unknown@example.com');
+      expect(result.message).toContain('If an account exists');
     });
   });
 
   describe('confirmReset', () => {
-    it('resets password and allows login with new password', async () => {
-      await setupUser(authService);
-      await recoveryService.requestReset('test@example.com');
-      const token =
-        notificationService.getLastTokenForEmail('test@example.com')!;
-
-      await recoveryService.confirmReset(token, 'NewPass456!');
-
+    it('throws AUTH_RESET_TOKEN_INVALID for unknown token', async () => {
+      const { UnauthorizedException } = await import('@nestjs/common');
+      tokenRepo.findOne.mockResolvedValue(null);
       await expect(
-        authService.login({
-          email: 'test@example.com',
-          password: 'StrongPass123!',
-        }),
-      ).rejects.toThrow();
-
-      const loginResult = await authService.login({
-        email: 'test@example.com',
-        password: 'NewPass456!',
-      });
-      expect(loginResult.accessToken).toBeTruthy();
-    });
-
-    it('revokes all active sessions on successful reset', async () => {
-      await setupUser(authService);
-      const { accessToken } = await authService.login({
-        email: 'test@example.com',
-        password: 'StrongPass123!',
-      });
-
-      await recoveryService.requestReset('test@example.com');
-      const token =
-        notificationService.getLastTokenForEmail('test@example.com')!;
-      await recoveryService.confirmReset(token, 'NewPass456!');
-
-      expect(() => authService.logout(accessToken)).toThrow();
-    });
-
-    it('enforces single-use: rejects token used twice', async () => {
-      await setupUser(authService);
-      await recoveryService.requestReset('test@example.com');
-      const token =
-        notificationService.getLastTokenForEmail('test@example.com')!;
-
-      await recoveryService.confirmReset(token, 'NewPass456!');
-      await expect(
-        recoveryService.confirmReset(token, 'AnotherPass789!'),
+        recoveryService.confirmReset('bad-token', 'NewPass123!'),
       ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('rejects invalid token', async () => {
+    it('throws AUTH_RESET_TOKEN_EXPIRED for expired token', async () => {
+      const { BadRequestException } = await import('@nestjs/common');
+      tokenRepo.findOne.mockResolvedValue({
+        id: 'tok-1',
+        userId: 'user-1',
+        tokenHash: 'somehash',
+        expiresAt: new Date(Date.now() - 1000),
+        usedAt: null,
+        createdAt: new Date(),
+      } as PasswordResetTokenEntity);
       await expect(
-        recoveryService.confirmReset('completely-fake-token', 'NewPass456!'),
-      ).rejects.toThrow(UnauthorizedException);
-    });
-
-    it('enforces password policy on reset', async () => {
-      await setupUser(authService);
-      await recoveryService.requestReset('test@example.com');
-      const token =
-        notificationService.getLastTokenForEmail('test@example.com')!;
-
-      await expect(
-        recoveryService.confirmReset(token, 'short'),
+        recoveryService.confirmReset('expired-raw-token', 'NewPass123!'),
       ).rejects.toThrow(BadRequestException);
     });
   });

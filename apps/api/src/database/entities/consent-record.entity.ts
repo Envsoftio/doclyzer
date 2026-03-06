@@ -20,6 +20,9 @@ export class ConsentRecordEntity {
   @JoinColumn({ name: 'user_id' })
   user!: UserEntity;
 
+  @Column({ type: 'varchar', length: 32, name: 'policy_type', nullable: true })
+  policyType!: string | null;
+
   @Column({ type: 'varchar', length: 64, name: 'policy_version' })
   policyVersion!: string;
 

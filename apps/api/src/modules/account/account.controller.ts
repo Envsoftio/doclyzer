@@ -30,89 +30,90 @@ export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
   @Get('restriction-status')
-  getRestrictionStatus(@Req() req: Request): object {
+  async getRestrictionStatus(@Req() req: Request): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.accountService.getRestrictionStatus(userId);
+    const data = await this.accountService.getRestrictionStatus(userId);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Get('profile')
-  getProfile(@Req() req: Request): object {
+  async getProfile(@Req() req: Request): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.accountService.getProfile(userId);
+    const data = await this.accountService.getProfile(userId);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Patch('profile')
   @HttpCode(HttpStatus.OK)
-  updateProfile(
+  async updateProfile(
     @Body() body: UpdateAccountProfileDto,
     @Req() req: Request,
-  ): object {
+  ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.accountService.updateProfile(userId, body);
+    const data = await this.accountService.updateProfile(userId, body);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Get('communication-preferences')
-  getCommunicationPreferences(@Req() req: Request): object {
+  async getCommunicationPreferences(@Req() req: Request): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.accountService.getCommunicationPreferences(userId);
+    const data = await this.accountService.getCommunicationPreferences(userId);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Patch('communication-preferences')
   @HttpCode(HttpStatus.OK)
-  updateCommunicationPreferences(
+  async updateCommunicationPreferences(
     @Body() body: UpdateCommunicationPreferencesDto,
     @Req() req: Request,
-  ): object {
+  ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.accountService.updateCommunicationPreferences(userId, body);
+    const data = await this.accountService.updateCommunicationPreferences(userId, body);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Post('data-export-requests')
   @HttpCode(HttpStatus.CREATED)
-  createDataExportRequest(
+  async createDataExportRequest(
     @Body() _body: CreateDataExportRequestDto,
     @Req() req: Request,
-  ): object {
+  ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const correlationId = getCorrelationId(req);
-    const data = this.accountService.createDataExportRequest(userId, correlationId);
+    const data = await this.accountService.createDataExportRequest(userId, correlationId);
     return successResponse(data, correlationId);
   }
 
   @Get('data-export-requests/:requestId')
-  getDataExportRequest(
+  async getDataExportRequest(
     @Param('requestId') requestId: string,
     @Req() req: Request,
-  ): object {
+  ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.accountService.getDataExportRequest(userId, requestId);
-    if (!data) {
-      throw new ExportRequestNotFoundException();
-    }
+    const data = await this.accountService.getDataExportRequest(userId, requestId);
+    if (!data) throw new ExportRequestNotFoundException();
     return successResponse(data, getCorrelationId(req));
   }
 
   @Post('closure-requests')
   @HttpCode(HttpStatus.CREATED)
-  createClosureRequest(
+  async createClosureRequest(
     @Body() body: CreateClosureRequestDto,
     @Req() req: Request,
-  ): object {
+  ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const correlationId = getCorrelationId(req);
-    const data = this.accountService.createClosureRequest(userId, body, correlationId);
+    const data = await this.accountService.createClosureRequest(userId, body, correlationId);
     return successResponse(data, correlationId);
   }
 
   @Get('closure-request')
-  getClosureRequest(@Req() req: Request): object {
+  async getClosureRequest(@Req() req: Request): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.accountService.getClosureRequest(userId);
-    return successResponse({ status: data?.status ?? null, request: data }, getCorrelationId(req));
+    const data = await this.accountService.getClosureRequest(userId);
+    return successResponse(
+      { status: data?.status ?? null, request: data },
+      getCorrelationId(req),
+    );
   }
 }

@@ -28,9 +28,7 @@ import { PasswordRecoveryService } from './password-recovery.service';
 
 function getClientIp(req: Request): string {
   const forwarded = req.header('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
+  if (forwarded) return forwarded.split(',')[0].trim();
   return req.ip ?? 'unknown';
 }
 
@@ -42,10 +40,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  async register(
-    @Body() body: RegisterDto,
-    @Req() req: Request,
-  ): Promise<object> {
+  async register(@Body() body: RegisterDto, @Req() req: Request): Promise<object> {
     this.authService.enforceRateLimit('register', getClientIp(req), 20);
     const data = await this.authService.register(body);
     return successResponse(data, getCorrelationId(req));
@@ -55,59 +50,49 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() body: LoginDto, @Req() req: Request): Promise<object> {
     this.authService.enforceRateLimit('login', getClientIp(req));
-    const ip = getClientIp(req);
-    const userAgent = req.headers['user-agent'] ?? 'Unknown';
-    const data = await this.authService.login(body, ip, userAgent);
+    const data = await this.authService.login(body, getClientIp(req), req.headers['user-agent'] ?? 'Unknown');
     return successResponse(data, getCorrelationId(req));
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  logout(@Req() req: Request): object {
-    const authorizationHeader = req.header('authorization');
-    const accessToken = this.extractBearerToken(authorizationHeader);
-    this.authService.logout(accessToken);
+  async logout(@Req() req: Request): Promise<object> {
+    const token = this.extractBearerToken(req.header('authorization'));
+    await this.authService.logout(token);
     return successResponse({ revoked: true }, getCorrelationId(req));
   }
 
   @Get('sessions')
   @UseGuards(AuthGuard)
-  getSessions(@Req() req: Request): object {
+  async getSessions(@Req() req: Request): Promise<object> {
     const userId = (req as Request & { user: RequestUser }).user.id;
-    const currentSessionId = (req as Request & { currentSessionId?: string | null })
-      .currentSessionId ?? null;
-    const sessions = this.authService.getSessions(userId, currentSessionId);
+    const currentSessionId =
+      (req as Request & { currentSessionId?: string | null }).currentSessionId ?? null;
+    const sessions = await this.authService.getSessions(userId, currentSessionId);
     return successResponse(sessions, getCorrelationId(req));
   }
 
   @Delete('sessions/:sessionId')
   @UseGuards(AuthGuard)
-  revokeSession(
+  async revokeSession(
     @Req() req: Request,
     @Param('sessionId') sessionId: string,
-  ): object {
+  ): Promise<object> {
     const userId = (req as Request & { user: RequestUser }).user.id;
-    this.authService.revokeSession(
-      userId,
-      sessionId,
-      getCorrelationId(req),
-    );
+    await this.authService.revokeSession(userId, sessionId, getCorrelationId(req));
     return successResponse(null, getCorrelationId(req));
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  refresh(@Body() body: RefreshDto, @Req() req: Request): object {
-    const data = this.authService.refresh(body.refreshToken);
+  async refresh(@Body() body: RefreshDto, @Req() req: Request): Promise<object> {
+    const data = await this.authService.refresh(body.refreshToken);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(
-    @Body() body: ForgotPasswordDto,
-    @Req() req: Request,
-  ): Promise<object> {
+  async forgotPassword(@Body() body: ForgotPasswordDto, @Req() req: Request): Promise<object> {
     const clientIp = getClientIp(req);
     this.authService.enforceRateLimit('forgot-password', clientIp, 20);
     this.authService.enforceRateLimit('forgot-password-account', body.email, 5);
@@ -117,14 +102,8 @@ export class AuthController {
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  async resetPassword(
-    @Body() body: ResetPasswordDto,
-    @Req() req: Request,
-  ): Promise<object> {
-    const data = await this.recoveryService.confirmReset(
-      body.token,
-      body.newPassword,
-    );
+  async resetPassword(@Body() body: ResetPasswordDto, @Req() req: Request): Promise<object> {
+    const data = await this.recoveryService.confirmReset(body.token, body.newPassword);
     return successResponse(data, getCorrelationId(req));
   }
 
@@ -135,7 +114,6 @@ export class AuthController {
         message: 'Authorization bearer token is required',
       });
     }
-
     const [scheme, token] = authorizationHeader.split(' ');
     if (scheme !== 'Bearer' || !token) {
       throw new UnauthorizedException({
@@ -143,7 +121,6 @@ export class AuthController {
         message: 'Authorization bearer token is required',
       });
     }
-
     return token;
   }
 }

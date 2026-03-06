@@ -25,43 +25,43 @@ export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}
 
   @Get()
-  getProfiles(@Req() req: Request): object {
+  async getProfiles(@Req() req: Request): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.profilesService.getProfiles(userId);
+    const data = await this.profilesService.getProfiles(userId);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  createProfile(@Body() body: CreateProfileDto, @Req() req: Request): object {
+  async createProfile(@Body() body: CreateProfileDto, @Req() req: Request): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.profilesService.createProfile(userId, body);
+    const data = await this.profilesService.createProfile(userId, body);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Patch(':id')
-  updateProfile(
+  async updateProfile(
     @Param('id') profileId: string,
     @Body() body: UpdateProfileDto,
     @Req() req: Request,
-  ): object {
+  ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.profilesService.updateProfile(userId, profileId, body);
+    const data = await this.profilesService.updateProfile(userId, profileId, body);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Post(':id/activate')
   @HttpCode(HttpStatus.OK)
-  activateProfile(@Param('id') profileId: string, @Req() req: Request): object {
+  async activateProfile(@Param('id') profileId: string, @Req() req: Request): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.profilesService.activateProfile(userId, profileId);
+    const data = await this.profilesService.activateProfile(userId, profileId);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Delete(':id')
-  deleteProfile(@Param('id') profileId: string, @Req() req: Request): object {
+  async deleteProfile(@Param('id') profileId: string, @Req() req: Request): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = this.profilesService.deleteProfile(userId, profileId);
+    const data = await this.profilesService.deleteProfile(userId, profileId);
     return successResponse(data, getCorrelationId(req));
   }
 }

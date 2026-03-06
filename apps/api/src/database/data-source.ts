@@ -1,4 +1,9 @@
+import { config } from 'dotenv';
+import { join } from 'path';
 import { DataSource } from 'typeorm';
+
+// Load .env when running TypeORM CLI (migrations); Nest loads it via ConfigModule
+config({ path: join(__dirname, '../../../../.env') });
 import { AccountPreferenceEntity } from './entities/account-preference.entity';
 import { ClosureRequestEntity } from './entities/closure-request.entity';
 import { ConsentRecordEntity } from './entities/consent-record.entity';

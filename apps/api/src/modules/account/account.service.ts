@@ -1,5 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { AccountPreferenceEntity } from '../../database/entities/account-preference.entity';
+import { RestrictionEntity } from '../../database/entities/restriction.entity';
+import { DataExportRequestEntity } from '../../database/entities/data-export-request.entity';
+import { ClosureRequestEntity } from '../../database/entities/closure-request.entity';
+import { UserEntity } from '../../database/entities/user.entity';
 import { AuthService } from '../auth/auth.service';
 import type {
   UpdateAccountProfileDto,
@@ -16,220 +22,155 @@ import type {
 import {
   COMM_PREF_CATEGORY,
   ClosureConfirmationRequiredException,
-  ExportRequestNotFoundException,
 } from './account.types';
 
 @Injectable()
 export class AccountService {
   private readonly logger = new Logger(AccountService.name);
 
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
+    @InjectRepository(AccountPreferenceEntity)
+    private readonly prefRepo: Repository<AccountPreferenceEntity>,
+    @InjectRepository(RestrictionEntity)
+    private readonly restrictionRepo: Repository<RestrictionEntity>,
+    @InjectRepository(DataExportRequestEntity)
+    private readonly exportRepo: Repository<DataExportRequestEntity>,
+    @InjectRepository(ClosureRequestEntity)
+    private readonly closureRepo: Repository<ClosureRequestEntity>,
+    private readonly authService: AuthService,
+  ) {}
 
-  private readonly commPrefsStore = new Map<string, { productEmails: boolean }>();
-  private readonly restrictionStore = new Map<
-    string,
-    { rationale: string; nextSteps: string; restrictedActions?: string[] }
-  >();
-  private readonly exportRequestStore = new Map<string, DataExportRequest>();
-  private readonly closureRequestStore = new Map<string, ClosureRequest>();
-
-  getRestrictionStatus(userId: string): RestrictionStatus {
-    const entry = this.restrictionStore.get(userId);
-    if (!entry || !entry.rationale || !entry.nextSteps) {
-      return { isRestricted: false };
-    }
+  async getRestrictionStatus(userId: string): Promise<RestrictionStatus> {
+    const entry = await this.restrictionRepo.findOne({ where: { userId } });
+    if (!entry || !entry.isRestricted) return { isRestricted: false };
     return {
       isRestricted: true,
-      rationale: entry.rationale,
-      nextSteps: entry.nextSteps,
-      ...(entry.restrictedActions ? { restrictedActions: entry.restrictedActions } : {}),
+      rationale: entry.rationale ?? undefined,
+      nextSteps: entry.nextSteps ?? undefined,
     };
   }
 
-  getProfile(userId: string): AccountProfile {
-    const user = this.authService.findUserById(userId);
+  async getProfile(userId: string): Promise<AccountProfile> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException({
-        code: 'ACCOUNT_NOT_FOUND',
-        message: 'Account not found',
-      });
+      throw new NotFoundException({ code: 'ACCOUNT_NOT_FOUND', message: 'Account not found' });
     }
-    return {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      createdAt: user.createdAt,
-    };
+    return { id: user.id, email: user.email, displayName: user.displayName, createdAt: user.createdAt };
   }
 
-  getCommunicationPreferences(userId: string): CommunicationPreferences {
-    const stored = this.commPrefsStore.get(userId);
-    const productEnabled = stored?.productEmails ?? true;
+  async getCommunicationPreferences(userId: string): Promise<CommunicationPreferences> {
+    const pref = await this.prefRepo.findOne({ where: { userId } });
+    const productEnabled = pref?.productEmailsEnabled ?? true;
     return {
       preferences: [
-        {
-          category: COMM_PREF_CATEGORY.SECURITY,
-          enabled: true,
-          mandatory: true,
-        },
-        {
-          category: COMM_PREF_CATEGORY.COMPLIANCE,
-          enabled: true,
-          mandatory: true,
-        },
-        {
-          category: COMM_PREF_CATEGORY.PRODUCT,
-          enabled: productEnabled,
-          mandatory: false,
-        },
+        { category: COMM_PREF_CATEGORY.SECURITY, enabled: true, mandatory: true },
+        { category: COMM_PREF_CATEGORY.COMPLIANCE, enabled: true, mandatory: true },
+        { category: COMM_PREF_CATEGORY.PRODUCT, enabled: productEnabled, mandatory: false },
       ],
     };
   }
 
-  updateCommunicationPreferences(
+  async updateCommunicationPreferences(
     userId: string,
     dto: UpdateCommunicationPreferencesDto,
-  ): CommunicationPreferences {
-    const current = this.commPrefsStore.get(userId) ?? { productEmails: true };
-    if (dto.productEmails !== undefined) {
-      current.productEmails = dto.productEmails;
+  ): Promise<CommunicationPreferences> {
+    let pref = await this.prefRepo.findOne({ where: { userId } });
+    if (!pref) {
+      pref = this.prefRepo.create({ userId, productEmailsEnabled: true });
     }
-    this.commPrefsStore.set(userId, current);
+    if (dto.productEmails !== undefined) pref.productEmailsEnabled = dto.productEmails;
+    await this.prefRepo.save(pref);
     return this.getCommunicationPreferences(userId);
   }
 
-  updateProfile(userId: string, dto: UpdateAccountProfileDto): AccountProfile {
-    const user = this.authService.findUserById(userId);
+  async updateProfile(userId: string, dto: UpdateAccountProfileDto): Promise<AccountProfile> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException({
-        code: 'ACCOUNT_NOT_FOUND',
-        message: 'Account not found',
-      });
+      throw new NotFoundException({ code: 'ACCOUNT_NOT_FOUND', message: 'Account not found' });
     }
-    if (dto.displayName !== undefined) {
-      this.authService.updateUser(userId, { displayName: dto.displayName });
-    }
-    return {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      createdAt: user.createdAt,
-    };
+    if (dto.displayName !== undefined) user.displayName = dto.displayName;
+    await this.userRepo.save(user);
+    return { id: user.id, email: user.email, displayName: user.displayName, createdAt: user.createdAt };
   }
 
-  createDataExportRequest(
-    userId: string,
-    correlationId: string,
-  ): DataExportRequest {
-    const requestId = randomUUID();
-    const createdAt = new Date().toISOString();
-    const request: DataExportRequest = {
-      requestId,
+  async createDataExportRequest(userId: string, correlationId: string): Promise<DataExportRequest> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    const exportPayload = user
+      ? { profile: { id: user.id, email: user.email, displayName: user.displayName, createdAt: user.createdAt }, profiles: [], consentRecords: [] }
+      : null;
+
+    const downloadUrl = exportPayload
+      ? `data:application/json;base64,${Buffer.from(JSON.stringify(exportPayload)).toString('base64')}`
+      : null;
+
+    const entity = this.exportRepo.create({
       userId,
-      status: 'pending',
-      createdAt,
-    };
-    this.exportRequestStore.set(requestId, request);
-    this.logger.log(
-      JSON.stringify({
-        action: 'DATA_EXPORT_REQUESTED',
-        userId,
-        requestId,
-        correlationId,
-      }),
-    );
-    return { ...request };
+      status: exportPayload ? 'completed' : 'failed',
+      completedAt: exportPayload ? new Date() : null,
+      downloadUrl,
+      failureReason: exportPayload ? null : 'USER_NOT_FOUND',
+    });
+    const saved = await this.exportRepo.save(entity);
+
+    this.logger.log(JSON.stringify({ action: 'DATA_EXPORT_REQUESTED', userId, requestId: saved.id, correlationId }));
+    return this.toExportDto(saved);
   }
 
-  getDataExportRequest(
-    userId: string,
-    requestId: string,
-  ): DataExportRequest | null {
-    const request = this.exportRequestStore.get(requestId);
-    if (!request || request.userId !== userId) {
-      return null;
-    }
-    if (request.status === 'pending') {
-      const user = this.authService.findUserById(userId);
-      if (!user) {
-        request.status = 'failed';
-        request.failureReason = 'USER_NOT_FOUND';
-        this.exportRequestStore.set(requestId, request);
-        this.logger.log(
-          JSON.stringify({
-            action: 'DATA_EXPORT_FAILED',
-            userId,
-            requestId,
-            reason: 'USER_NOT_FOUND',
-          }),
-        );
-      } else {
-        const exportPayload = {
-          profile: { id: user.id, email: user.email, displayName: user.displayName, createdAt: user.createdAt },
-          profiles: [],
-          consentRecords: [],
-        };
-        const downloadUrl = `data:application/json;base64,${Buffer.from(JSON.stringify(exportPayload)).toString('base64')}`;
-        request.status = 'completed';
-        request.completedAt = new Date().toISOString();
-        request.downloadUrl = downloadUrl;
-        this.exportRequestStore.set(requestId, request);
-        this.logger.log(
-          JSON.stringify({
-            action: 'DATA_EXPORT_COMPLETED',
-            userId,
-            requestId,
-          }),
-        );
-      }
-    }
-    return { ...request };
+  async getDataExportRequest(userId: string, requestId: string): Promise<DataExportRequest | null> {
+    const entity = await this.exportRepo.findOne({ where: { id: requestId, userId } });
+    if (!entity) return null;
+    return this.toExportDto(entity);
   }
 
-  createClosureRequest(
+  async createClosureRequest(
     userId: string,
     dto: CreateClosureRequestDto,
     correlationId: string,
-  ): ClosureRequest {
-    if (!dto.confirmClosure) {
-      throw new ClosureConfirmationRequiredException();
-    }
-    const requestId = randomUUID();
-    const createdAt = new Date().toISOString();
-    const message =
-      'Your account is scheduled for closure. You will lose access to all data.';
-    const request: ClosureRequest = {
-      requestId,
+  ): Promise<ClosureRequest> {
+    if (!dto.confirmClosure) throw new ClosureConfirmationRequiredException();
+
+    const entity = this.closureRepo.create({
       userId,
-      status: 'pending',
-      createdAt,
-      message,
-    };
-    this.closureRequestStore.set(userId, request);
-    this.authService.revokeAllSessionsForUser(userId);
-    this.logger.log(
-      JSON.stringify({
-        action: 'CLOSURE_REQUESTED',
-        userId,
-        requestId,
-        correlationId,
-      }),
-    );
-    request.status = 'completed';
-    this.closureRequestStore.set(userId, request);
-    this.logger.log(
-      JSON.stringify({
-        action: 'CLOSURE_COMPLETED',
-        userId,
-        requestId,
-        correlationId,
-      }),
-    );
-    return { ...request };
+      status: 'completed',
+      message: 'Your account is scheduled for closure. You will lose access to all data.',
+    });
+    const saved = await this.closureRepo.save(entity);
+    await this.authService.revokeAllSessionsForUser(userId);
+
+    this.logger.log(JSON.stringify({ action: 'CLOSURE_COMPLETED', userId, requestId: saved.id, correlationId }));
+    return this.toClosureDto(saved);
   }
 
-  getClosureRequest(userId: string): ClosureRequest | null {
-    const request = this.closureRequestStore.get(userId);
-    return request ? { ...request } : null;
+  async getClosureRequest(userId: string): Promise<ClosureRequest | null> {
+    const entity = await this.closureRepo.findOne({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+    if (!entity) return null;
+    return this.toClosureDto(entity);
+  }
+
+  private toExportDto(e: DataExportRequestEntity): DataExportRequest {
+    return {
+      requestId: e.id,
+      userId: e.userId,
+      status: e.status,
+      createdAt: e.createdAt.toISOString(),
+      completedAt: e.completedAt?.toISOString(),
+      downloadUrl: e.downloadUrl ?? undefined,
+      failureReason: e.failureReason ?? undefined,
+    };
+  }
+
+  private toClosureDto(e: ClosureRequestEntity): ClosureRequest {
+    return {
+      requestId: e.id,
+      userId: e.userId,
+      status: e.status as 'pending' | 'completed',
+      createdAt: e.createdAt.toISOString(),
+      message: e.message ?? '',
+    };
   }
 }

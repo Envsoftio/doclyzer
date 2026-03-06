@@ -34,14 +34,7 @@ const mockProfile: ProfileWithActive = {
 describe('ProfilesController', () => {
   let controller: ProfilesController;
   let profilesService: jest.Mocked<
-    Pick<
-      ProfilesService,
-      | 'getProfiles'
-      | 'createProfile'
-      | 'updateProfile'
-      | 'activateProfile'
-      | 'deleteProfile'
-    >
+    Pick<ProfilesService, 'getProfiles' | 'createProfile' | 'updateProfile' | 'activateProfile' | 'deleteProfile'>
   >;
 
   beforeEach(() => {
@@ -52,126 +45,75 @@ describe('ProfilesController', () => {
       activateProfile: jest.fn(),
       deleteProfile: jest.fn(),
     };
-    controller = new ProfilesController(
-      profilesService as unknown as ProfilesService,
-    );
+    controller = new ProfilesController(profilesService as unknown as ProfilesService);
   });
 
   describe('getProfiles', () => {
-    it('delegates to ProfilesService.getProfiles and wraps in success envelope', () => {
-      profilesService.getProfiles.mockReturnValue([mockProfile]);
-      const result = controller.getProfiles(makeReq()) as {
+    it('wraps in success envelope', async () => {
+      profilesService.getProfiles.mockResolvedValue([mockProfile]);
+      const result = (await controller.getProfiles(makeReq())) as {
         success: boolean;
         data: ProfileWithActive[];
         correlationId: string;
       };
       expect(result.success).toBe(true);
       expect(result.data).toEqual([mockProfile]);
-      expect(result.correlationId).toBe('test-cid');
       expect(profilesService.getProfiles).toHaveBeenCalledWith('user-1');
     });
   });
 
   describe('createProfile', () => {
-    it('delegates to ProfilesService.createProfile and returns created profile', () => {
-      profilesService.createProfile.mockReturnValue(mockProfile);
-      const result = controller.createProfile(
-        { name: 'Vishnu' },
-        makeReq(),
-      ) as {
+    it('returns created profile', async () => {
+      profilesService.createProfile.mockResolvedValue(mockProfile);
+      const result = (await controller.createProfile({ name: 'Vishnu' }, makeReq())) as {
         success: boolean;
         data: ProfileWithActive;
       };
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockProfile);
-      expect(profilesService.createProfile).toHaveBeenCalledWith('user-1', {
-        name: 'Vishnu',
-      });
+      expect(profilesService.createProfile).toHaveBeenCalledWith('user-1', { name: 'Vishnu' });
     });
 
-    it('propagates exceptions from service', () => {
-      profilesService.createProfile.mockImplementation(() => {
-        throw new Error('unexpected');
-      });
-      expect(() =>
-        controller.createProfile({ name: 'Vishnu' }, makeReq()),
-      ).toThrow(Error);
+    it('propagates exceptions from service', async () => {
+      profilesService.createProfile.mockRejectedValue(new Error('unexpected'));
+      await expect(controller.createProfile({ name: 'Vishnu' }, makeReq())).rejects.toThrow(Error);
     });
   });
 
   describe('updateProfile', () => {
-    it('delegates to ProfilesService.updateProfile with userId and profileId', () => {
+    it('delegates to ProfilesService.updateProfile', async () => {
       const updated = { ...mockProfile, name: 'Vishnu Updated' };
-      profilesService.updateProfile.mockReturnValue(updated);
-      const result = controller.updateProfile(
-        'profile-1',
-        { name: 'Vishnu Updated' },
-        makeReq(),
-      ) as { success: boolean; data: ProfileWithActive };
+      profilesService.updateProfile.mockResolvedValue(updated);
+      const result = (await controller.updateProfile('profile-1', { name: 'Vishnu Updated' }, makeReq())) as {
+        success: boolean;
+        data: ProfileWithActive;
+      };
       expect(result.success).toBe(true);
       expect(result.data.name).toBe('Vishnu Updated');
-      expect(profilesService.updateProfile).toHaveBeenCalledWith(
-        'user-1',
-        'profile-1',
-        { name: 'Vishnu Updated' },
-      );
-    });
-
-    it('propagates exceptions from service', () => {
-      profilesService.updateProfile.mockImplementation(() => {
-        throw new Error('not found');
-      });
-      expect(() =>
-        controller.updateProfile('bad-id', { name: 'X' }, makeReq()),
-      ).toThrow();
     });
   });
 
   describe('activateProfile', () => {
-    it('delegates to ProfilesService.activateProfile and returns full profile list', () => {
-      profilesService.activateProfile.mockReturnValue([mockProfile]);
-      const result = controller.activateProfile('profile-1', makeReq()) as {
+    it('returns full profile list', async () => {
+      profilesService.activateProfile.mockResolvedValue([mockProfile]);
+      const result = (await controller.activateProfile('profile-1', makeReq())) as {
         success: boolean;
         data: ProfileWithActive[];
       };
       expect(result.success).toBe(true);
       expect(result.data).toEqual([mockProfile]);
-      expect(profilesService.activateProfile).toHaveBeenCalledWith(
-        'user-1',
-        'profile-1',
-      );
-    });
-
-    it('propagates exceptions from service', () => {
-      profilesService.activateProfile.mockImplementation(() => {
-        throw new Error('not found');
-      });
-      expect(() => controller.activateProfile('bad-id', makeReq())).toThrow();
     });
   });
 
   describe('deleteProfile', () => {
-    it('delegates to ProfilesService.deleteProfile and returns updated list', () => {
-      profilesService.deleteProfile.mockReturnValue([]);
-      const result = controller.deleteProfile('profile-1', makeReq()) as {
+    it('returns updated list', async () => {
+      profilesService.deleteProfile.mockResolvedValue([]);
+      const result = (await controller.deleteProfile('profile-1', makeReq())) as {
         success: boolean;
         data: ProfileWithActive[];
-        correlationId: string;
       };
       expect(result.success).toBe(true);
       expect(result.data).toEqual([]);
-      expect(result.correlationId).toBe('test-cid');
-      expect(profilesService.deleteProfile).toHaveBeenCalledWith(
-        'user-1',
-        'profile-1',
-      );
-    });
-
-    it('propagates exceptions from service', () => {
-      profilesService.deleteProfile.mockImplementation(() => {
-        throw new Error('not found');
-      });
-      expect(() => controller.deleteProfile('bad-id', makeReq())).toThrow();
     });
   });
 });

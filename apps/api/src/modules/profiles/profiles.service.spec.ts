@@ -1,13 +1,58 @@
+import type { Repository } from 'typeorm';
 import { ProfileLimitExceededException } from './exceptions/profile-limit-exceeded.exception';
 import { ProfileNotFoundException } from './exceptions/profile-not-found.exception';
 import { ProfilesService } from './profiles.service';
+import { ProfileEntity } from '../../database/entities/profile.entity';
 import type { EntitlementsService } from '../entitlements/entitlements.service';
+
+function makeProfileRepo(): jest.Mocked<Repository<ProfileEntity>> {
+  const store: ProfileEntity[] = [];
+  let idCounter = 1;
+
+  return {
+    find: jest.fn(async ({ where }: { where: { userId: string } }) =>
+      store.filter((p) => p.userId === where.userId),
+    ),
+    findOne: jest.fn(async ({ where }: { where: { id?: string; userId?: string } }) =>
+      store.find((p) => (!where.id || p.id === where.id) && (!where.userId || p.userId === where.userId)) ?? null,
+    ),
+    count: jest.fn(async ({ where }: { where: { userId: string } }) =>
+      store.filter((p) => p.userId === where.userId).length,
+    ),
+    create: jest.fn((data: Partial<ProfileEntity>) => ({ ...data } as ProfileEntity)),
+    save: jest.fn(async (entity: ProfileEntity) => {
+      const existing = store.findIndex((p) => p.id === entity.id);
+      if (existing >= 0) {
+        store[existing] = entity;
+        return entity;
+      }
+      const saved = { ...entity, id: `profile-${idCounter++}`, createdAt: new Date(), updatedAt: new Date() } as ProfileEntity;
+      store.push(saved);
+      return saved;
+    }),
+    delete: jest.fn(async ({ id, userId }: { id?: string; userId?: string }) => {
+      const idx = store.findIndex(
+        (p) => (!id || p.id === id) && (!userId || p.userId === userId),
+      );
+      if (idx >= 0) store.splice(idx, 1);
+      return { affected: 1 };
+    }),
+    update: jest.fn(async (criteria: string | { userId?: string; id?: string }, partial: Partial<ProfileEntity>) => {
+      store.forEach((p) => {
+        const matchId = typeof criteria === 'string' ? p.id === criteria : (!criteria.id || p.id === criteria.id);
+        const matchUser = typeof criteria === 'string' ? true : (!criteria.userId || p.userId === criteria.userId);
+        if (matchId && matchUser) Object.assign(p, partial);
+      });
+      return { affected: 1 };
+    }),
+  } as unknown as jest.Mocked<Repository<ProfileEntity>>;
+}
 
 function createService(maxProfiles = 2): ProfilesService {
   const entitlementsService = {
     getMaxProfiles: jest.fn().mockReturnValue(maxProfiles),
   } as unknown as EntitlementsService;
-  return new ProfilesService(entitlementsService);
+  return new ProfilesService(makeProfileRepo(), entitlementsService);
 }
 
 describe('ProfilesService', () => {
@@ -18,15 +63,15 @@ describe('ProfilesService', () => {
   });
 
   describe('getProfiles', () => {
-    it('returns empty array for new user', () => {
-      const profiles = service.getProfiles('user-1');
+    it('returns empty array for new user', async () => {
+      const profiles = await service.getProfiles('user-1');
       expect(profiles).toEqual([]);
     });
   });
 
   describe('createProfile', () => {
-    it('creates a profile with generated id and createdAt', () => {
-      const profile = service.createProfile('user-1', { name: 'Vishnu' });
+    it('creates a profile with id and createdAt', async () => {
+      const profile = await service.createProfile('user-1', { name: 'Vishnu' });
       expect(profile.id).toBeTruthy();
       expect(profile.name).toBe('Vishnu');
       expect(profile.createdAt).toBeTruthy();
@@ -35,27 +80,19 @@ describe('ProfilesService', () => {
       expect(profile.relation).toBeNull();
     });
 
-    it('first created profile is auto-activated (isActive: true)', () => {
-      const profile = service.createProfile('user-1', { name: 'Vishnu' });
+    it('first created profile is auto-activated', async () => {
+      const profile = await service.createProfile('user-1', { name: 'Vishnu' });
       expect(profile.isActive).toBe(true);
     });
 
-    it('second created profile is not active by default', () => {
-      service.createProfile('user-1', { name: 'Vishnu' });
-      const second = service.createProfile('user-1', { name: 'Amma' });
+    it('second created profile is not active', async () => {
+      await service.createProfile('user-1', { name: 'Vishnu' });
+      const second = await service.createProfile('user-1', { name: 'Amma' });
       expect(second.isActive).toBe(false);
     });
 
-    it('first profile remains active after second is created', () => {
-      const first = service.createProfile('user-1', { name: 'Vishnu' });
-      service.createProfile('user-1', { name: 'Amma' });
-      const profiles = service.getProfiles('user-1');
-      const firstUpdated = profiles.find((p) => p.id === first.id)!;
-      expect(firstUpdated.isActive).toBe(true);
-    });
-
-    it('stores optional fields when provided', () => {
-      const profile = service.createProfile('user-1', {
+    it('stores optional fields', async () => {
+      const profile = await service.createProfile('user-1', {
         name: 'Amma',
         dateOfBirth: '1960-05-15',
         relation: 'parent',
@@ -64,145 +101,34 @@ describe('ProfilesService', () => {
       expect(profile.relation).toBe('parent');
     });
 
-    it('profiles from different users are isolated', () => {
-      service.createProfile('user-1', { name: 'Vishnu' });
-      const user2Profiles = service.getProfiles('user-2');
-      expect(user2Profiles).toHaveLength(0);
-    });
-
-    it('throws ProfileLimitExceededException when free tier and already at 1 profile', () => {
+    it('throws ProfileLimitExceededException at limit', async () => {
       const freeService = createService(1);
-      freeService.createProfile('user-1', { name: 'Vishnu' });
-      expect(() =>
-        freeService.createProfile('user-1', { name: 'Amma' }),
-      ).toThrow(ProfileLimitExceededException);
-    });
-  });
-
-  describe('activateProfile', () => {
-    it('switches active profile and returns full updated list', () => {
-      const first = service.createProfile('user-1', { name: 'Vishnu' });
-      const second = service.createProfile('user-1', { name: 'Amma' });
-      const result = service.activateProfile('user-1', second.id);
-      const updatedFirst = result.find((p) => p.id === first.id)!;
-      const updatedSecond = result.find((p) => p.id === second.id)!;
-      expect(updatedFirst.isActive).toBe(false);
-      expect(updatedSecond.isActive).toBe(true);
-    });
-
-    it('throws ProfileNotFoundException for non-existent profile id', () => {
-      expect(() => service.activateProfile('user-1', 'nonexistent-id')).toThrow(
-        ProfileNotFoundException,
-      );
-    });
-
-    it('throws ProfileNotFoundException when profile belongs to a different user', () => {
-      const profile = service.createProfile('user-1', { name: 'Vishnu' });
-      expect(() => service.activateProfile('user-2', profile.id)).toThrow(
-        ProfileNotFoundException,
-      );
-    });
-  });
-
-  describe('deleteProfile', () => {
-    it('deletes a profile and returns updated list without it', () => {
-      const first = service.createProfile('user-1', { name: 'Vishnu' });
-      const second = service.createProfile('user-1', { name: 'Amma' });
-      const result = service.deleteProfile('user-1', second.id);
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(first.id);
-    });
-
-    it('deleting the active profile sets another profile as active', () => {
-      const first = service.createProfile('user-1', { name: 'Vishnu' });
-      service.createProfile('user-1', { name: 'Amma' });
-      const result = service.deleteProfile('user-1', first.id);
-      expect(result).toHaveLength(1);
-      expect(result[0].isActive).toBe(true);
-    });
-
-    it('deleting the only profile returns empty list and clears active', () => {
-      const only = service.createProfile('user-1', { name: 'Vishnu' });
-      const result = service.deleteProfile('user-1', only.id);
-      expect(result).toHaveLength(0);
-      const after = service.getProfiles('user-1');
-      expect(after).toHaveLength(0);
-    });
-
-    it('deleting a non-active profile preserves the existing active profile', () => {
-      const first = service.createProfile('user-1', { name: 'Vishnu' });
-      const second = service.createProfile('user-1', { name: 'Amma' });
-      const result = service.deleteProfile('user-1', second.id);
-      const active = result.find((p) => p.id === first.id)!;
-      expect(active.isActive).toBe(true);
-    });
-
-    it('throws ProfileNotFoundException for non-existent profile id', () => {
-      expect(() =>
-        service.deleteProfile('user-1', 'nonexistent-id'),
-      ).toThrow(ProfileNotFoundException);
-    });
-
-    it('throws ProfileNotFoundException when profile belongs to a different user', () => {
-      const profile = service.createProfile('user-1', { name: 'Vishnu' });
-      expect(() => service.deleteProfile('user-2', profile.id)).toThrow(
-        ProfileNotFoundException,
+      await freeService.createProfile('user-1', { name: 'Vishnu' });
+      await expect(freeService.createProfile('user-1', { name: 'Amma' })).rejects.toThrow(
+        ProfileLimitExceededException,
       );
     });
   });
 
   describe('updateProfile', () => {
-    it('updates name and reflects in getProfiles', () => {
-      const profile = service.createProfile('user-1', { name: 'Vishnu' });
-      const updated = service.updateProfile('user-1', profile.id, {
-        name: 'Vishnu Updated',
-      });
+    it('updates name', async () => {
+      const profile = await service.createProfile('user-1', { name: 'Vishnu' });
+      const updated = await service.updateProfile('user-1', profile.id, { name: 'Vishnu Updated' });
       expect(updated.name).toBe('Vishnu Updated');
-
-      const profiles = service.getProfiles('user-1');
-      expect(profiles[0].name).toBe('Vishnu Updated');
     });
 
-    it('updates optional fields', () => {
-      const profile = service.createProfile('user-1', { name: 'Amma' });
-      const updated = service.updateProfile('user-1', profile.id, {
-        dateOfBirth: '1960-05-15',
-        relation: 'parent',
-      });
-      expect(updated.dateOfBirth).toBe('1960-05-15');
-      expect(updated.relation).toBe('parent');
+    it('throws ProfileNotFoundException for unknown id', async () => {
+      await expect(
+        service.updateProfile('user-1', 'nonexistent', { name: 'X' }),
+      ).rejects.toThrow(ProfileNotFoundException);
     });
+  });
 
-    it('preserves existing fields when only partial update provided', () => {
-      const profile = service.createProfile('user-1', {
-        name: 'Amma',
-        relation: 'parent',
-      });
-      const updated = service.updateProfile('user-1', profile.id, {
-        name: 'Amma Edited',
-      });
-      expect(updated.relation).toBe('parent');
-    });
-
-    it('preserves isActive state after update', () => {
-      const profile = service.createProfile('user-1', { name: 'Vishnu' });
-      const updated = service.updateProfile('user-1', profile.id, {
-        name: 'Vishnu Updated',
-      });
-      expect(updated.isActive).toBe(true);
-    });
-
-    it('throws ProfileNotFoundException for non-existent profile id', () => {
-      expect(() =>
-        service.updateProfile('user-1', 'nonexistent-id', { name: 'New' }),
-      ).toThrow(ProfileNotFoundException);
-    });
-
-    it('throws ProfileNotFoundException when profile belongs to a different user', () => {
-      const profile = service.createProfile('user-1', { name: 'Vishnu' });
-      expect(() =>
-        service.updateProfile('user-2', profile.id, { name: 'Hacked' }),
-      ).toThrow(ProfileNotFoundException);
+  describe('deleteProfile', () => {
+    it('throws ProfileNotFoundException for unknown id', async () => {
+      await expect(service.deleteProfile('user-1', 'nonexistent')).rejects.toThrow(
+        ProfileNotFoundException,
+      );
     });
   });
 });

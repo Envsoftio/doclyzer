@@ -12,7 +12,7 @@ import type { RequestUser } from '../../modules/auth/auth.types';
 export class AuthGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request>();
     const authHeader = req.header('authorization');
 
@@ -31,7 +31,7 @@ export class AuthGuard implements CanActivate {
       });
     }
 
-    const user = this.authService.validateAccessToken(token);
+    const user = await this.authService.validateAccessToken(token);
     (req as Request & { user: RequestUser }).user = { id: user.id };
     (req as Request & { currentSessionId?: string | null }).currentSessionId =
       this.authService.getSessionIdForAccessToken(token) ?? null;

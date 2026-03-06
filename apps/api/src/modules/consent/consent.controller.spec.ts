@@ -45,24 +45,20 @@ const mockStatus: ConsentStatus = {
 
 describe('ConsentController', () => {
   let controller: ConsentController;
-  let consentService: jest.Mocked<
-    Pick<ConsentService, 'getStatus' | 'acceptPolicies'>
-  >;
+  let consentService: jest.Mocked<Pick<ConsentService, 'getStatus' | 'acceptPolicies'>>;
 
   beforeEach(() => {
     consentService = {
       getStatus: jest.fn(),
       acceptPolicies: jest.fn(),
     };
-    controller = new ConsentController(
-      consentService as unknown as ConsentService,
-    );
+    controller = new ConsentController(consentService as unknown as ConsentService);
   });
 
   describe('getStatus', () => {
-    it('delegates to ConsentService.getStatus and wraps in success envelope', () => {
-      consentService.getStatus.mockReturnValue(mockStatus);
-      const result = controller.getStatus(makeReq()) as {
+    it('delegates to ConsentService.getStatus and wraps in success envelope', async () => {
+      consentService.getStatus.mockResolvedValue(mockStatus);
+      const result = (await controller.getStatus(makeReq())) as {
         success: boolean;
         data: ConsentStatus;
       };
@@ -73,7 +69,7 @@ describe('ConsentController', () => {
   });
 
   describe('accept', () => {
-    it('delegates to ConsentService.acceptPolicies and returns updated status', () => {
+    it('delegates to ConsentService.acceptPolicies and returns updated status', async () => {
       const acceptedStatus: ConsentStatus = {
         ...mockStatus,
         policies: mockStatus.policies.map((p) => ({
@@ -83,12 +79,12 @@ describe('ConsentController', () => {
         })),
         hasPending: false,
       };
-      consentService.acceptPolicies.mockReturnValue(acceptedStatus);
+      consentService.acceptPolicies.mockResolvedValue(acceptedStatus);
 
-      const result = controller.accept(
+      const result = (await controller.accept(
         { policyTypes: ['terms', 'privacy'] },
         makeReq(),
-      ) as { success: boolean; data: ConsentStatus };
+      )) as { success: boolean; data: ConsentStatus };
 
       expect(result.success).toBe(true);
       expect(result.data.hasPending).toBe(false);
@@ -98,13 +94,11 @@ describe('ConsentController', () => {
       ]);
     });
 
-    it('propagates unexpected exceptions from service', () => {
-      consentService.acceptPolicies.mockImplementation(() => {
-        throw new Error('unexpected');
-      });
-      expect(() =>
+    it('propagates unexpected exceptions from service', async () => {
+      consentService.acceptPolicies.mockRejectedValue(new Error('unexpected'));
+      await expect(
         controller.accept({ policyTypes: ['terms'] }, makeReq()),
-      ).toThrow(Error);
+      ).rejects.toThrow(Error);
     });
   });
 });

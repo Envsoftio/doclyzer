@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ProfileEntity } from '../../database/entities/profile.entity';
 import type { CreateProfileDto, UpdateProfileDto } from './profiles.dto';
 import { ProfileLimitExceededException } from './exceptions/profile-limit-exceeded.exception';
 import { ProfileNotFoundException } from './exceptions/profile-not-found.exception';
@@ -8,106 +10,92 @@ import { EntitlementsService } from '../entitlements/entitlements.service';
 
 @Injectable()
 export class ProfilesService {
-  constructor(private readonly entitlementsService: EntitlementsService) {}
+  constructor(
+    @InjectRepository(ProfileEntity)
+    private readonly profileRepo: Repository<ProfileEntity>,
+    private readonly entitlementsService: EntitlementsService,
+  ) {}
 
-  private readonly profiles = new Map<string, Profile[]>();
-  private readonly activeProfileId = new Map<string, string>();
-
-  getProfiles(userId: string): ProfileWithActive[] {
-    const active = this.activeProfileId.get(userId);
-    return (this.profiles.get(userId) ?? []).map((p) => ({
-      ...p,
-      isActive: p.id === active,
-    }));
+  async getProfiles(userId: string): Promise<ProfileWithActive[]> {
+    const profiles = await this.profileRepo.find({
+      where: { userId },
+      order: { createdAt: 'ASC' },
+    });
+    return profiles.map(this.toDto);
   }
 
-  createProfile(userId: string, dto: CreateProfileDto): ProfileWithActive {
-    const existing = this.profiles.get(userId) ?? [];
+  async createProfile(userId: string, dto: CreateProfileDto): Promise<ProfileWithActive> {
+    const count = await this.profileRepo.count({ where: { userId } });
     const maxProfiles = this.entitlementsService.getMaxProfiles(userId);
-    if (existing.length >= maxProfiles) {
-      throw new ProfileLimitExceededException();
-    }
+    if (count >= maxProfiles) throw new ProfileLimitExceededException();
 
-    const id = randomUUID();
-    const profile: Profile = {
-      id,
+    const isFirstProfile = count === 0;
+    const entity = this.profileRepo.create({
       userId,
       name: dto.name,
       dateOfBirth: dto.dateOfBirth ?? null,
       relation: dto.relation ?? null,
-      createdAt: new Date().toISOString(),
-    };
-
-    existing.push(profile);
-    this.profiles.set(userId, existing);
-
-    if (existing.length === 1) {
-      this.activeProfileId.set(userId, id);
-    }
-
-    const active = this.activeProfileId.get(userId);
-    return { ...profile, isActive: profile.id === active };
+      isActive: isFirstProfile,
+    });
+    const saved = await this.profileRepo.save(entity);
+    return this.toDto(saved);
   }
 
-  updateProfile(
+  async updateProfile(
     userId: string,
     profileId: string,
     dto: UpdateProfileDto,
-  ): ProfileWithActive {
-    const userProfiles = this.profiles.get(userId) ?? [];
-    const index = userProfiles.findIndex((p) => p.id === profileId);
+  ): Promise<ProfileWithActive> {
+    const entity = await this.profileRepo.findOne({ where: { id: profileId, userId } });
+    if (!entity) throw new ProfileNotFoundException();
 
-    if (index === -1) {
-      throw new ProfileNotFoundException();
-    }
+    if (dto.name !== undefined) entity.name = dto.name;
+    if (dto.dateOfBirth !== undefined) entity.dateOfBirth = dto.dateOfBirth;
+    if (dto.relation !== undefined) entity.relation = dto.relation;
 
-    const existing = userProfiles[index];
-    const updated: Profile = {
-      ...existing,
-      name: dto.name !== undefined ? dto.name : existing.name,
-      dateOfBirth:
-        dto.dateOfBirth !== undefined ? dto.dateOfBirth : existing.dateOfBirth,
-      relation: dto.relation !== undefined ? dto.relation : existing.relation,
-    };
-
-    userProfiles[index] = updated;
-    this.profiles.set(userId, userProfiles);
-
-    const active = this.activeProfileId.get(userId);
-    return { ...updated, isActive: updated.id === active };
+    const saved = await this.profileRepo.save(entity);
+    return this.toDto(saved);
   }
 
-  activateProfile(userId: string, profileId: string): ProfileWithActive[] {
-    const userProfiles = this.profiles.get(userId) ?? [];
-    const found = userProfiles.find((p) => p.id === profileId);
+  async activateProfile(userId: string, profileId: string): Promise<ProfileWithActive[]> {
+    const target = await this.profileRepo.findOne({ where: { id: profileId, userId } });
+    if (!target) throw new ProfileNotFoundException();
 
-    if (!found) {
-      throw new ProfileNotFoundException();
-    }
+    await this.profileRepo.update({ userId }, { isActive: false });
+    await this.profileRepo.update({ id: profileId, userId }, { isActive: true });
 
-    this.activeProfileId.set(userId, profileId);
     return this.getProfiles(userId);
   }
 
-  deleteProfile(userId: string, profileId: string): ProfileWithActive[] {
-    const userProfiles = this.profiles.get(userId) ?? [];
-    const index = userProfiles.findIndex((p) => p.id === profileId);
+  async deleteProfile(userId: string, profileId: string): Promise<ProfileWithActive[]> {
+    const entity = await this.profileRepo.findOne({ where: { id: profileId, userId } });
+    if (!entity) throw new ProfileNotFoundException();
 
-    if (index === -1) {
-      throw new ProfileNotFoundException();
-    }
+    const wasActive = entity.isActive;
+    await this.profileRepo.delete({ id: profileId, userId });
 
-    userProfiles.splice(index, 1);
-    this.profiles.set(userId, userProfiles);
-
-    if (this.activeProfileId.get(userId) === profileId) {
-      if (userProfiles.length > 0) {
-        this.activeProfileId.set(userId, userProfiles[0].id);
-      } else {
-        this.activeProfileId.delete(userId);
+    if (wasActive) {
+      const remaining = await this.profileRepo.find({
+        where: { userId },
+        order: { createdAt: 'ASC' },
+      });
+      if (remaining.length > 0) {
+        await this.profileRepo.update(remaining[0].id, { isActive: true });
       }
     }
 
     return this.getProfiles(userId);
+  }
+
+  private toDto(e: ProfileEntity): ProfileWithActive {
+    return {
+      id: e.id,
+      userId: e.userId,
+      name: e.name,
+      dateOfBirth: e.dateOfBirth,
+      relation: e.relation,
+      createdAt: e.createdAt.toISOString(),
+      isActive: e.isActive,
+    };
   }
 }

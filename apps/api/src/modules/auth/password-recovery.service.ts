@@ -4,87 +4,62 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { LessThan, Repository } from 'typeorm';
 import { createHash, randomBytes } from 'node:crypto';
+import { PasswordResetTokenEntity } from '../../database/entities/password-reset-token.entity';
 import { NotificationService } from '../../common/notification/notification.service';
 import { AuthService } from './auth.service';
-import type {
-  ForgotPasswordResponse,
-  ResetPasswordResponse,
-} from './auth.types';
-
-interface ResetTokenRecord {
-  tokenHash: string;
-  userId: string;
-  email: string;
-  expiresAt: Date;
-  usedAt?: Date;
-}
+import type { ForgotPasswordResponse, ResetPasswordResponse } from './auth.types';
 
 @Injectable()
 export class PasswordRecoveryService {
   private readonly logger = new Logger(PasswordRecoveryService.name);
-  private readonly resetTokensByHash = new Map<string, ResetTokenRecord>();
 
   constructor(
+    @InjectRepository(PasswordResetTokenEntity)
+    private readonly tokenRepo: Repository<PasswordResetTokenEntity>,
     private readonly authService: AuthService,
     private readonly notificationService: NotificationService,
   ) {}
 
-  requestReset(email: string): Promise<ForgotPasswordResponse> {
+  async requestReset(email: string): Promise<ForgotPasswordResponse> {
     const normalizedEmail = email.trim().toLowerCase();
     const rawToken = randomBytes(32).toString('hex');
-    const user = this.authService.findUserByEmail(normalizedEmail);
+    const user = await this.authService.findUserByEmail(normalizedEmail);
 
-    this.purgeExpiredTokens();
+    await this.purgeExpiredTokens();
 
     if (!user) {
-      // Do equivalent work to avoid timing oracle on account existence.
       createHash('sha256').update(rawToken).digest('hex');
-      this.logger.log(
-        'Password reset requested (enumeration-safe: no matching account)',
-      );
-      return Promise.resolve({
-        message:
-          'If an account exists for this email, a reset link has been sent.',
-      });
+      this.logger.log('Password reset requested (enumeration-safe: no matching account)');
+      return { message: 'If an account exists for this email, a reset link has been sent.' };
     }
 
-    // Invalidate any previous pending token for this account.
-    for (const [hash, record] of this.resetTokensByHash) {
-      if (record.email === normalizedEmail && !record.usedAt) {
-        this.resetTokensByHash.delete(hash);
-      }
-    }
+    // Invalidate any previous pending tokens for this user.
+    await this.tokenRepo.delete({ userId: user.id, usedAt: undefined as unknown as Date });
 
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
-    this.resetTokensByHash.set(tokenHash, {
-      tokenHash,
-      userId: user.id,
-      email: normalizedEmail,
-      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
-    });
-
-    void this.notificationService.sendPasswordResetToken(
-      normalizedEmail,
-      rawToken,
+    await this.tokenRepo.save(
+      this.tokenRepo.create({
+        userId: user.id,
+        tokenHash,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        usedAt: null,
+      }),
     );
 
-    this.logger.log(`Password reset token issued userId=${user.id}`);
+    void this.notificationService.sendPasswordResetToken(normalizedEmail, rawToken);
 
-    return Promise.resolve({
-      message:
-        'If an account exists for this email, a reset link has been sent.',
-    });
+    this.logger.log(`Password reset token issued userId=${user.id}`);
+    return { message: 'If an account exists for this email, a reset link has been sent.' };
   }
 
-  async confirmReset(
-    rawToken: string,
-    newPassword: string,
-  ): Promise<ResetPasswordResponse> {
+  async confirmReset(rawToken: string, newPassword: string): Promise<ResetPasswordResponse> {
     this.authService.validatePasswordStrength(newPassword);
 
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
-    const record = this.resetTokensByHash.get(tokenHash);
+    const record = await this.tokenRepo.findOne({ where: { tokenHash } });
 
     if (!record) {
       throw new UnauthorizedException({
@@ -107,29 +82,17 @@ export class PasswordRecoveryService {
       });
     }
 
-    // Mark single-use before any state mutation.
-    record.usedAt = new Date();
+    await this.tokenRepo.update(record.id, { usedAt: new Date() });
 
     const newHash = await this.authService.hashPassword(newPassword);
-    this.authService.updatePasswordHash(record.userId, newHash);
-    this.authService.revokeAllSessionsForUser(record.userId);
+    await this.authService.updatePasswordHash(record.userId, newHash);
+    await this.authService.revokeAllSessionsForUser(record.userId);
 
-    this.logger.log(
-      `Password reset confirmed userId=${record.userId} — sessions revoked`,
-    );
-
-    return {
-      message:
-        'Password reset successful. Please log in with your new password.',
-    };
+    this.logger.log(`Password reset confirmed userId=${record.userId} — sessions revoked`);
+    return { message: 'Password reset successful. Please log in with your new password.' };
   }
 
-  private purgeExpiredTokens(): void {
-    const now = new Date();
-    for (const [hash, record] of this.resetTokensByHash) {
-      if (record.expiresAt <= now) {
-        this.resetTokensByHash.delete(hash);
-      }
-    }
+  private async purgeExpiredTokens(): Promise<void> {
+    await this.tokenRepo.delete({ expiresAt: LessThan(new Date()) });
   }
 }

@@ -12,9 +12,7 @@ function makeContext(authHeader?: string): {
       name.toLowerCase() === 'authorization' ? authHeader : undefined,
   };
   const ctx = {
-    switchToHttp: () => ({
-      getRequest: () => req,
-    }),
+    switchToHttp: () => ({ getRequest: () => req }),
   } as unknown as ExecutionContext;
   return { ctx, req };
 }
@@ -33,7 +31,7 @@ describe('AuthGuard', () => {
     guard = new AuthGuard(authService as unknown as AuthService);
   });
 
-  it('passes and attaches user and currentSessionId for a valid Bearer token', () => {
+  it('passes and attaches user and currentSessionId for a valid Bearer token', async () => {
     const fullUser: AuthUser = {
       id: 'user-1',
       email: 'test@example.com',
@@ -41,46 +39,36 @@ describe('AuthGuard', () => {
       displayName: null,
       createdAt: new Date(),
     };
-    authService.validateAccessToken.mockReturnValue(fullUser);
+    authService.validateAccessToken.mockResolvedValue(fullUser);
     authService.getSessionIdForAccessToken.mockReturnValue('session-1');
     const { ctx, req } = makeContext('Bearer valid-token');
-    const result = guard.canActivate(ctx);
+    const result = await guard.canActivate(ctx);
     expect(result).toBe(true);
     expect(req['user']).toEqual({ id: 'user-1' });
     expect(req['currentSessionId']).toBe('session-1');
   });
 
-  it('throws AUTH_UNAUTHORIZED when Authorization header is missing', () => {
+  it('throws AUTH_UNAUTHORIZED when Authorization header is missing', async () => {
     const { ctx } = makeContext(undefined);
-    expect(() => guard.canActivate(ctx)).toThrow(UnauthorizedException);
-    try {
-      guard.canActivate(ctx);
-    } catch (e) {
-      expect((e as UnauthorizedException).getResponse()).toMatchObject({
-        code: 'AUTH_UNAUTHORIZED',
-      });
-    }
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
   });
 
-  it('throws AUTH_UNAUTHORIZED when scheme is not Bearer', () => {
+  it('throws AUTH_UNAUTHORIZED when scheme is not Bearer', async () => {
     const { ctx } = makeContext('Basic some-token');
-    expect(() => guard.canActivate(ctx)).toThrow(UnauthorizedException);
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
   });
 
-  it('throws AUTH_UNAUTHORIZED when token is missing after Bearer', () => {
+  it('throws AUTH_UNAUTHORIZED when token is missing after Bearer', async () => {
     const { ctx } = makeContext('Bearer ');
-    expect(() => guard.canActivate(ctx)).toThrow(UnauthorizedException);
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
     expect(authService.validateAccessToken).not.toHaveBeenCalled();
   });
 
-  it('propagates UnauthorizedException from AuthService (revoked/expired)', () => {
-    authService.validateAccessToken.mockImplementation(() => {
-      throw new UnauthorizedException({
-        code: 'AUTH_UNAUTHORIZED',
-        message: 'Authentication required',
-      });
-    });
+  it('propagates UnauthorizedException from AuthService (revoked/expired)', async () => {
+    authService.validateAccessToken.mockRejectedValue(
+      new UnauthorizedException({ code: 'AUTH_UNAUTHORIZED', message: 'Authentication required' }),
+    );
     const { ctx } = makeContext('Bearer revoked-token');
-    expect(() => guard.canActivate(ctx)).toThrow(UnauthorizedException);
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
   });
 });
