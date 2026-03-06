@@ -46,6 +46,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   exports: [
     AuthService,
     AuthGuard,
+    JwtModule,
     PasswordRecoveryService,
     NotificationService,
   ],

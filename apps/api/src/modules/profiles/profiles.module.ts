@@ -3,13 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProfileEntity } from '../../database/entities/profile.entity';
 import { AuthModule } from '../auth/auth.module';
 import { EntitlementsModule } from '../entitlements/entitlements.module';
-import { AuthGuard } from '../../common/guards/auth.guard';
 import { ProfilesController } from './profiles.controller';
 import { ProfilesService } from './profiles.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ProfileEntity]), AuthModule, EntitlementsModule],
   controllers: [ProfilesController],
-  providers: [ProfilesService, AuthGuard],
+  providers: [ProfilesService],
 })
 export class ProfilesModule {}

@@ -6,7 +6,6 @@ import { RestrictionEntity } from '../../database/entities/restriction.entity';
 import { DataExportRequestEntity } from '../../database/entities/data-export-request.entity';
 import { ClosureRequestEntity } from '../../database/entities/closure-request.entity';
 import { AuthModule } from '../auth/auth.module';
-import { AuthGuard } from '../../common/guards/auth.guard';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 
@@ -22,6 +21,6 @@ import { AccountService } from './account.service';
     AuthModule,
   ],
   controllers: [AccountController],
-  providers: [AccountService, AuthGuard],
+  providers: [AccountService],
 })
 export class AccountModule {}
