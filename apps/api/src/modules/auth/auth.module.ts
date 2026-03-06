@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthGuard } from '../../common/guards/auth.guard';
 import { InMemoryNotificationService } from '../../common/notification/in-memory-notification.service';
 import { NotificationService } from '../../common/notification/notification.service';
 import { AuthController } from './auth.controller';
@@ -9,6 +10,7 @@ import { PasswordRecoveryService } from './password-recovery.service';
   controllers: [AuthController],
   providers: [
     AuthService,
+    AuthGuard,
     PasswordRecoveryService,
     {
       provide: NotificationService,

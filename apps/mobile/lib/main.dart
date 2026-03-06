@@ -7,9 +7,12 @@ import 'features/auth/auth_repository.dart';
 import 'features/auth/forgot_password/forgot_password_screen.dart';
 import 'features/auth/in_memory_auth_repository.dart';
 import 'features/auth/reset_password/reset_password_screen.dart';
+import 'features/auth/in_memory_sessions_repository.dart';
 import 'features/auth/screens/home_screen.dart';
 import 'features/auth/screens/login_screen.dart';
+import 'features/auth/screens/session_list_screen.dart';
 import 'features/auth/screens/signup_screen.dart';
+import 'features/auth/sessions_repository.dart';
 import 'features/auth/screens/verification_screen.dart';
 import 'features/consent/consent_repository.dart';
 import 'features/consent/in_memory_consent_repository.dart';
@@ -33,6 +36,7 @@ enum _AuthView {
   accountProfile,
   policyAcceptance,
   profileList,
+  sessionList,
   createProfile,
   editProfile,
 }
@@ -44,15 +48,18 @@ class DoclyzerApp extends StatefulWidget {
     AccountRepository? accountRepository,
     ConsentRepository? consentRepository,
     ProfilesRepository? profilesRepository,
+    SessionsRepository? sessionsRepository,
   })  : _authRepository = authRepository,
         _accountRepository = accountRepository,
         _consentRepository = consentRepository,
-        _profilesRepository = profilesRepository;
+        _profilesRepository = profilesRepository,
+        _sessionsRepository = sessionsRepository;
 
   final AuthRepository? _authRepository;
   final AccountRepository? _accountRepository;
   final ConsentRepository? _consentRepository;
   final ProfilesRepository? _profilesRepository;
+  final SessionsRepository? _sessionsRepository;
 
   @override
   State<DoclyzerApp> createState() => _DoclyzerAppState();
@@ -63,6 +70,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
   late final AccountRepository _accountRepository;
   late final ConsentRepository _consentRepository;
   late final ProfilesRepository _profilesRepository;
+  late final SessionsRepository _sessionsRepository;
   _AuthView _authView = _AuthView.login;
   String? _prefillEmail;
   Profile? _editingProfile;
@@ -77,6 +85,8 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
         widget._consentRepository ?? InMemoryConsentRepository();
     _profilesRepository =
         widget._profilesRepository ?? InMemoryProfilesRepository();
+    _sessionsRepository =
+        widget._sessionsRepository ?? InMemorySessionsRepository();
   }
 
   Future<void> _register(
@@ -185,6 +195,11 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
                 _authView = _AuthView.profileList;
               });
             },
+            onGoToSessions: () {
+              setState(() {
+                _authView = _AuthView.sessionList;
+              });
+            },
           ),
         _AuthView.accountProfile => AccountProfileScreen(
             accountRepository: _accountRepository,
@@ -218,6 +233,17 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
         _AuthView.policyAcceptance => PolicyAcceptanceScreen(
             consentRepository: _consentRepository,
             onComplete: () {
+              setState(() {
+                _authView = _AuthView.home;
+              });
+            },
+          ),
+        _AuthView.sessionList => SessionListScreen(
+            sessionsRepository: _sessionsRepository,
+            onLogout: () {
+              _logout();
+            },
+            onBack: () {
               setState(() {
                 _authView = _AuthView.home;
               });

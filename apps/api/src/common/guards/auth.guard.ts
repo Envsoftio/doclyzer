@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { AuthService } from '../../modules/auth/auth.service';
+import type { RequestUser } from '../../modules/auth/auth.types';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -30,7 +31,10 @@ export class AuthGuard implements CanActivate {
       });
     }
 
-    req.user = this.authService.validateAccessToken(token);
+    const user = this.authService.validateAccessToken(token);
+    (req as Request & { user: RequestUser }).user = { id: user.id };
+    (req as Request & { currentSessionId?: string | null }).currentSessionId =
+      this.authService.getSessionIdForAccessToken(token) ?? null;
     return true;
   }
 }

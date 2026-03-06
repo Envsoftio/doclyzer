@@ -40,6 +40,9 @@ export interface AuthSession {
   refreshExpiresAt: Date;
   revokedAt?: Date;
   createdAt: Date;
+  /** Set at login for device session list (story 1.7) */
+  ip?: string;
+  userAgent?: string;
 }
 
 export interface RefreshRequest {
@@ -61,4 +64,27 @@ export interface ResetPasswordRequest {
 
 export interface ResetPasswordResponse {
   message: string;
+}
+
+// Device session list/revoke (story 1.7)
+export interface DeviceSessionData {
+  userId: string;
+  sessionId: string;
+  ip: string;
+  userAgent: string;
+  createdAt: string;
+}
+
+export interface DeviceSessionSummary {
+  sessionId: string;
+  ip: string;
+  userAgent: string;
+  createdAt: string;
+  isCurrent: boolean;
+}
+
+export const SESSION_NOT_FOUND = 'SESSION_NOT_FOUND' as const;
+
+export interface RequestUser {
+  id: string;
 }

@@ -3,14 +3,6 @@ import { AuthGuard } from './auth.guard';
 import { AuthService } from '../../modules/auth/auth.service';
 import type { AuthUser } from '../../modules/auth/auth.types';
 
-const mockUser: AuthUser = {
-  id: 'user-1',
-  email: 'test@example.com',
-  passwordHash: 'hash',
-  displayName: null,
-  createdAt: new Date(),
-};
-
 function makeContext(authHeader?: string): {
   ctx: ExecutionContext;
   req: Record<string, unknown>;
@@ -29,19 +21,33 @@ function makeContext(authHeader?: string): {
 
 describe('AuthGuard', () => {
   let guard: AuthGuard;
-  let authService: jest.Mocked<Pick<AuthService, 'validateAccessToken'>>;
+  let authService: jest.Mocked<
+    Pick<AuthService, 'validateAccessToken' | 'getSessionIdForAccessToken'>
+  >;
 
   beforeEach(() => {
-    authService = { validateAccessToken: jest.fn() };
+    authService = {
+      validateAccessToken: jest.fn(),
+      getSessionIdForAccessToken: jest.fn().mockReturnValue('session-1'),
+    };
     guard = new AuthGuard(authService as unknown as AuthService);
   });
 
-  it('passes and attaches user for a valid Bearer token', () => {
-    authService.validateAccessToken.mockReturnValue(mockUser);
+  it('passes and attaches user and currentSessionId for a valid Bearer token', () => {
+    const fullUser: AuthUser = {
+      id: 'user-1',
+      email: 'test@example.com',
+      passwordHash: 'hash',
+      displayName: null,
+      createdAt: new Date(),
+    };
+    authService.validateAccessToken.mockReturnValue(fullUser);
+    authService.getSessionIdForAccessToken.mockReturnValue('session-1');
     const { ctx, req } = makeContext('Bearer valid-token');
     const result = guard.canActivate(ctx);
     expect(result).toBe(true);
-    expect(req['user']).toEqual(mockUser);
+    expect(req['user']).toEqual({ id: 'user-1' });
+    expect(req['currentSessionId']).toBe('session-1');
   });
 
   it('throws AUTH_UNAUTHORIZED when Authorization header is missing', () => {

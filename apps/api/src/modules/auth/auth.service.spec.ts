@@ -1,3 +1,4 @@
+import { SessionNotFoundException } from './exceptions/session-not-found.exception';
 import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
@@ -155,6 +156,138 @@ describe('AuthService', () => {
       expect(() =>
         service.enforceRateLimit('register', '1.2.3.4', 10),
       ).not.toThrow();
+    });
+  });
+
+  describe('getSessions', () => {
+    it('returns sessions with isCurrent true for matching sessionId', async () => {
+      await service.register({
+        email: 'sessions@example.com',
+        password: 'StrongPass123!',
+        policyAccepted: true,
+      });
+      const loginRes = await service.login(
+        { email: 'sessions@example.com', password: 'StrongPass123!' },
+        '192.168.1.1',
+        'Mozilla/5.0',
+      );
+      const sessions = service.getSessions(
+        service.validateAccessToken(loginRes.accessToken).id,
+        service.getSessionIdForAccessToken(loginRes.accessToken),
+      );
+      expect(sessions).toHaveLength(1);
+      expect(sessions[0].sessionId).toBeTruthy();
+      expect(sessions[0].ip).toBe('192.168.1.1');
+      expect(sessions[0].userAgent).toBe('Mozilla/5.0');
+      expect(sessions[0].isCurrent).toBe(true);
+      expect(sessions[0].createdAt).toBeTruthy();
+    });
+
+    it('returns empty array when user has no active sessions', async () => {
+      await service.register({
+        email: 'nosess@example.com',
+        password: 'StrongPass123!',
+        policyAccepted: true,
+      });
+      const user = service.findUserByEmail('nosess@example.com');
+      expect(user).toBeDefined();
+      const sessions = service.getSessions(user!.id, null);
+      expect(sessions).toEqual([]);
+    });
+
+    it('marks isCurrent false when currentSessionId does not match', async () => {
+      await service.register({
+        email: 'current@example.com',
+        password: 'StrongPass123!',
+        policyAccepted: true,
+      });
+      const loginRes = await service.login({
+        email: 'current@example.com',
+        password: 'StrongPass123!',
+      });
+      const userId = service.validateAccessToken(loginRes.accessToken).id;
+      const sessions = service.getSessions(userId, 'non-matching-session-id');
+      expect(sessions).toHaveLength(1);
+      expect(sessions[0].isCurrent).toBe(false);
+    });
+  });
+
+  describe('revokeSession', () => {
+    it('revokes session and emits audit log', async () => {
+      await service.register({
+        email: 'revoke@example.com',
+        password: 'StrongPass123!',
+        policyAccepted: true,
+      });
+      const loginRes = await service.login({
+        email: 'revoke@example.com',
+        password: 'StrongPass123!',
+      });
+      const userId = service.validateAccessToken(loginRes.accessToken).id;
+      const sessionId = service.getSessionIdForAccessToken(loginRes.accessToken)!;
+      const logSpy = jest.spyOn(service['logger'], 'log').mockImplementation();
+      service.revokeSession(userId, sessionId, 'corr-123');
+      expect(logSpy).toHaveBeenCalledWith(
+        JSON.stringify({
+          action: 'SESSION_REVOKED',
+          actorUserId: userId,
+          targetSessionId: sessionId,
+          correlationId: 'corr-123',
+        }),
+      );
+      logSpy.mockRestore();
+      expect(() => service.validateAccessToken(loginRes.accessToken)).toThrow();
+    });
+
+    it('throws SessionNotFoundException for unknown sessionId', async () => {
+      await service.register({
+        email: 'revoke2@example.com',
+        password: 'StrongPass123!',
+        policyAccepted: true,
+      });
+      const loginRes = await service.login({
+        email: 'revoke2@example.com',
+        password: 'StrongPass123!',
+      });
+      const userId = service.validateAccessToken(loginRes.accessToken).id;
+      expect(() =>
+        service.revokeSession(userId, '00000000-0000-0000-0000-000000000000', 'c'),
+      ).toThrow(SessionNotFoundException);
+    });
+  });
+
+  describe('getSessionIdForAccessToken', () => {
+    it('returns sessionId for valid token', async () => {
+      await service.register({
+        email: 'sid@example.com',
+        password: 'StrongPass123!',
+        policyAccepted: true,
+      });
+      const loginRes = await service.login({
+        email: 'sid@example.com',
+        password: 'StrongPass123!',
+      });
+      const sessionId = service.getSessionIdForAccessToken(loginRes.accessToken);
+      expect(sessionId).toBeTruthy();
+      expect(typeof sessionId).toBe('string');
+    });
+
+    it('returns null for invalid token', () => {
+      expect(service.getSessionIdForAccessToken('invalid')).toBeNull();
+    });
+
+    it('returns null for revoked token', async () => {
+      await service.register({
+        email: 'sid2@example.com',
+        password: 'StrongPass123!',
+        policyAccepted: true,
+      });
+      const loginRes = await service.login({
+        email: 'sid2@example.com',
+        password: 'StrongPass123!',
+      });
+      service.logout(loginRes.accessToken);
+      expect(service.getSessionIdForAccessToken(loginRes.accessToken)).toBeNull();
     });
   });
 });

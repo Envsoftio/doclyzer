@@ -397,6 +397,161 @@ describe('AuthController (e2e)', () => {
     });
   });
 
+  describe('GET /auth/sessions and DELETE /auth/sessions/:sessionId', () => {
+    it('GET /auth/sessions with valid token returns 200 and list with isCurrent', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .send({
+          email: 'sessions-e2e@example.com',
+          password: 'StrongPass123!',
+          policyAccepted: true,
+        })
+        .expect(201);
+
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({
+          email: 'sessions-e2e@example.com',
+          password: 'StrongPass123!',
+        })
+        .expect(200);
+
+      const accessToken = loginRes.body.data.accessToken as string;
+      const res = await request(app.getHttpServer())
+        .get('/v1/auth/sessions')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.length).toBeGreaterThanOrEqual(1);
+      const current = (res.body.data as Array<{ isCurrent: boolean }>).find(
+        (s) => s.isCurrent,
+      );
+      expect(current).toBeDefined();
+      expect(res.body.correlationId).toBeTruthy();
+    });
+
+    it('GET /auth/sessions without token returns 401', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/auth/sessions')
+        .expect(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error?.code).toBe('AUTH_UNAUTHORIZED');
+    });
+
+    it('DELETE /auth/sessions/:sessionId for valid owned session returns 200 and data null', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .send({
+          email: 'revoke-e2e@example.com',
+          password: 'StrongPass123!',
+          policyAccepted: true,
+        })
+        .expect(201);
+
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({
+          email: 'revoke-e2e@example.com',
+          password: 'StrongPass123!',
+        })
+        .expect(200);
+
+      const accessToken = loginRes.body.data.accessToken as string;
+      const listRes = await request(app.getHttpServer())
+        .get('/v1/auth/sessions')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      const sessionId = (listRes.body.data as Array<{ sessionId: string }>)[0]
+        .sessionId;
+      const delRes = await request(app.getHttpServer())
+        .delete(`/v1/auth/sessions/${sessionId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      expect(delRes.body.success).toBe(true);
+      expect(delRes.body.data).toBeNull();
+    });
+
+    it('DELETE /auth/sessions/:sessionId for non-existent sessionId returns 404 SESSION_NOT_FOUND', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .send({
+          email: 'revoke404@example.com',
+          password: 'StrongPass123!',
+          policyAccepted: true,
+        })
+        .expect(201);
+
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({
+          email: 'revoke404@example.com',
+          password: 'StrongPass123!',
+        })
+        .expect(200);
+
+      const accessToken = loginRes.body.data.accessToken as string;
+      const res = await request(app.getHttpServer())
+        .delete(
+          '/v1/auth/sessions/00000000-0000-0000-0000-000000000000',
+        )
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(404);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.error?.code).toBe('SESSION_NOT_FOUND');
+    });
+
+    it('DELETE /auth/sessions without token returns 401', async () => {
+      const res = await request(app.getHttpServer())
+        .delete('/v1/auth/sessions/some-session-id')
+        .expect(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error?.code).toBe('AUTH_UNAUTHORIZED');
+    });
+
+    it('after DELETE current session, subsequent request with same token returns 401', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .send({
+          email: 'revoke-current@example.com',
+          password: 'StrongPass123!',
+          policyAccepted: true,
+        })
+        .expect(201);
+
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({
+          email: 'revoke-current@example.com',
+          password: 'StrongPass123!',
+        })
+        .expect(200);
+
+      const accessToken = loginRes.body.data.accessToken as string;
+      const listRes = await request(app.getHttpServer())
+        .get('/v1/auth/sessions')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      const sessionId = (listRes.body.data as Array<{ sessionId: string }>)[0]
+        .sessionId;
+      await request(app.getHttpServer())
+        .delete(`/v1/auth/sessions/${sessionId}`)
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
+
+      const afterRes = await request(app.getHttpServer())
+        .get('/v1/auth/sessions')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(401);
+      expect(afterRes.body.error?.code).toBe('AUTH_UNAUTHORIZED');
+    });
+  });
+
   describe('Account Profile', () => {
     const accountEmail = 'account-profile@example.com';
     const accountPassword = 'StrongPass123!';

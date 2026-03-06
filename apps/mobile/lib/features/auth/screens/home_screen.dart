@@ -6,11 +6,13 @@ class HomeScreen extends StatelessWidget {
     required this.onLogout,
     required this.onGoToAccount,
     required this.onGoToProfiles,
+    required this.onGoToSessions,
   });
 
   final Future<void> Function() onLogout;
   final VoidCallback onGoToAccount;
   final VoidCallback onGoToProfiles;
+  final VoidCallback onGoToSessions;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +38,12 @@ class HomeScreen extends StatelessWidget {
               key: const Key('go-to-profiles'),
               onPressed: onGoToProfiles,
               child: const Text('Profiles'),
+            ),
+            const SizedBox(height: 8),
+            FilledButton(
+              key: const Key('go-to-sessions'),
+              onPressed: onGoToSessions,
+              child: const Text('Active Sessions'),
             ),
             const SizedBox(height: 8),
             FilledButton(

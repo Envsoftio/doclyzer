@@ -1,13 +1,18 @@
 import {
   Body,
   Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Req,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
+import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
 import {
@@ -17,6 +22,7 @@ import {
   RegisterDto,
   ResetPasswordDto,
 } from './auth.dto';
+import type { RequestUser } from './auth.types';
 import { AuthService } from './auth.service';
 import { PasswordRecoveryService } from './password-recovery.service';
 
@@ -49,7 +55,9 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() body: LoginDto, @Req() req: Request): Promise<object> {
     this.authService.enforceRateLimit('login', getClientIp(req));
-    const data = await this.authService.login(body);
+    const ip = getClientIp(req);
+    const userAgent = req.headers['user-agent'] ?? 'Unknown';
+    const data = await this.authService.login(body, ip, userAgent);
     return successResponse(data, getCorrelationId(req));
   }
 
@@ -60,6 +68,31 @@ export class AuthController {
     const accessToken = this.extractBearerToken(authorizationHeader);
     this.authService.logout(accessToken);
     return successResponse({ revoked: true }, getCorrelationId(req));
+  }
+
+  @Get('sessions')
+  @UseGuards(AuthGuard)
+  getSessions(@Req() req: Request): object {
+    const userId = (req as Request & { user: RequestUser }).user.id;
+    const currentSessionId = (req as Request & { currentSessionId?: string | null })
+      .currentSessionId ?? null;
+    const sessions = this.authService.getSessions(userId, currentSessionId);
+    return successResponse(sessions, getCorrelationId(req));
+  }
+
+  @Delete('sessions/:sessionId')
+  @UseGuards(AuthGuard)
+  revokeSession(
+    @Req() req: Request,
+    @Param('sessionId') sessionId: string,
+  ): object {
+    const userId = (req as Request & { user: RequestUser }).user.id;
+    this.authService.revokeSession(
+      userId,
+      sessionId,
+      getCorrelationId(req),
+    );
+    return successResponse(null, getCorrelationId(req));
   }
 
   @Post('refresh')

@@ -18,11 +18,13 @@ import { promisify } from 'node:util';
 import type {
   AuthSession,
   AuthUser,
+  DeviceSessionSummary,
   LoginRequest,
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
 } from './auth.types';
+import { SessionNotFoundException } from './exceptions/session-not-found.exception';
 
 const scrypt = promisify(scryptCallback);
 
@@ -76,7 +78,11 @@ export class AuthService {
     };
   }
 
-  async login(payload: LoginRequest): Promise<LoginResponse> {
+  async login(
+    payload: LoginRequest,
+    ip?: string,
+    userAgent?: string,
+  ): Promise<LoginResponse> {
     this.validateEmail(payload.email);
     this.validatePassword(payload.password);
 
@@ -99,7 +105,11 @@ export class AuthService {
       });
     }
 
-    const session = this.createSession(user.id);
+    const session = this.createSession(
+      user.id,
+      ip ?? 'unknown',
+      userAgent ?? 'Unknown',
+    );
     this.logger.log(
       `Auth login success userId=${user.id} sessionId=${session.sessionId}`,
     );
@@ -266,6 +276,72 @@ export class AuthService {
     return user;
   }
 
+  getSessionIdForAccessToken(accessToken: string): string | null {
+    const session = this.sessionsByAccessToken.get(accessToken);
+    if (!session || session.revokedAt || session.accessExpiresAt <= new Date()) {
+      return null;
+    }
+    return session.sessionId;
+  }
+
+  getSessions(
+    userId: string,
+    currentSessionId: string | null,
+  ): DeviceSessionSummary[] {
+    const now = new Date();
+    const summaries: DeviceSessionSummary[] = [];
+
+    for (const session of this.sessionsByAccessToken.values()) {
+      if (
+        session.userId !== userId ||
+        session.revokedAt ||
+        session.accessExpiresAt <= now
+      ) {
+        continue;
+      }
+      summaries.push({
+        sessionId: session.sessionId,
+        ip: session.ip ?? 'unknown',
+        userAgent: session.userAgent ?? 'Unknown',
+        createdAt: session.createdAt.toISOString(),
+        isCurrent: session.sessionId === currentSessionId,
+      });
+    }
+
+    summaries.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    return summaries;
+  }
+
+  revokeSession(
+    userId: string,
+    sessionId: string,
+    correlationId: string,
+  ): void {
+    let found: AuthSession | undefined;
+    for (const session of this.sessionsByAccessToken.values()) {
+      if (session.userId === userId && session.sessionId === sessionId) {
+        found = session;
+        break;
+      }
+    }
+    if (!found) {
+      throw new SessionNotFoundException();
+    }
+    found.revokedAt = new Date();
+    this.sessionsByAccessToken.set(found.accessToken, found);
+    this.logger.log(
+      JSON.stringify({
+        action: 'SESSION_REVOKED',
+        actorUserId: userId,
+        targetSessionId: sessionId,
+        correlationId,
+      }),
+    );
+  }
+
   updatePasswordHash(userId: string, newPasswordHash: string): void {
     for (const user of this.usersByEmail.values()) {
       if (user.id === userId) {
@@ -315,7 +391,11 @@ export class AuthService {
     return timingSafeEqual(candidate, stored);
   }
 
-  private createSession(userId: string): AuthSession {
+  private createSession(
+    userId: string,
+    ip = 'unknown',
+    userAgent = 'Unknown',
+  ): AuthSession {
     const now = new Date();
     const session: AuthSession = {
       sessionId: randomUUID(),
@@ -325,6 +405,8 @@ export class AuthService {
       accessExpiresAt: new Date(now.getTime() + 15 * 60 * 1000),
       refreshExpiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
       createdAt: now,
+      ip,
+      userAgent,
     };
     this.sessionsByAccessToken.set(session.accessToken, session);
     this.sessionsByRefreshToken.set(session.refreshToken, session);

@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import type { AuthUser } from '../../modules/auth/auth.types';
+import type { RequestUser } from '../../modules/auth/auth.types';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
@@ -23,7 +23,7 @@ export class AccountController {
 
   @Get('profile')
   getProfile(@Req() req: Request): object {
-    const { id: userId } = req.user as AuthUser;
+    const { id: userId } = req.user as RequestUser;
     const data = this.accountService.getProfile(userId);
     return successResponse(data, getCorrelationId(req));
   }
@@ -34,7 +34,7 @@ export class AccountController {
     @Body() body: UpdateAccountProfileDto,
     @Req() req: Request,
   ): object {
-    const { id: userId } = req.user as AuthUser;
+    const { id: userId } = req.user as RequestUser;
     const data = this.accountService.updateProfile(userId, body);
     return successResponse(data, getCorrelationId(req));
   }

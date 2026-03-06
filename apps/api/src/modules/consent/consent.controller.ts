@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import type { AuthUser } from '../auth/auth.types';
+import type { RequestUser } from '../auth/auth.types';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
@@ -23,7 +23,7 @@ export class ConsentController {
 
   @Get('status')
   getStatus(@Req() req: Request): object {
-    const { id: userId } = req.user as AuthUser;
+    const { id: userId } = req.user as RequestUser;
     const data = this.consentService.getStatus(userId);
     return successResponse(data, getCorrelationId(req));
   }
@@ -31,7 +31,7 @@ export class ConsentController {
   @Post('accept')
   @HttpCode(HttpStatus.OK)
   accept(@Body() body: AcceptPoliciesDto, @Req() req: Request): object {
-    const { id: userId } = req.user as AuthUser;
+    const { id: userId } = req.user as RequestUser;
     const data = this.consentService.acceptPolicies(userId, body.policyTypes);
     return successResponse(data, getCorrelationId(req));
   }
