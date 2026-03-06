@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -8,9 +9,15 @@ import {
   Patch,
   Post,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
 import type { Request } from 'express';
+import type { Express } from 'express';
 import type { RequestUser } from '../../modules/auth/auth.types';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
@@ -105,6 +112,38 @@ export class AccountController {
     const correlationId = getCorrelationId(req);
     const data = await this.accountService.createClosureRequest(userId, body, correlationId);
     return successResponse(data, correlationId);
+  }
+
+  @Post('avatar')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: diskStorage({
+        destination: join(process.cwd(), 'uploads', 'avatars'),
+        filename: (_req, file, cb) => {
+          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          cb(null, `${unique}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        if (!file.mimetype.match(/^image\//)) {
+          cb(new BadRequestException('Only image files are allowed'), false);
+        } else {
+          cb(null, true);
+        }
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ): Promise<object> {
+    if (!file) throw new BadRequestException('No file uploaded');
+    const { id: userId } = req.user as RequestUser;
+    const avatarUrl = `/uploads/avatars/${file.filename}`;
+    const data = await this.accountService.updateAvatar(userId, avatarUrl);
+    return successResponse(data, getCorrelationId(req));
   }
 
   @Get('closure-request')

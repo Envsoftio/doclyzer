@@ -20,6 +20,11 @@ export class UpdateAccountProfileDto {
   @IsString()
   @MaxLength(100)
   displayName?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1024)
+  avatarUrl?: string | null;
 }
 
 export class UpdateCommunicationPreferencesDto {

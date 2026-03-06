@@ -4,11 +4,13 @@ class AccountProfile {
     required this.email,
     required this.displayName,
     required this.createdAt,
+    this.avatarUrl,
   });
 
   final String id;
   final String email;
   final String? displayName;
+  final String? avatarUrl;
   final DateTime createdAt;
 }
 
@@ -25,4 +27,6 @@ abstract class AccountRepository {
   Future<AccountProfile> getProfile();
 
   Future<AccountProfile> updateProfile({String? displayName});
+
+  Future<AccountProfile> uploadAvatar(String filePath);
 }

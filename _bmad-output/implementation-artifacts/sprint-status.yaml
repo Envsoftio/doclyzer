@@ -42,9 +42,10 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 development_status:
   epic-0: in-progress
   0-1-typeorm-integration-database-entities-migrations: done
-  0-2-jwt-access-refresh-token-auth-db-backed-sessions: ready-for-dev
+  0-2-jwt-access-refresh-token-auth-db-backed-sessions: done
   0-3-replace-all-in-memory-services-with-typeorm-repositories: ready-for-dev
   0-4-e2e-test-infrastructure-with-real-test-database: ready-for-dev
+  0-5-backblaze-b2-object-storage-reports-profile-pics-file-uploads: ready-for-dev
   epic-0-retrospective: optional
 
   epic-1: in-progress

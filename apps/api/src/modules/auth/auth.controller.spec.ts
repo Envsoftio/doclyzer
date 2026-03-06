@@ -5,7 +5,13 @@ import { PasswordRecoveryService } from './password-recovery.service';
 import type { DeviceSessionSummary } from './auth.types';
 
 function makeReq(
-  overrides: Partial<Request & { user: { id: string }; currentSessionId?: string | null; correlationId?: string }> = {},
+  overrides: Partial<
+    Request & {
+      user: { id: string };
+      currentSessionId?: string | null;
+      correlationId?: string;
+    }
+  > = {},
 ): Request {
   return {
     user: { id: 'user-1' },
@@ -19,7 +25,9 @@ function makeReq(
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let authService: jest.Mocked<Pick<AuthService, 'getSessions' | 'revokeSession'>>;
+  let authService: jest.Mocked<
+    Pick<AuthService, 'getSessions' | 'revokeSession'>
+  >;
 
   beforeEach(() => {
     authService = {
@@ -35,7 +43,13 @@ describe('AuthController', () => {
   describe('getSessions', () => {
     it('delegates to getSessions and returns success envelope', async () => {
       const sessions: DeviceSessionSummary[] = [
-        { sessionId: 's1', ip: '127.0.0.1', userAgent: 'test', createdAt: new Date().toISOString(), isCurrent: true },
+        {
+          sessionId: 's1',
+          ip: '127.0.0.1',
+          userAgent: 'test',
+          createdAt: new Date().toISOString(),
+          isCurrent: true,
+        },
       ];
       authService.getSessions.mockResolvedValue(sessions);
       const req = makeReq({ user: { id: 'user-1' }, currentSessionId: 's1' });
@@ -53,19 +67,30 @@ describe('AuthController', () => {
   describe('revokeSession', () => {
     it('delegates to revokeSession and returns success envelope', async () => {
       authService.revokeSession.mockResolvedValue(undefined);
-      const result = (await controller.revokeSession(makeReq(), 'session-123')) as {
+      const result = (await controller.revokeSession(
+        makeReq(),
+        'session-123',
+      )) as {
         success: boolean;
         data: null;
         correlationId: string;
       };
       expect(result.success).toBe(true);
       expect(result.data).toBeNull();
-      expect(authService.revokeSession).toHaveBeenCalledWith('user-1', 'session-123', 'test-cid');
+      expect(authService.revokeSession).toHaveBeenCalledWith(
+        'user-1',
+        'session-123',
+        'test-cid',
+      );
     });
 
     it('propagates SessionNotFoundException', async () => {
-      authService.revokeSession.mockRejectedValue(new Error('SESSION_NOT_FOUND'));
-      await expect(controller.revokeSession(makeReq(), 'bad-id')).rejects.toThrow();
+      authService.revokeSession.mockRejectedValue(
+        new Error('SESSION_NOT_FOUND'),
+      );
+      await expect(
+        controller.revokeSession(makeReq(), 'bad-id'),
+      ).rejects.toThrow();
     });
   });
 });

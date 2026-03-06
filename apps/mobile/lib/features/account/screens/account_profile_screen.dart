@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../../core/api_client.dart';
+import '../../../core/api_config.dart';
 import '../account_repository.dart';
 import '../restriction_repository.dart';
 
@@ -27,6 +30,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   String? _error;
   bool _loading = true;
   bool _saving = false;
+  bool _uploadingAvatar = false;
 
   @override
   void initState() {
@@ -81,16 +85,122 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
       final updated = await widget.accountRepository.updateProfile(
         displayName: _displayNameController.text.trim(),
       );
-      setState(() {
-        _profile = updated;
-        _saving = false;
-      });
+      if (mounted) {
+        setState(() {
+          _profile = updated;
+          _saving = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } on AccountException catch (e) {
-      setState(() {
-        _error = e.message;
-        _saving = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _saving = false;
+        });
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _saving = false;
+        });
+      }
     }
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return;
+
+    setState(() => _uploadingAvatar = true);
+    try {
+      final updated = await widget.accountRepository.uploadAvatar(picked.path);
+      if (mounted) {
+        setState(() {
+          _profile = updated;
+          _uploadingAvatar = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Avatar updated'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } on AccountException catch (e) {
+      if (mounted) {
+        setState(() => _uploadingAvatar = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _uploadingAvatar = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildAvatar() {
+    final avatarUrl = _profile?.avatarUrl;
+    final fullUrl = avatarUrl != null
+        ? (avatarUrl.startsWith('http') ? avatarUrl : '$apiBaseUrl$avatarUrl')
+        : null;
+
+    return GestureDetector(
+      key: const Key('account-profile-avatar'),
+      onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
+      child: Stack(
+        alignment: Alignment.bottomRight,
+        children: [
+          CircleAvatar(
+            radius: 48,
+            backgroundColor: Colors.grey.shade200,
+            backgroundImage:
+                fullUrl != null ? NetworkImage(fullUrl) : null,
+            child: fullUrl == null
+                ? const Icon(Icons.person, size: 48, color: Colors.grey)
+                : null,
+          ),
+          if (_uploadingAvatar)
+            const Positioned.fill(
+              child: CircleAvatar(
+                backgroundColor: Colors.black38,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: const Icon(Icons.edit, size: 14, color: Colors.white),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -147,6 +257,8 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                     ),
                     const SizedBox(height: 16),
                   ],
+                  Center(child: _buildAvatar()),
+                  const SizedBox(height: 24),
                   if (_error != null)
                     Text(
                       _error!,
@@ -163,7 +275,8 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                   TextField(
                     key: const Key('account-profile-display-name'),
                     controller: _displayNameController,
-                    decoration: const InputDecoration(labelText: 'Display Name'),
+                    decoration:
+                        const InputDecoration(labelText: 'Display Name'),
                     maxLength: 100,
                   ),
                   const SizedBox(height: 16),

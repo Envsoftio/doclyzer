@@ -10,7 +10,10 @@ import { createHash, randomBytes } from 'node:crypto';
 import { PasswordResetTokenEntity } from '../../database/entities/password-reset-token.entity';
 import { NotificationService } from '../../common/notification/notification.service';
 import { AuthService } from './auth.service';
-import type { ForgotPasswordResponse, ResetPasswordResponse } from './auth.types';
+import type {
+  ForgotPasswordResponse,
+  ResetPasswordResponse,
+} from './auth.types';
 
 @Injectable()
 export class PasswordRecoveryService {
@@ -32,12 +35,20 @@ export class PasswordRecoveryService {
 
     if (!user) {
       createHash('sha256').update(rawToken).digest('hex');
-      this.logger.log('Password reset requested (enumeration-safe: no matching account)');
-      return { message: 'If an account exists for this email, a reset link has been sent.' };
+      this.logger.log(
+        'Password reset requested (enumeration-safe: no matching account)',
+      );
+      return {
+        message:
+          'If an account exists for this email, a reset link has been sent.',
+      };
     }
 
     // Invalidate any previous pending tokens for this user.
-    await this.tokenRepo.delete({ userId: user.id, usedAt: undefined as unknown as Date });
+    await this.tokenRepo.delete({
+      userId: user.id,
+      usedAt: undefined as unknown as Date,
+    });
 
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
     await this.tokenRepo.save(
@@ -49,13 +60,22 @@ export class PasswordRecoveryService {
       }),
     );
 
-    void this.notificationService.sendPasswordResetToken(normalizedEmail, rawToken);
+    void this.notificationService.sendPasswordResetToken(
+      normalizedEmail,
+      rawToken,
+    );
 
     this.logger.log(`Password reset token issued userId=${user.id}`);
-    return { message: 'If an account exists for this email, a reset link has been sent.' };
+    return {
+      message:
+        'If an account exists for this email, a reset link has been sent.',
+    };
   }
 
-  async confirmReset(rawToken: string, newPassword: string): Promise<ResetPasswordResponse> {
+  async confirmReset(
+    rawToken: string,
+    newPassword: string,
+  ): Promise<ResetPasswordResponse> {
     this.authService.validatePasswordStrength(newPassword);
 
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
@@ -88,8 +108,13 @@ export class PasswordRecoveryService {
     await this.authService.updatePasswordHash(record.userId, newHash);
     await this.authService.revokeAllSessionsForUser(record.userId);
 
-    this.logger.log(`Password reset confirmed userId=${record.userId} — sessions revoked`);
-    return { message: 'Password reset successful. Please log in with your new password.' };
+    this.logger.log(
+      `Password reset confirmed userId=${record.userId} — sessions revoked`,
+    );
+    return {
+      message:
+        'Password reset successful. Please log in with your new password.',
+    };
   }
 
   private async purgeExpiredTokens(): Promise<void> {

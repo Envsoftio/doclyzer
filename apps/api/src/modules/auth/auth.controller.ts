@@ -40,7 +40,10 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  async register(@Body() body: RegisterDto, @Req() req: Request): Promise<object> {
+  async register(
+    @Body() body: RegisterDto,
+    @Req() req: Request,
+  ): Promise<object> {
     this.authService.enforceRateLimit('register', getClientIp(req), 20);
     const data = await this.authService.register(body);
     return successResponse(data, getCorrelationId(req));
@@ -50,7 +53,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() body: LoginDto, @Req() req: Request): Promise<object> {
     this.authService.enforceRateLimit('login', getClientIp(req));
-    const data = await this.authService.login(body, getClientIp(req), req.headers['user-agent'] ?? 'Unknown');
+    const data = await this.authService.login(
+      body,
+      getClientIp(req),
+      req.headers['user-agent'] ?? 'Unknown',
+    );
     return successResponse(data, getCorrelationId(req));
   }
 
@@ -67,8 +74,12 @@ export class AuthController {
   async getSessions(@Req() req: Request): Promise<object> {
     const userId = (req as Request & { user: RequestUser }).user.id;
     const currentSessionId =
-      (req as Request & { currentSessionId?: string | null }).currentSessionId ?? null;
-    const sessions = await this.authService.getSessions(userId, currentSessionId);
+      (req as Request & { currentSessionId?: string | null })
+        .currentSessionId ?? null;
+    const sessions = await this.authService.getSessions(
+      userId,
+      currentSessionId,
+    );
     return successResponse(sessions, getCorrelationId(req));
   }
 
@@ -79,20 +90,31 @@ export class AuthController {
     @Param('sessionId') sessionId: string,
   ): Promise<object> {
     const userId = (req as Request & { user: RequestUser }).user.id;
-    await this.authService.revokeSession(userId, sessionId, getCorrelationId(req));
+    await this.authService.revokeSession(
+      userId,
+      sessionId,
+      getCorrelationId(req),
+    );
     return successResponse(null, getCorrelationId(req));
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(@Body() body: RefreshDto, @Req() req: Request): Promise<object> {
+  async refresh(
+    @Body() body: RefreshDto,
+    @Req() req: Request,
+  ): Promise<object> {
+    this.authService.enforceRateLimit('refresh', getClientIp(req));
     const data = await this.authService.refresh(body.refreshToken);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() body: ForgotPasswordDto, @Req() req: Request): Promise<object> {
+  async forgotPassword(
+    @Body() body: ForgotPasswordDto,
+    @Req() req: Request,
+  ): Promise<object> {
     const clientIp = getClientIp(req);
     this.authService.enforceRateLimit('forgot-password', clientIp, 20);
     this.authService.enforceRateLimit('forgot-password-account', body.email, 5);
@@ -102,8 +124,14 @@ export class AuthController {
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() body: ResetPasswordDto, @Req() req: Request): Promise<object> {
-    const data = await this.recoveryService.confirmReset(body.token, body.newPassword);
+  async resetPassword(
+    @Body() body: ResetPasswordDto,
+    @Req() req: Request,
+  ): Promise<object> {
+    const data = await this.recoveryService.confirmReset(
+      body.token,
+      body.newPassword,
+    );
     return successResponse(data, getCorrelationId(req));
   }
 

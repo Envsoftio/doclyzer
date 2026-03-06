@@ -17,9 +17,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
-  tokenType: 'Bearer';
-  accessTokenExpiresInSec: number;
-  refreshTokenExpiresInSec: number;
+  expiresIn: number;
 }
 
 export interface AuthUser {
@@ -83,6 +81,7 @@ export interface DeviceSessionSummary {
 }
 
 export const SESSION_NOT_FOUND = 'SESSION_NOT_FOUND' as const;
+export const INVALID_REFRESH_TOKEN = 'INVALID_REFRESH_TOKEN' as const;
 
 export interface RequestUser {
   id: string;

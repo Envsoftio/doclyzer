@@ -23,12 +23,24 @@ class ApiAccountRepository implements AccountRepository {
     return _profileFromJson(d);
   }
 
+  @override
+  Future<AccountProfile> uploadAvatar(String filePath) async {
+    final data = await _client.uploadFile(
+      'v1/account/avatar',
+      'avatar',
+      filePath,
+    );
+    final d = data['data'] as Map<String, dynamic>;
+    return _profileFromJson(d);
+  }
+
   AccountProfile _profileFromJson(Map<String, dynamic> json) {
     final createdAt = json['createdAt'] as String?;
     return AccountProfile(
       id: json['id'] as String,
       email: json['email'] as String,
       displayName: json['displayName'] as String?,
+      avatarUrl: json['avatarUrl'] as String?,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
     );
   }

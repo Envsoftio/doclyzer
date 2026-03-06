@@ -109,6 +109,7 @@ Leading indicators: reports uploaded per user, share links created per MAU, AI s
 - One share link per account (Free); share page (web) with reports, summaries, charts; expiry and revoke.
 - Credits and recharge (credit packs + subscription from day one); Razorpay (India + international); promo codes at checkout.
 - Plan table and promo CRUD in superadmin; analytics (signups, active users, credit/subscription revenue, promo impact).
+- **Object storage:** Backblaze B2 (S3-compatible) for report PDFs, profile avatars, and other user-uploaded files; private buckets with signed or scoped URLs for access.
 - Flutter app (mobile); NestJS backend; separate share web app.
 
 **MVP success:** User can sign up, create a profile, upload ≥2 reports, see timeline and a simple trend, create one share link and open it in a browser with correct data. Share link opened by recipient within 7d as north-star signal. No critical security/privacy incidents; disclaimers and consent in place.
@@ -305,6 +306,22 @@ Doclyzer is a Flutter-first mobile healthcare app for patients and carers, cente
   - contract tests for parsing status transitions,
   - E2E for upload/share critical paths,
   - synthetic monitoring for share-link rendering.
+
+### Object Storage (Backblaze B2)
+
+User-uploaded files (medical report PDFs, profile pictures, and any other binary assets) must be stored in durable, scalable object storage rather than local disk. **Backblaze B2** is the designated object store for MVP.
+
+**Requirements:**
+
+- **Backblaze B2** (S3-compatible API): one or more buckets for production file storage.
+- **Asset types:** (1) Report PDFs (per profile, linked from report records); (2) profile/account avatars; (3) any future uploads (e.g. export packs, attachments).
+- **Access model:** Buckets are private; the API generates short-lived signed URLs (or application-served streams) for reading. No public bucket listing. Write via application credentials only.
+- **Naming and structure:** Predictable key structure (e.g. `reports/{userId}/{profileId}/{reportId}.pdf`, `avatars/{userId}.{ext}`) to support cleanup, data export, and account closure.
+- **Environment:** B2 key ID, application key, bucket name(s), and endpoint configured via environment; no credentials in code or repo.
+- **Resilience:** Upload flow stores file to B2 first, then creates/updates DB record; on DB failure, orphan files can be reconciled via lifecycle or admin job. Deletion (account closure, report delete) must remove both DB record and B2 object where applicable.
+- **Compliance:** Same PHI and retention expectations as the rest of the system; B2 region and terms chosen to align with data-residency and backup requirements.
+
+**Out of scope for MVP:** Cross-region replication, custom CDN, or multi-provider failover; single B2 bucket (or one per asset type) is sufficient.
 
 ### Failure Modes and Mitigations (Step-7 Addendum)
 

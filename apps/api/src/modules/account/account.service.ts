@@ -57,7 +57,7 @@ export class AccountService {
     if (!user) {
       throw new NotFoundException({ code: 'ACCOUNT_NOT_FOUND', message: 'Account not found' });
     }
-    return { id: user.id, email: user.email, displayName: user.displayName, createdAt: user.createdAt };
+    return { id: user.id, email: user.email, displayName: user.displayName, avatarUrl: user.avatarUrl, createdAt: user.createdAt };
   }
 
   async getCommunicationPreferences(userId: string): Promise<CommunicationPreferences> {
@@ -91,8 +91,19 @@ export class AccountService {
       throw new NotFoundException({ code: 'ACCOUNT_NOT_FOUND', message: 'Account not found' });
     }
     if (dto.displayName !== undefined) user.displayName = dto.displayName;
+    if (dto.avatarUrl !== undefined) user.avatarUrl = dto.avatarUrl;
     await this.userRepo.save(user);
-    return { id: user.id, email: user.email, displayName: user.displayName, createdAt: user.createdAt };
+    return { id: user.id, email: user.email, displayName: user.displayName, avatarUrl: user.avatarUrl, createdAt: user.createdAt };
+  }
+
+  async updateAvatar(userId: string, avatarUrl: string): Promise<AccountProfile> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException({ code: 'ACCOUNT_NOT_FOUND', message: 'Account not found' });
+    }
+    user.avatarUrl = avatarUrl;
+    await this.userRepo.save(user);
+    return { id: user.id, email: user.email, displayName: user.displayName, avatarUrl: user.avatarUrl, createdAt: user.createdAt };
   }
 
   async createDataExportRequest(userId: string, correlationId: string): Promise<DataExportRequest> {

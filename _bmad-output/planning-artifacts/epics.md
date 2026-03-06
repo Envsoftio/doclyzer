@@ -226,8 +226,8 @@ FR76: Epic 5 - Time-bound override actions
 ## Epic List
 
 ### Epic 0: Backend Foundation — Real Persistence, JWT Auth & API Wiring
-All Epic 1 API endpoints are production-ready: PostgreSQL via TypeORM, JWT access + refresh token auth with DB-backed sessions, all in-memory Maps replaced, Flutter wired to real API, E2E tests passing against a real DB.
-**Technical Stories:** 0.1 TypeORM setup, 0.2 JWT auth, 0.3 DB-backed services, 0.4 E2E test infra
+All Epic 1 API endpoints are production-ready: PostgreSQL via TypeORM, JWT access + refresh token auth with DB-backed sessions, all in-memory Maps replaced, Flutter wired to real API, E2E tests passing against a real DB, and user-uploaded files (reports, avatars) stored in Backblaze B2.
+**Technical Stories:** 0.1 TypeORM setup, 0.2 JWT auth, 0.3 DB-backed services, 0.4 E2E test infra, 0.5 Backblaze B2 object storage (reports, profile pics, file uploads)
 
 ### Epic 1: Account Security, Consent, Profile & Delegation Foundation
 Users can securely onboard, manage account/session controls, accept legal policies, exercise consent and data rights, and manage multi-profile/delegation foundations needed by all later workflows.
@@ -369,6 +369,39 @@ So that integration coverage is meaningful and the test suite is not fragile.
 - Helper `test/db-cleaner.ts` exports `clearDatabase(dataSource)` that truncates all tables
 - CI can run `docker compose up -d postgres && npm run test:e2e`
 - No mocking of TypeORM in E2E tests; real DB only
+
+### Story 0.5: Backblaze B2 Object Storage for Reports, Profile Pictures, and File Uploads
+
+As a developer,
+I want all user-uploaded files (report PDFs, profile/account avatars, and other assets) stored in Backblaze B2 via an S3-compatible API,
+So that storage is durable, scalable, and not tied to local disk, and access is controlled via signed URLs or application-served streams.
+
+**Acceptance Criteria:**
+
+**Given** the API is configured with valid B2 credentials (key ID, application key, bucket name, endpoint)
+**When** a user uploads a report PDF or profile avatar
+**Then** the file is uploaded to the configured B2 bucket with a deterministic key structure (e.g. `reports/{userId}/{profileId}/{reportId}.pdf`, `avatars/{userId}.{ext}`)
+**And** the database record stores the B2 key (or URL path) for later retrieval
+**And** no file is stored on local disk in production (local disk allowed only for dev/test when B2 is disabled or mocked)
+
+**Given** a client requests to read an uploaded file (e.g. view PDF, avatar image)
+**When** the user is authorized to access that resource
+**Then** the API serves the file via a short-lived signed URL from B2 or streams it through the API
+**And** bucket and keys are not publicly listable or directly accessible without authorization
+
+**Given** a user deletes a report or account closure removes data
+**When** the delete is committed
+**Then** the corresponding object(s) in B2 are deleted (or scheduled for deletion) so that storage is not left with orphans
+
+**Given** B2 is unavailable or misconfigured
+**When** an upload is attempted
+**Then** the API returns a clear error and does not leave the DB in an inconsistent state (no report/avatar record without a stored file)
+
+**Technical Notes:**
+- Use an S3-compatible client (e.g. `@aws-sdk/client-s3` with B2 endpoint, or `aws4fetch` / custom) and inject config from env: `B2_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`, `B2_ENDPOINT` (e.g. `https://s3.us-west-002.backblazeb2.com`).
+- Introduce a small abstraction (e.g. `FileStorageService` or `ObjectStorageService`) so that upload/delete/get URL are in one place and B2 can be swapped or mocked in tests.
+- Avatar upload (account controller) and report upload flows must use this service instead of `diskStorage` (multer); multipart still handled by multer, then stream or buffer to B2.
+- Document key naming and lifecycle in project context or architecture; ensure account closure and data-export flows consider B2 objects.
 
 ## Epic 1: Account Security, Consent, Profile & Delegation Foundation
 

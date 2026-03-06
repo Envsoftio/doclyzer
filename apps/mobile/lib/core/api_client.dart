@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -78,6 +79,27 @@ class ApiClient {
         headers: _headers(auth: auth),
         body: body != null ? jsonEncode(body) : null,
       );
+      return _handleResponse(res);
+    }, auth);
+  }
+
+  Future<Map<String, dynamic>> uploadFile(
+    String path,
+    String fieldName,
+    String filePath, {
+    bool auth = true,
+  }) async {
+    return _requestWithRefresh(() async {
+      final uri = Uri.parse(_url(path));
+      final request = http.MultipartRequest('POST', uri);
+      if (auth && _accessToken != null) {
+        request.headers['Authorization'] = 'Bearer $_accessToken';
+      }
+      request.headers['x-correlation-id'] =
+          DateTime.now().millisecondsSinceEpoch.toString();
+      request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
+      final streamed = await request.send();
+      final res = await http.Response.fromStream(streamed);
       return _handleResponse(res);
     }, auth);
   }

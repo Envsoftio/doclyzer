@@ -1,3 +1,4 @@
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import type { Repository } from 'typeorm';
 import { PasswordResetTokenEntity } from '../../database/entities/password-reset-token.entity';
 import { InMemoryNotificationService } from '../../common/notification/in-memory-notification.service';
@@ -17,7 +18,14 @@ function makeTokenRepo(): jest.Mocked<Repository<PasswordResetTokenEntity>> {
 
 describe('PasswordRecoveryService', () => {
   let authService: jest.Mocked<
-    Pick<AuthService, 'findUserByEmail' | 'hashPassword' | 'updatePasswordHash' | 'revokeAllSessionsForUser' | 'validatePasswordStrength'>
+    Pick<
+      AuthService,
+      | 'findUserByEmail'
+      | 'hashPassword'
+      | 'updatePasswordHash'
+      | 'revokeAllSessionsForUser'
+      | 'validatePasswordStrength'
+    >
   >;
   let notificationService: InMemoryNotificationService;
   let tokenRepo: jest.Mocked<Repository<PasswordResetTokenEntity>>;
@@ -67,7 +75,6 @@ describe('PasswordRecoveryService', () => {
 
   describe('confirmReset', () => {
     it('throws AUTH_RESET_TOKEN_INVALID for unknown token', async () => {
-      const { UnauthorizedException } = await import('@nestjs/common');
       tokenRepo.findOne.mockResolvedValue(null);
       await expect(
         recoveryService.confirmReset('bad-token', 'NewPass123!'),
@@ -75,7 +82,6 @@ describe('PasswordRecoveryService', () => {
     });
 
     it('throws AUTH_RESET_TOKEN_EXPIRED for expired token', async () => {
-      const { BadRequestException } = await import('@nestjs/common');
       tokenRepo.findOne.mockResolvedValue({
         id: 'tok-1',
         userId: 'user-1',

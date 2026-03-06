@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/api_client.dart';
 import '../../../features/account/restriction_repository.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -36,11 +37,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadRestrictionStatus() async {
-    final status = await widget.restrictionRepository.getStatus();
-    if (mounted) {
-      setState(() {
-        _restrictionStatus = status;
-      });
+    try {
+      final status = await widget.restrictionRepository.getStatus();
+      if (mounted) {
+        setState(() {
+          _restrictionStatus = status;
+        });
+      }
+    } on ApiException catch (e) {
+      if (e.code == 'AUTH_UNAUTHORIZED' && mounted) {
+        await widget.onLogout();
+      }
     }
   }
 

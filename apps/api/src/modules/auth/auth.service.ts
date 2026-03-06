@@ -9,29 +9,27 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import {
-  createHash,
-  createHmac,
-  randomBytes,
-  scrypt as scryptCallback,
-  timingSafeEqual,
-} from 'node:crypto';
-import { promisify } from 'node:util';
+import { Repository, MoreThan } from 'typeorm';
+import { randomBytes } from 'node:crypto';
+import { createHash } from 'node:crypto';
+import * as bcrypt from 'bcryptjs';
 import { UserEntity } from '../../database/entities/user.entity';
 import { SessionEntity } from '../../database/entities/session.entity';
-import type {
-  AuthUser,
-  DeviceSessionSummary,
-  LoginRequest,
-  LoginResponse,
-  RegisterRequest,
-  RegisterResponse,
+import {
+  type AuthUser,
+  type DeviceSessionSummary,
+  INVALID_REFRESH_TOKEN,
+  type LoginRequest,
+  type LoginResponse,
+  type RegisterRequest,
+  type RegisterResponse,
 } from './auth.types';
 import { SessionNotFoundException } from './exceptions/session-not-found.exception';
 
-const scrypt = promisify(scryptCallback);
+const BCRYPT_ROUNDS = 12;
+const REFRESH_TTL_DAYS = 30;
 
 interface RateLimitState {
   count: number;
@@ -40,67 +38,26 @@ interface RateLimitState {
 
 interface JwtPayload {
   sub: string;
-  sid: string;
-  iat: number;
-  exp: number;
-}
-
-function b64url(buf: Buffer): string {
-  return buf.toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-}
-
-function b64urlDecode(s: string): string {
-  const pad = s.length % 4 === 0 ? '' : '='.repeat(4 - (s.length % 4));
-  return Buffer.from(s + pad, 'base64').toString('utf8');
-}
-
-function signJwt(payload: object, secret: string): string {
-  const hdr = b64url(Buffer.from('{"alg":"HS256","typ":"JWT"}'));
-  const bdy = b64url(Buffer.from(JSON.stringify(payload)));
-  const sig = b64url(createHmac('sha256', secret).update(`${hdr}.${bdy}`).digest());
-  return `${hdr}.${bdy}.${sig}`;
-}
-
-function verifyJwt(token: string, secret: string): JwtPayload | null {
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-  const [hdr, bdy, sig] = parts;
-  const expected = b64url(createHmac('sha256', secret).update(`${hdr}.${bdy}`).digest());
-  const sigBuf = Buffer.from(sig, 'utf8');
-  const expectedBuf = Buffer.from(expected, 'utf8');
-  if (sigBuf.length !== expectedBuf.length) return null;
-  if (!timingSafeEqual(sigBuf, expectedBuf)) return null;
-  try {
-    return JSON.parse(b64urlDecode(bdy)) as JwtPayload;
-  } catch {
-    return null;
-  }
-}
-
-function decodeJwtUnsafe(token: string): JwtPayload | null {
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-  try {
-    return JSON.parse(b64urlDecode(parts[1])) as JwtPayload;
-  } catch {
-    return null;
-  }
+  sessionId: string;
 }
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly rateLimit = new Map<string, RateLimitState>();
-  private readonly jwtSecret: string;
+
+  private readonly accessTtlSec: number;
 
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
     @InjectRepository(SessionEntity)
     private readonly sessionRepo: Repository<SessionEntity>,
-    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
+    configService: ConfigService,
   ) {
-    this.jwtSecret = this.configService.getOrThrow<string>('JWT_ACCESS_SECRET');
+    this.accessTtlSec =
+      configService.get<number>('JWT_ACCESS_TTL_SECONDS') ?? 900;
   }
 
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
@@ -117,11 +74,19 @@ export class AuthService {
     }
 
     const passwordHash = await this.hashPassword(payload.password);
-    const user = this.userRepo.create({ email, passwordHash, displayName: null });
+    const user = this.userRepo.create({
+      email,
+      passwordHash,
+      displayName: null,
+    });
     const saved = await this.userRepo.save(user);
 
     this.logger.log(`Auth registration success userId=${saved.id}`);
-    return { userId: saved.id, requiresVerification: true, nextStep: 'verify_then_login' };
+    return {
+      userId: saved.id,
+      requiresVerification: true,
+      nextStep: 'verify_then_login',
+    };
   }
 
   async login(
@@ -141,7 +106,10 @@ export class AuthService {
       });
     }
 
-    const isValid = await this.verifyPassword(payload.password, user.passwordHash);
+    const isValid = await this.verifyPassword(
+      payload.password,
+      user.passwordHash,
+    );
     if (!isValid) {
       throw new UnauthorizedException({
         code: 'AUTH_INVALID_CREDENTIALS',
@@ -156,101 +124,51 @@ export class AuthService {
     );
 
     this.logger.log(`Auth login success userId=${user.id}`);
-    return {
-      accessToken,
-      refreshToken,
-      tokenType: 'Bearer',
-      accessTokenExpiresInSec: 15 * 60,
-      refreshTokenExpiresInSec: 7 * 24 * 60 * 60,
-    };
+    return { accessToken, refreshToken, expiresIn: this.accessTtlSec };
   }
 
   async logout(accessToken: string): Promise<void> {
-    const payload = decodeJwtUnsafe(accessToken);
-    if (!payload?.sid) return;
-    await this.sessionRepo.delete({ id: payload.sid, userId: payload.sub });
-    this.logger.log(`Auth logout sessionId=${payload.sid}`);
+    const payload = this.jwtService.decode<JwtPayload>(accessToken);
+    if (!payload?.sessionId) return;
+    await this.sessionRepo.delete({
+      id: payload.sessionId,
+      userId: payload.sub,
+    });
+    this.logger.log(`Auth logout sessionId=${payload.sessionId}`);
   }
 
   async refresh(refreshToken: string): Promise<LoginResponse> {
     const hash = createHash('sha256').update(refreshToken).digest('hex');
-    const session = await this.sessionRepo.findOne({ where: { refreshTokenHash: hash } });
+    const now = new Date();
+    const session = await this.sessionRepo.findOne({
+      where: {
+        refreshTokenHash: hash,
+        expiresAt: MoreThan(now),
+      },
+    });
 
     if (!session) {
       throw new UnauthorizedException({
-        code: 'AUTH_SESSION_NOT_FOUND',
-        message: 'Session not found',
-      });
-    }
-
-    if (session.expiresAt <= new Date()) {
-      await this.sessionRepo.delete(session.id);
-      throw new UnauthorizedException({
-        code: 'AUTH_SESSION_EXPIRED',
-        message: 'Refresh token has expired',
+        code: INVALID_REFRESH_TOKEN,
+        message: 'Invalid or expired refresh token',
       });
     }
 
     await this.sessionRepo.delete(session.id);
 
-    const { accessToken, refreshToken: newRefreshToken } = await this.createSession(
-      session.userId,
-      session.ipAddress,
-      session.userAgent,
-    );
+    const { accessToken, refreshToken: newRefreshToken } =
+      await this.createSession(
+        session.userId,
+        session.ipAddress,
+        session.userAgent,
+      );
 
     this.logger.log(`Auth token refresh userId=${session.userId}`);
     return {
       accessToken,
       refreshToken: newRefreshToken,
-      tokenType: 'Bearer',
-      accessTokenExpiresInSec: 15 * 60,
-      refreshTokenExpiresInSec: 7 * 24 * 60 * 60,
+      expiresIn: this.accessTtlSec,
     };
-  }
-
-  async validateAccessToken(token: string): Promise<AuthUser> {
-    const payload = verifyJwt(token, this.jwtSecret);
-    if (!payload) {
-      throw new UnauthorizedException({
-        code: 'AUTH_UNAUTHORIZED',
-        message: 'Authentication required',
-      });
-    }
-
-    if (payload.exp * 1000 <= Date.now()) {
-      throw new UnauthorizedException({
-        code: 'AUTH_UNAUTHORIZED',
-        message: 'Authentication required',
-      });
-    }
-
-    const session = await this.sessionRepo.findOne({
-      where: { id: payload.sid, userId: payload.sub },
-    });
-    if (!session) {
-      throw new UnauthorizedException({
-        code: 'AUTH_UNAUTHORIZED',
-        message: 'Authentication required',
-      });
-    }
-
-    const user = await this.userRepo.findOne({ where: { id: payload.sub } });
-    if (!user) {
-      throw new UnauthorizedException({
-        code: 'AUTH_UNAUTHORIZED',
-        message: 'Authentication required',
-      });
-    }
-
-    return this.toAuthUser(user);
-  }
-
-  getSessionIdForAccessToken(token: string): string | null {
-    const payload = decodeJwtUnsafe(token);
-    if (!payload) return null;
-    if (payload.exp * 1000 <= Date.now()) return null;
-    return payload.sid ?? null;
   }
 
   async getSessions(
@@ -269,7 +187,10 @@ export class AuthService {
         createdAt: s.createdAt.toISOString(),
         isCurrent: s.id === currentSessionId,
       }))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
   }
 
   async revokeSession(
@@ -320,8 +241,13 @@ export class AuthService {
     await this.userRepo.save(user);
   }
 
-  async updatePasswordHash(userId: string, newPasswordHash: string): Promise<void> {
-    const result = await this.userRepo.update(userId, { passwordHash: newPasswordHash });
+  async updatePasswordHash(
+    userId: string,
+    newPasswordHash: string,
+  ): Promise<void> {
+    const result = await this.userRepo.update(userId, {
+      passwordHash: newPasswordHash,
+    });
     if (!result.affected) {
       throw new NotFoundException({
         code: 'ACCOUNT_NOT_FOUND',
@@ -373,18 +299,11 @@ export class AuthService {
   }
 
   async hashPassword(password: string): Promise<string> {
-    const salt = randomBytes(16).toString('hex');
-    const derived = (await scrypt(password, salt, 64)) as Buffer;
-    return `${salt}:${derived.toString('hex')}`;
+    return bcrypt.hash(password, BCRYPT_ROUNDS);
   }
 
   async verifyPassword(password: string, hash: string): Promise<boolean> {
-    const [salt, storedHex] = hash.split(':');
-    if (!salt || !storedHex) return false;
-    const candidate = (await scrypt(password, salt, 64)) as Buffer;
-    const stored = Buffer.from(storedHex, 'hex');
-    if (candidate.length !== stored.length) return false;
-    return timingSafeEqual(candidate, stored);
+    return bcrypt.compare(password, hash);
   }
 
   private async createSession(
@@ -393,8 +312,12 @@ export class AuthService {
     userAgent: string | null,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const rawRefresh = randomBytes(48).toString('hex');
-    const refreshTokenHash = createHash('sha256').update(rawRefresh).digest('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const refreshTokenHash = createHash('sha256')
+      .update(rawRefresh)
+      .digest('hex');
+    const expiresAt = new Date(
+      Date.now() + REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000,
+    );
 
     const session = this.sessionRepo.create({
       userId,
@@ -405,11 +328,10 @@ export class AuthService {
     });
     const saved = await this.sessionRepo.save(session);
 
-    const now = Math.floor(Date.now() / 1000);
-    const accessToken = signJwt(
-      { sub: userId, sid: saved.id, iat: now, exp: now + 15 * 60 },
-      this.jwtSecret,
-    );
+    const accessToken = this.jwtService.sign({
+      sub: userId,
+      sessionId: saved.id,
+    });
 
     return { accessToken, refreshToken: rawRefresh };
   }

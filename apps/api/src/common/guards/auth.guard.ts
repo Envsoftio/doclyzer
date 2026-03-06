@@ -4,15 +4,19 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
-import { AuthService } from '../../modules/auth/auth.service';
-import type { RequestUser } from '../../modules/auth/auth.types';
+
+interface JwtPayload {
+  sub: string;
+  sessionId: string;
+}
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly jwtService: JwtService) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest<Request>();
     const authHeader = req.header('authorization');
 
@@ -31,10 +35,17 @@ export class AuthGuard implements CanActivate {
       });
     }
 
-    const user = await this.authService.validateAccessToken(token);
-    (req as Request & { user: RequestUser }).user = { id: user.id };
-    (req as Request & { currentSessionId?: string | null }).currentSessionId =
-      this.authService.getSessionIdForAccessToken(token) ?? null;
-    return true;
+    try {
+      const payload = this.jwtService.verify<JwtPayload>(token);
+      (req as Request & { user: { id: string } }).user = { id: payload.sub };
+      (req as Request & { currentSessionId?: string }).currentSessionId =
+        payload.sessionId;
+      return true;
+    } catch {
+      throw new UnauthorizedException({
+        code: 'AUTH_UNAUTHORIZED',
+        message: 'Authentication required',
+      });
+    }
   }
 }
