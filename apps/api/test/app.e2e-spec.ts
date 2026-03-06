@@ -9,6 +9,7 @@ import { correlationIdMiddleware } from '../src/common/correlation-id.middleware
 import { InMemoryNotificationService } from '../src/common/notification/in-memory-notification.service';
 import { NotificationService } from '../src/common/notification/notification.service';
 import { PasswordRecoveryService } from '../src/modules/auth/password-recovery.service';
+import { AccountService } from '../src/modules/account/account.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -38,14 +39,13 @@ describe('AuthController (e2e)', () => {
     await app.close();
   });
 
-  it('registers with policy acknowledgement', async () => {
+  it('registers successfully', async () => {
     const res = await request(app.getHttpServer())
       .post('/v1/auth/register')
       .set('x-correlation-id', 'test-correlation-id')
       .send({
         email: 'user@example.com',
         password: 'StrongPass123!',
-        policyAccepted: true,
       })
       .expect(201);
 
@@ -54,28 +54,12 @@ describe('AuthController (e2e)', () => {
     expect(res.body.data.requiresVerification).toBe(true);
   });
 
-  it('rejects registration without policy acknowledgement', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/v1/auth/register')
-      .send({
-        email: 'user2@example.com',
-        password: 'StrongPass123!',
-        policyAccepted: false,
-      })
-      .expect(400);
-
-    expect(res.body.success).toBe(false);
-    expect(res.body.error.code).toBe('AUTH_POLICY_ACK_REQUIRED');
-    expect(typeof res.body.correlationId).toBe('string');
-  });
-
   it('logs in and logs out with revocation', async () => {
     await request(app.getHttpServer())
       .post('/v1/auth/register')
       .send({
         email: 'logout@example.com',
         password: 'StrongPass123!',
-        policyAccepted: true,
       })
       .expect(201);
 
@@ -107,7 +91,6 @@ describe('AuthController (e2e)', () => {
       .send({
         email: 'invalid@example.com',
         password: 'StrongPass123!',
-        policyAccepted: true,
       })
       .expect(201);
 
@@ -126,7 +109,6 @@ describe('AuthController (e2e)', () => {
       .send({
         email: 'refresh@example.com',
         password: 'StrongPass123!',
-        policyAccepted: true,
       })
       .expect(201);
 
@@ -179,7 +161,6 @@ describe('AuthController (e2e)', () => {
         .send({
           email: 'pwreset@example.com',
           password: 'OldPass123!',
-          policyAccepted: true,
         })
         .expect(201);
 
@@ -215,7 +196,6 @@ describe('AuthController (e2e)', () => {
         .send({
           email: 'oldpass@example.com',
           password: 'OldPass123!',
-          policyAccepted: true,
         })
         .expect(201);
 
@@ -246,7 +226,6 @@ describe('AuthController (e2e)', () => {
         .send({
           email: 'sessionrevoke@example.com',
           password: 'OldPass123!',
-          policyAccepted: true,
         })
         .expect(201);
 
@@ -293,7 +272,6 @@ describe('AuthController (e2e)', () => {
         .send({
           email: 'singleuse@example.com',
           password: 'OldPass123!',
-          policyAccepted: true,
         })
         .expect(201);
 
@@ -324,7 +302,6 @@ describe('AuthController (e2e)', () => {
         .send({
           email: 'weakpw@example.com',
           password: 'OldPass123!',
-          policyAccepted: true,
         })
         .expect(201);
 
@@ -364,7 +341,6 @@ describe('AuthController (e2e)', () => {
         .send({
           email: 'expiredtoken@example.com',
           password: 'OldPass123!',
-          policyAccepted: true,
         })
         .expect(201);
 
@@ -404,7 +380,6 @@ describe('AuthController (e2e)', () => {
         .send({
           email: 'sessions-e2e@example.com',
           password: 'StrongPass123!',
-          policyAccepted: true,
         })
         .expect(201);
 
@@ -446,7 +421,6 @@ describe('AuthController (e2e)', () => {
         .send({
           email: 'revoke-e2e@example.com',
           password: 'StrongPass123!',
-          policyAccepted: true,
         })
         .expect(201);
 
@@ -481,7 +455,6 @@ describe('AuthController (e2e)', () => {
         .send({
           email: 'revoke404@example.com',
           password: 'StrongPass123!',
-          policyAccepted: true,
         })
         .expect(201);
 
@@ -519,7 +492,6 @@ describe('AuthController (e2e)', () => {
         .send({
           email: 'revoke-current@example.com',
           password: 'StrongPass123!',
-          policyAccepted: true,
         })
         .expect(201);
 
@@ -560,15 +532,16 @@ describe('AuthController (e2e)', () => {
     beforeAll(async () => {
       await request(app.getHttpServer())
         .post('/v1/auth/register')
+        .set('x-forwarded-for', '10.0.1.1')
         .send({
           email: accountEmail,
           password: accountPassword,
-          policyAccepted: true,
         })
         .expect(201);
 
       const loginRes = await request(app.getHttpServer())
         .post('/v1/auth/login')
+        .set('x-forwarded-for', '10.0.1.1')
         .send({ email: accountEmail, password: accountPassword })
         .expect(200);
 
@@ -652,94 +625,6 @@ describe('AuthController (e2e)', () => {
     });
   });
 
-  describe('Consent', () => {
-    const consentEmail = 'consent-policy@example.com';
-    const consentPassword = 'StrongPass123!';
-    let consentToken: string;
-
-    beforeAll(async () => {
-      await request(app.getHttpServer())
-        .post('/v1/auth/register')
-        .send({
-          email: consentEmail,
-          password: consentPassword,
-          policyAccepted: true,
-        })
-        .expect(201);
-
-      const loginRes = await request(app.getHttpServer())
-        .post('/v1/auth/login')
-        .send({ email: consentEmail, password: consentPassword })
-        .expect(200);
-
-      consentToken = loginRes.body.data.accessToken as string;
-    });
-
-    it('GET /consent/status without token → 401 AUTH_UNAUTHORIZED', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/v1/consent/status')
-        .expect(401);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
-    });
-
-    it('GET /consent/status with invalid token → 401 AUTH_UNAUTHORIZED', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/v1/consent/status')
-        .set('Authorization', 'Bearer invalid-token-xyz')
-        .expect(401);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
-    });
-
-    it('GET /consent/status with valid token → 200, both policies pending', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/v1/consent/status')
-        .set('Authorization', `Bearer ${consentToken}`)
-        .expect(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.hasPending).toBe(true);
-      expect(res.body.data.policies).toHaveLength(2);
-      for (const policy of res.body.data.policies as Array<{
-        accepted: boolean;
-      }>) {
-        expect(policy.accepted).toBe(false);
-      }
-      expect(typeof res.body.correlationId).toBe('string');
-    });
-
-    it('POST /consent/accept without token → 401 AUTH_UNAUTHORIZED', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/v1/consent/accept')
-        .send({ policyTypes: ['terms', 'privacy'] })
-        .expect(401);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
-    });
-
-    it('POST /consent/accept all → 200, GET status shows hasPending false', async () => {
-      const acceptRes = await request(app.getHttpServer())
-        .post('/v1/consent/accept')
-        .set('Authorization', `Bearer ${consentToken}`)
-        .send({ policyTypes: ['terms', 'privacy'] })
-        .expect(200);
-      expect(acceptRes.body.success).toBe(true);
-      expect(acceptRes.body.data.hasPending).toBe(false);
-      expect(typeof acceptRes.body.correlationId).toBe('string');
-
-      const statusRes = await request(app.getHttpServer())
-        .get('/v1/consent/status')
-        .set('Authorization', `Bearer ${consentToken}`)
-        .expect(200);
-      expect(statusRes.body.data.hasPending).toBe(false);
-      for (const policy of statusRes.body.data.policies as Array<{
-        accepted: boolean;
-      }>) {
-        expect(policy.accepted).toBe(true);
-      }
-    });
-  });
-
   describe('Profiles', () => {
     const profilesEmail = 'profiles@example.com';
     const profilesPassword = 'StrongPass123!';
@@ -750,15 +635,16 @@ describe('AuthController (e2e)', () => {
     beforeAll(async () => {
       await request(app.getHttpServer())
         .post('/v1/auth/register')
+        .set('x-forwarded-for', '10.0.1.3')
         .send({
           email: profilesEmail,
           password: profilesPassword,
-          policyAccepted: true,
         })
         .expect(201);
 
       const loginRes = await request(app.getHttpServer())
         .post('/v1/auth/login')
+        .set('x-forwarded-for', '10.0.1.3')
         .send({ email: profilesEmail, password: profilesPassword })
         .expect(200);
 
@@ -947,7 +833,6 @@ describe('AuthController (e2e)', () => {
         .send({
           email: limitEmail,
           password: limitPassword,
-          policyAccepted: true,
         })
         .expect(201);
 
@@ -979,6 +864,410 @@ describe('AuthController (e2e)', () => {
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('PROFILE_LIMIT_EXCEEDED');
       expect(res.body.error.message).toContain('Free plan');
+    });
+  });
+
+  describe('Communication Preferences', () => {
+    const commPrefEmail = 'comm-prefs@example.com';
+    const commPrefPassword = 'StrongPass123!';
+    let commPrefToken: string;
+
+    beforeAll(async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .set('x-forwarded-for', '10.0.1.4')
+        .send({
+          email: commPrefEmail,
+          password: commPrefPassword,
+        })
+        .expect(201);
+
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .set('x-forwarded-for', '10.0.1.4')
+        .send({ email: commPrefEmail, password: commPrefPassword })
+        .expect(200);
+
+      commPrefToken = loginRes.body.data.accessToken as string;
+    });
+
+    it('GET /account/communication-preferences with valid token → 200, returns all 3 categories with mandatory flags', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/account/communication-preferences')
+        .set('Authorization', `Bearer ${commPrefToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(typeof res.body.correlationId).toBe('string');
+      const prefs = res.body.data.preferences as Array<{
+        category: string;
+        enabled: boolean;
+        mandatory: boolean;
+      }>;
+      expect(prefs).toHaveLength(3);
+      const security = prefs.find((p) => p.category === 'security')!;
+      expect(security.enabled).toBe(true);
+      expect(security.mandatory).toBe(true);
+      const compliance = prefs.find((p) => p.category === 'compliance')!;
+      expect(compliance.enabled).toBe(true);
+      expect(compliance.mandatory).toBe(true);
+      const product = prefs.find((p) => p.category === 'product')!;
+      expect(product.enabled).toBe(true);
+      expect(product.mandatory).toBe(false);
+    });
+
+    it('PATCH /account/communication-preferences with { productEmails: false } → 200, product disabled', async () => {
+      const res = await request(app.getHttpServer())
+        .patch('/v1/account/communication-preferences')
+        .set('Authorization', `Bearer ${commPrefToken}`)
+        .send({ productEmails: false })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      const prefs = res.body.data.preferences as Array<{
+        category: string;
+        enabled: boolean;
+      }>;
+      const product = prefs.find((p) => p.category === 'product')!;
+      expect(product.enabled).toBe(false);
+      const security = prefs.find((p) => p.category === 'security')!;
+      expect(security.enabled).toBe(true);
+    });
+
+    it('PATCH preference persists — GET after PATCH returns updated value', async () => {
+      await request(app.getHttpServer())
+        .patch('/v1/account/communication-preferences')
+        .set('Authorization', `Bearer ${commPrefToken}`)
+        .send({ productEmails: true })
+        .expect(200);
+
+      const res = await request(app.getHttpServer())
+        .get('/v1/account/communication-preferences')
+        .set('Authorization', `Bearer ${commPrefToken}`)
+        .expect(200);
+
+      const prefs = res.body.data.preferences as Array<{
+        category: string;
+        enabled: boolean;
+      }>;
+      const product = prefs.find((p) => p.category === 'product')!;
+      expect(product.enabled).toBe(true);
+    });
+
+    it('GET /account/communication-preferences without token → 401 AUTH_UNAUTHORIZED', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/account/communication-preferences')
+        .expect(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+    });
+
+    it('PATCH /account/communication-preferences without token → 401 AUTH_UNAUTHORIZED', async () => {
+      const res = await request(app.getHttpServer())
+        .patch('/v1/account/communication-preferences')
+        .send({ productEmails: false })
+        .expect(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+    });
+  });
+
+  describe('Data Export and Account Closure', () => {
+    const dataRightsEmail = 'data-rights@example.com';
+    const dataRightsPassword = 'StrongPass123!';
+    let dataRightsToken: string;
+
+    beforeAll(async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .set('x-forwarded-for', '10.0.2.1')
+        .send({
+          email: dataRightsEmail,
+          password: dataRightsPassword,
+        })
+        .expect(201);
+
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .set('x-forwarded-for', '10.0.2.1')
+        .send({ email: dataRightsEmail, password: dataRightsPassword })
+        .expect(200);
+
+      dataRightsToken = loginRes.body.data.accessToken as string;
+    });
+
+    it('POST /account/data-export-requests → 201 with pending request', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/v1/account/data-export-requests')
+        .set('Authorization', `Bearer ${dataRightsToken}`)
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.requestId).toBeDefined();
+      expect(res.body.data.status).toBe('pending');
+      expect(res.body.data.createdAt).toBeDefined();
+    });
+
+    it('POST /account/data-export-requests → GET by requestId → 200 with completed status', async () => {
+      const createRes = await request(app.getHttpServer())
+        .post('/v1/account/data-export-requests')
+        .set('Authorization', `Bearer ${dataRightsToken}`)
+        .expect(201);
+
+      const { requestId } = createRes.body.data as { requestId: string };
+
+      const getRes = await request(app.getHttpServer())
+        .get(`/v1/account/data-export-requests/${requestId}`)
+        .set('Authorization', `Bearer ${dataRightsToken}`)
+        .expect(200);
+
+      expect(getRes.body.success).toBe(true);
+      expect(getRes.body.data.status).toBe('completed');
+      expect(getRes.body.data.downloadUrl).toBeDefined();
+    });
+
+    it('GET /account/data-export-requests/:requestId with wrong requestId → 404 EXPORT_REQUEST_NOT_FOUND', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/account/data-export-requests/nonexistent-id')
+        .set('Authorization', `Bearer ${dataRightsToken}`)
+        .expect(404);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('EXPORT_REQUEST_NOT_FOUND');
+    });
+
+    it('POST /account/data-export-requests without token → 401 AUTH_UNAUTHORIZED', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/v1/account/data-export-requests')
+        .expect(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+    });
+
+    it('GET /account/data-export-requests/:requestId without token → 401 AUTH_UNAUTHORIZED', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/account/data-export-requests/some-id')
+        .expect(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+    });
+
+    it('GET /account/closure-request → 200 with null status when no closure requested', async () => {
+      const closureEmail = 'pre-closure@example.com';
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .set('x-forwarded-for', '10.0.2.2')
+        .send({
+          email: closureEmail,
+          password: dataRightsPassword,
+        })
+        .expect(201);
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .set('x-forwarded-for', '10.0.2.2')
+        .send({ email: closureEmail, password: dataRightsPassword })
+        .expect(200);
+      const token = loginRes.body.data.accessToken as string;
+
+      const res = await request(app.getHttpServer())
+        .get('/v1/account/closure-request')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.status).toBeNull();
+    });
+
+    it('POST /account/closure-requests → 201, sessions invalidated', async () => {
+      const closureEmail = 'closure-test@example.com';
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .set('x-forwarded-for', '10.0.2.3')
+        .send({
+          email: closureEmail,
+          password: dataRightsPassword,
+        })
+        .expect(201);
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .set('x-forwarded-for', '10.0.2.3')
+        .send({ email: closureEmail, password: dataRightsPassword })
+        .expect(200);
+      const token = loginRes.body.data.accessToken as string;
+
+      const res = await request(app.getHttpServer())
+        .post('/v1/account/closure-requests')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ confirmClosure: true })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.requestId).toBeDefined();
+      expect(res.body.data.status).toBe('completed');
+      expect(res.body.data.message).toContain('closure');
+
+      const afterClose = await request(app.getHttpServer())
+        .get('/v1/account/profile')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(401);
+      expect(afterClose.body.success).toBe(false);
+    });
+
+    it('GET /account/closure-request → 200 with completed status after closure processed', async () => {
+      const closureEmail = 'closure-get@example.com';
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .set('x-forwarded-for', '10.0.2.4')
+        .send({
+          email: closureEmail,
+          password: dataRightsPassword,
+        })
+        .expect(201);
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .set('x-forwarded-for', '10.0.2.4')
+        .send({ email: closureEmail, password: dataRightsPassword })
+        .expect(200);
+      const token = loginRes.body.data.accessToken as string;
+
+      await request(app.getHttpServer())
+        .post('/v1/account/closure-requests')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ confirmClosure: true })
+        .expect(201);
+
+      const loginRes2 = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .set('x-forwarded-for', '10.0.2.4')
+        .send({ email: closureEmail, password: dataRightsPassword })
+        .expect(200);
+      const newToken = loginRes2.body.data.accessToken as string;
+
+      const res = await request(app.getHttpServer())
+        .get('/v1/account/closure-request')
+        .set('Authorization', `Bearer ${newToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.status).toBe('completed');
+    });
+
+    it('POST /account/closure-requests with confirmClosure: false → 400 CLOSURE_CONFIRMATION_REQUIRED', async () => {
+      const closureEmail = 'closure-reject@example.com';
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .set('x-forwarded-for', '10.0.2.5')
+        .send({
+          email: closureEmail,
+          password: dataRightsPassword,
+        })
+        .expect(201);
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .set('x-forwarded-for', '10.0.2.5')
+        .send({ email: closureEmail, password: dataRightsPassword })
+        .expect(200);
+      const token = loginRes.body.data.accessToken as string;
+
+      const res = await request(app.getHttpServer())
+        .post('/v1/account/closure-requests')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ confirmClosure: false })
+        .expect(400);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('CLOSURE_CONFIRMATION_REQUIRED');
+    });
+
+    it('POST /account/closure-requests without token → 401 AUTH_UNAUTHORIZED', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/v1/account/closure-requests')
+        .send({ confirmClosure: true })
+        .expect(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+    });
+
+    it('GET /account/closure-request without token → 401 AUTH_UNAUTHORIZED', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/account/closure-request')
+        .expect(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+    });
+  });
+
+  describe('Restriction Status', () => {
+    const restrictionEmail = 'restriction-test@example.com';
+    const restrictionPassword = 'StrongPass123!';
+    let restrictionToken: string;
+
+    beforeAll(async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .set('x-forwarded-for', '10.0.3.1')
+        .send({
+          email: restrictionEmail,
+          password: restrictionPassword,
+        })
+        .expect(201);
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .set('x-forwarded-for', '10.0.3.1')
+        .send({ email: restrictionEmail, password: restrictionPassword })
+        .expect(200);
+      restrictionToken = loginRes.body.data.accessToken as string;
+    });
+
+    it('GET /account/restriction-status with valid token → 200 and isRestricted false', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/account/restriction-status')
+        .set('Authorization', `Bearer ${restrictionToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.isRestricted).toBe(false);
+      expect(typeof res.body.correlationId).toBe('string');
+    });
+
+    it('GET /account/restriction-status without token → 401 AUTH_UNAUTHORIZED', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/v1/account/restriction-status')
+        .expect(401);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+    });
+
+    it('GET /account/restriction-status → 200 with isRestricted true, rationale, nextSteps when user is restricted', async () => {
+      const profileRes = await request(app.getHttpServer())
+        .get('/v1/account/profile')
+        .set('Authorization', `Bearer ${restrictionToken}`)
+        .expect(200);
+      const userId = profileRes.body.data.id as string;
+
+      const accountService = app.get(AccountService);
+      (accountService as unknown as { restrictionStore: Map<string, { rationale: string; nextSteps: string }> })
+        .restrictionStore.set(userId, {
+          rationale: 'Suspicious activity detected on your account.',
+          nextSteps: 'Contact support at support@doclyzer.com to resolve.',
+        });
+
+      const res = await request(app.getHttpServer())
+        .get('/v1/account/restriction-status')
+        .set('Authorization', `Bearer ${restrictionToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.isRestricted).toBe(true);
+      expect(typeof res.body.data.rationale).toBe('string');
+      expect(res.body.data.rationale.length).toBeGreaterThan(0);
+      expect(typeof res.body.data.nextSteps).toBe('string');
+      expect(res.body.data.nextSteps.length).toBeGreaterThan(0);
+
+      // clean up so other tests in this block still see isRestricted: false
+      (accountService as unknown as { restrictionStore: Map<string, unknown> })
+        .restrictionStore.delete(userId);
     });
   });
 

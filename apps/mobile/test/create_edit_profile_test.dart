@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:mobile/features/profiles/in_memory_profiles_repository.dart';
 import 'package:mobile/features/profiles/profiles_repository.dart';
 import 'package:mobile/features/profiles/screens/create_edit_profile_screen.dart';
+import 'fakes.dart';
 
 Widget _wrapCreate(
-  InMemoryProfilesRepository repo, {
+  ProfilesRepository repo, {
   VoidCallback? onComplete,
   VoidCallback? onBack,
 }) {
@@ -20,7 +20,7 @@ Widget _wrapCreate(
 }
 
 Widget _wrapEdit(
-  InMemoryProfilesRepository repo,
+  ProfilesRepository repo,
   Profile profile, {
   VoidCallback? onComplete,
   VoidCallback? onBack,
@@ -39,7 +39,7 @@ void main() {
   group('Create mode', () {
     testWidgets('renders empty form with Create Profile button',
         (WidgetTester tester) async {
-      final repo = InMemoryProfilesRepository();
+      final repo = FakeProfilesRepository();
       await tester.pumpWidget(_wrapCreate(repo));
 
       expect(find.byKey(const Key('profile-name-field')), findsOneWidget);
@@ -50,7 +50,7 @@ void main() {
 
     testWidgets('submitting with empty name shows error',
         (WidgetTester tester) async {
-      final repo = InMemoryProfilesRepository();
+      final repo = FakeProfilesRepository();
       await tester.pumpWidget(_wrapCreate(repo));
 
       await tester.tap(find.byKey(const Key('profile-submit')));
@@ -62,7 +62,7 @@ void main() {
 
     testWidgets('submitting with valid name calls createProfile and onComplete',
         (WidgetTester tester) async {
-      final repo = InMemoryProfilesRepository();
+      final repo = FakeProfilesRepository();
       var completed = false;
 
       await tester.pumpWidget(
@@ -81,26 +81,58 @@ void main() {
 
     testWidgets('submitting with optional fields creates profile correctly',
         (WidgetTester tester) async {
-      final repo = InMemoryProfilesRepository();
+      final repo = FakeProfilesRepository();
 
       await tester.pumpWidget(_wrapCreate(repo));
 
       await tester.enterText(
           find.byKey(const Key('profile-name-field')), 'Amma');
       await tester.enterText(
-          find.byKey(const Key('profile-dob-field')), '1960-05-15');
-      await tester.enterText(
           find.byKey(const Key('profile-relation-field')), 'parent');
       await tester.tap(find.byKey(const Key('profile-submit')));
       await tester.pumpAndSettle();
 
       final profiles = await repo.getProfiles();
-      expect(profiles.first.dateOfBirth, equals('1960-05-15'));
       expect(profiles.first.relation, equals('parent'));
     });
 
+    testWidgets('tapping DOB field opens date picker', (WidgetTester tester) async {
+      final repo = FakeProfilesRepository();
+      await tester.pumpWidget(_wrapCreate(repo));
+
+      await tester.tap(find.byKey(const Key('profile-dob-field')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+    });
+
+    testWidgets('selecting date from picker stores DOB on profile',
+        (WidgetTester tester) async {
+      final repo = FakeProfilesRepository();
+      await tester.pumpWidget(_wrapCreate(repo));
+
+      await tester.enterText(
+          find.byKey(const Key('profile-name-field')), 'Amma');
+      await tester.tap(find.byKey(const Key('profile-dob-field')));
+      await tester.pumpAndSettle();
+
+      final picker = tester.widget<DatePickerDialog>(
+          find.byType(DatePickerDialog));
+      final initialDate = picker.initialDate!;
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('profile-submit')));
+      await tester.pumpAndSettle();
+
+      final profiles = await repo.getProfiles();
+      final expectedDob =
+          '${initialDate.year.toString().padLeft(4, '0')}-${initialDate.month.toString().padLeft(2, '0')}-${initialDate.day.toString().padLeft(2, '0')}';
+      expect(profiles.first.dateOfBirth, equals(expectedDob));
+    });
+
     testWidgets('tapping back calls onBack', (WidgetTester tester) async {
-      final repo = InMemoryProfilesRepository();
+      final repo = FakeProfilesRepository();
       var called = false;
 
       await tester
@@ -113,7 +145,7 @@ void main() {
     });
 
     testWidgets('shows upgrade message when at profile limit', (WidgetTester tester) async {
-      final repo = InMemoryProfilesRepository(maxProfiles: 1);
+      final repo = FakeProfilesRepository(maxProfiles: 1);
       await repo.createProfile(name: 'Existing');
 
       await tester.pumpWidget(_wrapCreate(repo));
@@ -130,7 +162,7 @@ void main() {
   group('Edit mode', () {
     testWidgets('renders form pre-filled with existing profile data',
         (WidgetTester tester) async {
-      final repo = InMemoryProfilesRepository();
+      final repo = FakeProfilesRepository();
       final profile = await repo.createProfile(
         name: 'Vishnu',
         relation: 'self',
@@ -149,7 +181,7 @@ void main() {
 
     testWidgets('shows Update Profile button in edit mode',
         (WidgetTester tester) async {
-      final repo = InMemoryProfilesRepository();
+      final repo = FakeProfilesRepository();
       final profile = await repo.createProfile(name: 'Vishnu');
 
       await tester.pumpWidget(_wrapEdit(repo, profile));
@@ -159,7 +191,7 @@ void main() {
 
     testWidgets('submitting calls updateProfile and onComplete',
         (WidgetTester tester) async {
-      final repo = InMemoryProfilesRepository();
+      final repo = FakeProfilesRepository();
       final profile = await repo.createProfile(name: 'Vishnu');
       var completed = false;
 

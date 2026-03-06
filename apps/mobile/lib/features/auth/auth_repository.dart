@@ -33,7 +33,6 @@ abstract class AuthRepository {
   Future<RegisterResult> register({
     required String email,
     required String password,
-    required bool policyAccepted,
   });
 
   Future<LoginResult> login({

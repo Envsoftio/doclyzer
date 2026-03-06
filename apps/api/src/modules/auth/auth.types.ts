@@ -1,7 +1,6 @@
 export interface RegisterRequest {
   email: string;
   password: string;
-  policyAccepted: boolean;
 }
 
 export interface RegisterResponse {

@@ -27,9 +27,14 @@ _This file contains critical rules and patterns that AI agents must follow when 
   - `synchronize: false` in all environments except local dev
   - Standalone `src/database/data-source.ts` exports a bare `DataSource` using
     `process.env` directly (required for TypeORM CLI — NestJS DI is unavailable there)
-  - Migrations at `src/database/migrations/`; npm scripts: `migration:generate`,
-    `migration:run`, `migration:revert`
-- **Entity convention:** `src/modules/<domain>/entities/<name>.entity.ts`
+  - Migrations at `src/database/migrations/`; registered via
+    `src/database/migrations/index.ts` (import there, nowhere else); npm scripts:
+    `migration:generate`, `migration:run`, `migration:revert`
+  - **Migration generate usage:** `npm run migration:generate -- src/database/migrations/DescriptiveName`
+    (the path arg is passed after `--`; TypeORM appends a timestamp prefix automatically)
+- **Entity convention:** shared/cross-domain entities live in
+  `src/database/entities/<name>.entity.ts`; domain-specific entities (if introduced
+  later) would live in `src/modules/<domain>/entities/<name>.entity.ts`
 - **Config:** `@nestjs/config` global; `ConfigModule.forRoot({ isGlobal: true,
   validate: validateSync })` in `AppModule`; per-domain config factories via
   `registerAs('database', ...)`, `registerAs('redis', ...)`, `registerAs('auth', ...)`;
@@ -54,9 +59,9 @@ _This file contains critical rules and patterns that AI agents must follow when 
   integration tests in `integration_test/`)
 
 ### Infrastructure
-- **Database:** PostgreSQL 16-alpine — source of truth for all persistent state
+- **Database:** PostgreSQL `postgres:16-alpine` — source of truth for all persistent state
 - **Cache:** Redis 7-alpine — ephemeral only; never store authoritative state or PHI
-- **Adminer:** port 8080, `ops` docker-compose profile only
+- **DB access from client:** SSH tunnel, e.g. `ssh -L 5432:localhost:5432 user@server` then connect to localhost
 
 ### Web (apps/web — not yet scaffolded)
 - **Framework:** Nuxt v4.x

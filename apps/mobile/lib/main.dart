@@ -1,24 +1,32 @@
 import 'package:flutter/material.dart';
 
-import 'features/account/account_repository.dart';
-import 'features/account/in_memory_account_repository.dart';
+import 'core/api_client.dart';
+import 'core/api_config.dart';
+import 'core/token_storage.dart';
+import 'features/account/api_account_repository.dart';
+import 'features/account/api_communication_preferences_repository.dart';
+import 'features/account/api_data_rights_repository.dart';
+import 'features/account/api_restriction_repository.dart';
 import 'features/account/screens/account_profile_screen.dart';
+import 'features/account/screens/communication_preferences_screen.dart';
+import 'features/account/screens/data_rights_screen.dart';
+import 'features/auth/api_auth_repository.dart';
+import 'features/account/account_repository.dart';
+import 'features/account/communication_preferences_repository.dart';
+import 'features/account/data_rights_repository.dart';
+import 'features/account/restriction_repository.dart';
+import 'features/auth/api_sessions_repository.dart';
 import 'features/auth/auth_repository.dart';
+import 'features/auth/sessions_repository.dart';
 import 'features/auth/forgot_password/forgot_password_screen.dart';
-import 'features/auth/in_memory_auth_repository.dart';
 import 'features/auth/reset_password/reset_password_screen.dart';
-import 'features/auth/in_memory_sessions_repository.dart';
 import 'features/auth/screens/home_screen.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/session_list_screen.dart';
 import 'features/auth/screens/signup_screen.dart';
-import 'features/auth/sessions_repository.dart';
 import 'features/auth/screens/verification_screen.dart';
-import 'features/consent/consent_repository.dart';
-import 'features/consent/in_memory_consent_repository.dart';
-import 'features/consent/screens/policy_acceptance_screen.dart';
-import 'features/profiles/in_memory_profiles_repository.dart';
 import 'features/profiles/profiles_repository.dart';
+import 'features/profiles/api_profiles_repository.dart';
 import 'features/profiles/screens/create_edit_profile_screen.dart';
 import 'features/profiles/screens/profile_list_screen.dart';
 
@@ -34,73 +42,104 @@ enum _AuthView {
   forgotPassword,
   resetPassword,
   accountProfile,
-  policyAcceptance,
   profileList,
   sessionList,
   createProfile,
   editProfile,
+  communicationPreferences,
+  dataRights,
 }
 
 class DoclyzerApp extends StatefulWidget {
   const DoclyzerApp({
     super.key,
-    AuthRepository? authRepository,
-    AccountRepository? accountRepository,
-    ConsentRepository? consentRepository,
-    ProfilesRepository? profilesRepository,
-    SessionsRepository? sessionsRepository,
-  })  : _authRepository = authRepository,
-        _accountRepository = accountRepository,
-        _consentRepository = consentRepository,
-        _profilesRepository = profilesRepository,
-        _sessionsRepository = sessionsRepository;
+    this.authRepository,
+    this.accountRepository,
+    this.profilesRepository,
+    this.sessionsRepository,
+    this.communicationPreferencesRepository,
+    this.dataRightsRepository,
+    this.restrictionRepository,
+  });
 
-  final AuthRepository? _authRepository;
-  final AccountRepository? _accountRepository;
-  final ConsentRepository? _consentRepository;
-  final ProfilesRepository? _profilesRepository;
-  final SessionsRepository? _sessionsRepository;
+  final AuthRepository? authRepository;
+  final AccountRepository? accountRepository;
+  final ProfilesRepository? profilesRepository;
+  final SessionsRepository? sessionsRepository;
+  final CommunicationPreferencesRepository? communicationPreferencesRepository;
+  final DataRightsRepository? dataRightsRepository;
+  final RestrictionRepository? restrictionRepository;
 
   @override
   State<DoclyzerApp> createState() => _DoclyzerAppState();
 }
 
 class _DoclyzerAppState extends State<DoclyzerApp> {
-  late final AuthRepository _authRepository;
+  ApiClient? _apiClient;
+  ApiAuthRepository? _authRepository;
   late final AccountRepository _accountRepository;
-  late final ConsentRepository _consentRepository;
   late final ProfilesRepository _profilesRepository;
   late final SessionsRepository _sessionsRepository;
+  late final CommunicationPreferencesRepository _communicationPreferencesRepository;
+  late final DataRightsRepository _dataRightsRepository;
+  late final RestrictionRepository _restrictionRepository;
+
   _AuthView _authView = _AuthView.login;
   String? _prefillEmail;
   Profile? _editingProfile;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _authRepository = widget._authRepository ?? InMemoryAuthRepository();
-    _accountRepository =
-        widget._accountRepository ?? InMemoryAccountRepository();
-    _consentRepository =
-        widget._consentRepository ?? InMemoryConsentRepository();
-    _profilesRepository =
-        widget._profilesRepository ?? InMemoryProfilesRepository();
-    _sessionsRepository =
-        widget._sessionsRepository ?? InMemorySessionsRepository();
+    if (widget.authRepository != null) {
+      _accountRepository = widget.accountRepository!;
+      _profilesRepository = widget.profilesRepository!;
+      _sessionsRepository = widget.sessionsRepository!;
+      _communicationPreferencesRepository =
+          widget.communicationPreferencesRepository!;
+      _dataRightsRepository = widget.dataRightsRepository!;
+      _restrictionRepository = widget.restrictionRepository!;
+      setState(() => _initialized = true);
+    } else {
+      final tokenStorage = TokenStorage();
+      _apiClient = ApiClient(
+        baseUrl: apiBaseUrl,
+        onRefreshToken: () => _authRepository!.refreshTokens(),
+      );
+      _authRepository = ApiAuthRepository(_apiClient!, tokenStorage);
+      _accountRepository = ApiAccountRepository(_apiClient!);
+      _profilesRepository = ApiProfilesRepository(_apiClient!);
+      _sessionsRepository = ApiSessionsRepository(_apiClient!);
+      _communicationPreferencesRepository =
+          ApiCommunicationPreferencesRepository(_apiClient!);
+      _dataRightsRepository = ApiDataRightsRepository(_apiClient!);
+      _restrictionRepository = ApiRestrictionRepository(_apiClient!);
+      _initAuth();
+    }
   }
 
-  Future<void> _register(
-    String email,
-    String password,
-    bool policyAccepted,
-  ) async {
-    final result = await _authRepository.register(
+  Future<void> _initAuth() async {
+    final restored = await _authRepository!.restoreSession();
+    if (restored && mounted) {
+      setState(() {
+        _authView = _AuthView.home;
+        _initialized = true;
+      });
+    } else if (mounted) {
+      setState(() => _initialized = true);
+    }
+  }
+
+  AuthRepository get _auth => _authRepository ?? widget.authRepository!;
+
+  Future<void> _register(String email, String password) async {
+    final result = await _auth.register(
       email: email,
       password: password,
-      policyAccepted: policyAccepted,
     );
 
-    if (result.requiresVerification) {
+    if (result.requiresVerification && mounted) {
       setState(() {
         _prefillEmail = email;
         _authView = _AuthView.verification;
@@ -108,45 +147,56 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
       return;
     }
 
-    setState(() {
-      _prefillEmail = email;
-      _authView = _AuthView.login;
-    });
+    if (mounted) {
+      setState(() {
+        _prefillEmail = email;
+        _authView = _AuthView.login;
+      });
+    }
   }
 
   Future<void> _login(String email, String password) async {
-    await _authRepository.login(email: email, password: password);
-    final consentStatus = await _consentRepository.getStatus();
-    setState(() {
-      _authView = consentStatus.hasPending
-          ? _AuthView.policyAcceptance
-          : _AuthView.home;
-    });
+    await _auth.login(email: email, password: password);
+    if (mounted) {
+      setState(() => _authView = _AuthView.home);
+    }
   }
 
   Future<void> _logout() async {
-    await _authRepository.logout();
-    setState(() {
-      _authView = _AuthView.login;
-    });
+    await _auth.logout();
+    if (mounted) {
+      setState(() => _authView = _AuthView.login);
+    }
   }
 
   Future<void> _requestPasswordReset(String email) async {
-    await _authRepository.requestPasswordReset(email: email);
+    await _auth.requestPasswordReset(email: email);
   }
 
   Future<void> _confirmPasswordReset(String token, String newPassword) async {
-    await _authRepository.confirmPasswordReset(
+    await _auth.confirmPasswordReset(
       token: token,
       newPassword: newPassword,
     );
-    setState(() {
-      _authView = _AuthView.login;
-    });
+    if (mounted) {
+      setState(() => _authView = _AuthView.login);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_initialized) {
+      return MaterialApp(
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0A7C8C)),
+          useMaterial3: true,
+        ),
+        home: const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
     return MaterialApp(
       title: 'Doclyzer',
       theme: ThemeData(
@@ -157,96 +207,70 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
         _AuthView.login => LoginScreen(
             onLogin: _login,
             onGoToSignup: () {
-              setState(() {
-                _authView = _AuthView.signup;
-              });
+              setState(() => _authView = _AuthView.signup);
             },
             onGoToForgotPassword: () {
-              setState(() {
-                _authView = _AuthView.forgotPassword;
-              });
+              setState(() => _authView = _AuthView.forgotPassword);
             },
             initialEmail: _prefillEmail,
           ),
         _AuthView.signup => SignupScreen(
             onSignup: _register,
             onGoToLogin: () {
-              setState(() {
-                _authView = _AuthView.login;
-              });
+              setState(() => _authView = _AuthView.login);
             },
           ),
         _AuthView.verification => VerificationScreen(
             onContinueToLogin: () {
-              setState(() {
-                _authView = _AuthView.login;
-              });
+              setState(() => _authView = _AuthView.login);
             },
           ),
         _AuthView.home => HomeScreen(
             onLogout: _logout,
             onGoToAccount: () {
-              setState(() {
-                _authView = _AuthView.accountProfile;
-              });
+              setState(() => _authView = _AuthView.accountProfile);
             },
             onGoToProfiles: () {
-              setState(() {
-                _authView = _AuthView.profileList;
-              });
+              setState(() => _authView = _AuthView.profileList);
             },
             onGoToSessions: () {
-              setState(() {
-                _authView = _AuthView.sessionList;
-              });
+              setState(() => _authView = _AuthView.sessionList);
             },
+            onGoToCommunicationPreferences: () {
+              setState(() => _authView = _AuthView.communicationPreferences);
+            },
+            onGoToDataRights: () {
+              setState(() => _authView = _AuthView.dataRights);
+            },
+            restrictionRepository: _restrictionRepository,
           ),
         _AuthView.accountProfile => AccountProfileScreen(
             accountRepository: _accountRepository,
+            restrictionRepository: _restrictionRepository,
             onBack: () {
-              setState(() {
-                _authView = _AuthView.home;
-              });
+              setState(() => _authView = _AuthView.home);
             },
           ),
         _AuthView.forgotPassword => ForgotPasswordScreen(
             onSubmit: _requestPasswordReset,
             onGoToLogin: () {
-              setState(() {
-                _authView = _AuthView.login;
-              });
+              setState(() => _authView = _AuthView.login);
             },
             onResetSent: () {
-              setState(() {
-                _authView = _AuthView.resetPassword;
-              });
+              setState(() => _authView = _AuthView.resetPassword);
             },
           ),
         _AuthView.resetPassword => ResetPasswordScreen(
             onReset: _confirmPasswordReset,
             onGoToLogin: () {
-              setState(() {
-                _authView = _AuthView.login;
-              });
-            },
-          ),
-        _AuthView.policyAcceptance => PolicyAcceptanceScreen(
-            consentRepository: _consentRepository,
-            onComplete: () {
-              setState(() {
-                _authView = _AuthView.home;
-              });
+              setState(() => _authView = _AuthView.login);
             },
           ),
         _AuthView.sessionList => SessionListScreen(
             sessionsRepository: _sessionsRepository,
-            onLogout: () {
-              _logout();
-            },
+            onLogout: _logout,
             onBack: () {
-              setState(() {
-                _authView = _AuthView.home;
-              });
+              setState(() => _authView = _AuthView.home);
             },
           ),
         _AuthView.profileList => ProfileListScreen(
@@ -264,22 +288,16 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
               });
             },
             onBack: () {
-              setState(() {
-                _authView = _AuthView.home;
-              });
+              setState(() => _authView = _AuthView.home);
             },
           ),
         _AuthView.createProfile => CreateEditProfileScreen(
             profilesRepository: _profilesRepository,
             onComplete: () {
-              setState(() {
-                _authView = _AuthView.profileList;
-              });
+              setState(() => _authView = _AuthView.profileList);
             },
             onBack: () {
-              setState(() {
-                _authView = _AuthView.profileList;
-              });
+              setState(() => _authView = _AuthView.profileList);
             },
           ),
         _AuthView.editProfile => CreateEditProfileScreen(
@@ -296,6 +314,22 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
                 _editingProfile = null;
                 _authView = _AuthView.profileList;
               });
+            },
+          ),
+        _AuthView.communicationPreferences => CommunicationPreferencesScreen(
+            communicationPreferencesRepository:
+                _communicationPreferencesRepository,
+            onBack: () {
+              setState(() => _authView = _AuthView.home);
+            },
+          ),
+        _AuthView.dataRights => DataRightsScreen(
+            dataRightsRepository: _dataRightsRepository,
+            onBack: () {
+              setState(() => _authView = _AuthView.home);
+            },
+            onAccountClosed: () async {
+              await _logout();
             },
           ),
       },

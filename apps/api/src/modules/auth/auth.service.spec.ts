@@ -22,7 +22,6 @@ describe('AuthService', () => {
     await service.register({
       email: 'unit@example.com',
       password: 'StrongPass123!',
-      policyAccepted: true,
     });
 
     const login = await service.login({
@@ -37,22 +36,11 @@ describe('AuthService', () => {
     expect(() => service.logout(login.accessToken)).toThrow();
   });
 
-  it('requires policy acceptance to register', async () => {
-    await expect(
-      service.register({
-        email: 'policy@example.com',
-        password: 'StrongPass123!',
-        policyAccepted: false,
-      }),
-    ).rejects.toThrow();
-  });
-
   describe('token refresh', () => {
     it('rotates tokens and invalidates old refresh token', async () => {
       await service.register({
         email: 'refresh@example.com',
         password: 'StrongPass123!',
-        policyAccepted: true,
       });
 
       const { accessToken, refreshToken } = await service.login({
@@ -80,7 +68,7 @@ describe('AuthService', () => {
     const password = 'StrongPass123!';
 
     beforeEach(async () => {
-      await service.register({ email, password, policyAccepted: true });
+      await service.register({ email, password });
     });
 
     it('returns the AuthUser for a valid token', async () => {
@@ -164,7 +152,6 @@ describe('AuthService', () => {
       await service.register({
         email: 'sessions@example.com',
         password: 'StrongPass123!',
-        policyAccepted: true,
       });
       const loginRes = await service.login(
         { email: 'sessions@example.com', password: 'StrongPass123!' },
@@ -187,7 +174,6 @@ describe('AuthService', () => {
       await service.register({
         email: 'nosess@example.com',
         password: 'StrongPass123!',
-        policyAccepted: true,
       });
       const user = service.findUserByEmail('nosess@example.com');
       expect(user).toBeDefined();
@@ -199,7 +185,6 @@ describe('AuthService', () => {
       await service.register({
         email: 'current@example.com',
         password: 'StrongPass123!',
-        policyAccepted: true,
       });
       const loginRes = await service.login({
         email: 'current@example.com',
@@ -217,7 +202,6 @@ describe('AuthService', () => {
       await service.register({
         email: 'revoke@example.com',
         password: 'StrongPass123!',
-        policyAccepted: true,
       });
       const loginRes = await service.login({
         email: 'revoke@example.com',
@@ -243,7 +227,6 @@ describe('AuthService', () => {
       await service.register({
         email: 'revoke2@example.com',
         password: 'StrongPass123!',
-        policyAccepted: true,
       });
       const loginRes = await service.login({
         email: 'revoke2@example.com',
@@ -261,7 +244,6 @@ describe('AuthService', () => {
       await service.register({
         email: 'sid@example.com',
         password: 'StrongPass123!',
-        policyAccepted: true,
       });
       const loginRes = await service.login({
         email: 'sid@example.com',
@@ -280,7 +262,6 @@ describe('AuthService', () => {
       await service.register({
         email: 'sid2@example.com',
         password: 'StrongPass123!',
-        policyAccepted: true,
       });
       const loginRes = await service.login({
         email: 'sid2@example.com',

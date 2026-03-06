@@ -40,6 +40,13 @@ tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
 
 development_status:
+  epic-0: in-progress
+  0-1-typeorm-integration-database-entities-migrations: done
+  0-2-jwt-access-refresh-token-auth-db-backed-sessions: ready-for-dev
+  0-3-replace-all-in-memory-services-with-typeorm-repositories: ready-for-dev
+  0-4-e2e-test-infrastructure-with-real-test-database: ready-for-dev
+  epic-0-retrospective: optional
+
   epic-1: in-progress
   1-1-account-registration-login-logout: done
   1-2-password-recovery-and-secure-session-rotation: done
@@ -48,12 +55,13 @@ development_status:
   1-5-multi-profile-create-edit-switch: done
   1-6-profile-deletion-with-confirmation-and-impact-messaging: done
   1-7-active-session-device-list-and-revoke: done
-  1-8-communication-preferences-management: backlog
-  1-9-data-export-and-account-closure-requests: backlog
-  1-10-restriction-visibility-rationale-and-user-next-steps: backlog
+  1-8-communication-preferences-management: done
+  1-9-data-export-and-account-closure-requests: done
+  1-10-restriction-visibility-rationale-and-user-next-steps: done
   epic-1-retrospective: optional
 
   epic-2: backlog
+  # 2-0-postgresql-persistence-setup absorbed into Epic 0 stories 0.1–0.4
   2-1-upload-report-to-active-profile: backlog
   2-2-parsing-status-lifecycle-visibility: backlog
   2-3-parse-failure-recovery-retry-keep-file-anyway: backlog
@@ -106,6 +114,8 @@ development_status:
   5-12-time-bound-override-actions-with-expiry: backlog
   5-13-restricted-account-resolution-documentation-workflow: backlog
   5-14-emergency-containment-actions-with-mandatory-audit-notes: backlog
+  5-15-email-queue-delivery-analytics-and-sending-history-admin-panel: backlog
+  5-16-admin-level-email-sending-with-audit-and-recipient-controls: backlog
   epic-5-retrospective: optional
 
   epic-6: backlog
@@ -114,6 +124,7 @@ development_status:
   6-3-consistent-in-app-success-failure-recovery-messaging-patterns: backlog
   6-4-major-service-incident-status-communication-to-users: backlog
   6-5-in-product-support-requests-linked-to-failed-critical-actions: backlog
+  6-6-email-pipeline-delivery-tracking-and-template-support: backlog
   epic-6-retrospective: optional
 
   epic-7: backlog

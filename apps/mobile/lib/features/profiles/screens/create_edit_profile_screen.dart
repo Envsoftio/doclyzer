@@ -2,6 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../profiles_repository.dart';
 
+DateTime? _parseDob(String? s) {
+  if (s == null || s.trim().isEmpty) return null;
+  return DateTime.tryParse(s.trim());
+}
+
+String _formatDob(DateTime d) {
+  return '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+}
+
 class CreateEditProfileScreen extends StatefulWidget {
   const CreateEditProfileScreen({
     super.key,
@@ -23,8 +32,8 @@ class CreateEditProfileScreen extends StatefulWidget {
 
 class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
   late final TextEditingController _nameController;
-  late final TextEditingController _dobController;
   late final TextEditingController _relationController;
+  DateTime? _selectedDob;
   bool _submitting = false;
   String? _error;
 
@@ -33,8 +42,7 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
     super.initState();
     _nameController =
         TextEditingController(text: widget.existingProfile?.name ?? '');
-    _dobController =
-        TextEditingController(text: widget.existingProfile?.dateOfBirth ?? '');
+    _selectedDob = _parseDob(widget.existingProfile?.dateOfBirth);
     _relationController =
         TextEditingController(text: widget.existingProfile?.relation ?? '');
   }
@@ -42,9 +50,22 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _dobController.dispose();
     _relationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final initial = _selectedDob ?? DateTime(now.year - 30, now.month, now.day);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1900),
+      lastDate: now,
+    );
+    if (picked != null) {
+      setState(() => _selectedDob = picked);
+    }
   }
 
   Future<void> _submit() async {
@@ -60,8 +81,7 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
     });
 
     try {
-      final dob =
-          _dobController.text.trim().isEmpty ? null : _dobController.text.trim();
+      final dob = _selectedDob != null ? _formatDob(_selectedDob!) : null;
       final relation = _relationController.text.trim().isEmpty
           ? null
           : _relationController.text.trim();
@@ -119,11 +139,25 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
               decoration: const InputDecoration(labelText: 'Name *'),
             ),
             const SizedBox(height: 12),
-            TextField(
+            InkWell(
               key: const Key('profile-dob-field'),
-              controller: _dobController,
-              decoration:
-                  const InputDecoration(labelText: 'Date of Birth (optional)'),
+              onTap: _pickDate,
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Date of Birth (optional)',
+                  suffixIcon: Icon(Icons.calendar_today),
+                ),
+                child: Text(
+                  _selectedDob != null
+                      ? _formatDob(_selectedDob!)
+                      : 'Tap to select date',
+                  style: TextStyle(
+                    color: _selectedDob != null
+                        ? null
+                        : Theme.of(context).hintColor,
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             TextField(

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:mobile/features/auth/in_memory_sessions_repository.dart';
 import 'package:mobile/features/auth/screens/session_list_screen.dart';
 import 'package:mobile/features/auth/sessions_repository.dart';
+import 'fakes.dart';
 
 Widget _wrap(
   SessionsRepository repo, {
@@ -25,7 +25,7 @@ Widget _wrap(
 
 void main() {
   testWidgets('sessions render with correct keys', (WidgetTester tester) async {
-    final repo = InMemorySessionsRepository();
+    final repo = FakeSessionsRepository();
     await tester.pumpWidget(_wrap(repo));
     await tester.pumpAndSettle();
 
@@ -36,7 +36,7 @@ void main() {
   });
 
   testWidgets('tapping revoke shows confirmation dialog', (WidgetTester tester) async {
-    final repo = InMemorySessionsRepository();
+    final repo = FakeSessionsRepository();
     await tester.pumpWidget(_wrap(repo));
     await tester.pumpAndSettle();
 
@@ -49,7 +49,7 @@ void main() {
   });
 
   testWidgets('tapping Cancel closes dialog and does not call revokeSession', (WidgetTester tester) async {
-    final repo = InMemorySessionsRepository();
+    final repo = FakeSessionsRepository();
     await tester.pumpWidget(_wrap(repo));
     await tester.pumpAndSettle();
 
@@ -66,7 +66,7 @@ void main() {
   });
 
   testWidgets('tapping Revoke calls revokeSession and list refreshes', (WidgetTester tester) async {
-    final repo = InMemorySessionsRepository();
+    final repo = FakeSessionsRepository();
     await tester.pumpWidget(_wrap(repo));
     await tester.pumpAndSettle();
 
@@ -81,7 +81,7 @@ void main() {
   });
 
   testWidgets('revoking current session calls onLogout callback', (WidgetTester tester) async {
-    final repo = InMemorySessionsRepository();
+    final repo = FakeSessionsRepository();
     var logoutCalled = false;
 
     await tester.pumpWidget(_wrap(repo, onLogout: () => logoutCalled = true));

@@ -87,6 +87,9 @@ This document provides the complete epic and story breakdown for doclyzer, decom
 - FR72: Users can define delegation expiration conditions when granting delegated access. (Deferred: Out of current release scope)
 - FR73: Superadmins can document resolution outcomes for restricted accounts with audit traceability.
 - FR76: Superadmins can execute time-bound override actions with mandatory reason capture and expiration.
+- FR77: The system provides an email pipeline for sending transactional and product emails (e.g. password reset, notifications, security/compliance notices) with delivery status and tracking.
+- FR78: Superadmins can view email queue status, delivery analytics (sent, failed, bounced by type), and email sending history via an admin panel.
+- FR79: Superadmins can send admin-level emails (e.g. announcements, support, incident notifications) through the admin panel with mandatory audit and recipient controls.
 
 ### NonFunctional Requirements
 
@@ -222,6 +225,10 @@ FR76: Epic 5 - Time-bound override actions
 
 ## Epic List
 
+### Epic 0: Backend Foundation — Real Persistence, JWT Auth & API Wiring
+All Epic 1 API endpoints are production-ready: PostgreSQL via TypeORM, JWT access + refresh token auth with DB-backed sessions, all in-memory Maps replaced, Flutter wired to real API, E2E tests passing against a real DB.
+**Technical Stories:** 0.1 TypeORM setup, 0.2 JWT auth, 0.3 DB-backed services, 0.4 E2E test infra
+
 ### Epic 1: Account Security, Consent, Profile & Delegation Foundation
 Users can securely onboard, manage account/session controls, accept legal policies, exercise consent and data rights, and manage multi-profile/delegation foundations needed by all later workflows.
 **FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR8, FR10, FR41, FR48, FR54, FR55, FR56, FR60, FR62, FR67, FR70, FR71
@@ -240,18 +247,128 @@ Users can understand and manage credits/plans, complete purchases/subscriptions,
 **FRs covered:** FR27, FR28, FR29, FR30, FR31, FR47, FR51
 
 ### Epic 5: Superadmin Operations, Risk Controls & Product Analytics
-Superadmins can configure plans/promos, monitor business and behavior analytics, and execute auditable risk containment/incident controls.
-**FRs covered:** FR35, FR36, FR37, FR38, FR39, FR43, FR49, FR53, FR57, FR58, FR64, FR69, FR73, FR76
+Superadmins can configure plans/promos, monitor business and behavior analytics, execute auditable risk containment/incident controls, and manage email pipeline analytics and admin-level sending.
+**FRs covered:** FR35, FR36, FR37, FR38, FR39, FR43, FR49, FR53, FR57, FR58, FR64, FR69, FR73, FR76, FR78, FR79
 **Refinements:** include PHI-safe analytics taxonomy and governance gates as explicit story acceptance criteria.
 
 ### Epic 6: Notifications, Incident Communication & Support
-Users can receive clear event/incident messaging, configure notifications, and request support from critical failure contexts.
-**FRs covered:** FR32, FR33, FR34, FR65, FR68
+Users can receive clear event/incident messaging, configure notifications, and request support from critical failure contexts; the system provides a unified email pipeline for all email types with delivery tracking.
+**FRs covered:** FR32, FR33, FR34, FR65, FR68, FR77
 
 ### Epic 7: Cross-Cutting Compliance, Privacy & Safe AI Guardrails
 System-wide controls enforce PHI-safe telemetry and AI disclaimer safety framing across all epic implementations.
 **FRs covered:** FR40, FR42
 **Refinements:** applies as mandatory acceptance criteria overlay across stories in Epics 1-6.
+
+## Epic 0: Backend Foundation — Real Persistence, JWT Auth & API Wiring
+
+All NestJS API services are production-ready: in-memory Maps are replaced with TypeORM + PostgreSQL, JWT access/refresh tokens are properly issued and rotated, DB-backed sessions drive the session-list and revoke flows, and E2E tests pass against a real test database.
+
+### Story 0.1: TypeORM Integration, Database Entities & Migrations
+
+As a developer,
+I want the NestJS API connected to PostgreSQL via TypeORM with versioned migrations,
+So that all Epic 1 data persists across restarts and is schema-controlled.
+
+**Acceptance Criteria:**
+
+**Given** the API starts
+**When** DATABASE_URL points to a running Postgres instance
+**Then** TypeORM connects, runs pending migrations, and the schema is present
+**And** `npm run migration:run` applies migrations idempotently
+**And** `docker compose up` starts Postgres and the schema is auto-migrated on API start in dev
+
+**Entities required:** User, Session, Profile, AccountPreference, Restriction, DataExportRequest, ClosureRequest, PasswordResetToken, ConsentRecord
+
+**Technical Notes:**
+- Install `@nestjs/typeorm`, `typeorm`, `pg`, `@nestjs/config`
+- `TypeOrmModule.forRootAsync` reads `DATABASE_URL` from env
+- Migrations in `src/database/migrations/`; entities in `src/database/entities/`
+- `.env.example` documents all required env vars
+- `npm run migration:generate` and `npm run migration:run` scripts added
+
+### Story 0.2: JWT Access + Refresh Token Auth with DB-Backed Sessions
+
+As an authenticated user,
+I want access tokens (short-lived) and refresh tokens (long-lived, stored in DB),
+So that my session survives app restarts, rotates on refresh, and can be revoked remotely.
+
+**Acceptance Criteria:**
+
+**Given** I log in successfully
+**When** the API responds
+**Then** I receive `{ accessToken, refreshToken, expiresIn }` where accessToken TTL is 15 min and refreshToken TTL is 30 days
+**And** the refreshToken is stored hashed in the Session entity along with IP, user-agent, and timestamps
+
+**Given** I call `POST /auth/refresh` with a valid refreshToken
+**When** the token is valid and not revoked
+**Then** I receive new accessToken + refreshToken (rotation)
+**And** the old refreshToken is invalidated
+
+**Given** I call `POST /auth/logout`
+**When** my session exists
+**Then** the Session is deleted from DB and both tokens are unusable
+
+**Given** the AuthGuard validates a request
+**When** the JWT is valid (signature + expiry)
+**Then** the request proceeds without a DB lookup (stateless JWT verification)
+**And** userId and sessionId are extracted from JWT claims
+
+**Technical Notes:**
+- Install `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt`, `bcryptjs`
+- Access token payload: `{ sub: userId, sessionId, iat, exp }`
+- Refresh token: 256-bit crypto random, stored as SHA-256 hash in Session entity
+- `POST /auth/refresh` is public (no AuthGuard); validates hash match + expiry
+- Session entity stores: userId, refreshTokenHash, ipAddress, userAgent, createdAt, expiresAt
+- `GET /auth/sessions` returns all active sessions for current user from DB
+- `DELETE /auth/sessions/:id` deletes that Session row (revoke)
+
+### Story 0.3: Replace All In-Memory Services with TypeORM Repositories
+
+As a developer,
+I want all five in-memory Map stores replaced with TypeORM repositories,
+So that all Epic 1 data is durable and the API behaves identically after restart.
+
+**Acceptance Criteria:**
+
+**Given** the API restarts
+**When** I log in and create profiles/preferences/etc.
+**Then** all data is present after restart (no in-memory state)
+**And** all existing unit tests pass with mocked TypeORM repositories
+**And** the external API contract (routes, request/response shapes) is unchanged
+
+**Services to migrate:**
+- `AuthService`: users from User repo (bcrypt password hash), sessions from Session repo, rate-limit state stays in-memory (Redis later)
+- `PasswordRecoveryService`: reset tokens stored in PasswordResetToken repo (hashed, TTL enforced by expiry column)
+- `ProfilesService`: profiles and activeProfileId from Profile repo (userId FK, isActive column)
+- `AccountService`: AccountPreference, Restriction, DataExportRequest, ClosureRequest from their respective repos
+- `ConsentService`: ConsentRecord repo (userId, policyVersion, acceptedAt)
+
+**Technical Notes:**
+- Each service receives TypeORM `Repository<Entity>` via `@InjectRepository`
+- User passwords stored as bcrypt hash (cost 12); plaintext never stored
+- EntitlementsService checks `maxProfiles` via DB query on Profile entity count
+
+### Story 0.4: E2E Test Infrastructure with Real Test Database
+
+As a developer,
+I want E2E tests running against a real Postgres test database,
+So that integration coverage is meaningful and the test suite is not fragile.
+
+**Acceptance Criteria:**
+
+**Given** `npm run test:e2e` executes
+**When** the test suite runs
+**Then** a separate test database (`doclyzer_test`) is used (never the dev DB)
+**And** each test suite truncates relevant tables in `beforeEach` or `afterEach`
+**And** all existing E2E test cases from stories 1.1–1.10 pass
+
+**Technical Notes:**
+- `test/jest-e2e.json` configured with `globalSetup` for DB bootstrap
+- `AppModule` in tests uses `DATABASE_URL` from `.env.test`
+- Helper `test/db-cleaner.ts` exports `clearDatabase(dataSource)` that truncates all tables
+- CI can run `docker compose up -d postgres && npm run test:e2e`
+- No mocking of TypeORM in E2E tests; real DB only
 
 ## Epic 1: Account Security, Consent, Profile & Delegation Foundation
 
@@ -392,6 +509,26 @@ So that blocked actions are understandable and recoverable.
 ## Epic 2: Report Ingestion, Processing Recovery & Timeline Insights
 
 Users can upload reports, recover from parsing failures, and consume timeline/trend/summary value with deterministic lifecycle states.
+
+### Story 2.0: PostgreSQL Persistence Setup (Foundation)
+
+As a developer,
+I want the API backed by PostgreSQL instead of in-memory stores,
+So that data persists across restarts and meets architecture/PRD requirements.
+
+**Acceptance Criteria:**
+
+**Given** the NestJS API runs
+**When** connected to PostgreSQL (via docker-compose)
+**Then** auth (users, sessions), profiles, consent, account (prefs, restrictions, export/closure requests) are persisted
+**And** migrations are versioned and runnable
+**And** existing e2e tests pass with DB-backed implementation
+**And** local dev uses `docker compose up` for Postgres + API
+
+**Technical Notes:**
+- Use TypeORM or Prisma per architecture; entities for users, sessions, profiles, consent, account data
+- Replace in-memory Map usage in AuthService, AccountService, ProfilesService, ConsentService, PasswordRecoveryService
+- Wire API to DATABASE_URL from env; document in README
 
 ### Story 2.1: Upload Report to Active Profile
 
@@ -926,6 +1063,36 @@ So that urgent response remains accountable.
 **When** completion occurs
 **Then** mandatory audit notes are captured.
 
+### Story 5.15: Email Queue, Delivery Analytics & Sending History (Admin Panel)
+
+As a superadmin,
+I want to view email queue status, delivery analytics, and sending history in the admin panel,
+So that I can monitor and troubleshoot all email types (transactional and admin-sent).
+
+**Acceptance Criteria:**
+
+**Given** I am an authenticated superadmin
+**When** I open the email section of the admin panel
+**Then** I can see queue status (pending, processing, completed)
+**And** I can see delivery analytics: counts by type (e.g. password reset, notification, admin), outcome (sent, failed, bounced) and time range filters
+**And** I can view sending history (timestamp, type, recipient scope, outcome) with pagination; no PHI in recipient display beyond what is needed for support (e.g. redacted or scope-only)
+**And** all views are PHI-safe per NFR7; admin actions are auditable (NFR9)
+
+### Story 5.16: Admin-Level Email Sending with Audit & Recipient Controls
+
+As a superadmin,
+I want to send admin-level emails (announcements, support, incident notifications) from the admin panel,
+So that I can communicate with users in a controlled, auditable way.
+
+**Acceptance Criteria:**
+
+**Given** I am an authenticated superadmin
+**When** I use the admin panel to send an admin-level email
+**Then** I can choose type (e.g. announcement, incident notice, support), subject, body (with template support where applicable), and recipient scope (e.g. all users, segment, single)
+**And** sending uses the same email pipeline (Story 6.6); delivery is tracked and visible in email analytics (Story 5.15)
+**And** each send is audited: actor, action, recipient scope, timestamp, outcome; no PHI in audit payload beyond scope description
+**And** optional approval or rate limits can be applied for safety
+
 ## Epic 6: Notifications, Incident Communication & Support
 
 Users can receive notifications, control preferences, get clear incident messaging, and open support requests from failure contexts.
@@ -989,6 +1156,22 @@ So that triage includes relevant action metadata.
 **Given** critical action fails
 **When** support request is created from failure state
 **Then** request includes linked action/correlation identifiers.
+
+### Story 6.6: Email Pipeline — Delivery, Tracking & Template Support
+
+As a platform,
+I want a unified email pipeline for all outbound email types,
+So that transactional and product emails are sent with consistent delivery, status tracking, and template support.
+
+**Acceptance Criteria:**
+
+**Given** the system sends any email (password reset, notifications, security/compliance, etc.)
+**When** the email pipeline is invoked
+**Then** the message is queued/sent via a configured provider with delivery status and tracking (sent, failed, bounced where available)
+**And** templates are supported per email type and respect user communication preferences where applicable
+**And** pipeline failures use retry/backoff and terminal state handling; no PHI in logs
+
+**Technical Notes:** Single pipeline used by auth (password reset), account (notices), and future notification flows; admin sending (FR79) uses the same pipeline. Delivery analytics (FR78) consume pipeline status data.
 
 ## Epic 7: Cross-Cutting Compliance, Privacy & Safe AI Guardrails
 

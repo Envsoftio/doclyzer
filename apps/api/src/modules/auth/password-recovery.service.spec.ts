@@ -8,7 +8,7 @@ async function setupUser(
   email = 'test@example.com',
   password = 'StrongPass123!',
 ): Promise<void> {
-  await service.register({ email, password, policyAccepted: true });
+  await service.register({ email, password });
 }
 
 describe('PasswordRecoveryService', () => {

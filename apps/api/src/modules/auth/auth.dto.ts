@@ -1,5 +1,4 @@
 import {
-  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsString,
@@ -13,9 +12,6 @@ export class RegisterDto {
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   password!: string;
-
-  @IsBoolean({ message: 'policyAccepted must be a boolean' })
-  policyAccepted!: boolean;
 }
 
 export class LoginDto {

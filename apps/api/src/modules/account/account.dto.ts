@@ -1,5 +1,12 @@
 import { Transform } from 'class-transformer';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+
+export class CreateDataExportRequestDto {}
+
+export class CreateClosureRequestDto {
+  @IsBoolean()
+  confirmClosure!: boolean;
+}
 
 export class UpdateAccountProfileDto {
   @IsOptional()
@@ -13,4 +20,10 @@ export class UpdateAccountProfileDto {
   @IsString()
   @MaxLength(100)
   displayName?: string | null;
+}
+
+export class UpdateCommunicationPreferencesDto {
+  @IsOptional()
+  @IsBoolean()
+  productEmails?: boolean;
 }

@@ -434,6 +434,7 @@ Mitigation: strict MVP boundaries, defer advanced AI/features to Phase 2, keep c
 - FR60: Users can manage account communication preferences for security and compliance notices.
 - FR65: The system can provide user-facing status updates for major service incidents affecting core workflows.
 - FR68: Users can initiate in-product support requests tied to failed critical actions, including related action identifiers for triage.
+- FR77: The system provides an email pipeline for sending transactional and product emails (e.g. password reset, notifications, security/compliance notices) with delivery status and tracking.
 
 ### Consent, Privacy & Governance
 
@@ -476,6 +477,8 @@ Mitigation: strict MVP boundaries, defer advanced AI/features to Phase 2, keep c
 - FR69: Superadmins can place accounts in restricted review mode without deleting user data.
 - FR73: Superadmins can document resolution outcomes for restricted accounts with audit traceability.
 - FR76: Superadmins can execute time-bound override actions with mandatory reason capture and expiration.
+- FR78: Superadmins can view email queue status, delivery analytics (sent, failed, bounced by type), and email sending history via an admin panel.
+- FR79: Superadmins can send admin-level emails (e.g. announcements, support, incident notifications) through the admin panel with mandatory audit and recipient controls.
 
 ### FR Governance Note
 

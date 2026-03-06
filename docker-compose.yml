@@ -38,19 +38,6 @@ services:
     networks:
       - doclyzer_net
 
-  adminer:
-    image: adminer:4
-    container_name: doclyzer-adminer
-    restart: unless-stopped
-    profiles: ["ops"]
-    ports:
-      - "${ADMINER_PORT:-8080}:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - doclyzer_net
-
 volumes:
   doclyzer_postgres_data:
   doclyzer_redis_data:

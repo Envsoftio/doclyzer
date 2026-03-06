@@ -107,7 +107,7 @@ so that I can access my Doclyzer workspace safely.
 - **Mobile framework:** Flutter stable `3.41.x` track (docs reflect `3.41.2`).
 - **Web framework (project baseline):** Nuxt `v4.x` (latest release track currently `v4.3.1`) for web surfaces; this story is primarily mobile + API.
 - **Runtime recommendation for new scaffolds:** Node.js Active LTS (`v24` as of 2026-03-05) unless team policy pins differently.
-- **Database compatibility:** Current repo baseline uses PostgreSQL 16 (`postgres:16-alpine`) and Redis 7 (`redis:7-alpine`); auth persistence and session storage choices must remain compatible.
+- **Database compatibility:** Current repo baseline uses latest PostgreSQL (`postgres:alpine`) and Redis (`redis:alpine`); auth persistence and session storage choices must remain compatible.
 
 ### Latest Tech Information (Web Research)
 

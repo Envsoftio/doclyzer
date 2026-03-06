@@ -9,8 +9,7 @@ class SignupScreen extends StatefulWidget {
     required this.onGoToLogin,
   });
 
-  final Future<void> Function(String email, String password, bool policyAccepted)
-      onSignup;
+  final Future<void> Function(String email, String password) onSignup;
   final VoidCallback onGoToLogin;
 
   @override
@@ -20,7 +19,6 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _policyAccepted = false;
   String? _error;
 
   @override
@@ -38,13 +36,6 @@ class _SignupScreenState extends State<SignupScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (!_policyAccepted) {
-      setState(() {
-        _error = 'Please accept terms and privacy policy';
-      });
-      return;
-    }
-
     if (email.isEmpty || password.isEmpty) {
       setState(() {
         _error = 'Enter email and password';
@@ -53,7 +44,7 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     try {
-      await widget.onSignup(email, password, _policyAccepted);
+      await widget.onSignup(email, password);
     } on AuthException catch (error) {
       setState(() {
         _error = error.message;
@@ -85,22 +76,6 @@ class _SignupScreenState extends State<SignupScreen> {
               controller: _passwordController,
               obscureText: true,
               decoration: const InputDecoration(labelText: 'Password'),
-            ),
-            Row(
-              children: [
-                Checkbox(
-                  key: const Key('signup-policy'),
-                  value: _policyAccepted,
-                  onChanged: (value) {
-                    setState(() {
-                      _policyAccepted = value ?? false;
-                    });
-                  },
-                ),
-                const Expanded(
-                  child: Text('I agree to Terms and Privacy Policy'),
-                ),
-              ],
             ),
             if (_error != null)
               Padding(

@@ -33,10 +33,13 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   crypto: ^3.0.0
+  http: ^1.2.0
+  flutter_secure_storage: ^9.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  mocktail: ^1.0.4
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

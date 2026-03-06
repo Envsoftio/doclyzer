@@ -45,13 +45,6 @@ export class AuthService {
     this.validateEmail(payload.email);
     this.validatePassword(payload.password);
 
-    if (payload.policyAccepted !== true) {
-      throw new BadRequestException({
-        code: 'AUTH_POLICY_ACK_REQUIRED',
-        message: 'Policy acknowledgement is required before registration',
-      });
-    }
-
     const normalizedEmail = payload.email.trim().toLowerCase();
     if (this.usersByEmail.has(normalizedEmail)) {
       throw new ConflictException({
