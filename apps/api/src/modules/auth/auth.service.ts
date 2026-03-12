@@ -12,15 +12,13 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
-import { randomBytes } from 'node:crypto';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import { UserEntity } from '../../database/entities/user.entity';
 import { SessionEntity } from '../../database/entities/session.entity';
 import {
   type AuthUser,
   type DeviceSessionSummary,
-  INVALID_REFRESH_TOKEN,
   type LoginRequest,
   type LoginResponse,
   type RegisterRequest,
@@ -44,6 +42,7 @@ interface JwtPayload {
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  // Temporary in-memory limiter for auth endpoints; move to Redis-backed counters later.
   private readonly rateLimit = new Map<string, RateLimitState>();
 
   private readonly accessTtlSec: number;
@@ -56,8 +55,9 @@ export class AuthService {
     private readonly jwtService: JwtService,
     configService: ConfigService,
   ) {
-    this.accessTtlSec =
-      configService.get<number>('JWT_ACCESS_TTL_SECONDS') ?? 900;
+    const raw = configService.get<string>('JWT_ACCESS_TTL_SECONDS') ?? '900';
+    const n = parseInt(raw, 10);
+    this.accessTtlSec = Number.isNaN(n) ? 900 : n;
   }
 
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
@@ -149,8 +149,8 @@ export class AuthService {
 
     if (!session) {
       throw new UnauthorizedException({
-        code: INVALID_REFRESH_TOKEN,
-        message: 'Invalid or expired refresh token',
+        code: 'AUTH_SESSION_REVOKED',
+        message: 'Session has been revoked',
       });
     }
 
@@ -311,6 +311,7 @@ export class AuthService {
     ipAddress: string | null,
     userAgent: string | null,
   ): Promise<{ accessToken: string; refreshToken: string }> {
+    const sessionId = randomUUID();
     const rawRefresh = randomBytes(48).toString('hex');
     const refreshTokenHash = createHash('sha256')
       .update(rawRefresh)
@@ -320,17 +321,18 @@ export class AuthService {
     );
 
     const session = this.sessionRepo.create({
+      id: sessionId,
       userId,
       refreshTokenHash,
       ipAddress,
       userAgent,
       expiresAt,
     });
-    const saved = await this.sessionRepo.save(session);
+    await this.sessionRepo.insert(session);
 
     const accessToken = this.jwtService.sign({
       sub: userId,
-      sessionId: saved.id,
+      sessionId,
     });
 
     return { accessToken, refreshToken: rawRefresh };

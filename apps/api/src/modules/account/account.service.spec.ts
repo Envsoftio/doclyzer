@@ -7,6 +7,8 @@ import { AccountPreferenceEntity } from '../../database/entities/account-prefere
 import { RestrictionEntity } from '../../database/entities/restriction.entity';
 import { DataExportRequestEntity } from '../../database/entities/data-export-request.entity';
 import { ClosureRequestEntity } from '../../database/entities/closure-request.entity';
+import { ProfileEntity } from '../../database/entities/profile.entity';
+import { ConsentRecordEntity } from '../../database/entities/consent-record.entity';
 import { COMM_PREF_CATEGORY } from './account.types';
 
 function makeRepo(): jest.Mocked<Repository<object>> {
@@ -26,6 +28,7 @@ const baseUser: UserEntity = {
   email: 'test@example.com',
   passwordHash: 'hash',
   displayName: null,
+  avatarUrl: null,
   createdAt: new Date('2026-01-01'),
   updatedAt: new Date('2026-01-01'),
 } as UserEntity;
@@ -37,6 +40,8 @@ describe('AccountService', () => {
   let restrictionRepo: ReturnType<typeof makeRepo>;
   let exportRepo: ReturnType<typeof makeRepo>;
   let closureRepo: ReturnType<typeof makeRepo>;
+  let profileRepo: ReturnType<typeof makeRepo>;
+  let consentRepo: ReturnType<typeof makeRepo>;
   let authService: jest.Mocked<Pick<AuthService, 'revokeAllSessionsForUser'>>;
 
   beforeEach(() => {
@@ -45,7 +50,11 @@ describe('AccountService', () => {
     restrictionRepo = makeRepo();
     exportRepo = makeRepo();
     closureRepo = makeRepo();
-    authService = { revokeAllSessionsForUser: jest.fn().mockResolvedValue(undefined) };
+    profileRepo = makeRepo();
+    consentRepo = makeRepo();
+    authService = {
+      revokeAllSessionsForUser: jest.fn().mockResolvedValue(undefined),
+    };
 
     service = new AccountService(
       userRepo as unknown as Repository<UserEntity>,
@@ -53,6 +62,8 @@ describe('AccountService', () => {
       restrictionRepo as unknown as Repository<RestrictionEntity>,
       exportRepo as unknown as Repository<DataExportRequestEntity>,
       closureRepo as unknown as Repository<ClosureRequestEntity>,
+      profileRepo as unknown as Repository<ProfileEntity>,
+      consentRepo as unknown as Repository<ConsentRecordEntity>,
       authService as unknown as AuthService,
     );
   });
@@ -65,13 +76,16 @@ describe('AccountService', () => {
         id: 'user-1',
         email: 'test@example.com',
         displayName: null,
+        avatarUrl: null,
         createdAt: baseUser.createdAt,
       });
     });
 
     it('throws NotFoundException for unknown user', async () => {
       userRepo.findOne.mockResolvedValue(null);
-      await expect(service.getProfile('unknown')).rejects.toThrow(NotFoundException);
+      await expect(service.getProfile('unknown')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -79,16 +93,21 @@ describe('AccountService', () => {
     it('updates displayName and returns updated profile', async () => {
       const user = { ...baseUser };
       userRepo.findOne.mockResolvedValue(user);
-      userRepo.save.mockResolvedValue({ ...user, displayName: 'Alice' } as UserEntity);
-      const updated = await service.updateProfile('user-1', { displayName: 'Alice' });
+      userRepo.save.mockResolvedValue({
+        ...user,
+        displayName: 'Alice',
+      } as UserEntity);
+      const updated = await service.updateProfile('user-1', {
+        displayName: 'Alice',
+      });
       expect(updated.displayName).toBe('Alice');
     });
 
     it('throws NotFoundException for unknown user', async () => {
       userRepo.findOne.mockResolvedValue(null);
-      await expect(service.updateProfile('unknown', { displayName: 'X' })).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.updateProfile('unknown', { displayName: 'X' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -97,15 +116,21 @@ describe('AccountService', () => {
       prefRepo.findOne.mockResolvedValue(null);
       const result = await service.getCommunicationPreferences('user-1');
       expect(result.preferences).toHaveLength(3);
-      const product = result.preferences.find((p) => p.category === COMM_PREF_CATEGORY.PRODUCT)!;
+      const product = result.preferences.find(
+        (p) => p.category === COMM_PREF_CATEGORY.PRODUCT,
+      )!;
       expect(product.enabled).toBe(true);
       expect(product.mandatory).toBe(false);
     });
 
     it('returns stored prefs when present', async () => {
-      prefRepo.findOne.mockResolvedValue({ productEmailsEnabled: false } as AccountPreferenceEntity);
+      prefRepo.findOne.mockResolvedValue({
+        productEmailsEnabled: false,
+      } as AccountPreferenceEntity);
       const result = await service.getCommunicationPreferences('user-1');
-      const product = result.preferences.find((p) => p.category === COMM_PREF_CATEGORY.PRODUCT)!;
+      const product = result.preferences.find(
+        (p) => p.category === COMM_PREF_CATEGORY.PRODUCT,
+      )!;
       expect(product.enabled).toBe(false);
     });
   });
@@ -139,14 +164,24 @@ describe('AccountService', () => {
         createdAt: new Date(),
       } as unknown as ClosureRequestEntity;
       closureRepo.save.mockResolvedValue(saved);
-      const req = await service.createClosureRequest('user-1', { confirmClosure: true }, 'cid-1');
+      const req = await service.createClosureRequest(
+        'user-1',
+        { confirmClosure: true },
+        'cid-1',
+      );
       expect(req.status).toBe('completed');
-      expect(authService.revokeAllSessionsForUser).toHaveBeenCalledWith('user-1');
+      expect(authService.revokeAllSessionsForUser).toHaveBeenCalledWith(
+        'user-1',
+      );
     });
 
     it('throws when confirmClosure is false', async () => {
       await expect(
-        service.createClosureRequest('user-1', { confirmClosure: false }, 'cid-1'),
+        service.createClosureRequest(
+          'user-1',
+          { confirmClosure: false },
+          'cid-1',
+        ),
       ).rejects.toThrow();
     });
   });

@@ -7,7 +7,11 @@ import { ProfilesController } from './profiles.controller';
 import { ProfilesService } from './profiles.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ProfileEntity]), AuthModule, EntitlementsModule],
+  imports: [
+    TypeOrmModule.forFeature([ProfileEntity]),
+    AuthModule,
+    EntitlementsModule,
+  ],
   controllers: [ProfilesController],
   providers: [ProfilesService],
 })

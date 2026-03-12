@@ -26,7 +26,11 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
         signOptions: {
-          expiresIn: config.get<number>('JWT_ACCESS_TTL_SECONDS') ?? 900,
+          expiresIn: (() => {
+            const raw = config.get<string>('JWT_ACCESS_TTL_SECONDS') ?? '900';
+            const n = parseInt(raw, 10);
+            return Number.isNaN(n) ? 900 : n;
+          })(),
         },
       }),
       inject: [ConfigService],
@@ -49,6 +53,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     JwtModule,
     PasswordRecoveryService,
     NotificationService,
+    TypeOrmModule,
   ],
 })
 export class AuthModule {}

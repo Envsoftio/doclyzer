@@ -33,7 +33,10 @@ export class ProfilesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createProfile(@Body() body: CreateProfileDto, @Req() req: Request): Promise<object> {
+  async createProfile(
+    @Body() body: CreateProfileDto,
+    @Req() req: Request,
+  ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const data = await this.profilesService.createProfile(userId, body);
     return successResponse(data, getCorrelationId(req));
@@ -46,20 +49,30 @@ export class ProfilesController {
     @Req() req: Request,
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = await this.profilesService.updateProfile(userId, profileId, body);
+    const data = await this.profilesService.updateProfile(
+      userId,
+      profileId,
+      body,
+    );
     return successResponse(data, getCorrelationId(req));
   }
 
-  @Post(':id/activate')
+  @Patch(':id/activate')
   @HttpCode(HttpStatus.OK)
-  async activateProfile(@Param('id') profileId: string, @Req() req: Request): Promise<object> {
+  async activateProfile(
+    @Param('id') profileId: string,
+    @Req() req: Request,
+  ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const data = await this.profilesService.activateProfile(userId, profileId);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Delete(':id')
-  async deleteProfile(@Param('id') profileId: string, @Req() req: Request): Promise<object> {
+  async deleteProfile(
+    @Param('id') profileId: string,
+    @Req() req: Request,
+  ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const data = await this.profilesService.deleteProfile(userId, profileId);
     return successResponse(data, getCorrelationId(req));

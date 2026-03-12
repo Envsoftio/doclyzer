@@ -5,9 +5,10 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param,
   Patch,
+  Param,
   Post,
+  Put,
   Req,
   UploadedFile,
   UseGuards,
@@ -36,7 +37,7 @@ import { ExportRequestNotFoundException } from './account.types';
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
-  @Get('restriction-status')
+  @Get('restriction')
   async getRestrictionStatus(@Req() req: Request): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const data = await this.accountService.getRestrictionStatus(userId);
@@ -68,14 +69,17 @@ export class AccountController {
     return successResponse(data, getCorrelationId(req));
   }
 
-  @Patch('communication-preferences')
+  @Put('communication-preferences')
   @HttpCode(HttpStatus.OK)
   async updateCommunicationPreferences(
     @Body() body: UpdateCommunicationPreferencesDto,
     @Req() req: Request,
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = await this.accountService.updateCommunicationPreferences(userId, body);
+    const data = await this.accountService.updateCommunicationPreferences(
+      userId,
+      body,
+    );
     return successResponse(data, getCorrelationId(req));
   }
 
@@ -87,7 +91,10 @@ export class AccountController {
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const correlationId = getCorrelationId(req);
-    const data = await this.accountService.createDataExportRequest(userId, correlationId);
+    const data = await this.accountService.createDataExportRequest(
+      userId,
+      correlationId,
+    );
     return successResponse(data, correlationId);
   }
 
@@ -97,7 +104,10 @@ export class AccountController {
     @Req() req: Request,
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = await this.accountService.getDataExportRequest(userId, requestId);
+    const data = await this.accountService.getDataExportRequest(
+      userId,
+      requestId,
+    );
     if (!data) throw new ExportRequestNotFoundException();
     return successResponse(data, getCorrelationId(req));
   }
@@ -110,7 +120,11 @@ export class AccountController {
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const correlationId = getCorrelationId(req);
-    const data = await this.accountService.createClosureRequest(userId, body, correlationId);
+    const data = await this.accountService.createClosureRequest(
+      userId,
+      body,
+      correlationId,
+    );
     return successResponse(data, correlationId);
   }
 

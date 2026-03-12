@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { isUUID } from 'class-validator';
 import { Repository } from 'typeorm';
 import { ProfileEntity } from '../../database/entities/profile.entity';
 import type { CreateProfileDto, UpdateProfileDto } from './profiles.dto';
 import { ProfileLimitExceededException } from './exceptions/profile-limit-exceeded.exception';
 import { ProfileNotFoundException } from './exceptions/profile-not-found.exception';
-import type { Profile, ProfileWithActive } from './profiles.types';
+import type { ProfileWithActive } from './profiles.types';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 
 @Injectable()
@@ -21,10 +22,13 @@ export class ProfilesService {
       where: { userId },
       order: { createdAt: 'ASC' },
     });
-    return profiles.map(this.toDto);
+    return profiles.map((p) => this.toDto(p));
   }
 
-  async createProfile(userId: string, dto: CreateProfileDto): Promise<ProfileWithActive> {
+  async createProfile(
+    userId: string,
+    dto: CreateProfileDto,
+  ): Promise<ProfileWithActive> {
     const count = await this.profileRepo.count({ where: { userId } });
     const maxProfiles = this.entitlementsService.getMaxProfiles(userId);
     if (count >= maxProfiles) throw new ProfileLimitExceededException();
@@ -46,7 +50,10 @@ export class ProfilesService {
     profileId: string,
     dto: UpdateProfileDto,
   ): Promise<ProfileWithActive> {
-    const entity = await this.profileRepo.findOne({ where: { id: profileId, userId } });
+    if (!isUUID(profileId)) throw new ProfileNotFoundException();
+    const entity = await this.profileRepo.findOne({
+      where: { id: profileId, userId },
+    });
     if (!entity) throw new ProfileNotFoundException();
 
     if (dto.name !== undefined) entity.name = dto.name;
@@ -57,32 +64,50 @@ export class ProfilesService {
     return this.toDto(saved);
   }
 
-  async activateProfile(userId: string, profileId: string): Promise<ProfileWithActive[]> {
-    const target = await this.profileRepo.findOne({ where: { id: profileId, userId } });
+  async activateProfile(
+    userId: string,
+    profileId: string,
+  ): Promise<ProfileWithActive[]> {
+    if (!isUUID(profileId)) throw new ProfileNotFoundException();
+    const target = await this.profileRepo.findOne({
+      where: { id: profileId, userId },
+    });
     if (!target) throw new ProfileNotFoundException();
 
-    await this.profileRepo.update({ userId }, { isActive: false });
-    await this.profileRepo.update({ id: profileId, userId }, { isActive: true });
+    await this.profileRepo.manager.transaction(async (manager) => {
+      const repo = manager.getRepository(ProfileEntity);
+      await repo.update({ userId }, { isActive: false });
+      await repo.update({ id: profileId, userId }, { isActive: true });
+    });
 
     return this.getProfiles(userId);
   }
 
-  async deleteProfile(userId: string, profileId: string): Promise<ProfileWithActive[]> {
-    const entity = await this.profileRepo.findOne({ where: { id: profileId, userId } });
+  async deleteProfile(
+    userId: string,
+    profileId: string,
+  ): Promise<ProfileWithActive[]> {
+    if (!isUUID(profileId)) throw new ProfileNotFoundException();
+    const entity = await this.profileRepo.findOne({
+      where: { id: profileId, userId },
+    });
     if (!entity) throw new ProfileNotFoundException();
 
     const wasActive = entity.isActive;
-    await this.profileRepo.delete({ id: profileId, userId });
+    await this.profileRepo.manager.transaction(async (manager) => {
+      const repo = manager.getRepository(ProfileEntity);
+      await repo.delete({ id: profileId, userId });
 
-    if (wasActive) {
-      const remaining = await this.profileRepo.find({
+      if (!wasActive) return;
+
+      const remaining = await repo.find({
         where: { userId },
         order: { createdAt: 'ASC' },
       });
       if (remaining.length > 0) {
-        await this.profileRepo.update(remaining[0].id, { isActive: true });
+        await repo.update(remaining[0].id, { isActive: true });
       }
-    }
+    });
 
     return this.getProfiles(userId);
   }

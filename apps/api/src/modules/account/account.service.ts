@@ -1,10 +1,13 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { isUUID } from 'class-validator';
 import { Repository } from 'typeorm';
 import { AccountPreferenceEntity } from '../../database/entities/account-preference.entity';
 import { RestrictionEntity } from '../../database/entities/restriction.entity';
 import { DataExportRequestEntity } from '../../database/entities/data-export-request.entity';
 import { ClosureRequestEntity } from '../../database/entities/closure-request.entity';
+import { ProfileEntity } from '../../database/entities/profile.entity';
+import { ConsentRecordEntity } from '../../database/entities/consent-record.entity';
 import { UserEntity } from '../../database/entities/user.entity';
 import { AuthService } from '../auth/auth.service';
 import type {
@@ -39,6 +42,10 @@ export class AccountService {
     private readonly exportRepo: Repository<DataExportRequestEntity>,
     @InjectRepository(ClosureRequestEntity)
     private readonly closureRepo: Repository<ClosureRequestEntity>,
+    @InjectRepository(ProfileEntity)
+    private readonly profileRepo: Repository<ProfileEntity>,
+    @InjectRepository(ConsentRecordEntity)
+    private readonly consentRepo: Repository<ConsentRecordEntity>,
     private readonly authService: AuthService,
   ) {}
 
@@ -55,19 +62,42 @@ export class AccountService {
   async getProfile(userId: string): Promise<AccountProfile> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException({ code: 'ACCOUNT_NOT_FOUND', message: 'Account not found' });
+      throw new NotFoundException({
+        code: 'ACCOUNT_NOT_FOUND',
+        message: 'Account not found',
+      });
     }
-    return { id: user.id, email: user.email, displayName: user.displayName, avatarUrl: user.avatarUrl, createdAt: user.createdAt };
+    return {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      createdAt: user.createdAt,
+    };
   }
 
-  async getCommunicationPreferences(userId: string): Promise<CommunicationPreferences> {
+  async getCommunicationPreferences(
+    userId: string,
+  ): Promise<CommunicationPreferences> {
     const pref = await this.prefRepo.findOne({ where: { userId } });
     const productEnabled = pref?.productEmailsEnabled ?? true;
     return {
       preferences: [
-        { category: COMM_PREF_CATEGORY.SECURITY, enabled: true, mandatory: true },
-        { category: COMM_PREF_CATEGORY.COMPLIANCE, enabled: true, mandatory: true },
-        { category: COMM_PREF_CATEGORY.PRODUCT, enabled: productEnabled, mandatory: false },
+        {
+          category: COMM_PREF_CATEGORY.SECURITY,
+          enabled: true,
+          mandatory: true,
+        },
+        {
+          category: COMM_PREF_CATEGORY.COMPLIANCE,
+          enabled: true,
+          mandatory: true,
+        },
+        {
+          category: COMM_PREF_CATEGORY.PRODUCT,
+          enabled: productEnabled,
+          mandatory: false,
+        },
       ],
     };
   }
@@ -80,58 +110,134 @@ export class AccountService {
     if (!pref) {
       pref = this.prefRepo.create({ userId, productEmailsEnabled: true });
     }
-    if (dto.productEmails !== undefined) pref.productEmailsEnabled = dto.productEmails;
+    if (dto.productEmails !== undefined)
+      pref.productEmailsEnabled = dto.productEmails;
     await this.prefRepo.save(pref);
     return this.getCommunicationPreferences(userId);
   }
 
-  async updateProfile(userId: string, dto: UpdateAccountProfileDto): Promise<AccountProfile> {
+  async updateProfile(
+    userId: string,
+    dto: UpdateAccountProfileDto,
+  ): Promise<AccountProfile> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException({ code: 'ACCOUNT_NOT_FOUND', message: 'Account not found' });
+      throw new NotFoundException({
+        code: 'ACCOUNT_NOT_FOUND',
+        message: 'Account not found',
+      });
     }
     if (dto.displayName !== undefined) user.displayName = dto.displayName;
     if (dto.avatarUrl !== undefined) user.avatarUrl = dto.avatarUrl;
     await this.userRepo.save(user);
-    return { id: user.id, email: user.email, displayName: user.displayName, avatarUrl: user.avatarUrl, createdAt: user.createdAt };
+    return {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      createdAt: user.createdAt,
+    };
   }
 
-  async updateAvatar(userId: string, avatarUrl: string): Promise<AccountProfile> {
+  async updateAvatar(
+    userId: string,
+    avatarUrl: string,
+  ): Promise<AccountProfile> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) {
-      throw new NotFoundException({ code: 'ACCOUNT_NOT_FOUND', message: 'Account not found' });
+      throw new NotFoundException({
+        code: 'ACCOUNT_NOT_FOUND',
+        message: 'Account not found',
+      });
     }
     user.avatarUrl = avatarUrl;
     await this.userRepo.save(user);
-    return { id: user.id, email: user.email, displayName: user.displayName, avatarUrl: user.avatarUrl, createdAt: user.createdAt };
+    return {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      createdAt: user.createdAt,
+    };
   }
 
-  async createDataExportRequest(userId: string, correlationId: string): Promise<DataExportRequest> {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    const exportPayload = user
-      ? { profile: { id: user.id, email: user.email, displayName: user.displayName, createdAt: user.createdAt }, profiles: [], consentRecords: [] }
-      : null;
-
-    const downloadUrl = exportPayload
-      ? `data:application/json;base64,${Buffer.from(JSON.stringify(exportPayload)).toString('base64')}`
-      : null;
-
+  async createDataExportRequest(
+    userId: string,
+    correlationId: string,
+  ): Promise<DataExportRequest> {
     const entity = this.exportRepo.create({
       userId,
-      status: exportPayload ? 'completed' : 'failed',
-      completedAt: exportPayload ? new Date() : null,
-      downloadUrl,
-      failureReason: exportPayload ? null : 'USER_NOT_FOUND',
+      status: 'pending',
+      completedAt: null,
+      downloadUrl: null,
+      failureReason: null,
     });
     const saved = await this.exportRepo.save(entity);
 
-    this.logger.log(JSON.stringify({ action: 'DATA_EXPORT_REQUESTED', userId, requestId: saved.id, correlationId }));
+    this.logger.log(
+      JSON.stringify({
+        action: 'DATA_EXPORT_REQUESTED',
+        userId,
+        requestId: saved.id,
+        correlationId,
+      }),
+    );
     return this.toExportDto(saved);
   }
 
-  async getDataExportRequest(userId: string, requestId: string): Promise<DataExportRequest | null> {
-    const entity = await this.exportRepo.findOne({ where: { id: requestId, userId } });
+  async getDataExportRequest(
+    userId: string,
+    requestId: string,
+  ): Promise<DataExportRequest | null> {
+    if (!isUUID(requestId)) return null;
+    const entity = await this.exportRepo.findOne({
+      where: { id: requestId, userId },
+    });
     if (!entity) return null;
+
+    if (entity.status === 'pending') {
+      const user = await this.userRepo.findOne({ where: { id: userId } });
+      const profiles = await this.profileRepo.find({
+        where: { userId },
+        order: { createdAt: 'ASC' },
+      });
+      const consentRecords = await this.consentRepo.find({
+        where: { userId },
+        order: { acceptedAt: 'ASC' },
+      });
+      const exportPayload = user
+        ? {
+            profile: {
+              id: user.id,
+              email: user.email,
+              displayName: user.displayName,
+              createdAt: user.createdAt,
+            },
+            profiles: profiles.map((profile) => ({
+              id: profile.id,
+              name: profile.name,
+              dateOfBirth: profile.dateOfBirth,
+              relation: profile.relation,
+              isActive: profile.isActive,
+              createdAt: profile.createdAt,
+            })),
+            consentRecords: consentRecords.map((record) => ({
+              id: record.id,
+              policyType: record.policyType,
+              policyVersion: record.policyVersion,
+              acceptedAt: record.acceptedAt,
+            })),
+          }
+        : null;
+
+      entity.status = exportPayload ? 'completed' : 'failed';
+      entity.completedAt = exportPayload ? new Date() : null;
+      entity.downloadUrl = exportPayload
+        ? `data:application/json;base64,${Buffer.from(JSON.stringify(exportPayload)).toString('base64')}`
+        : null;
+      entity.failureReason = exportPayload ? null : 'USER_NOT_FOUND';
+      await this.exportRepo.save(entity);
+    }
     return this.toExportDto(entity);
   }
 
@@ -145,12 +251,20 @@ export class AccountService {
     const entity = this.closureRepo.create({
       userId,
       status: 'completed',
-      message: 'Your account is scheduled for closure. You will lose access to all data.',
+      message:
+        'Your account is scheduled for closure. You will lose access to all data.',
     });
     const saved = await this.closureRepo.save(entity);
     await this.authService.revokeAllSessionsForUser(userId);
 
-    this.logger.log(JSON.stringify({ action: 'CLOSURE_COMPLETED', userId, requestId: saved.id, correlationId }));
+    this.logger.log(
+      JSON.stringify({
+        action: 'CLOSURE_COMPLETED',
+        userId,
+        requestId: saved.id,
+        correlationId,
+      }),
+    );
     return this.toClosureDto(saved);
   }
 

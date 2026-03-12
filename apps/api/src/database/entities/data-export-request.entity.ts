@@ -35,7 +35,12 @@ export class DataExportRequestEntity {
   @Column({ type: 'timestamptz', name: 'completed_at', nullable: true })
   completedAt!: Date | null;
 
-  @Column({ type: 'varchar', length: 2048, name: 'download_url', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 2048,
+    name: 'download_url',
+    nullable: true,
+  })
   downloadUrl!: string | null;
 
   @Column({ type: 'text', name: 'failure_reason', nullable: true })

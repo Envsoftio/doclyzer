@@ -45,14 +45,18 @@ const mockStatus: ConsentStatus = {
 
 describe('ConsentController', () => {
   let controller: ConsentController;
-  let consentService: jest.Mocked<Pick<ConsentService, 'getStatus' | 'acceptPolicies'>>;
+  let consentService: jest.Mocked<
+    Pick<ConsentService, 'getStatus' | 'acceptPolicies'>
+  >;
 
   beforeEach(() => {
     consentService = {
       getStatus: jest.fn(),
       acceptPolicies: jest.fn(),
     };
-    controller = new ConsentController(consentService as unknown as ConsentService);
+    controller = new ConsentController(
+      consentService as unknown as ConsentService,
+    );
   });
 
   describe('getStatus', () => {

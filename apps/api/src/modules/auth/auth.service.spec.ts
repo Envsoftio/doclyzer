@@ -17,6 +17,7 @@ function makeRepo(): jest.Mocked<Repository<object>> {
     findOne: jest.fn(),
     find: jest.fn(),
     save: jest.fn(),
+    insert: jest.fn(),
     create: jest.fn((data: unknown) => data),
     delete: jest.fn(),
     update: jest.fn(),
@@ -184,14 +185,7 @@ describe('AuthService - login', () => {
       passwordHash: hash,
     } as UserEntity;
     userRepo.findOne.mockResolvedValue(user);
-    const session = {
-      id: 'session-1',
-      userId: 'user-1',
-      refreshTokenHash: 'hash',
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      createdAt: new Date(),
-    } as SessionEntity;
-    sessionRepo.save.mockResolvedValue(session);
+    sessionRepo.insert.mockResolvedValue({} as never);
 
     const result = await service.login({
       email: 'a@b.com',
@@ -250,8 +244,7 @@ describe('AuthService - refresh', () => {
       userAgent: 'test',
     } as SessionEntity;
     sessionRepo.findOne.mockResolvedValue(session);
-    const newSession = { ...session, id: 'session-2' } as SessionEntity;
-    sessionRepo.save.mockResolvedValue(newSession);
+    sessionRepo.insert.mockResolvedValue({} as never);
 
     const result = await service.refresh(rawToken);
     expect(result.accessToken).toBe('mock-access-token');

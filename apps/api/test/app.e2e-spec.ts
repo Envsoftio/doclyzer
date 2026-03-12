@@ -1,20 +1,24 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access */
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
 import { createHash } from 'node:crypto';
+import { DataSource, type Repository } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { ApiExceptionFilter } from '../src/common/api-exception.filter';
 import { correlationIdMiddleware } from '../src/common/correlation-id.middleware';
 import { InMemoryNotificationService } from '../src/common/notification/in-memory-notification.service';
 import { NotificationService } from '../src/common/notification/notification.service';
-import { PasswordRecoveryService } from '../src/modules/auth/password-recovery.service';
-import { AccountService } from '../src/modules/account/account.service';
+import { PasswordResetTokenEntity } from '../src/database/entities/password-reset-token.entity';
+import { RestrictionEntity } from '../src/database/entities/restriction.entity';
+import { clearDatabase } from './db-cleaner';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let notificationService: InMemoryNotificationService;
-  let recoveryService: PasswordRecoveryService;
+  let resetTokenRepo: Repository<PasswordResetTokenEntity>;
+  let restrictionRepo: Repository<RestrictionEntity>;
 
   beforeAll(async () => {
     process.env.E2E_MAX_PROFILES = '2';
@@ -32,113 +36,129 @@ describe('AuthController (e2e)', () => {
     await app.init();
     notificationService =
       app.get<InMemoryNotificationService>(NotificationService);
-    recoveryService = app.get(PasswordRecoveryService);
+    resetTokenRepo = app.get<Repository<PasswordResetTokenEntity>>(
+      getRepositoryToken(PasswordResetTokenEntity),
+    );
+    restrictionRepo = app.get<Repository<RestrictionEntity>>(
+      getRepositoryToken(RestrictionEntity),
+    );
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('registers successfully', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/v1/auth/register')
-      .set('x-correlation-id', 'test-correlation-id')
-      .send({
-        email: 'user@example.com',
-        password: 'StrongPass123!',
-      })
-      .expect(201);
+  describe('Auth flows (per-test clean)', () => {
+    beforeEach(async () => {
+      const dataSource = app.get<DataSource>(DataSource);
+      await clearDatabase(dataSource);
+    });
 
-    expect(res.body.success).toBe(true);
-    expect(res.body.correlationId).toBe('test-correlation-id');
-    expect(res.body.data.requiresVerification).toBe(true);
-  });
+    it('registers successfully', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .set('x-correlation-id', 'test-correlation-id')
+        .send({
+          email: 'user@example.com',
+          password: 'StrongPass123!',
+        })
+        .expect(201);
 
-  it('logs in and logs out with revocation', async () => {
-    await request(app.getHttpServer())
-      .post('/v1/auth/register')
-      .send({
-        email: 'logout@example.com',
-        password: 'StrongPass123!',
-      })
-      .expect(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.correlationId).toBe('test-correlation-id');
+      expect(res.body.data.requiresVerification).toBe(true);
+    });
 
-    const loginRes = await request(app.getHttpServer())
-      .post('/v1/auth/login')
-      .send({ email: 'logout@example.com', password: 'StrongPass123!' })
-      .expect(200);
+    it('logs in and logs out with revocation', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .send({
+          email: 'logout@example.com',
+          password: 'StrongPass123!',
+        })
+        .expect(201);
 
-    const accessToken = loginRes.body.data.accessToken as string;
-    expect(accessToken).toBeTruthy();
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({ email: 'logout@example.com', password: 'StrongPass123!' })
+        .expect(200);
 
-    await request(app.getHttpServer())
-      .post('/v1/auth/logout')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .expect(200);
+      const accessToken = loginRes.body.data.accessToken as string;
+      expect(accessToken).toBeTruthy();
 
-    const secondLogoutRes = await request(app.getHttpServer())
-      .post('/v1/auth/logout')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .expect(401);
+      await request(app.getHttpServer())
+        .post('/v1/auth/logout')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(200);
 
-    expect(secondLogoutRes.body.success).toBe(false);
-    expect(secondLogoutRes.body.error.code).toBe('AUTH_SESSION_REVOKED');
-  });
+      const secondLogoutRes = await request(app.getHttpServer())
+        .post('/v1/auth/logout')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .expect(401);
 
-  it('rejects login with invalid credentials', async () => {
-    await request(app.getHttpServer())
-      .post('/v1/auth/register')
-      .send({
-        email: 'invalid@example.com',
-        password: 'StrongPass123!',
-      })
-      .expect(201);
+      expect(secondLogoutRes.body.success).toBe(false);
+      expect(secondLogoutRes.body.error.code).toBe('AUTH_SESSION_REVOKED');
+    });
 
-    const res = await request(app.getHttpServer())
-      .post('/v1/auth/login')
-      .send({ email: 'invalid@example.com', password: 'WrongPass999!' })
-      .expect(401);
+      it('rejects login with invalid credentials', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .send({
+          email: 'invalid@example.com',
+          password: 'StrongPass123!',
+        })
+        .expect(201);
 
-    expect(res.body.success).toBe(false);
-    expect(res.body.error.code).toBe('AUTH_INVALID_CREDENTIALS');
-  });
+      const res = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({ email: 'invalid@example.com', password: 'WrongPass999!' })
+        .expect(401);
 
-  it('rotates session on refresh and invalidates old refresh token', async () => {
-    await request(app.getHttpServer())
-      .post('/v1/auth/register')
-      .send({
-        email: 'refresh@example.com',
-        password: 'StrongPass123!',
-      })
-      .expect(201);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('AUTH_INVALID_CREDENTIALS');
+    });
 
-    const loginRes = await request(app.getHttpServer())
-      .post('/v1/auth/login')
-      .send({ email: 'refresh@example.com', password: 'StrongPass123!' })
-      .expect(200);
+    it('rotates session on refresh and invalidates old refresh token', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .send({
+          email: 'refresh@example.com',
+          password: 'StrongPass123!',
+        })
+        .expect(201);
 
-    const originalRefreshToken = loginRes.body.data.refreshToken as string;
-    const originalAccessToken = loginRes.body.data.accessToken as string;
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({ email: 'refresh@example.com', password: 'StrongPass123!' })
+        .expect(200);
 
-    const refreshRes = await request(app.getHttpServer())
-      .post('/v1/auth/refresh')
-      .send({ refreshToken: originalRefreshToken })
-      .expect(200);
+      const originalRefreshToken = loginRes.body.data.refreshToken as string;
+      const originalAccessToken = loginRes.body.data.accessToken as string;
 
-    expect(refreshRes.body.success).toBe(true);
-    expect(refreshRes.body.data.accessToken).not.toBe(originalAccessToken);
-    expect(refreshRes.body.data.refreshToken).not.toBe(originalRefreshToken);
-    expect(refreshRes.body.data.accessToken).toBeTruthy();
+      const refreshRes = await request(app.getHttpServer())
+        .post('/v1/auth/refresh')
+        .send({ refreshToken: originalRefreshToken })
+        .expect(200);
 
-    const reusedRefreshRes = await request(app.getHttpServer())
-      .post('/v1/auth/refresh')
-      .send({ refreshToken: originalRefreshToken })
-      .expect(401);
+      expect(refreshRes.body.success).toBe(true);
+      expect(refreshRes.body.data.accessToken).not.toBe(originalAccessToken);
+      expect(refreshRes.body.data.refreshToken).not.toBe(originalRefreshToken);
+      expect(refreshRes.body.data.accessToken).toBeTruthy();
 
-    expect(reusedRefreshRes.body.error.code).toBe('AUTH_SESSION_REVOKED');
+      const reusedRefreshRes = await request(app.getHttpServer())
+        .post('/v1/auth/refresh')
+        .send({ refreshToken: originalRefreshToken })
+        .expect(401);
+
+      expect(reusedRefreshRes.body.error.code).toBe('AUTH_SESSION_REVOKED');
+    });
   });
 
   describe('password recovery', () => {
+    beforeEach(async () => {
+      const dataSource = app.get<DataSource>(DataSource);
+      await clearDatabase(dataSource);
+    });
     it('forgot-password returns generic message regardless of account existence', async () => {
       const knownRes = await request(app.getHttpServer())
         .post('/v1/auth/forgot-password')
@@ -356,13 +376,10 @@ describe('AuthController (e2e)', () => {
 
       // Backdate the token record directly via the injected service to simulate expiry.
       const tokenHash = createHash('sha256').update(token).digest('hex');
-      type TokenMap = Map<string, { expiresAt: Date }>;
-      const tokenMap = (
-        recoveryService as unknown as { resetTokensByHash: TokenMap }
-      ).resetTokensByHash;
-      const record = tokenMap.get(tokenHash);
-      expect(record).toBeDefined();
-      record!.expiresAt = new Date(Date.now() - 1000);
+      await resetTokenRepo.update(
+        { tokenHash },
+        { expiresAt: new Date(Date.now() - 1000) },
+      );
 
       const res = await request(app.getHttpServer())
         .post('/v1/auth/reset-password')
@@ -374,6 +391,10 @@ describe('AuthController (e2e)', () => {
   });
 
   describe('GET /auth/sessions and DELETE /auth/sessions/:sessionId', () => {
+    beforeEach(async () => {
+      const dataSource = app.get<DataSource>(DataSource);
+      await clearDatabase(dataSource);
+    });
     it('GET /auth/sessions with valid token returns 200 and list with isCurrent', async () => {
       await request(app.getHttpServer())
         .post('/v1/auth/register')
@@ -468,9 +489,7 @@ describe('AuthController (e2e)', () => {
 
       const accessToken = loginRes.body.data.accessToken as string;
       const res = await request(app.getHttpServer())
-        .delete(
-          '/v1/auth/sessions/00000000-0000-0000-0000-000000000000',
-        )
+        .delete('/v1/auth/sessions/00000000-0000-0000-0000-000000000000')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(404);
 
@@ -523,6 +542,7 @@ describe('AuthController (e2e)', () => {
       expect(afterRes.body.error?.code).toBe('AUTH_UNAUTHORIZED');
     });
   });
+  });
 
   describe('Account Profile', () => {
     const accountEmail = 'account-profile@example.com';
@@ -530,6 +550,7 @@ describe('AuthController (e2e)', () => {
     let accountToken: string;
 
     beforeAll(async () => {
+      await clearDatabase(app.get<DataSource>(DataSource));
       await request(app.getHttpServer())
         .post('/v1/auth/register')
         .set('x-forwarded-for', '10.0.1.1')
@@ -633,6 +654,7 @@ describe('AuthController (e2e)', () => {
     let secondProfileId: string;
 
     beforeAll(async () => {
+      await clearDatabase(app.get<DataSource>(DataSource));
       await request(app.getHttpServer())
         .post('/v1/auth/register')
         .set('x-forwarded-for', '10.0.1.3')
@@ -703,9 +725,9 @@ describe('AuthController (e2e)', () => {
       secondProfileId = res.body.data.id as string;
     });
 
-    it('POST /profiles/:id/activate switches active profile', async () => {
+    it('PATCH /profiles/:id/activate switches active profile', async () => {
       const res = await request(app.getHttpServer())
-        .post(`/v1/profiles/${secondProfileId}/activate`)
+        .patch(`/v1/profiles/${secondProfileId}/activate`)
         .set('Authorization', `Bearer ${profilesToken}`)
         .expect(200);
       expect(res.body.success).toBe(true);
@@ -750,9 +772,9 @@ describe('AuthController (e2e)', () => {
       expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
     });
 
-    it('POST /profiles/nonexistent-id/activate → 404 PROFILE_NOT_FOUND', async () => {
+    it('PATCH /profiles/nonexistent-id/activate → 404 PROFILE_NOT_FOUND', async () => {
       const res = await request(app.getHttpServer())
-        .post('/v1/profiles/nonexistent-id/activate')
+        .patch('/v1/profiles/nonexistent-id/activate')
         .set('Authorization', `Bearer ${profilesToken}`)
         .expect(404);
       expect(res.body.success).toBe(false);
@@ -812,6 +834,7 @@ describe('AuthController (e2e)', () => {
     const limitPassword = 'StrongPass123!';
     let limitToken: string;
 
+    // Fresh app instance without E2E_MAX_PROFILES; DB is shared so we clear before seeding.
     beforeAll(async () => {
       delete process.env.E2E_MAX_PROFILES;
 
@@ -827,7 +850,10 @@ describe('AuthController (e2e)', () => {
       );
       limitApp.setGlobalPrefix('v1');
       await limitApp.init();
+    });
 
+    beforeAll(async () => {
+      await clearDatabase(limitApp.get<DataSource>(DataSource));
       await request(limitApp.getHttpServer())
         .post('/v1/auth/register')
         .send({
@@ -873,6 +899,7 @@ describe('AuthController (e2e)', () => {
     let commPrefToken: string;
 
     beforeAll(async () => {
+      await clearDatabase(app.get<DataSource>(DataSource));
       await request(app.getHttpServer())
         .post('/v1/auth/register')
         .set('x-forwarded-for', '10.0.1.4')
@@ -916,9 +943,9 @@ describe('AuthController (e2e)', () => {
       expect(product.mandatory).toBe(false);
     });
 
-    it('PATCH /account/communication-preferences with { productEmails: false } → 200, product disabled', async () => {
+    it('PUT /account/communication-preferences with { productEmails: false } → 200, product disabled', async () => {
       const res = await request(app.getHttpServer())
-        .patch('/v1/account/communication-preferences')
+        .put('/v1/account/communication-preferences')
         .set('Authorization', `Bearer ${commPrefToken}`)
         .send({ productEmails: false })
         .expect(200);
@@ -936,7 +963,7 @@ describe('AuthController (e2e)', () => {
 
     it('PATCH preference persists — GET after PATCH returns updated value', async () => {
       await request(app.getHttpServer())
-        .patch('/v1/account/communication-preferences')
+        .put('/v1/account/communication-preferences')
         .set('Authorization', `Bearer ${commPrefToken}`)
         .send({ productEmails: true })
         .expect(200);
@@ -962,9 +989,9 @@ describe('AuthController (e2e)', () => {
       expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
     });
 
-    it('PATCH /account/communication-preferences without token → 401 AUTH_UNAUTHORIZED', async () => {
+    it('PUT /account/communication-preferences without token → 401 AUTH_UNAUTHORIZED', async () => {
       const res = await request(app.getHttpServer())
-        .patch('/v1/account/communication-preferences')
+        .put('/v1/account/communication-preferences')
         .send({ productEmails: false })
         .expect(401);
       expect(res.body.success).toBe(false);
@@ -978,6 +1005,7 @@ describe('AuthController (e2e)', () => {
     let dataRightsToken: string;
 
     beforeAll(async () => {
+      await clearDatabase(app.get<DataSource>(DataSource));
       await request(app.getHttpServer())
         .post('/v1/auth/register')
         .set('x-forwarded-for', '10.0.2.1')
@@ -1203,6 +1231,7 @@ describe('AuthController (e2e)', () => {
     let restrictionToken: string;
 
     beforeAll(async () => {
+      await clearDatabase(app.get<DataSource>(DataSource));
       await request(app.getHttpServer())
         .post('/v1/auth/register')
         .set('x-forwarded-for', '10.0.3.1')
@@ -1219,9 +1248,9 @@ describe('AuthController (e2e)', () => {
       restrictionToken = loginRes.body.data.accessToken as string;
     });
 
-    it('GET /account/restriction-status with valid token → 200 and isRestricted false', async () => {
+    it('GET /account/restriction with valid token → 200 and isRestricted false', async () => {
       const res = await request(app.getHttpServer())
-        .get('/v1/account/restriction-status')
+        .get('/v1/account/restriction')
         .set('Authorization', `Bearer ${restrictionToken}`)
         .expect(200);
 
@@ -1230,31 +1259,33 @@ describe('AuthController (e2e)', () => {
       expect(typeof res.body.correlationId).toBe('string');
     });
 
-    it('GET /account/restriction-status without token → 401 AUTH_UNAUTHORIZED', async () => {
+    it('GET /account/restriction without token → 401 AUTH_UNAUTHORIZED', async () => {
       const res = await request(app.getHttpServer())
-        .get('/v1/account/restriction-status')
+        .get('/v1/account/restriction')
         .expect(401);
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
     });
 
-    it('GET /account/restriction-status → 200 with isRestricted true, rationale, nextSteps when user is restricted', async () => {
+    it('GET /account/restriction → 200 with isRestricted true, rationale, nextSteps when user is restricted', async () => {
       const profileRes = await request(app.getHttpServer())
         .get('/v1/account/profile')
         .set('Authorization', `Bearer ${restrictionToken}`)
         .expect(200);
       const userId = profileRes.body.data.id as string;
 
-      const accountService = app.get(AccountService);
-      (accountService as unknown as { restrictionStore: Map<string, { rationale: string; nextSteps: string }> })
-        .restrictionStore.set(userId, {
+      await restrictionRepo.save(
+        restrictionRepo.create({
+          userId,
+          isRestricted: true,
           rationale: 'Suspicious activity detected on your account.',
           nextSteps: 'Contact support at support@doclyzer.com to resolve.',
-        });
+        }),
+      );
 
       const res = await request(app.getHttpServer())
-        .get('/v1/account/restriction-status')
+        .get('/v1/account/restriction')
         .set('Authorization', `Bearer ${restrictionToken}`)
         .expect(200);
 
@@ -1266,28 +1297,32 @@ describe('AuthController (e2e)', () => {
       expect(res.body.data.nextSteps.length).toBeGreaterThan(0);
 
       // clean up so other tests in this block still see isRestricted: false
-      (accountService as unknown as { restrictionStore: Map<string, unknown> })
-        .restrictionStore.delete(userId);
+      await restrictionRepo.delete({ userId });
     });
   });
 
-  it('enforces rate limiting and returns correct error shape', async () => {
-    let rateLimitedRes: request.Response | undefined;
+  describe('rate limiting', () => {
+    beforeEach(async () => {
+      await clearDatabase(app.get<DataSource>(DataSource));
+    });
+    it('enforces rate limiting and returns correct error shape', async () => {
+      let rateLimitedRes: request.Response | undefined;
 
-    for (let i = 0; i < 20; i++) {
-      const res = await request(app.getHttpServer())
-        .post('/v1/auth/login')
-        .send({ email: 'ratelimit@example.com', password: 'any' });
+      for (let i = 0; i < 20; i++) {
+        const res = await request(app.getHttpServer())
+          .post('/v1/auth/login')
+          .send({ email: 'ratelimit@example.com', password: 'any' });
 
-      if (res.status === 429) {
-        rateLimitedRes = res;
-        break;
+        if (res.status === 429) {
+          rateLimitedRes = res;
+          break;
+        }
       }
-    }
 
-    expect(rateLimitedRes).toBeDefined();
-    expect(rateLimitedRes!.body.success).toBe(false);
-    expect(rateLimitedRes!.body.error.code).toBe('AUTH_RATE_LIMITED');
-    expect(typeof rateLimitedRes!.body.correlationId).toBe('string');
+      expect(rateLimitedRes).toBeDefined();
+      expect(rateLimitedRes!.body.success).toBe(false);
+      expect(rateLimitedRes!.body.error.code).toBe('AUTH_RATE_LIMITED');
+      expect(typeof rateLimitedRes!.body.correlationId).toBe('string');
+    });
   });
 });

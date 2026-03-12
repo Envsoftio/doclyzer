@@ -10,41 +10,68 @@ function makeProfileRepo(): jest.Mocked<Repository<ProfileEntity>> {
   let idCounter = 1;
 
   return {
-    find: jest.fn(async ({ where }: { where: { userId: string } }) =>
+    find: jest.fn(({ where }: { where: { userId: string } }) =>
       store.filter((p) => p.userId === where.userId),
     ),
-    findOne: jest.fn(async ({ where }: { where: { id?: string; userId?: string } }) =>
-      store.find((p) => (!where.id || p.id === where.id) && (!where.userId || p.userId === where.userId)) ?? null,
+    findOne: jest.fn(
+      ({ where }: { where: { id?: string; userId?: string } }) =>
+        store.find(
+          (p) =>
+            (!where.id || p.id === where.id) &&
+            (!where.userId || p.userId === where.userId),
+        ) ?? null,
     ),
-    count: jest.fn(async ({ where }: { where: { userId: string } }) =>
-      store.filter((p) => p.userId === where.userId).length,
+    count: jest.fn(
+      ({ where }: { where: { userId: string } }) =>
+        store.filter((p) => p.userId === where.userId).length,
     ),
-    create: jest.fn((data: Partial<ProfileEntity>) => ({ ...data } as ProfileEntity)),
-    save: jest.fn(async (entity: ProfileEntity) => {
+    create: jest.fn(
+      (data: Partial<ProfileEntity>) => ({ ...data }) as ProfileEntity,
+    ),
+    save: jest.fn((entity: ProfileEntity) => {
       const existing = store.findIndex((p) => p.id === entity.id);
       if (existing >= 0) {
         store[existing] = entity;
         return entity;
       }
-      const saved = { ...entity, id: `profile-${idCounter++}`, createdAt: new Date(), updatedAt: new Date() } as ProfileEntity;
+      const uuidSuffix = idCounter.toString(16).padStart(12, '0');
+      const id = `00000000-0000-4000-8000-${uuidSuffix}`;
+      idCounter += 1;
+      const saved = {
+        ...entity,
+        id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as ProfileEntity;
       store.push(saved);
       return saved;
     }),
-    delete: jest.fn(async ({ id, userId }: { id?: string; userId?: string }) => {
+    delete: jest.fn(({ id, userId }: { id?: string; userId?: string }) => {
       const idx = store.findIndex(
         (p) => (!id || p.id === id) && (!userId || p.userId === userId),
       );
       if (idx >= 0) store.splice(idx, 1);
       return { affected: 1 };
     }),
-    update: jest.fn(async (criteria: string | { userId?: string; id?: string }, partial: Partial<ProfileEntity>) => {
-      store.forEach((p) => {
-        const matchId = typeof criteria === 'string' ? p.id === criteria : (!criteria.id || p.id === criteria.id);
-        const matchUser = typeof criteria === 'string' ? true : (!criteria.userId || p.userId === criteria.userId);
-        if (matchId && matchUser) Object.assign(p, partial);
-      });
-      return { affected: 1 };
-    }),
+    update: jest.fn(
+      (
+        criteria: string | { userId?: string; id?: string },
+        partial: Partial<ProfileEntity>,
+      ) => {
+        store.forEach((p) => {
+          const matchId =
+            typeof criteria === 'string'
+              ? p.id === criteria
+              : !criteria.id || p.id === criteria.id;
+          const matchUser =
+            typeof criteria === 'string'
+              ? true
+              : !criteria.userId || p.userId === criteria.userId;
+          if (matchId && matchUser) Object.assign(p, partial);
+        });
+        return { affected: 1 };
+      },
+    ),
   } as unknown as jest.Mocked<Repository<ProfileEntity>>;
 }
 
@@ -104,16 +131,18 @@ describe('ProfilesService', () => {
     it('throws ProfileLimitExceededException at limit', async () => {
       const freeService = createService(1);
       await freeService.createProfile('user-1', { name: 'Vishnu' });
-      await expect(freeService.createProfile('user-1', { name: 'Amma' })).rejects.toThrow(
-        ProfileLimitExceededException,
-      );
+      await expect(
+        freeService.createProfile('user-1', { name: 'Amma' }),
+      ).rejects.toThrow(ProfileLimitExceededException);
     });
   });
 
   describe('updateProfile', () => {
     it('updates name', async () => {
       const profile = await service.createProfile('user-1', { name: 'Vishnu' });
-      const updated = await service.updateProfile('user-1', profile.id, { name: 'Vishnu Updated' });
+      const updated = await service.updateProfile('user-1', profile.id, {
+        name: 'Vishnu Updated',
+      });
       expect(updated.name).toBe('Vishnu Updated');
     });
 
@@ -126,9 +155,9 @@ describe('ProfilesService', () => {
 
   describe('deleteProfile', () => {
     it('throws ProfileNotFoundException for unknown id', async () => {
-      await expect(service.deleteProfile('user-1', 'nonexistent')).rejects.toThrow(
-        ProfileNotFoundException,
-      );
+      await expect(
+        service.deleteProfile('user-1', 'nonexistent'),
+      ).rejects.toThrow(ProfileNotFoundException);
     });
   });
 });

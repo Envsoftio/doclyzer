@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LessThan, Repository } from 'typeorm';
+import { IsNull, LessThan, Repository } from 'typeorm';
 import { createHash, randomBytes } from 'node:crypto';
 import { PasswordResetTokenEntity } from '../../database/entities/password-reset-token.entity';
 import { NotificationService } from '../../common/notification/notification.service';
@@ -34,6 +34,7 @@ export class PasswordRecoveryService {
     await this.purgeExpiredTokens();
 
     if (!user) {
+      // Burn equivalent CPU work to keep timing similar for unknown accounts.
       createHash('sha256').update(rawToken).digest('hex');
       this.logger.log(
         'Password reset requested (enumeration-safe: no matching account)',
@@ -47,7 +48,7 @@ export class PasswordRecoveryService {
     // Invalidate any previous pending tokens for this user.
     await this.tokenRepo.delete({
       userId: user.id,
-      usedAt: undefined as unknown as Date,
+      usedAt: IsNull(),
     });
 
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');

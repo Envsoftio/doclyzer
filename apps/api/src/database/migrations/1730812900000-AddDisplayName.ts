@@ -10,6 +10,8 @@ export class AddDisplayName1730812900000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN IF EXISTS "display_name"`);
+    await queryRunner.query(
+      `ALTER TABLE "users" DROP COLUMN IF EXISTS "display_name"`,
+    );
   }
 }

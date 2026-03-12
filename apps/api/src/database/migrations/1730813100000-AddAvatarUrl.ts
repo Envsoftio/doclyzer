@@ -8,6 +8,8 @@ export class AddAvatarUrl1730813100000 implements MigrationInterface {
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN IF EXISTS "avatar_url"`);
+    await queryRunner.query(
+      `ALTER TABLE "users" DROP COLUMN IF EXISTS "avatar_url"`,
+    );
   }
 }

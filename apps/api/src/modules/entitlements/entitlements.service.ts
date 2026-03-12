@@ -14,7 +14,8 @@ export class EntitlementsService {
    * Returns max profiles allowed for the user's plan.
    * Free tier: 1. Paid tier: multiple (configurable in Epic 5.2).
    */
-  getMaxProfiles(_userId: string): number {
+  getMaxProfiles(userId: string): number {
+    void userId;
     const e2eOverride = this.configService.get<string>('E2E_MAX_PROFILES');
     if (!e2eOverride) return 1;
     const n = parseInt(e2eOverride, 10);

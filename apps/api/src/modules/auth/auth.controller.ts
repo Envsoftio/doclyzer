@@ -63,6 +63,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
   async logout(@Req() req: Request): Promise<object> {
     const token = this.extractBearerToken(req.header('authorization'));
     await this.authService.logout(token);

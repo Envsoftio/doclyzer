@@ -26,7 +26,12 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 255, name: 'password_hash' })
   passwordHash!: string;
 
-  @Column({ type: 'varchar', length: 255, name: 'display_name', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'display_name',
+    nullable: true,
+  })
   displayName!: string | null;
 
   @Column({ type: 'varchar', length: 1024, name: 'avatar_url', nullable: true })

@@ -30,9 +30,15 @@ export class ConsentController {
 
   @Post('accept')
   @HttpCode(HttpStatus.OK)
-  async accept(@Body() body: AcceptPoliciesDto, @Req() req: Request): Promise<object> {
+  async accept(
+    @Body() body: AcceptPoliciesDto,
+    @Req() req: Request,
+  ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = await this.consentService.acceptPolicies(userId, body.policyTypes);
+    const data = await this.consentService.acceptPolicies(
+      userId,
+      body.policyTypes,
+    );
     return successResponse(data, getCorrelationId(req));
   }
 }

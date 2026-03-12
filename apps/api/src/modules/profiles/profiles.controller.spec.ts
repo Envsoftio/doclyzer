@@ -34,7 +34,14 @@ const mockProfile: ProfileWithActive = {
 describe('ProfilesController', () => {
   let controller: ProfilesController;
   let profilesService: jest.Mocked<
-    Pick<ProfilesService, 'getProfiles' | 'createProfile' | 'updateProfile' | 'activateProfile' | 'deleteProfile'>
+    Pick<
+      ProfilesService,
+      | 'getProfiles'
+      | 'createProfile'
+      | 'updateProfile'
+      | 'activateProfile'
+      | 'deleteProfile'
+    >
   >;
 
   beforeEach(() => {
@@ -45,7 +52,9 @@ describe('ProfilesController', () => {
       activateProfile: jest.fn(),
       deleteProfile: jest.fn(),
     };
-    controller = new ProfilesController(profilesService as unknown as ProfilesService);
+    controller = new ProfilesController(
+      profilesService as unknown as ProfilesService,
+    );
   });
 
   describe('getProfiles', () => {
@@ -65,18 +74,25 @@ describe('ProfilesController', () => {
   describe('createProfile', () => {
     it('returns created profile', async () => {
       profilesService.createProfile.mockResolvedValue(mockProfile);
-      const result = (await controller.createProfile({ name: 'Vishnu' }, makeReq())) as {
+      const result = (await controller.createProfile(
+        { name: 'Vishnu' },
+        makeReq(),
+      )) as {
         success: boolean;
         data: ProfileWithActive;
       };
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockProfile);
-      expect(profilesService.createProfile).toHaveBeenCalledWith('user-1', { name: 'Vishnu' });
+      expect(profilesService.createProfile).toHaveBeenCalledWith('user-1', {
+        name: 'Vishnu',
+      });
     });
 
     it('propagates exceptions from service', async () => {
       profilesService.createProfile.mockRejectedValue(new Error('unexpected'));
-      await expect(controller.createProfile({ name: 'Vishnu' }, makeReq())).rejects.toThrow(Error);
+      await expect(
+        controller.createProfile({ name: 'Vishnu' }, makeReq()),
+      ).rejects.toThrow(Error);
     });
   });
 
@@ -84,7 +100,11 @@ describe('ProfilesController', () => {
     it('delegates to ProfilesService.updateProfile', async () => {
       const updated = { ...mockProfile, name: 'Vishnu Updated' };
       profilesService.updateProfile.mockResolvedValue(updated);
-      const result = (await controller.updateProfile('profile-1', { name: 'Vishnu Updated' }, makeReq())) as {
+      const result = (await controller.updateProfile(
+        'profile-1',
+        { name: 'Vishnu Updated' },
+        makeReq(),
+      )) as {
         success: boolean;
         data: ProfileWithActive;
       };
@@ -96,7 +116,10 @@ describe('ProfilesController', () => {
   describe('activateProfile', () => {
     it('returns full profile list', async () => {
       profilesService.activateProfile.mockResolvedValue([mockProfile]);
-      const result = (await controller.activateProfile('profile-1', makeReq())) as {
+      const result = (await controller.activateProfile(
+        'profile-1',
+        makeReq(),
+      )) as {
         success: boolean;
         data: ProfileWithActive[];
       };
@@ -108,7 +131,10 @@ describe('ProfilesController', () => {
   describe('deleteProfile', () => {
     it('returns updated list', async () => {
       profilesService.deleteProfile.mockResolvedValue([]);
-      const result = (await controller.deleteProfile('profile-1', makeReq())) as {
+      const result = (await controller.deleteProfile(
+        'profile-1',
+        makeReq(),
+      )) as {
         success: boolean;
         data: ProfileWithActive[];
       };

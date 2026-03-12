@@ -31,7 +31,10 @@ export const CLOSURE_CONFIRMATION_REQUIRED = 'CLOSURE_CONFIRMATION_REQUIRED';
 
 export class ExportRequestNotFoundException extends NotFoundException {
   constructor() {
-    super({ code: EXPORT_REQUEST_NOT_FOUND, message: 'Export request not found' });
+    super({
+      code: EXPORT_REQUEST_NOT_FOUND,
+      message: 'Export request not found',
+    });
   }
 }
 
