@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Patch,
   Param,
   Post,
@@ -15,8 +16,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { memoryStorage } from 'multer';
+import { extname } from 'path';
+import type { FileStorageService } from '../../common/storage/file-storage.interface';
+import { FILE_STORAGE } from '../../common/storage/storage.module';
 import type { Request } from 'express';
 import type { Express } from 'express';
 import type { RequestUser } from '../../modules/auth/auth.types';
@@ -31,11 +34,24 @@ import {
 } from './account.dto';
 import { AccountService } from './account.service';
 import { ExportRequestNotFoundException } from './account.types';
+import { AuthService } from '../auth/auth.service';
+
+const ALLOWED_AVATAR_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+
+function getClientIp(req: Request): string {
+  const forwarded = req.header('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.ip ?? 'unknown';
+}
 
 @Controller('account')
 @UseGuards(AuthGuard)
 export class AccountController {
-  constructor(private readonly accountService: AccountService) {}
+  constructor(
+    private readonly accountService: AccountService,
+    private readonly authService: AuthService,
+    @Inject(FILE_STORAGE) private readonly fileStorage: FileStorageService,
+  ) {}
 
   @Get('restriction')
   async getRestrictionStatus(@Req() req: Request): Promise<object> {
@@ -132,18 +148,22 @@ export class AccountController {
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(
     FileInterceptor('avatar', {
-      storage: diskStorage({
-        destination: join(process.cwd(), 'uploads', 'avatars'),
-        filename: (_req, file, cb) => {
-          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-          cb(null, `${unique}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
       fileFilter: (_req, file, cb) => {
         if (!file.mimetype.match(/^image\//)) {
           cb(new BadRequestException('Only image files are allowed'), false);
         } else {
-          cb(null, true);
+          const ext = extname(file.originalname).toLowerCase();
+          if (ext && !ALLOWED_AVATAR_EXTENSIONS.includes(ext)) {
+            cb(
+              new BadRequestException(
+                `Invalid file extension. Allowed: ${ALLOWED_AVATAR_EXTENSIONS.join(', ')}`,
+              ),
+              false,
+            );
+          } else {
+            cb(null, true);
+          }
         }
       },
       limits: { fileSize: 5 * 1024 * 1024 },
@@ -153,11 +173,22 @@ export class AccountController {
     @UploadedFile() file: Express.Multer.File,
     @Req() req: Request,
   ): Promise<object> {
-    if (!file) throw new BadRequestException('No file uploaded');
+    if (!file || !file.buffer)
+      throw new BadRequestException('No file uploaded');
+    this.authService.enforceRateLimit('avatar-upload', getClientIp(req), 10);
     const { id: userId } = req.user as RequestUser;
-    const avatarUrl = `/uploads/avatars/${file.filename}`;
-    const data = await this.accountService.updateAvatar(userId, avatarUrl);
-    return successResponse(data, getCorrelationId(req));
+    const rawExt = extname(file.originalname).toLowerCase();
+    const ext =
+      rawExt && ALLOWED_AVATAR_EXTENSIONS.includes(rawExt) ? rawExt : '.jpg';
+    const key = `avatars/${userId}${ext}`;
+    await this.fileStorage.upload(key, file.buffer, file.mimetype);
+    try {
+      const data = await this.accountService.updateAvatar(userId, key);
+      return successResponse(data, getCorrelationId(req));
+    } catch (e) {
+      await this.fileStorage.delete(key);
+      throw e;
+    }
   }
 
   @Get('closure-request')

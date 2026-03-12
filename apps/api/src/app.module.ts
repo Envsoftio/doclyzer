@@ -1,6 +1,7 @@
 import { join } from 'path';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { storageConfig } from './config/storage.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataType, newDb } from 'pg-mem';
 import { DataSource, type DataSourceOptions } from 'typeorm';
@@ -38,6 +39,7 @@ const typeOrmEntities = [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [join(__dirname, '../../../.env'), '.env'],
+      load: [storageConfig],
     }),
     TypeOrmModule.forRootAsync({
       useFactory: (config: ConfigService) => {
@@ -49,7 +51,9 @@ const typeOrmEntities = [
         const usePgMem = isTest && !e2eRealDb;
         return {
           type: 'postgres',
-          ...(usePgMem ? {} : { url: dbUrl ?? config.getOrThrow<string>('DATABASE_URL') }),
+          ...(usePgMem
+            ? {}
+            : { url: dbUrl ?? config.getOrThrow<string>('DATABASE_URL') }),
           entities: typeOrmEntities,
           autoLoadEntities: true,
           synchronize: usePgMem,
@@ -67,7 +71,9 @@ const typeOrmEntities = [
         if (!options) throw new Error('TypeORM options were not provided');
         const isTest =
           options.type === 'postgres' &&
-          Boolean((options as { extra?: { usePgMem?: boolean } }).extra?.usePgMem);
+          Boolean(
+            (options as { extra?: { usePgMem?: boolean } }).extra?.usePgMem,
+          );
         if (!isTest) {
           return new DataSource(options).initialize();
         }

@@ -10,6 +10,15 @@ import { ClosureRequestEntity } from '../../database/entities/closure-request.en
 import { ProfileEntity } from '../../database/entities/profile.entity';
 import { ConsentRecordEntity } from '../../database/entities/consent-record.entity';
 import { COMM_PREF_CATEGORY } from './account.types';
+import type { FileStorageService } from '../../common/storage/file-storage.interface';
+
+function makeFileStorage(): jest.Mocked<FileStorageService> {
+  return {
+    upload: jest.fn().mockResolvedValue('avatars/user-1.jpg'),
+    delete: jest.fn().mockResolvedValue(undefined),
+    getSignedUrl: jest.fn().mockResolvedValue('https://example.com/signed'),
+  };
+}
 
 function makeRepo(): jest.Mocked<Repository<object>> {
   return {
@@ -43,6 +52,7 @@ describe('AccountService', () => {
   let profileRepo: ReturnType<typeof makeRepo>;
   let consentRepo: ReturnType<typeof makeRepo>;
   let authService: jest.Mocked<Pick<AuthService, 'revokeAllSessionsForUser'>>;
+  let fileStorage: ReturnType<typeof makeFileStorage>;
 
   beforeEach(() => {
     userRepo = makeRepo();
@@ -55,6 +65,7 @@ describe('AccountService', () => {
     authService = {
       revokeAllSessionsForUser: jest.fn().mockResolvedValue(undefined),
     };
+    fileStorage = makeFileStorage();
 
     service = new AccountService(
       userRepo as unknown as Repository<UserEntity>,
@@ -65,6 +76,7 @@ describe('AccountService', () => {
       profileRepo as unknown as Repository<ProfileEntity>,
       consentRepo as unknown as Repository<ConsentRecordEntity>,
       authService as unknown as AuthService,
+      fileStorage,
     );
   });
 
@@ -87,6 +99,21 @@ describe('AccountService', () => {
         NotFoundException,
       );
     });
+
+    it('resolves avatar storage key to signed URL', async () => {
+      const userWithAvatar = { ...baseUser, avatarUrl: 'avatars/user-1.jpg' };
+      userRepo.findOne.mockResolvedValue(userWithAvatar);
+      fileStorage.getSignedUrl.mockResolvedValue(
+        'https://signed.example/avatar',
+      );
+      const profile = await service.getProfile('user-1');
+      expect(profile.avatarUrl).toBe('https://signed.example/avatar');
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- jest mock assertion
+      expect(fileStorage.getSignedUrl).toHaveBeenCalledWith(
+        'avatars/user-1.jpg',
+        300,
+      );
+    });
   });
 
   describe('updateProfile', () => {
@@ -101,6 +128,28 @@ describe('AccountService', () => {
         displayName: 'Alice',
       });
       expect(updated.displayName).toBe('Alice');
+    });
+
+    it('clears avatar when avatarUrl is null and deletes old key', async () => {
+      const userWithAvatar = {
+        ...baseUser,
+        avatarUrl: 'avatars/user-1.jpg',
+      } as UserEntity;
+      userRepo.findOne.mockResolvedValue(userWithAvatar);
+      userRepo.save.mockResolvedValue({
+        ...userWithAvatar,
+        avatarUrl: null,
+      } as UserEntity);
+      fileStorage.getSignedUrl.mockResolvedValue('https://example.com/signed');
+
+      await service.updateProfile('user-1', { avatarUrl: null });
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- jest mock assertion
+      expect(fileStorage.delete).toHaveBeenCalledWith('avatars/user-1.jpg');
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- jest mock assertion
+      expect(userRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ avatarUrl: null }),
+      );
     });
 
     it('throws NotFoundException for unknown user', async () => {

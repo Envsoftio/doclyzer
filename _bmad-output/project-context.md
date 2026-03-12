@@ -242,6 +242,10 @@ _This file contains critical rules and patterns that AI agents must follow when 
   `Repository` directly; always go through the owning module's exported service
 - **Config never leaks to HTTP responses** — env vars, internal paths, stack traces,
   and DB error messages are always stripped by `ApiExceptionFilter`
+- **Object storage (Backblaze B2)** — user-uploaded files stored via S3-compatible API;
+  key layout: `avatars/{userId}.{ext}`, `reports/{userId}/{profileId}/{reportId}.pdf`;
+  DB stores storage key (not URL); API returns short-lived signed URLs for reads;
+  when `B2_DISABLED=true` or B2 vars missing, `InMemoryFileStorageService` stub is used
 
 ### Mobile Architecture
 

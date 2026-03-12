@@ -45,7 +45,7 @@ development_status:
   0-2-jwt-access-refresh-token-auth-db-backed-sessions: done
   0-3-replace-all-in-memory-services-with-typeorm-repositories: done
   0-4-e2e-test-infrastructure-with-real-test-database: done
-  0-5-backblaze-b2-object-storage-reports-profile-pics-file-uploads: ready-for-dev
+  0-5-backblaze-b2-object-storage-reports-profile-pics-file-uploads: review
   epic-0-retrospective: optional
 
   epic-1: in-progress

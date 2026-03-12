@@ -1,6 +1,6 @@
 # Story 0.5: Backblaze B2 Object Storage for Reports, Profile Pictures, and File Uploads
 
-**Status:** ready-for-dev  
+**Status:** review  
 **Epic:** 0 — Backend Foundation — Real Persistence, JWT Auth & API Wiring  
 **Depends on:** Story 0.1, 0.2, 0.3 (DB and auth in place; 0.4 optional for E2E)
 
@@ -33,35 +33,35 @@ So that storage is durable, scalable, and not tied to local disk, and access is 
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Introduce file-storage abstraction and B2 client** (AC: 1, 4)
-  - [ ] 1.1 Add `@aws-sdk/client-s3` (or equivalent S3-compatible client) and config validation for B2 env vars
-  - [ ] 1.2 Create `FileStorageService` (or `ObjectStorageService`) interface + B2 implementation in `apps/api/src/common/storage/` (or `apps/api/src/modules/shared/storage/`)
-  - [ ] 1.3 Register config: `B2_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`, `B2_ENDPOINT` (e.g. `https://s3.us-west-002.backblazeb2.com`), optional `B2_DISABLED` for local dev
-  - [ ] 1.4 Implement: `upload(key, streamOrBuffer, contentType?)`, `delete(key)`, `getSignedUrl(key, expiresInSeconds)` (and/or `getReadStream(key)` for streaming)
-  - [ ] 1.5 Key naming: `reports/{userId}/{profileId}/{reportId}.pdf`, `avatars/{userId}.{ext}`; document in code and project-context
+- [x] **Task 1: Introduce file-storage abstraction and B2 client** (AC: 1, 4)
+  - [x] 1.1 Add `@aws-sdk/client-s3` (or equivalent S3-compatible client) and config validation for B2 env vars
+  - [x] 1.2 Create `FileStorageService` (or `ObjectStorageService`) interface + B2 implementation in `apps/api/src/common/storage/` (or `apps/api/src/modules/shared/storage/`)
+  - [x] 1.3 Register config: `B2_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET_NAME`, `B2_ENDPOINT` (e.g. `https://s3.us-west-002.backblazeb2.com`), optional `B2_DISABLED` for local dev
+  - [x] 1.4 Implement: `upload(key, streamOrBuffer, contentType?)`, `delete(key)`, `getSignedUrl(key, expiresInSeconds)` (and/or `getReadStream(key)` for streaming)
+  - [x] 1.5 Key naming: `reports/{userId}/{profileId}/{reportId}.pdf`, `avatars/{userId}.{ext}`; document in code and project-context
 
-- [ ] **Task 2: Wire avatar upload to B2** (AC: 1, 2, 4)
-  - [ ] 2.1 Replace multer `diskStorage` in `AccountController` with memory storage (multer.memoryStorage()) so file is in buffer
-  - [ ] 2.2 After multer, call `FileStorageService.upload('avatars/' + userId + ext, file.buffer, file.mimetype)`; store returned key (or stable path) in DB
-  - [ ] 2.3 User/Profile entity: store `avatarStorageKey` or `avatarUrl` (path/key) instead of local path; ensure existing migration or new migration for new column if needed
-  - [ ] 2.4 Avatar read: endpoint returns signed URL from B2 or streams; remove reliance on static `/uploads/avatars/` serving
+- [x] **Task 2: Wire avatar upload to B2** (AC: 1, 2, 4)
+  - [x] 2.1 Replace multer `diskStorage` in `AccountController` with memory storage (multer.memoryStorage()) so file is in buffer
+  - [x] 2.2 After multer, call `FileStorageService.upload('avatars/' + userId + ext, file.buffer, file.mimetype)`; store returned key (or stable path) in DB
+  - [x] 2.3 User/Profile entity: store `avatarStorageKey` or `avatarUrl` (path/key) instead of local path; ensure existing migration or new migration for new column if needed
+  - [x] 2.4 Avatar read: endpoint returns signed URL from B2 or streams; remove reliance on static `/uploads/avatars/` serving
 
-- [ ] **Task 3: Report upload flow (placeholder for Epic 2)** (AC: 1, 2, 3)
-  - [ ] 3.1 If report upload exists in this codebase: same pattern — upload to B2 key `reports/{userId}/{profileId}/{reportId}.pdf`, save key in report record
-  - [ ] 3.2 If report upload is not yet implemented: ensure `FileStorageService` is used from report module when implemented; document key layout in project-context
+- [x] **Task 3: Report upload flow (placeholder for Epic 2)** (AC: 1, 2, 3)
+  - [x] 3.1 If report upload exists in this codebase: same pattern — upload to B2 key `reports/{userId}/{profileId}/{reportId}.pdf`, save key in report record
+  - [x] 3.2 If report upload is not yet implemented: ensure `FileStorageService` is used from report module when implemented; document key layout in project-context
 
-- [ ] **Task 4: Delete and lifecycle** (AC: 3)
-  - [ ] 4.1 On avatar update/remove: delete old B2 object by key when overwriting or clearing avatar
-  - [ ] 4.2 On report delete (or account closure): delete corresponding B2 object(s); hook into existing account/report services
+- [x] **Task 4: Delete and lifecycle** (AC: 3)
+  - [x] 4.1 On avatar update/remove: delete old B2 object by key when overwriting or clearing avatar
+  - [x] 4.2 On report delete (or account closure): delete corresponding B2 object(s); hook into existing account/report services
 
-- [ ] **Task 5: Error handling and configuration** (AC: 4)
-  - [ ] 5.1 If B2 credentials missing or `B2_DISABLED=true`: use in-memory or local-disk stub in dev so tests and local run still work; log warning
-  - [ ] 5.2 On B2 upload/delete failure: throw descriptive exception (e.g. `FileStorageException`), do not create/update DB record for the file so state stays consistent
-  - [ ] 5.3 Add `.env.example` entries for all B2_* vars
+- [x] **Task 5: Error handling and configuration** (AC: 4)
+  - [x] 5.1 If B2 credentials missing or `B2_DISABLED=true`: use in-memory or local-disk stub in dev so tests and local run still work; log warning
+  - [x] 5.2 On B2 upload/delete failure: throw descriptive exception (e.g. `FileStorageException`), do not create/update DB record for the file so state stays consistent
+  - [x] 5.3 Add `.env.example` entries for all B2_* vars
 
-- [ ] **Task 6: Tests** (AC: 1–4)
-  - [ ] 6.1 Unit tests: `FileStorageService` with mocked S3 client (or in-memory stub)
-  - [ ] 6.2 Integration/E2E: optional test against real B2 bucket in CI if credentials provided; otherwise test with stub that asserts key layout and delete calls
+- [x] **Task 6: Tests** (AC: 1–4)
+  - [x] 6.1 Unit tests: `FileStorageService` with mocked S3 client (or in-memory stub)
+  - [x] 6.2 Integration/E2E: optional test against real B2 bucket in CI if credentials provided; otherwise test with stub that asserts key layout and delete calls
 
 ## Dev Notes
 
@@ -131,17 +131,43 @@ So that storage is durable, scalable, and not tied to local disk, and access is 
 
 ### Agent Model Used
 
-(To be filled by dev agent.)
+Composer (Cursor)
 
 ### Completion Notes List
 
-(To be filled when story is implemented.)
+- Added `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner`; storage config via `registerAs('storage', ...)`.
+- Created `FileStorageService` interface, `B2FileStorageService`, `InMemoryFileStorageService` (stub when B2_DISABLED or vars missing).
+- StorageModule provides FILE_STORAGE token; AccountModule imports StorageModule.
+- Replaced multer diskStorage with memoryStorage; avatar upload → FileStorageService.upload → store key in user.avatarUrl.
+- getProfile resolves avatar key to signed URL (5 min TTL); B2 returns presigned URL, stub returns data URL.
+- Avatar overwrite/clear: delete old key before save; account closure deletes avatar and clears user.avatarUrl.
+- Removed static asset serving for /uploads from main.ts.
+- Documented key layout in project-context.md. Unit tests for InMemoryFileStorageService and AccountService/Controller with mocked storage.
 
 ### File List
 
-(To be filled when story is implemented.)
+- apps/api/package.json — added @aws-sdk/client-s3, @aws-sdk/s3-request-presigner
+- apps/api/src/config/storage.config.ts
+- apps/api/src/common/storage/file-storage.interface.ts
+- apps/api/src/common/storage/file-storage.types.ts
+- apps/api/src/common/storage/in-memory-file-storage.service.ts
+- apps/api/src/common/storage/in-memory-file-storage.service.spec.ts
+- apps/api/src/common/storage/b2-file-storage.service.ts
+- apps/api/src/common/storage/storage.module.ts
+- apps/api/src/app.module.ts — load storageConfig
+- apps/api/src/main.ts — removed uploads dir and static assets
+- apps/api/src/modules/account/account.module.ts — import StorageModule
+- apps/api/src/modules/account/account.controller.ts — memoryStorage, FileStorageService.upload
+- apps/api/src/modules/account/account.service.ts — getProfile signed URL, updateAvatar/updateProfile delete old key, closure deletes avatar
+- apps/api/src/modules/account/account.service.spec.ts — fileStorage mock
+- apps/api/src/modules/account/account.controller.spec.ts — fileStorage mock
+- .env.example — B2_* vars
+- _bmad-output/project-context.md — object storage key layout
+
+## Change Log
+
+- 2026-03-13: Implemented Story 0.5 — B2 storage abstraction, avatar upload/read/clear, account closure avatar deletion. Status → review.
 
 ## Senior Developer Review (AI)
 
-**Review date:** 2026-03-13  
-**Outcome:** Story not implemented (Status: ready-for-dev; all tasks unchecked). No code to review. Review again after implementation.
+(Pending — run code-review workflow after implementation.)

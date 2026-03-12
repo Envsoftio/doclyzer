@@ -1,7 +1,9 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { Request } from 'express';
+import type { Express } from 'express';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
+import { AuthService } from '../auth/auth.service';
 import type { AuthUser } from '../auth/auth.types';
 import type {
   AccountProfile,
@@ -14,6 +16,8 @@ import {
   COMM_PREF_CATEGORY,
   ExportRequestNotFoundException,
 } from './account.types';
+import type { FileStorageService } from '../../common/storage/file-storage.interface';
+import { FileStorageException } from '../../common/storage/file-storage.types';
 
 const mockUser: AuthUser = {
   id: 'user-1',
@@ -35,8 +39,22 @@ function makeReq(overrides: Partial<Request> = {}): Request {
     user: mockUser,
     correlationId: 'test-cid',
     header: () => undefined,
+    ip: '127.0.0.1',
     ...overrides,
   } as unknown as Request;
+}
+
+function makeFile(
+  overrides: Partial<Express.Multer.File> = {},
+): Express.Multer.File {
+  return {
+    fieldname: 'avatar',
+    originalname: 'avatar.jpg',
+    mimetype: 'image/jpeg',
+    buffer: Buffer.from('fake-image'),
+    size: 100,
+    ...overrides,
+  } as Express.Multer.File;
 }
 
 describe('AccountController', () => {
@@ -46,6 +64,7 @@ describe('AccountController', () => {
       AccountService,
       | 'getProfile'
       | 'updateProfile'
+      | 'updateAvatar'
       | 'getCommunicationPreferences'
       | 'updateCommunicationPreferences'
       | 'createDataExportRequest'
@@ -55,11 +74,14 @@ describe('AccountController', () => {
       | 'getRestrictionStatus'
     >
   >;
+  let authService: jest.Mocked<Pick<AuthService, 'enforceRateLimit'>>;
+  let mockFileStorage: jest.Mocked<FileStorageService>;
 
   beforeEach(() => {
     accountService = {
       getProfile: jest.fn(),
       updateProfile: jest.fn(),
+      updateAvatar: jest.fn(),
       getCommunicationPreferences: jest.fn(),
       updateCommunicationPreferences: jest.fn(),
       createDataExportRequest: jest.fn(),
@@ -68,8 +90,20 @@ describe('AccountController', () => {
       getClosureRequest: jest.fn(),
       getRestrictionStatus: jest.fn(),
     };
+    authService = {
+      enforceRateLimit: jest.fn(),
+    };
+    mockFileStorage = {
+      upload: jest.fn().mockResolvedValue('avatars/user-1.jpg'),
+      delete: jest.fn().mockResolvedValue(undefined),
+      getSignedUrl: jest
+        .fn()
+        .mockResolvedValue('https://signed.example/avatar'),
+    };
     controller = new AccountController(
       accountService as unknown as AccountService,
+      authService as unknown as AuthService,
+      mockFileStorage,
     );
   });
 
@@ -291,6 +325,80 @@ describe('AccountController', () => {
       expect(result.data.requestId).toBe('close-1');
       expect(result.data.message).toContain('closure');
     });
+  });
+
+  describe('uploadAvatar', () => {
+    /* eslint-disable @typescript-eslint/unbound-method -- jest mock assertions */
+    const profileWithAvatar: AccountProfile = {
+      ...mockProfile,
+      avatarUrl: 'https://signed.example/avatar',
+    };
+
+    it('returns success envelope with profile after upload', async () => {
+      accountService.updateAvatar.mockResolvedValue(profileWithAvatar);
+      const result = (await controller.uploadAvatar(makeFile(), makeReq())) as {
+        success: boolean;
+        data: AccountProfile;
+      };
+      expect(result.success).toBe(true);
+      expect(result.data.avatarUrl).toBe('https://signed.example/avatar');
+      expect(authService.enforceRateLimit).toHaveBeenCalledWith(
+        'avatar-upload',
+        '127.0.0.1',
+        10,
+      );
+      expect(mockFileStorage.upload).toHaveBeenCalledWith(
+        'avatars/user-1.jpg',
+        expect.any(Buffer),
+        'image/jpeg',
+      );
+      expect(accountService.updateAvatar).toHaveBeenCalledWith(
+        'user-1',
+        'avatars/user-1.jpg',
+      );
+    });
+
+    it('throws BadRequestException when no file uploaded', async () => {
+      await expect(
+        controller.uploadAvatar(
+          null as unknown as Express.Multer.File,
+          makeReq(),
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockFileStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException when file has no buffer', async () => {
+      await expect(
+        controller.uploadAvatar(makeFile({ buffer: undefined }), makeReq()),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockFileStorage.upload).not.toHaveBeenCalled();
+    });
+
+    it('deletes uploaded file when updateAvatar fails', async () => {
+      accountService.updateAvatar.mockRejectedValue(
+        new NotFoundException({
+          code: 'ACCOUNT_NOT_FOUND',
+          message: 'Not found',
+        }),
+      );
+      await expect(
+        controller.uploadAvatar(makeFile(), makeReq()),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockFileStorage.upload).toHaveBeenCalled();
+      expect(mockFileStorage.delete).toHaveBeenCalledWith('avatars/user-1.jpg');
+    });
+
+    it('propagates FileStorageException from upload', async () => {
+      mockFileStorage.upload.mockRejectedValue(
+        new FileStorageException('FILE_STORAGE_UPLOAD_FAILED', 'Upload failed'),
+      );
+      await expect(
+        controller.uploadAvatar(makeFile(), makeReq()),
+      ).rejects.toThrow(FileStorageException);
+      expect(accountService.updateAvatar).not.toHaveBeenCalled();
+    });
+    /* eslint-enable @typescript-eslint/unbound-method */
   });
 
   describe('getRestrictionStatus', () => {

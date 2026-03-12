@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
 import { Repository } from 'typeorm';
@@ -10,6 +10,8 @@ import { ProfileEntity } from '../../database/entities/profile.entity';
 import { ConsentRecordEntity } from '../../database/entities/consent-record.entity';
 import { UserEntity } from '../../database/entities/user.entity';
 import { AuthService } from '../auth/auth.service';
+import type { FileStorageService } from '../../common/storage/file-storage.interface';
+import { FILE_STORAGE } from '../../common/storage/storage.module';
 import type {
   UpdateAccountProfileDto,
   UpdateCommunicationPreferencesDto,
@@ -47,6 +49,7 @@ export class AccountService {
     @InjectRepository(ConsentRecordEntity)
     private readonly consentRepo: Repository<ConsentRecordEntity>,
     private readonly authService: AuthService,
+    @Inject(FILE_STORAGE) private readonly fileStorage: FileStorageService,
   ) {}
 
   async getRestrictionStatus(userId: string): Promise<RestrictionStatus> {
@@ -67,11 +70,15 @@ export class AccountService {
         message: 'Account not found',
       });
     }
+    let avatarUrl: string | null = null;
+    if (user.avatarUrl) {
+      avatarUrl = await this.fileStorage.getSignedUrl(user.avatarUrl, 300);
+    }
     return {
       id: user.id,
       email: user.email,
       displayName: user.displayName,
-      avatarUrl: user.avatarUrl,
+      avatarUrl,
       createdAt: user.createdAt,
     };
   }
@@ -128,20 +135,19 @@ export class AccountService {
       });
     }
     if (dto.displayName !== undefined) user.displayName = dto.displayName;
-    if (dto.avatarUrl !== undefined) user.avatarUrl = dto.avatarUrl;
+    if (dto.avatarUrl !== undefined) {
+      if (user.avatarUrl) {
+        await this.fileStorage.delete(user.avatarUrl);
+      }
+      user.avatarUrl = dto.avatarUrl;
+    }
     await this.userRepo.save(user);
-    return {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      avatarUrl: user.avatarUrl,
-      createdAt: user.createdAt,
-    };
+    return this.getProfile(userId);
   }
 
   async updateAvatar(
     userId: string,
-    avatarUrl: string,
+    avatarStorageKey: string,
   ): Promise<AccountProfile> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) {
@@ -150,15 +156,12 @@ export class AccountService {
         message: 'Account not found',
       });
     }
-    user.avatarUrl = avatarUrl;
+    if (user.avatarUrl) {
+      await this.fileStorage.delete(user.avatarUrl);
+    }
+    user.avatarUrl = avatarStorageKey;
     await this.userRepo.save(user);
-    return {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      avatarUrl: user.avatarUrl,
-      createdAt: user.createdAt,
-    };
+    return this.getProfile(userId);
   }
 
   async createDataExportRequest(
@@ -247,6 +250,11 @@ export class AccountService {
   ): Promise<ClosureRequest> {
     if (!dto.confirmClosure) throw new ClosureConfirmationRequiredException();
 
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (user?.avatarUrl) {
+      await this.fileStorage.delete(user.avatarUrl);
+    }
+
     const entity = this.closureRepo.create({
       userId,
       status: 'completed',
@@ -254,6 +262,10 @@ export class AccountService {
         'Your account is scheduled for closure. You will lose access to all data.',
     });
     const saved = await this.closureRepo.save(entity);
+    if (user) {
+      user.avatarUrl = null;
+      await this.userRepo.save(user);
+    }
     await this.authService.revokeAllSessionsForUser(userId);
 
     this.logger.log(

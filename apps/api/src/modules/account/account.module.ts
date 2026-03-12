@@ -8,6 +8,7 @@ import { ClosureRequestEntity } from '../../database/entities/closure-request.en
 import { ProfileEntity } from '../../database/entities/profile.entity';
 import { ConsentRecordEntity } from '../../database/entities/consent-record.entity';
 import { AuthModule } from '../auth/auth.module';
+import { StorageModule } from '../../common/storage/storage.module';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 
@@ -23,6 +24,7 @@ import { AccountService } from './account.service';
       ConsentRecordEntity,
     ]),
     AuthModule,
+    StorageModule,
   ],
   controllers: [AccountController],
   providers: [AccountService],

@@ -1,11 +1,23 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  MaxLength,
+  ValidateBy,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreateDataExportRequestDto {}
 
 export class CreateClosureRequestDto {
   @IsBoolean()
   confirmClosure!: boolean;
+}
+
+/** Only null is allowed to clear avatar; use POST /account/avatar to upload */
+function avatarUrlMustBeNull(value: unknown): boolean {
+  return value === null;
 }
 
 export class UpdateAccountProfileDto {
@@ -21,9 +33,15 @@ export class UpdateAccountProfileDto {
   @MaxLength(100)
   displayName?: string | null;
 
-  @IsOptional()
-  @IsString()
-  @MaxLength(1024)
+  @ValidateIf((o: { avatarUrl?: string | null }) => o.avatarUrl !== undefined)
+  @ValidateBy({
+    name: 'avatarUrlMustBeNull',
+    validator: {
+      validate: avatarUrlMustBeNull,
+      defaultMessage: () =>
+        'avatarUrl can only be null to clear avatar; use POST /account/avatar to upload',
+    },
+  })
   avatarUrl?: string | null;
 }
 
