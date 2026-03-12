@@ -51,3 +51,8 @@ So that transactional and product emails are sent with consistent delivery, stat
 - PRD: FR77, FR78, FR79
 - PRD addendum: `_bmad-output/planning-artifacts/prd-email-pipeline-and-onboarding.md`
 - Current: `NotificationService` (abstract) + `InMemoryNotificationService` (stub); only `sendPasswordResetToken` today.
+
+## Senior Developer Review (AI)
+
+**Review date:** 2026-03-13  
+**Outcome:** Story not implemented (Status: backlog; no Dev Agent Record or File List). No code to review. Review again after implementation.

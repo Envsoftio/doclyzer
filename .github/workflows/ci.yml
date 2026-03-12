@@ -47,3 +47,4 @@ jobs:
         run: npm run test:e2e
         env:
           DATABASE_URL: postgresql://doclyzer:doclyzer_dev_password@localhost:5432/doclyzer_test
+          E2E_MAX_PROFILES: '2'

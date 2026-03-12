@@ -256,3 +256,32 @@ claude-4.6-sonnet-medium-thinking
 - apps/mobile/lib/features/auth/screens/home_screen.dart
 - apps/mobile/lib/main.dart
 - apps/mobile/test/account_profile_test.dart
+
+## Change Log (review)
+
+- 2026-03-13: Senior Developer Review (AI) — MEDIUM: userId in logs; fixed by removing userId from DATA_EXPORT_REQUESTED and CLOSURE_COMPLETED log payloads.
+
+## Senior Developer Review (AI)
+
+**Review date:** 2026-03-13
+
+### Git vs Story
+- No uncommitted changes at review time. File List matches implementation.
+
+### Findings
+
+| Severity | Finding | Location |
+|----------|---------|----------|
+| **MEDIUM** | `AccountService.createDataExportRequest` and `createClosureRequest` log `userId` in JSON payload (action, userId, requestId, correlationId). Project-context: "No PHI in logs — never log email addresses, passwords, tokens, user IDs". userId is an identifier that can be linked to PII; should not be logged. | `apps/api/src/modules/account/account.service.ts` ~174–180, ~254–260 |
+| **LOW** | Story 1.3 scope was "displayName" only; `UpdateAccountProfileDto` and `updateProfile` also allow `avatarUrl`. Acceptable if added in a later story, but File List / completion notes don't document that 1.3 delivered avatar support. | account.dto.ts, account.service.ts |
+| **LOW** | `AuthGuard` uses `JwtService` + `SessionEntity` directly; story text mentioned `AuthService.validateAccessToken`. Implementation is DB-backed (0.2/0.3); no bug, just evolution. | auth.guard.ts |
+
+### AC / Task verification
+- AC1 (GET profile, envelope, correlationId): **Met** — controller uses `successResponse`, service returns AccountProfile.
+- AC2 (PATCH profile, persist displayName): **Met** — updateProfile updates displayName (and avatarUrl).
+- AC3 (restricted fields stripped): **Met** — DTO whitelist only displayName, avatarUrl.
+- AC4 (401 when unauthenticated): **Met** — `@UseGuards(AuthGuard)` on controller.
+- Tasks [x]: AuthGuard, displayName, account module, e2e, Flutter — all evidenced in code.
+
+### Outcome
+**Done.** MEDIUM fix applied: `userId` removed from `DATA_EXPORT_REQUESTED` and `CLOSURE_COMPLETED` log payloads in `account.service.ts` (project-context: no user IDs in logs).

@@ -1,6 +1,6 @@
 # Story 0.4: E2E Test Infrastructure with Real Test Database
 
-**Status:** review  
+**Status:** done  
 **Epic:** 0 — Backend Foundation — Real Persistence, JWT Auth & API Wiring  
 **Depends on:** Story 0.1, 0.2, 0.3 (all DB-backed services must be in place)
 
@@ -178,7 +178,32 @@ gpt-5.3-codex
 
 ## Change Log
 
+- 2026-03-13: Senior Developer Review (AI) — MEDIUM: CI missing E2E_MAX_PROFILES; fixed in .github/workflows/ci.yml; status → done.
 - (Initial story structure created with Tasks/Subtasks, Dev Agent Record, File List, Change Log. Status set to ready-for-dev.)
 - Added real Postgres-backed E2E infrastructure (env/test setup/cleanup/CI) and moved story to in-progress; final E2E pass verification pending Docker availability.
 - Resumed with Docker up: fixed Jest paths, AppModule e2e real DB detection, setup-env DATABASE_URL fallback, global-setup DB creation from URL; per-describe/per-test cleanup; all 61 E2E tests pass. Status set to review.
 - Code review fixes: .gitignore .env.test; CI ensure doclyzer_test exists before E2E; db-cleaner comment (tablePath); global-setup apiRoot path; e2e-spec indentation and Profiles limit comment; File List note on other modified files.
+- 2026-03-13: Senior Developer Review (AI) — MEDIUM: CI missing E2E_MAX_PROFILES; fix applied (env added to workflow); status → done.
+
+## Senior Developer Review (AI)
+
+**Review date:** 2026-03-13
+
+### Git vs Story
+- No uncommitted changes at review time. File List matches expected E2E infra files.
+
+### Findings
+
+| Severity | Finding | Location |
+|----------|---------|----------|
+| **MEDIUM** | CI workflow does not set `E2E_MAX_PROFILES`. E2e `beforeAll` sets `process.env.E2E_MAX_PROFILES = '2'`; the "Profiles limit (free tier)" test deletes it to create a second app. In CI this env is unset, so `EntitlementsService` may use a different default and the profile-limit test can be flaky or inconsistent. | `.github/workflows/ci.yml` — add `E2E_MAX_PROFILES: '2'` to the "Run E2E tests" step `env`. |
+| **LOW** | `jest-e2e.json` uses `<rootDir>` for globalSetup/Teardown/setupFiles; `rootDir` is `"."` so paths resolve from `apps/api/test/`. Confirm Jest is run with `working-directory: apps/api` so `<rootDir>` is correct (CI does use `working-directory: apps/api`; OK). | N/A — verified. |
+| **LOW** | `global-setup` destroys DataSource after `runMigrations()`; each test run re-initializes via Nest testing module. No double-init issue. | — |
+
+### AC / Task verification
+- AC: Tests connect to `doclyzer_test` — global-setup and setup-env enforce `doclyzer_test` URL. **Met.**
+- AC: Clean state per suite — `clearDatabase` in beforeEach/beforeAll per describe. **Met.**
+- AC: CI runs Postgres, migrations, tests — workflow starts Postgres, ensures DB, runs test:e2e. **Met.**
+
+### Outcome
+**Done.** MEDIUM fix applied: `E2E_MAX_PROFILES: '2'` added to CI workflow so profile-limit E2E tests behave consistently.

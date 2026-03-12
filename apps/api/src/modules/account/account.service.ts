@@ -177,7 +177,6 @@ export class AccountService {
     this.logger.log(
       JSON.stringify({
         action: 'DATA_EXPORT_REQUESTED',
-        userId,
         requestId: saved.id,
         correlationId,
       }),
@@ -260,7 +259,6 @@ export class AccountService {
     this.logger.log(
       JSON.stringify({
         action: 'CLOSURE_COMPLETED',
-        userId,
         requestId: saved.id,
         correlationId,
       }),
