@@ -45,7 +45,7 @@ development_status:
   0-2-jwt-access-refresh-token-auth-db-backed-sessions: done
   0-3-replace-all-in-memory-services-with-typeorm-repositories: done
   0-4-e2e-test-infrastructure-with-real-test-database: done
-  0-5-backblaze-b2-object-storage-reports-profile-pics-file-uploads: review
+  0-5-backblaze-b2-object-storage-reports-profile-pics-file-uploads: done
   epic-0-retrospective: optional
 
   epic-1: in-progress
@@ -63,11 +63,11 @@ development_status:
 
   epic-2: in-progress
   # 2-0-postgresql-persistence-setup absorbed into Epic 0 stories 0.1–0.4
-  2-1-upload-report-to-active-profile: ready-for-dev
-  2-2-parsing-status-lifecycle-visibility: backlog
-  2-3-parse-failure-recovery-retry-keep-file-anyway: backlog
-  2-4-original-pdf-viewing-parsed-and-unparsed: backlog
-  2-5-duplicate-report-detection-and-user-choice: backlog
+  2-1-upload-report-to-active-profile: done
+  2-2-parsing-status-lifecycle-visibility: done
+  2-3-parse-failure-recovery-retry-keep-file-anyway: done
+  2-4-original-pdf-viewing-parsed-and-unparsed: done
+  2-5-duplicate-report-detection-and-user-choice: ready-for-dev
   2-6-timeline-view-scoped-to-active-profile: backlog
   2-7-structured-lab-extraction-display: backlog
   2-8-trend-chart-rendering-for-chartable-parameters: backlog

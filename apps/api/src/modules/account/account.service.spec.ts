@@ -233,5 +233,29 @@ describe('AccountService', () => {
         ),
       ).rejects.toThrow();
     });
+
+    it('deletes avatar from storage when user has avatarUrl', async () => {
+      const userWithAvatar = {
+        ...baseUser,
+        avatarUrl: 'avatars/user-1.jpg',
+      } as UserEntity;
+      userRepo.findOne.mockResolvedValue(userWithAvatar);
+      closureRepo.save.mockResolvedValue({
+        id: 'close-1',
+        userId: 'user-1',
+        status: 'completed',
+        message: 'scheduled for closure',
+        createdAt: new Date(),
+      } as unknown as ClosureRequestEntity);
+      fileStorage.getSignedUrl.mockResolvedValue('https://example.com/signed');
+
+      await service.createClosureRequest(
+        'user-1',
+        { confirmClosure: true },
+        'cid-1',
+      );
+
+      expect(fileStorage.delete).toHaveBeenCalledWith('avatars/user-1.jpg');
+    });
   });
 });

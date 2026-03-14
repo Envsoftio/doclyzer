@@ -9,6 +9,7 @@ import 'package:mobile/features/account/restriction_repository.dart';
 import 'package:mobile/features/auth/auth_repository.dart';
 import 'package:mobile/features/auth/sessions_repository.dart';
 import 'package:mobile/features/profiles/profiles_repository.dart';
+import 'package:mobile/features/reports/reports_repository.dart';
 import 'package:mobile/main.dart';
 import 'mocks.dart';
 
@@ -20,6 +21,7 @@ void main() {
   late MockCommunicationPreferencesRepository commPrefsRepo;
   late MockDataRightsRepository dataRightsRepo;
   late MockRestrictionRepository restrictionRepo;
+  late MockReportsRepository reportsRepo;
 
   setUpAll(() {
     registerFallbackValue(RegisterResult(
@@ -38,6 +40,7 @@ void main() {
     commPrefsRepo = MockCommunicationPreferencesRepository();
     dataRightsRepo = MockDataRightsRepository();
     restrictionRepo = MockRestrictionRepository();
+    reportsRepo = MockReportsRepository();
   });
 
   Widget app() => DoclyzerApp(
@@ -48,6 +51,7 @@ void main() {
         communicationPreferencesRepository: commPrefsRepo,
         dataRightsRepository: dataRightsRepo,
         restrictionRepository: restrictionRepo,
+        reportsRepository: reportsRepo,
       );
 
   testWidgets('signup with valid data calls register and shows verification',

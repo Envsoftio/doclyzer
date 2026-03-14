@@ -53,6 +53,35 @@ class ApiClient {
     }, auth);
   }
 
+  /// Fetches raw bytes (e.g. PDF file). Does not parse as JSON.
+  Future<List<int>> getBytes(String path, {bool auth = true}) async {
+    return _requestWithRefresh(() async {
+      final headers = <String, String>{
+        'x-correlation-id': DateTime.now().millisecondsSinceEpoch.toString(),
+      };
+      if (auth && _accessToken != null) {
+        headers['Authorization'] = 'Bearer $_accessToken';
+      }
+      final res = await http.get(
+        Uri.parse(_url(path)),
+        headers: headers,
+      );
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        return res.bodyBytes;
+      }
+      Map<String, dynamic> body = {};
+      if (res.body.isNotEmpty) {
+        try {
+          body = jsonDecode(res.body) as Map<String, dynamic>;
+        } catch (_) {}
+      }
+      final error = body['error'] as Map<String, dynamic>?;
+      final code = error?['code'] as String? ?? 'UNKNOWN';
+      final message = error?['message'] as String? ?? 'Request failed';
+      throw ApiException(code, message);
+    }, auth);
+  }
+
   Future<Map<String, dynamic>> post(
     String path, {
     Map<String, dynamic>? body,

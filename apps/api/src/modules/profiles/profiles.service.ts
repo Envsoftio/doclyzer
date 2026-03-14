@@ -17,6 +17,14 @@ export class ProfilesService {
     private readonly entitlementsService: EntitlementsService,
   ) {}
 
+  async getActiveProfileId(userId: string): Promise<string | null> {
+    const active = await this.profileRepo.findOne({
+      where: { userId, isActive: true },
+      select: ['id'],
+    });
+    return active?.id ?? null;
+  }
+
   async getProfiles(userId: string): Promise<ProfileWithActive[]> {
     const profiles = await this.profileRepo.find({
       where: { userId },

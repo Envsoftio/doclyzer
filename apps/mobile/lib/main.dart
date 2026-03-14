@@ -29,6 +29,9 @@ import 'features/profiles/profiles_repository.dart';
 import 'features/profiles/api_profiles_repository.dart';
 import 'features/profiles/screens/create_edit_profile_screen.dart';
 import 'features/profiles/screens/profile_list_screen.dart';
+import 'features/reports/reports_repository.dart';
+import 'features/reports/api_reports_repository.dart';
+import 'features/reports/screens/upload_report_screen.dart';
 
 void main() {
   runApp(const DoclyzerApp());
@@ -48,6 +51,7 @@ enum _AuthView {
   editProfile,
   communicationPreferences,
   dataRights,
+  uploadReport,
 }
 
 class DoclyzerApp extends StatefulWidget {
@@ -60,6 +64,7 @@ class DoclyzerApp extends StatefulWidget {
     this.communicationPreferencesRepository,
     this.dataRightsRepository,
     this.restrictionRepository,
+    this.reportsRepository,
   });
 
   final AuthRepository? authRepository;
@@ -69,6 +74,7 @@ class DoclyzerApp extends StatefulWidget {
   final CommunicationPreferencesRepository? communicationPreferencesRepository;
   final DataRightsRepository? dataRightsRepository;
   final RestrictionRepository? restrictionRepository;
+  final ReportsRepository? reportsRepository;
 
   @override
   State<DoclyzerApp> createState() => _DoclyzerAppState();
@@ -83,10 +89,12 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
   late final CommunicationPreferencesRepository _communicationPreferencesRepository;
   late final DataRightsRepository _dataRightsRepository;
   late final RestrictionRepository _restrictionRepository;
+  late final ReportsRepository _reportsRepository;
 
   _AuthView _authView = _AuthView.login;
   String? _prefillEmail;
   Profile? _editingProfile;
+  String _activeProfileNameForUpload = '';
   bool _initialized = false;
 
   @override
@@ -100,6 +108,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
           widget.communicationPreferencesRepository!;
       _dataRightsRepository = widget.dataRightsRepository!;
       _restrictionRepository = widget.restrictionRepository!;
+      _reportsRepository = widget.reportsRepository!;
       setState(() => _initialized = true);
     } else {
       final tokenStorage = TokenStorage();
@@ -115,6 +124,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
           ApiCommunicationPreferencesRepository(_apiClient!);
       _dataRightsRepository = ApiDataRightsRepository(_apiClient!);
       _restrictionRepository = ApiRestrictionRepository(_apiClient!);
+      _reportsRepository = ApiReportsRepository(_apiClient!);
       _initAuth();
     }
   }
@@ -242,6 +252,21 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
             onGoToDataRights: () {
               setState(() => _authView = _AuthView.dataRights);
             },
+            onGoToUploadReport: () async {
+              final profiles = await _profilesRepository.getProfiles();
+              Profile? active;
+              for (final p in profiles) {
+                if (p.isActive) {
+                  active = p;
+                  break;
+                }
+              }
+              if (active == null || !mounted) return;
+              setState(() {
+                _authView = _AuthView.uploadReport;
+                _activeProfileNameForUpload = active!.name;
+              });
+            },
             restrictionRepository: _restrictionRepository,
           ),
         _AuthView.accountProfile => AccountProfileScreen(
@@ -330,6 +355,16 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
             },
             onAccountClosed: () async {
               await _logout();
+            },
+          ),
+        _AuthView.uploadReport => UploadReportScreen(
+            reportsRepository: _reportsRepository,
+            activeProfileName: _activeProfileNameForUpload,
+            onBack: () {
+              setState(() => _authView = _AuthView.home);
+            },
+            onComplete: () {
+              setState(() => _authView = _AuthView.home);
             },
           ),
       },

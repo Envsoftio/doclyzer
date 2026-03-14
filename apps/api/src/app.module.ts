@@ -1,6 +1,7 @@
 import { join } from 'path';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { reportsConfig } from './config/reports.config';
 import { storageConfig } from './config/storage.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataType, newDb } from 'pg-mem';
@@ -11,6 +12,7 @@ import { ConsentRecordEntity } from './database/entities/consent-record.entity';
 import { DataExportRequestEntity } from './database/entities/data-export-request.entity';
 import { PasswordResetTokenEntity } from './database/entities/password-reset-token.entity';
 import { ProfileEntity } from './database/entities/profile.entity';
+import { ReportEntity } from './database/entities/report.entity';
 import { RestrictionEntity } from './database/entities/restriction.entity';
 import { SessionEntity } from './database/entities/session.entity';
 import { UserEntity } from './database/entities/user.entity';
@@ -20,6 +22,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ConsentModule } from './modules/consent/consent.module';
 import { EntitlementsModule } from './modules/entitlements/entitlements.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { randomUUID } from 'node:crypto';
 
 const typeOrmEntities = [
@@ -32,6 +35,7 @@ const typeOrmEntities = [
   ClosureRequestEntity,
   PasswordResetTokenEntity,
   ConsentRecordEntity,
+  ReportEntity,
 ];
 
 @Module({
@@ -39,7 +43,7 @@ const typeOrmEntities = [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [join(__dirname, '../../../.env'), '.env'],
-      load: [storageConfig],
+      load: [storageConfig, reportsConfig],
     }),
     TypeOrmModule.forRootAsync({
       useFactory: (config: ConfigService) => {
@@ -127,6 +131,7 @@ const typeOrmEntities = [
     AccountModule,
     EntitlementsModule,
     ProfilesModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}

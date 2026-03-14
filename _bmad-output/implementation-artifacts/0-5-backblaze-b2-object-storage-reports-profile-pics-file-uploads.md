@@ -1,6 +1,6 @@
 # Story 0.5: Backblaze B2 Object Storage for Reports, Profile Pictures, and File Uploads
 
-**Status:** review  
+**Status:** done  
 **Epic:** 0 — Backend Foundation — Real Persistence, JWT Auth & API Wiring  
 **Depends on:** Story 0.1, 0.2, 0.3 (DB and auth in place; 0.4 optional for E2E)
 
@@ -143,16 +143,20 @@ Composer (Cursor)
 - Avatar overwrite/clear: delete old key before save; account closure deletes avatar and clears user.avatarUrl.
 - Removed static asset serving for /uploads from main.ts.
 - Documented key layout in project-context.md. Unit tests for InMemoryFileStorageService and AccountService/Controller with mocked storage.
+- Code review fixes: B2 error logging, production warning when B2 disabled, E2E avatar tests, createClosureRequest avatar-deletion unit test.
 
 ### File List
 
 - apps/api/package.json — added @aws-sdk/client-s3, @aws-sdk/s3-request-presigner
 - apps/api/src/config/storage.config.ts
+- apps/api/src/database/entities/user.entity.ts — avatarUrl column
+- apps/api/src/database/migrations/1730813100000-AddAvatarUrl.ts
 - apps/api/src/common/storage/file-storage.interface.ts
 - apps/api/src/common/storage/file-storage.types.ts
 - apps/api/src/common/storage/in-memory-file-storage.service.ts
 - apps/api/src/common/storage/in-memory-file-storage.service.spec.ts
 - apps/api/src/common/storage/b2-file-storage.service.ts
+- apps/api/src/common/storage/b2-file-storage.service.spec.ts
 - apps/api/src/common/storage/storage.module.ts
 - apps/api/src/app.module.ts — load storageConfig
 - apps/api/src/main.ts — removed uploads dir and static assets
@@ -163,11 +167,13 @@ Composer (Cursor)
 - apps/api/src/modules/account/account.controller.spec.ts — fileStorage mock
 - .env.example — B2_* vars
 - _bmad-output/project-context.md — object storage key layout
+- apps/api/test/app.e2e-spec.ts — avatar upload, getProfile avatarUrl, clear avatar, closure with avatar E2E tests
 
 ## Change Log
 
 - 2026-03-13: Implemented Story 0.5 — B2 storage abstraction, avatar upload/read/clear, account closure avatar deletion. Status → review.
+- 2026-03-13: Code review fixes — B2 error logging, production warning, E2E avatar tests, createClosureRequest unit test, File List updated. Status → done.
 
 ## Senior Developer Review (AI)
 
-(Pending — run code-review workflow after implementation.)
+- 2026-03-13: Adversarial code review completed. Fixed 2 HIGH + 4 MEDIUM issues: File List completed (migration, entity, b2 spec), E2E avatar flow tests added, createClosureRequest avatar-deletion unit test, B2 error logging, production warning when B2 disabled. Approved.

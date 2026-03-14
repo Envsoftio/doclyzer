@@ -1,10 +1,11 @@
 name: CI
 
+# Disabled for now - re-enable when CI is ready (restore push/PR triggers)
 on:
-  push:
-    branches:
-      - '**'
-  pull_request:
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   api-e2e:

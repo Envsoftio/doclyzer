@@ -10,6 +10,7 @@ import { ConsentRecordEntity } from './entities/consent-record.entity';
 import { DataExportRequestEntity } from './entities/data-export-request.entity';
 import { PasswordResetTokenEntity } from './entities/password-reset-token.entity';
 import { ProfileEntity } from './entities/profile.entity';
+import { ReportEntity } from './entities/report.entity';
 import { RestrictionEntity } from './entities/restriction.entity';
 import { SessionEntity } from './entities/session.entity';
 import { UserEntity } from './entities/user.entity';
@@ -32,6 +33,7 @@ export const AppDataSource = new DataSource({
     ClosureRequestEntity,
     PasswordResetTokenEntity,
     ConsentRecordEntity,
+    ReportEntity,
   ],
   migrations,
   synchronize: false,

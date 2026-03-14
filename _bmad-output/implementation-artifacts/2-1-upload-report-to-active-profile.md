@@ -1,6 +1,6 @@
 # Story 2.1: Upload Report to Active Profile
 
-**Status:** ready-for-dev  
+**Status:** done  
 **Epic:** 2 — Report Ingestion, Processing Recovery & Timeline Insights  
 **Depends on:** Story 1.5 (active profile context), Story 0.5 (object storage via Backblaze B2)  
 
@@ -37,47 +37,47 @@ so that it enters my health record and processing can begin.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Add report persistence model** (AC: 1–3)
-  - [ ] 1.1 Create `Report` entity under `apps/api/src/database/entities/report.entity.ts` (TypeORM Data Mapper pattern) with:
+- [x] **Task 1: Add report persistence model** (AC: 1–3)
+  - [x] 1.1 Create `Report` entity under `apps/api/src/database/entities/report.entity.ts` (TypeORM Data Mapper pattern) with:
     - `id` (uuid), `userId`, `profileId`
     - original file metadata (`originalFileName`, `contentType`, `sizeBytes`)
     - storage reference (`originalFileStorageKey`)
     - `status` enum (initial values only for now; full lifecycle in Story 2.2)
     - timestamps
-  - [ ] 1.2 Add migration to create the reports table (and indices for `userId`, `profileId`, and `createdAt`).
+  - [x] 1.2 Add migration to create the reports table (and indices for `userId`, `profileId`, and `createdAt`).
 
-- [ ] **Task 2: Implement API upload endpoint** (AC: 1–3)
-  - [ ] 2.1 Create `ReportsModule` under `apps/api/src/modules/reports/` with `reports.controller.ts`, `reports.service.ts`, `reports.types.ts` (error codes, status enum), and DTOs as needed.
-  - [ ] 2.2 Add `POST /reports` (or `POST /reports/upload`) protected by `@UseGuards(AuthGuard)`; accept multipart upload with a single `file` field.
-  - [ ] 2.3 Validate:
+- [x] **Task 2: Implement API upload endpoint** (AC: 1–3)
+  - [x] 2.1 Create `ReportsModule` under `apps/api/src/modules/reports/` with `reports.controller.ts`, `reports.service.ts`, `reports.types.ts` (error codes, status enum), and DTOs as needed.
+  - [x] 2.2 Add `POST /reports` (or `POST /reports/upload`) protected by `@UseGuards(AuthGuard)`; accept multipart upload with a single `file` field.
+  - [x] 2.3 Validate:
     - user has an active profile (source-of-truth is the server; do not trust client-provided profileId unless explicitly required)
     - file is provided, non-empty, and `contentType` is `application/pdf` (and/or allowlist per UX/PRD if expanded later)
     - enforce an explicit max upload size (choose a default and document it; align later with product limits/entitlements).
-  - [ ] 2.4 Implement safe “storage-first then DB” ordering:
+  - [x] 2.4 Implement safe “storage-first then DB” ordering:
     - generate `reportId` (uuid) without saving
     - compute `storageKey = reports/{userId}/{activeProfileId}/{reportId}.pdf`
     - upload file to object storage via the shared storage abstraction (Story 0.5)
     - only after successful upload: insert `Report` row with `status = queued|processing`
-  - [ ] 2.5 Return success via `successResponse(data, correlationId)` and ensure errors use typed `HttpException` subclasses with `{ code, message }`.
+  - [x] 2.5 Return success via `successResponse(data, correlationId)` and ensure errors use typed `HttpException` subclasses with `{ code, message }`.
 
-- [ ] **Task 3: Implement mobile upload flow (Flutter)** (AC: 4)
-  - [ ] 3.1 Create `features/reports/`:
+- [x] **Task 3: Implement mobile upload flow (Flutter)** (AC: 4)
+  - [x] 3.1 Create `features/reports/`:
     - `reports_repository.dart` (abstract)
     - `api_reports_repository.dart` (multipart upload via `ApiClient`)
     - screens: `upload_report_screen.dart` + a minimal “upload result” state.
-  - [ ] 3.2 Add an “Upload report” entry point from the authenticated home experience:
+  - [x] 3.2 Add an “Upload report” entry point from the authenticated home experience:
     - visible active profile indicator (“Uploading to: <Profile>”)
     - progress states: **Uploading…** → **Reading report…** (post-upload processing kickoff)
-  - [ ] 3.3 Ensure the upload flow is profile-safe:
+  - [x] 3.3 Ensure the upload flow is profile-safe:
     - if multiple profiles exist, allow user to confirm the active profile before upload (do not add cross-profile selection creep unless required by UX; keep it simple and explicit).
 
-- [ ] **Task 4: Tests** (AC: 1–4)
-  - [ ] 4.1 API unit tests for `ReportsService`:
+- [x] **Task 4: Tests** (AC: 1–4)
+  - [x] 4.1 API unit tests for `ReportsService`:
     - rejects missing/invalid files with stable error codes
     - does not insert DB rows on storage upload failure
     - inserts DB row only after successful upload
-  - [ ] 4.2 API e2e test for `POST /reports` using a stubbed storage provider (no real B2 required).
-  - [ ] 4.3 Flutter widget test for the upload screen: validates button enabled/disabled states and renders progress + error states using an in-memory reports repository.
+  - [x] 4.2 API e2e test for `POST /reports` using a stubbed storage provider (no real B2 required).
+  - [x] 4.3 Flutter widget test for the upload screen: validates button enabled/disabled states and renders progress + error states using an in-memory reports repository.
 
 ## Dev Notes
 
@@ -166,14 +166,42 @@ so that it enters my health record and processing can begin.
 - Git intelligence section omitted because no previous-story implementation artifacts exist
 - Latest-tech section intentionally omitted; Story 0.5 already captures B2/S3 SDK implementation guidance
 - Validation task file `_bmad/core/tasks/validate-workflow.xml` not present; manual checklist-aligned validation should be applied before dev-story if desired
+- Implementation: Report entity, migration, ReportsModule (storage-first upload, active profile from ProfilesService), Flutter upload flow with Uploading/Reading states, e2e and unit tests
 
 ### File List
 
+- apps/api/src/database/entities/report.entity.ts
+- apps/api/src/database/migrations/1730813200000-CreateReportsTable.ts
+- apps/api/src/database/migrations/index.ts
+- apps/api/src/database/data-source.ts
+- apps/api/src/app.module.ts
+- apps/api/src/common/storage/file-storage.interface.ts
+- apps/api/src/common/storage/file-storage.types.ts
+- apps/api/src/common/storage/b2-file-storage.service.ts
+- apps/api/src/common/storage/in-memory-file-storage.service.ts
+- apps/api/src/modules/reports/reports.module.ts
+- apps/api/src/modules/reports/reports.controller.ts
+- apps/api/src/modules/reports/reports.service.ts
+- apps/api/src/modules/reports/reports.types.ts
+- apps/api/src/modules/reports/exceptions/report-not-found.exception.ts
+- apps/api/src/modules/reports/exceptions/report-upload.exception.ts
+- apps/api/src/modules/profiles/profiles.module.ts
+- apps/api/src/modules/profiles/profiles.service.ts
+- apps/api/src/modules/reports/reports.service.spec.ts
+- apps/api/src/modules/reports/reports.controller.spec.ts
+- apps/api/test/app.e2e-spec.ts
+- apps/mobile/lib/core/api_client.dart
+- apps/mobile/lib/features/reports/reports_repository.dart
+- apps/mobile/lib/features/reports/api_reports_repository.dart
+- apps/mobile/lib/features/reports/screens/upload_report_screen.dart
+- apps/mobile/lib/features/auth/screens/home_screen.dart
+- apps/mobile/lib/main.dart
+- apps/mobile/test/upload_report_test.dart
 - _bmad-output/implementation-artifacts/2-1-upload-report-to-active-profile.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
 
 ## Senior Developer Review (AI)
 
 **Review date:** 2026-03-13  
-**Outcome:** Story not implemented (Status: ready-for-dev; all tasks unchecked; File List has no app code). No code to review. Review again after implementation.
+**Outcome:** Story implemented. Epic 2.1–2.4 consolidated code review completed; File List and tasks updated. ACs 1–4 verified (upload, validation, storage-first, mobile flow with progress states).
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   DeleteObjectCommand,
@@ -12,6 +12,7 @@ import type { FileStorageService } from './file-storage.interface';
 import {
   FileStorageException,
   FILE_STORAGE_DELETE_FAILED,
+  FILE_STORAGE_GET_FAILED,
   FILE_STORAGE_GET_URL_FAILED,
   FILE_STORAGE_UPLOAD_FAILED,
   StorageConfigurationException,
@@ -19,6 +20,7 @@ import {
 
 @Injectable()
 export class B2FileStorageService implements FileStorageService {
+  private readonly logger = new Logger(B2FileStorageService.name);
   private readonly client: S3Client;
   private readonly bucket: string;
 
@@ -61,10 +63,44 @@ export class B2FileStorageService implements FileStorageService {
         }),
       );
       return key;
-    } catch {
+    } catch (err) {
+      this.logger.warn(
+        `Upload failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+      );
       throw new FileStorageException(
         FILE_STORAGE_UPLOAD_FAILED,
         'Failed to upload file to storage',
+      );
+    }
+  }
+
+  async get(key: string): Promise<Buffer> {
+    try {
+      const response = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        }),
+      );
+      const stream = response.Body;
+      if (!stream) {
+        throw new FileStorageException(
+          FILE_STORAGE_GET_FAILED,
+          'Empty response from storage',
+        );
+      }
+      const chunks: Uint8Array[] = [];
+      for await (const chunk of stream as AsyncIterable<Uint8Array>) {
+        chunks.push(chunk);
+      }
+      return Buffer.concat(chunks);
+    } catch (err) {
+      this.logger.warn(
+        `Get failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      throw new FileStorageException(
+        FILE_STORAGE_GET_FAILED,
+        'Failed to get file from storage',
       );
     }
   }
@@ -77,7 +113,10 @@ export class B2FileStorageService implements FileStorageService {
           Key: key,
         }),
       );
-    } catch {
+    } catch (err) {
+      this.logger.warn(
+        `Delete failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+      );
       throw new FileStorageException(
         FILE_STORAGE_DELETE_FAILED,
         'Failed to delete file from storage',
@@ -94,7 +133,10 @@ export class B2FileStorageService implements FileStorageService {
       return await getSignedUrl(this.client, command, {
         expiresIn: expiresInSeconds,
       });
-    } catch {
+    } catch (err) {
+      this.logger.warn(
+        `getSignedUrl failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+      );
       throw new FileStorageException(
         FILE_STORAGE_GET_URL_FAILED,
         'Failed to generate signed URL',

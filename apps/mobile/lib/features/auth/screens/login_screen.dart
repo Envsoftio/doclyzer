@@ -24,6 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String? _error;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -43,6 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     setState(() {
       _error = null;
+      _isLoading = true;
     });
 
     final email = _emailController.text.trim();
@@ -50,21 +52,43 @@ class _LoginScreenState extends State<LoginScreen> {
     if (email.isEmpty || password.isEmpty) {
       setState(() {
         _error = 'Enter email and password';
+        _isLoading = false;
       });
+      _showSnackBar('Enter email and password');
       return;
     }
 
     try {
       await widget.onLogin(email, password);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
     } on AuthException catch (error) {
+      if (!mounted) return;
       setState(() {
         _error = error.message;
+        _isLoading = false;
       });
+      _showSnackBar(error.message);
     } catch (_) {
+      if (!mounted) return;
+      const message =
+          'Unable to sign in. Please check your connection and try again.';
       setState(() {
-        _error = 'Unable to sign in';
+        _error = message;
+        _isLoading = false;
       });
+      _showSnackBar(message);
     }
+  }
+
+  void _showSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -99,8 +123,14 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 16),
             FilledButton(
               key: const Key('login-submit'),
-              onPressed: _submit,
-              child: const Text('Login'),
+              onPressed: _isLoading ? null : _submit,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Login'),
             ),
             TextButton(
               key: const Key('go-to-signup'),

@@ -12,6 +12,7 @@ class HomeScreen extends StatefulWidget {
     required this.onGoToSessions,
     required this.onGoToCommunicationPreferences,
     required this.onGoToDataRights,
+    required this.onGoToUploadReport,
     required this.restrictionRepository,
   });
 
@@ -21,6 +22,7 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onGoToSessions;
   final VoidCallback onGoToCommunicationPreferences;
   final VoidCallback onGoToDataRights;
+  final Future<void> Function() onGoToUploadReport;
   final RestrictionRepository restrictionRepository;
 
   @override
@@ -115,6 +117,12 @@ class _HomeScreenState extends State<HomeScreen> {
               key: const Key('go-to-profiles'),
               onPressed: widget.onGoToProfiles,
               child: const Text('Profiles'),
+            ),
+            const SizedBox(height: 8),
+            FilledButton(
+              key: const Key('go-to-upload-report'),
+              onPressed: widget.onGoToUploadReport,
+              child: const Text('Upload Report'),
             ),
             const SizedBox(height: 8),
             FilledButton(

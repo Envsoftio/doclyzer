@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -6,6 +8,33 @@ import '../../core/api_client.dart';
 import '../../core/api_config.dart';
 import '../../core/token_storage.dart';
 import 'auth_repository.dart';
+
+/// Returns a user-friendly message for login/sign-in errors.
+String _loginErrorMessage(Object error) {
+  if (error is ApiException) {
+    switch (error.code) {
+      case 'AUTH_INVALID_CREDENTIALS':
+        return 'Invalid email or password. Please check your details and try again.';
+      case 'AUTH_RATE_LIMITED':
+        return 'Too many attempts. Please wait a few minutes and try again.';
+      case 'AUTH_EMAIL_INVALID':
+        return 'Please enter a valid email address.';
+      case 'AUTH_PASSWORD_INVALID':
+        return 'Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.';
+      case 'AUTH_EMAIL_EXISTS':
+        return 'An account with this email already exists. Try signing in or use a different email.';
+      default:
+        return error.message.isNotEmpty ? error.message : 'Sign-in failed. Please try again.';
+    }
+  }
+  if (error is SocketException || error is TimeoutException || error is HandshakeException) {
+    return 'Unable to reach the server. Check your internet connection and try again.';
+  }
+  if (error is FormatException) {
+    return 'Something went wrong on our side. Please try again later.';
+  }
+  return 'Unable to sign in. Please check your connection and try again.';
+}
 
 class ApiAuthRepository implements AuthRepository {
   ApiAuthRepository(this._client, this._tokenStorage);
@@ -50,7 +79,9 @@ class ApiAuthRepository implements AuthRepository {
     try {
       return await _loginImpl(email, password);
     } on ApiException catch (e) {
-      throw AuthException(e.message);
+      throw AuthException(_loginErrorMessage(e));
+    } on Exception catch (e) {
+      throw AuthException(_loginErrorMessage(e));
     }
   }
 

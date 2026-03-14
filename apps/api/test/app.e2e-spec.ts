@@ -12,6 +12,8 @@ import { InMemoryNotificationService } from '../src/common/notification/in-memor
 import { NotificationService } from '../src/common/notification/notification.service';
 import { PasswordResetTokenEntity } from '../src/database/entities/password-reset-token.entity';
 import { RestrictionEntity } from '../src/database/entities/restriction.entity';
+import { FILE_STORAGE } from '../src/common/storage/storage.module';
+import type { FileStorageService } from '../src/common/storage/file-storage.interface';
 import { clearDatabase } from './db-cleaner';
 
 describe('AuthController (e2e)', () => {
@@ -100,7 +102,7 @@ describe('AuthController (e2e)', () => {
       expect(secondLogoutRes.body.error.code).toBe('AUTH_SESSION_REVOKED');
     });
 
-      it('rejects login with invalid credentials', async () => {
+    it('rejects login with invalid credentials', async () => {
       await request(app.getHttpServer())
         .post('/v1/auth/register')
         .send({
@@ -542,354 +544,705 @@ describe('AuthController (e2e)', () => {
       expect(afterRes.body.error?.code).toBe('AUTH_UNAUTHORIZED');
     });
   });
+});
+
+describe('Account Profile', () => {
+  const accountEmail = 'account-profile@example.com';
+  const accountPassword = 'StrongPass123!';
+  let accountToken: string;
+
+  beforeAll(async () => {
+    await clearDatabase(app.get<DataSource>(DataSource));
+    await request(app.getHttpServer())
+      .post('/v1/auth/register')
+      .set('x-forwarded-for', '10.0.1.1')
+      .send({
+        email: accountEmail,
+        password: accountPassword,
+      })
+      .expect(201);
+
+    const loginRes = await request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .set('x-forwarded-for', '10.0.1.1')
+      .send({ email: accountEmail, password: accountPassword })
+      .expect(200);
+
+    accountToken = loginRes.body.data.accessToken as string;
   });
 
-  describe('Account Profile', () => {
-    const accountEmail = 'account-profile@example.com';
-    const accountPassword = 'StrongPass123!';
-    let accountToken: string;
+  it('GET /account/profile returns correct shape for authenticated user', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/account/profile')
+      .set('Authorization', `Bearer ${accountToken}`)
+      .expect(200);
 
-    beforeAll(async () => {
-      await clearDatabase(app.get<DataSource>(DataSource));
-      await request(app.getHttpServer())
-        .post('/v1/auth/register')
-        .set('x-forwarded-for', '10.0.1.1')
-        .send({
-          email: accountEmail,
-          password: accountPassword,
-        })
-        .expect(201);
-
-      const loginRes = await request(app.getHttpServer())
-        .post('/v1/auth/login')
-        .set('x-forwarded-for', '10.0.1.1')
-        .send({ email: accountEmail, password: accountPassword })
-        .expect(200);
-
-      accountToken = loginRes.body.data.accessToken as string;
-    });
-
-    it('GET /account/profile returns correct shape for authenticated user', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/v1/account/profile')
-        .set('Authorization', `Bearer ${accountToken}`)
-        .expect(200);
-
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.email).toBe(accountEmail);
-      expect(res.body.data.displayName).toBeNull();
-      expect(res.body.data.id).toBeTruthy();
-      expect(res.body.data.createdAt).toBeTruthy();
-      expect(typeof res.body.correlationId).toBe('string');
-    });
-
-    it('PATCH /account/profile updates displayName and persists', async () => {
-      const patchRes = await request(app.getHttpServer())
-        .patch('/v1/account/profile')
-        .set('Authorization', `Bearer ${accountToken}`)
-        .send({ displayName: 'Alice Tester' })
-        .expect(200);
-
-      expect(patchRes.body.success).toBe(true);
-      expect(patchRes.body.data.displayName).toBe('Alice Tester');
-
-      const getRes = await request(app.getHttpServer())
-        .get('/v1/account/profile')
-        .set('Authorization', `Bearer ${accountToken}`)
-        .expect(200);
-
-      expect(getRes.body.data.displayName).toBe('Alice Tester');
-    });
-
-    it('PATCH /account/profile ignores restricted field (email)', async () => {
-      await request(app.getHttpServer())
-        .patch('/v1/account/profile')
-        .set('Authorization', `Bearer ${accountToken}`)
-        .send({ email: 'hacked@example.com', displayName: 'Bob' })
-        .expect(200);
-
-      const getRes = await request(app.getHttpServer())
-        .get('/v1/account/profile')
-        .set('Authorization', `Bearer ${accountToken}`)
-        .expect(200);
-
-      expect(getRes.body.data.email).toBe(accountEmail);
-      expect(getRes.body.data.displayName).toBe('Bob');
-    });
-
-    it('GET /account/profile without token returns 401 AUTH_UNAUTHORIZED', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/v1/account/profile')
-        .expect(401);
-
-      expect(res.body.success).toBe(false);
-      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
-    });
-
-    it('PATCH /account/profile without token returns 401 AUTH_UNAUTHORIZED', async () => {
-      const res = await request(app.getHttpServer())
-        .patch('/v1/account/profile')
-        .send({ displayName: 'Ghost' })
-        .expect(401);
-
-      expect(res.body.success).toBe(false);
-      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
-    });
-
-    it('GET /account/profile with invalid token returns 401 AUTH_UNAUTHORIZED', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/v1/account/profile')
-        .set('Authorization', 'Bearer totally-invalid-token')
-        .expect(401);
-
-      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
-    });
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.email).toBe(accountEmail);
+    expect(res.body.data.displayName).toBeNull();
+    expect(res.body.data.id).toBeTruthy();
+    expect(res.body.data.createdAt).toBeTruthy();
+    expect(typeof res.body.correlationId).toBe('string');
   });
 
-  describe('Profiles', () => {
-    const profilesEmail = 'profiles@example.com';
-    const profilesPassword = 'StrongPass123!';
-    let profilesToken: string;
-    let firstProfileId: string;
-    let secondProfileId: string;
+  it('PATCH /account/profile updates displayName and persists', async () => {
+    const patchRes = await request(app.getHttpServer())
+      .patch('/v1/account/profile')
+      .set('Authorization', `Bearer ${accountToken}`)
+      .send({ displayName: 'Alice Tester' })
+      .expect(200);
 
-    beforeAll(async () => {
-      await clearDatabase(app.get<DataSource>(DataSource));
-      await request(app.getHttpServer())
-        .post('/v1/auth/register')
-        .set('x-forwarded-for', '10.0.1.3')
-        .send({
-          email: profilesEmail,
-          password: profilesPassword,
-        })
-        .expect(201);
+    expect(patchRes.body.success).toBe(true);
+    expect(patchRes.body.data.displayName).toBe('Alice Tester');
 
-      const loginRes = await request(app.getHttpServer())
-        .post('/v1/auth/login')
-        .set('x-forwarded-for', '10.0.1.3')
-        .send({ email: profilesEmail, password: profilesPassword })
-        .expect(200);
+    const getRes = await request(app.getHttpServer())
+      .get('/v1/account/profile')
+      .set('Authorization', `Bearer ${accountToken}`)
+      .expect(200);
 
-      profilesToken = loginRes.body.data.accessToken as string;
-    });
-
-    it('GET /profiles without token → 401 AUTH_UNAUTHORIZED', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/v1/profiles')
-        .expect(401);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
-    });
-
-    it('GET /profiles with valid token → 200, empty array', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/v1/profiles')
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .expect(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data).toEqual([]);
-      expect(typeof res.body.correlationId).toBe('string');
-    });
-
-    it('POST /profiles creates first profile and auto-activates it', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/v1/profiles')
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .send({ name: 'Vishnu' })
-        .expect(201);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.name).toBe('Vishnu');
-      expect(res.body.data.isActive).toBe(true);
-      expect(res.body.data.id).toBeTruthy();
-      expect(typeof res.body.correlationId).toBe('string');
-      firstProfileId = res.body.data.id as string;
-    });
-
-    it('GET /profiles after first create → one profile, isActive: true', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/v1/profiles')
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .expect(200);
-      expect(res.body.data).toHaveLength(1);
-      expect(res.body.data[0].isActive).toBe(true);
-    });
-
-    it('POST /profiles creates second profile, isActive: false', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/v1/profiles')
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .send({ name: 'Amma', relation: 'parent' })
-        .expect(201);
-      expect(res.body.data.name).toBe('Amma');
-      expect(res.body.data.isActive).toBe(false);
-      secondProfileId = res.body.data.id as string;
-    });
-
-    it('PATCH /profiles/:id/activate switches active profile', async () => {
-      const res = await request(app.getHttpServer())
-        .patch(`/v1/profiles/${secondProfileId}/activate`)
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .expect(200);
-      expect(res.body.success).toBe(true);
-      const profiles = res.body.data as Array<{
-        id: string;
-        isActive: boolean;
-      }>;
-      const second = profiles.find((p) => p.id === secondProfileId)!;
-      const first = profiles.find((p) => p.id === firstProfileId)!;
-      expect(second.isActive).toBe(true);
-      expect(first.isActive).toBe(false);
-    });
-
-    it('PATCH /profiles/:id updates profile name', async () => {
-      const res = await request(app.getHttpServer())
-        .patch(`/v1/profiles/${secondProfileId}`)
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .send({ name: 'Amma Edited' })
-        .expect(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.name).toBe('Amma Edited');
-    });
-
-    it('GET /profiles after update → name change reflected', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/v1/profiles')
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .expect(200);
-      const amma = (res.body.data as Array<{ id: string; name: string }>).find(
-        (p) => p.id === secondProfileId,
-      )!;
-      expect(amma.name).toBe('Amma Edited');
-    });
-
-    it('PATCH /profiles/nonexistent-id → 404 PROFILE_NOT_FOUND', async () => {
-      const res = await request(app.getHttpServer())
-        .patch('/v1/profiles/nonexistent-id')
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .send({ name: 'X' })
-        .expect(404);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
-    });
-
-    it('PATCH /profiles/nonexistent-id/activate → 404 PROFILE_NOT_FOUND', async () => {
-      const res = await request(app.getHttpServer())
-        .patch('/v1/profiles/nonexistent-id/activate')
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .expect(404);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
-    });
-
-    it('DELETE /profiles without token → 401 AUTH_UNAUTHORIZED', async () => {
-      const res = await request(app.getHttpServer())
-        .delete(`/v1/profiles/${firstProfileId}`)
-        .expect(401);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
-    });
-
-    it('DELETE /profiles/nonexistent-id → 404 PROFILE_NOT_FOUND', async () => {
-      const res = await request(app.getHttpServer())
-        .delete('/v1/profiles/nonexistent-id')
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .expect(404);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
-    });
-
-    it('DELETE /profiles/:id removes profile and returns updated list', async () => {
-      const res = await request(app.getHttpServer())
-        .delete(`/v1/profiles/${secondProfileId}`)
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .expect(200);
-      expect(res.body.success).toBe(true);
-      const ids = (res.body.data as Array<{ id: string }>).map((p) => p.id);
-      expect(ids).not.toContain(secondProfileId);
-      expect(ids).toContain(firstProfileId);
-    });
-
-    it('GET /profiles after delete → deleted profile absent', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/v1/profiles')
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .expect(200);
-      const ids = (res.body.data as Array<{ id: string }>).map((p) => p.id);
-      expect(ids).not.toContain(secondProfileId);
-    });
-
-    it('DELETE last profile → empty list returned', async () => {
-      const res = await request(app.getHttpServer())
-        .delete(`/v1/profiles/${firstProfileId}`)
-        .set('Authorization', `Bearer ${profilesToken}`)
-        .expect(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data).toHaveLength(0);
-    });
+    expect(getRes.body.data.displayName).toBe('Alice Tester');
   });
 
-  describe('Profiles limit (free tier)', () => {
-    let limitApp: INestApplication;
-    const limitEmail = 'profiles-limit@example.com';
-    const limitPassword = 'StrongPass123!';
-    let limitToken: string;
+  it('PATCH /account/profile ignores restricted field (email)', async () => {
+    await request(app.getHttpServer())
+      .patch('/v1/account/profile')
+      .set('Authorization', `Bearer ${accountToken}`)
+      .send({ email: 'hacked@example.com', displayName: 'Bob' })
+      .expect(200);
 
-    // Fresh app instance without E2E_MAX_PROFILES; DB is shared so we clear before seeding.
+    const getRes = await request(app.getHttpServer())
+      .get('/v1/account/profile')
+      .set('Authorization', `Bearer ${accountToken}`)
+      .expect(200);
+
+    expect(getRes.body.data.email).toBe(accountEmail);
+    expect(getRes.body.data.displayName).toBe('Bob');
+  });
+
+  it('GET /account/profile without token returns 401 AUTH_UNAUTHORIZED', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/account/profile')
+      .expect(401);
+
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+  });
+
+  it('PATCH /account/profile without token returns 401 AUTH_UNAUTHORIZED', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/v1/account/profile')
+      .send({ displayName: 'Ghost' })
+      .expect(401);
+
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+  });
+
+  it('POST /account/avatar uploads image and returns profile with avatarUrl', async () => {
+    const avatarBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+    const uploadRes = await request(app.getHttpServer())
+      .post('/v1/account/avatar')
+      .set('Authorization', `Bearer ${accountToken}`)
+      .attach('avatar', avatarBuffer, 'avatar.jpg')
+      .expect(200);
+
+    expect(uploadRes.body.success).toBe(true);
+    expect(uploadRes.body.data.avatarUrl).toBeTruthy();
+    expect(uploadRes.body.data.avatarUrl).toMatch(
+      /^data:application\/octet-stream;base64,/,
+    );
+  });
+
+  it('GET /account/profile returns avatarUrl after upload', async () => {
+    const avatarBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+    await request(app.getHttpServer())
+      .post('/v1/account/avatar')
+      .set('Authorization', `Bearer ${accountToken}`)
+      .attach('avatar', avatarBuffer, 'avatar.jpg')
+      .expect(200);
+
+    const getRes = await request(app.getHttpServer())
+      .get('/v1/account/profile')
+      .set('Authorization', `Bearer ${accountToken}`)
+      .expect(200);
+
+    expect(getRes.body.data.avatarUrl).toBeTruthy();
+    expect(getRes.body.data.avatarUrl).toMatch(
+      /^data:application\/octet-stream;base64,/,
+    );
+  });
+
+  it('PATCH /account/profile with avatarUrl: null clears avatar', async () => {
+    const avatarBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+    await request(app.getHttpServer())
+      .post('/v1/account/avatar')
+      .set('Authorization', `Bearer ${accountToken}`)
+      .attach('avatar', avatarBuffer, 'avatar.jpg')
+      .expect(200);
+
+    const clearRes = await request(app.getHttpServer())
+      .patch('/v1/account/profile')
+      .set('Authorization', `Bearer ${accountToken}`)
+      .send({ avatarUrl: null })
+      .expect(200);
+
+    expect(clearRes.body.data.avatarUrl).toBeNull();
+  });
+
+  it('GET /account/profile with invalid token returns 401 AUTH_UNAUTHORIZED', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/account/profile')
+      .set('Authorization', 'Bearer totally-invalid-token')
+      .expect(401);
+
+    expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+  });
+});
+
+describe('Profiles', () => {
+  const profilesEmail = 'profiles@example.com';
+  const profilesPassword = 'StrongPass123!';
+  let profilesToken: string;
+  let firstProfileId: string;
+  let secondProfileId: string;
+
+  beforeAll(async () => {
+    await clearDatabase(app.get<DataSource>(DataSource));
+    await request(app.getHttpServer())
+      .post('/v1/auth/register')
+      .set('x-forwarded-for', '10.0.1.3')
+      .send({
+        email: profilesEmail,
+        password: profilesPassword,
+      })
+      .expect(201);
+
+    const loginRes = await request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .set('x-forwarded-for', '10.0.1.3')
+      .send({ email: profilesEmail, password: profilesPassword })
+      .expect(200);
+
+    profilesToken = loginRes.body.data.accessToken as string;
+  });
+
+  it('GET /profiles without token → 401 AUTH_UNAUTHORIZED', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/profiles')
+      .expect(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+  });
+
+  it('GET /profiles with valid token → 200, empty array', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/profiles')
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .expect(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toEqual([]);
+    expect(typeof res.body.correlationId).toBe('string');
+  });
+
+  it('POST /profiles creates first profile and auto-activates it', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/profiles')
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .send({ name: 'Vishnu' })
+      .expect(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.name).toBe('Vishnu');
+    expect(res.body.data.isActive).toBe(true);
+    expect(res.body.data.id).toBeTruthy();
+    expect(typeof res.body.correlationId).toBe('string');
+    firstProfileId = res.body.data.id as string;
+  });
+
+  it('GET /profiles after first create → one profile, isActive: true', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/profiles')
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .expect(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].isActive).toBe(true);
+  });
+
+  it('POST /profiles creates second profile, isActive: false', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/profiles')
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .send({ name: 'Amma', relation: 'parent' })
+      .expect(201);
+    expect(res.body.data.name).toBe('Amma');
+    expect(res.body.data.isActive).toBe(false);
+    secondProfileId = res.body.data.id as string;
+  });
+
+  it('PATCH /profiles/:id/activate switches active profile', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(`/v1/profiles/${secondProfileId}/activate`)
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .expect(200);
+    expect(res.body.success).toBe(true);
+    const profiles = res.body.data as Array<{
+      id: string;
+      isActive: boolean;
+    }>;
+    const second = profiles.find((p) => p.id === secondProfileId)!;
+    const first = profiles.find((p) => p.id === firstProfileId)!;
+    expect(second.isActive).toBe(true);
+    expect(first.isActive).toBe(false);
+  });
+
+  it('PATCH /profiles/:id updates profile name', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(`/v1/profiles/${secondProfileId}`)
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .send({ name: 'Amma Edited' })
+      .expect(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.name).toBe('Amma Edited');
+  });
+
+  it('GET /profiles after update → name change reflected', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/profiles')
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .expect(200);
+    const amma = (res.body.data as Array<{ id: string; name: string }>).find(
+      (p) => p.id === secondProfileId,
+    )!;
+    expect(amma.name).toBe('Amma Edited');
+  });
+
+  it('PATCH /profiles/nonexistent-id → 404 PROFILE_NOT_FOUND', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/v1/profiles/nonexistent-id')
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .send({ name: 'X' })
+      .expect(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
+  });
+
+  it('PATCH /profiles/nonexistent-id/activate → 404 PROFILE_NOT_FOUND', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/v1/profiles/nonexistent-id/activate')
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .expect(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
+  });
+
+  it('DELETE /profiles without token → 401 AUTH_UNAUTHORIZED', async () => {
+    const res = await request(app.getHttpServer())
+      .delete(`/v1/profiles/${firstProfileId}`)
+      .expect(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+  });
+
+  it('DELETE /profiles/nonexistent-id → 404 PROFILE_NOT_FOUND', async () => {
+    const res = await request(app.getHttpServer())
+      .delete('/v1/profiles/nonexistent-id')
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .expect(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
+  });
+
+  it('DELETE /profiles/:id removes profile and returns updated list', async () => {
+    const res = await request(app.getHttpServer())
+      .delete(`/v1/profiles/${secondProfileId}`)
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .expect(200);
+    expect(res.body.success).toBe(true);
+    const ids = (res.body.data as Array<{ id: string }>).map((p) => p.id);
+    expect(ids).not.toContain(secondProfileId);
+    expect(ids).toContain(firstProfileId);
+  });
+
+  it('GET /profiles after delete → deleted profile absent', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/profiles')
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .expect(200);
+    const ids = (res.body.data as Array<{ id: string }>).map((p) => p.id);
+    expect(ids).not.toContain(secondProfileId);
+  });
+
+  it('DELETE last profile → empty list returned', async () => {
+    const res = await request(app.getHttpServer())
+      .delete(`/v1/profiles/${firstProfileId}`)
+      .set('Authorization', `Bearer ${profilesToken}`)
+      .expect(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveLength(0);
+  });
+});
+
+describe('Profiles limit (free tier)', () => {
+  let limitApp: INestApplication;
+  const limitEmail = 'profiles-limit@example.com';
+  const limitPassword = 'StrongPass123!';
+  let limitToken: string;
+
+  // Fresh app instance without E2E_MAX_PROFILES; DB is shared so we clear before seeding.
+  beforeAll(async () => {
+    delete process.env.E2E_MAX_PROFILES;
+
+    const moduleFixture = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    limitApp = moduleFixture.createNestApplication();
+    limitApp.use(correlationIdMiddleware);
+    limitApp.useGlobalFilters(new ApiExceptionFilter());
+    limitApp.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
+    limitApp.setGlobalPrefix('v1');
+    await limitApp.init();
+  });
+
+  beforeAll(async () => {
+    await clearDatabase(limitApp.get<DataSource>(DataSource));
+    await request(limitApp.getHttpServer())
+      .post('/v1/auth/register')
+      .send({
+        email: limitEmail,
+        password: limitPassword,
+      })
+      .expect(201);
+
+    const loginRes = await request(limitApp.getHttpServer())
+      .post('/v1/auth/login')
+      .send({ email: limitEmail, password: limitPassword })
+      .expect(200);
+
+    limitToken = loginRes.body.data.accessToken as string;
+  });
+
+  afterAll(async () => {
+    await limitApp.close();
+  });
+
+  it('POST /profiles when free tier and already 1 profile → 403 PROFILE_LIMIT_EXCEEDED', async () => {
+    await request(limitApp.getHttpServer())
+      .post('/v1/profiles')
+      .set('Authorization', `Bearer ${limitToken}`)
+      .send({ name: 'Me' })
+      .expect(201);
+
+    const res = await request(limitApp.getHttpServer())
+      .post('/v1/profiles')
+      .set('Authorization', `Bearer ${limitToken}`)
+      .send({ name: 'Second' })
+      .expect(403);
+
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('PROFILE_LIMIT_EXCEEDED');
+    expect(res.body.error.message).toContain('Free plan');
+  });
+});
+
+describe('Reports', () => {
+  const reportsEmail = 'reports@example.com';
+  const reportsPassword = 'StrongPass123!';
+  let reportsToken: string;
+  const pdfBuffer = Buffer.from('%PDF-1.4 minimal pdf content');
+
+  beforeAll(async () => {
+    await clearDatabase(app.get<DataSource>(DataSource));
+    await request(app.getHttpServer())
+      .post('/v1/auth/register')
+      .send({ email: reportsEmail, password: reportsPassword })
+      .expect(201);
+
+    const loginRes = await request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send({ email: reportsEmail, password: reportsPassword })
+      .expect(200);
+    reportsToken = loginRes.body.data.accessToken as string;
+
+    await request(app.getHttpServer())
+      .post('/v1/profiles')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .send({ name: 'Me' })
+      .expect(201);
+  });
+
+  it('POST /reports without token → 401 AUTH_UNAUTHORIZED', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/reports')
+      .attach('file', pdfBuffer, 'report.pdf')
+      .expect(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+  });
+
+  it('POST /reports with valid token and PDF → 201, returns report metadata', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/reports')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .attach('file', pdfBuffer, 'lab-report.pdf')
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.reportId).toBeTruthy();
+    expect(res.body.data.profileId).toBeTruthy();
+    expect(res.body.data.fileName).toBe('lab-report.pdf');
+    expect(res.body.data.contentType).toBe('application/pdf');
+    expect(res.body.data.sizeBytes).toBe(pdfBuffer.length);
+    expect(['queued', 'parsed']).toContain(res.body.data.status);
+    expect(typeof res.body.correlationId).toBe('string');
+  });
+
+  it('POST /reports without profile → 400 REPORT_NO_ACTIVE_PROFILE', async () => {
+    await request(app.getHttpServer())
+      .post('/v1/auth/register')
+      .send({ email: 'noprofile@example.com', password: reportsPassword })
+      .expect(201);
+    const loginRes = await request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send({ email: 'noprofile@example.com', password: reportsPassword })
+      .expect(200);
+    const token = loginRes.body.data.accessToken as string;
+
+    const res = await request(app.getHttpServer())
+      .post('/v1/reports')
+      .set('Authorization', `Bearer ${token}`)
+      .attach('file', pdfBuffer, 'x.pdf')
+      .expect(400);
+
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('REPORT_NO_ACTIVE_PROFILE');
+  });
+
+  it('GET /reports/:id with valid token and owned report → 200', async () => {
+    const uploadRes = await request(app.getHttpServer())
+      .post('/v1/reports')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .attach('file', pdfBuffer, 'x.pdf')
+      .expect(201);
+    const reportId = uploadRes.body.data.reportId as string;
+
+    const getRes = await request(app.getHttpServer())
+      .get(`/v1/reports/${reportId}`)
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .expect(200);
+
+    expect(getRes.body.success).toBe(true);
+    expect(getRes.body.data.id).toBe(reportId);
+    expect(['queued', 'parsed']).toContain(getRes.body.data.status);
+    expect(getRes.body.data.originalFileName).toBe('x.pdf');
+  });
+
+  it('GET /reports/:id without token → 401 AUTH_UNAUTHORIZED', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/reports/00000000-0000-0000-0000-000000000000')
+      .expect(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+  });
+
+  it('GET /reports/:id for non-existent report → 404 REPORT_NOT_FOUND', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/reports/00000000-0000-0000-0000-000000000000')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .expect(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('REPORT_NOT_FOUND');
+  });
+
+  it('GET /reports/:id/file with valid token and owned report → 200, PDF bytes', async () => {
+    const uploadRes = await request(app.getHttpServer())
+      .post('/v1/reports')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .attach('file', pdfBuffer, 'file-for-view.pdf')
+      .expect(201);
+    const reportId = uploadRes.body.data.reportId as string;
+
+    const fileRes = await request(app.getHttpServer())
+      .get(`/v1/reports/${reportId}/file`)
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .buffer(true)
+      .expect(200);
+
+    expect(fileRes.headers['content-type']).toContain('application/pdf');
+    expect(fileRes.headers['content-disposition']).toContain('inline');
+    expect(fileRes.headers['content-disposition']).toContain('file-for-view.pdf');
+    const body = fileRes.body as Buffer | string;
+    expect(body).toBeTruthy();
+    expect(
+      (body instanceof Buffer ? body.toString() : String(body)).slice(0, 5),
+    ).toBe('%PDF-');
+  });
+
+  it('GET /reports/:id/file without token → 401 AUTH_UNAUTHORIZED', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/reports/00000000-0000-0000-0000-000000000000/file')
+      .expect(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+  });
+
+  it('GET /reports/:id/file for non-existent report → 404 REPORT_NOT_FOUND', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/reports/00000000-0000-0000-0000-000000000000/file')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .expect(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('REPORT_NOT_FOUND');
+  });
+
+  it('GET /reports/:id/file when file missing from storage → 503 REPORT_FILE_UNAVAILABLE', async () => {
+    const uploadRes = await request(app.getHttpServer())
+      .post('/v1/reports')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .attach('file', pdfBuffer, 'orphaned.pdf')
+      .expect(201);
+    const reportId = uploadRes.body.data.reportId as string;
+    const profileId = uploadRes.body.data.profileId as string;
+    const profileRes = await request(app.getHttpServer())
+      .get('/v1/account/profile')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .expect(200);
+    const userId = profileRes.body.data.id as string;
+    const storageKey = `reports/${userId}/${profileId}/${reportId}.pdf`;
+    const storage = app.get<FileStorageService>(FILE_STORAGE);
+    await storage.delete(storageKey);
+
+    const res = await request(app.getHttpServer())
+      .get(`/v1/reports/${reportId}/file`)
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .expect(503);
+
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('REPORT_FILE_UNAVAILABLE');
+  });
+
+  it('POST /reports/:id/retry without token → 401 AUTH_UNAUTHORIZED', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/reports/00000000-0000-0000-0000-000000000000/retry')
+      .expect(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+  });
+
+  it('POST /reports/:id/keep-file without token → 401 AUTH_UNAUTHORIZED', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/reports/00000000-0000-0000-0000-000000000000/keep-file')
+      .expect(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+  });
+
+  it('POST /reports/:id/retry for non-existent report → 404 REPORT_NOT_FOUND', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/reports/00000000-0000-0000-0000-000000000000/retry')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .expect(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('REPORT_NOT_FOUND');
+  });
+
+  it('POST /reports/:id/retry for already parsed report → 400 REPORT_ALREADY_PARSED', async () => {
+    const uploadRes = await request(app.getHttpServer())
+      .post('/v1/reports')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .attach('file', pdfBuffer, 'parsed.pdf')
+      .expect(201);
+    const reportId = uploadRes.body.data.reportId as string;
+    expect(uploadRes.body.data.status).toBe('parsed');
+
+    const res = await request(app.getHttpServer())
+      .post(`/v1/reports/${reportId}/retry`)
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .expect(400);
+
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('REPORT_ALREADY_PARSED');
+  });
+
+  describe('Reports retry and keep-file (PARSE_STUB_FAIL)', () => {
+    let retryApp: INestApplication;
+    const retryEmail = 'retry-keep@example.com';
+    const retryPassword = 'StrongPass123!';
+    let retryToken: string;
+    const pdfBuffer = Buffer.from('%PDF-1.4 minimal pdf content');
+
     beforeAll(async () => {
-      delete process.env.E2E_MAX_PROFILES;
-
+      process.env.PARSE_STUB_FAIL = 'true';
+      process.env.PARSE_STUB_RETRY_SUCCEEDS = 'true';
       const moduleFixture = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
-
-      limitApp = moduleFixture.createNestApplication();
-      limitApp.use(correlationIdMiddleware);
-      limitApp.useGlobalFilters(new ApiExceptionFilter());
-      limitApp.useGlobalPipes(
+      retryApp = moduleFixture.createNestApplication();
+      retryApp.use(correlationIdMiddleware);
+      retryApp.useGlobalFilters(new ApiExceptionFilter());
+      retryApp.useGlobalPipes(
         new ValidationPipe({ whitelist: true, transform: true }),
       );
-      limitApp.setGlobalPrefix('v1');
-      await limitApp.init();
-    });
+      retryApp.setGlobalPrefix('v1');
+      await retryApp.init();
 
-    beforeAll(async () => {
-      await clearDatabase(limitApp.get<DataSource>(DataSource));
-      await request(limitApp.getHttpServer())
+      await clearDatabase(retryApp.get<DataSource>(DataSource));
+      await request(retryApp.getHttpServer())
         .post('/v1/auth/register')
-        .send({
-          email: limitEmail,
-          password: limitPassword,
-        })
+        .send({ email: retryEmail, password: retryPassword })
         .expect(201);
-
-      const loginRes = await request(limitApp.getHttpServer())
+      const loginRes = await request(retryApp.getHttpServer())
         .post('/v1/auth/login')
-        .send({ email: limitEmail, password: limitPassword })
+        .send({ email: retryEmail, password: retryPassword })
         .expect(200);
-
-      limitToken = loginRes.body.data.accessToken as string;
+      retryToken = loginRes.body.data.accessToken as string;
+      await request(retryApp.getHttpServer())
+        .post('/v1/profiles')
+        .set('Authorization', `Bearer ${retryToken}`)
+        .send({ name: 'Me' })
+        .expect(201);
     });
 
     afterAll(async () => {
-      await limitApp.close();
+      delete process.env.PARSE_STUB_FAIL;
+      delete process.env.PARSE_STUB_RETRY_SUCCEEDS;
+      await retryApp.close();
     });
 
-    it('POST /profiles when free tier and already 1 profile → 403 PROFILE_LIMIT_EXCEEDED', async () => {
-      await request(limitApp.getHttpServer())
-        .post('/v1/profiles')
-        .set('Authorization', `Bearer ${limitToken}`)
-        .send({ name: 'Me' })
+    it('POST /reports/:id/retry with unparsed report → 200, status parsed', async () => {
+      const uploadRes = await request(retryApp.getHttpServer())
+        .post('/v1/reports')
+        .set('Authorization', `Bearer ${retryToken}`)
+        .attach('file', pdfBuffer, 'unparsed.pdf')
         .expect(201);
+      expect(uploadRes.body.data.status).toBe('unparsed');
+      const reportId = uploadRes.body.data.reportId as string;
 
-      const res = await request(limitApp.getHttpServer())
-        .post('/v1/profiles')
-        .set('Authorization', `Bearer ${limitToken}`)
-        .send({ name: 'Second' })
-        .expect(403);
+      const retryRes = await request(retryApp.getHttpServer())
+        .post(`/v1/reports/${reportId}/retry`)
+        .set('Authorization', `Bearer ${retryToken}`)
+        .expect(200);
 
-      expect(res.body.success).toBe(false);
-      expect(res.body.error.code).toBe('PROFILE_LIMIT_EXCEEDED');
-      expect(res.body.error.message).toContain('Free plan');
+      expect(retryRes.body.success).toBe(true);
+      expect(retryRes.body.data.status).toBe('parsed');
+    });
+
+    it('POST /reports/:id/keep-file with unparsed report → 200, status unparsed', async () => {
+      const uploadRes = await request(retryApp.getHttpServer())
+        .post('/v1/reports')
+        .set('Authorization', `Bearer ${retryToken}`)
+        .attach('file', pdfBuffer, 'keep.pdf')
+        .expect(201);
+      const reportId = uploadRes.body.data.reportId as string;
+
+      const keepRes = await request(retryApp.getHttpServer())
+        .post(`/v1/reports/${reportId}/keep-file`)
+        .set('Authorization', `Bearer ${retryToken}`)
+        .expect(200);
+
+      expect(keepRes.body.success).toBe(true);
+      expect(keepRes.body.data.status).toBe('unparsed');
     });
   });
 
@@ -1205,6 +1558,42 @@ describe('AuthController (e2e)', () => {
 
       expect(res.body.success).toBe(false);
       expect(res.body.error.code).toBe('CLOSURE_CONFIRMATION_REQUIRED');
+    });
+
+    it('POST /account/closure-requests with avatar deletes avatar and completes', async () => {
+      const closureWithAvatarEmail = 'closure-avatar@example.com';
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .set('x-forwarded-for', '10.0.2.6')
+        .send({
+          email: closureWithAvatarEmail,
+          password: dataRightsPassword,
+        })
+        .expect(201);
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .set('x-forwarded-for', '10.0.2.6')
+        .send({
+          email: closureWithAvatarEmail,
+          password: dataRightsPassword,
+        })
+        .expect(200);
+      const token = loginRes.body.data.accessToken as string;
+
+      await request(app.getHttpServer())
+        .post('/v1/account/avatar')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('avatar', Buffer.from([0xff, 0xd8, 0xff]), 'avatar.jpg')
+        .expect(200);
+
+      const res = await request(app.getHttpServer())
+        .post('/v1/account/closure-requests')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ confirmClosure: true })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.status).toBe('completed');
     });
 
     it('POST /account/closure-requests without token → 401 AUTH_UNAUTHORIZED', async () => {
