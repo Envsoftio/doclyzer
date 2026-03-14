@@ -1138,6 +1138,49 @@ describe('Reports', () => {
     expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
   });
 
+  it('POST /reports same file twice (same profile) → second returns 409 REPORT_DUPLICATE_DETECTED with existingReport', async () => {
+    const firstRes = await request(app.getHttpServer())
+      .post('/v1/reports')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .attach('file', pdfBuffer, 'dup.pdf')
+      .expect(201);
+    const firstReportId = firstRes.body.data.reportId as string;
+
+    const secondRes = await request(app.getHttpServer())
+      .post('/v1/reports')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .attach('file', pdfBuffer, 'dup.pdf')
+      .expect(409);
+
+    expect(secondRes.body.success).toBe(false);
+    expect(secondRes.body.error.code).toBe('REPORT_DUPLICATE_DETECTED');
+    expect(secondRes.body.existingReport).toBeDefined();
+    expect(secondRes.body.existingReport.id).toBe(firstReportId);
+    expect(secondRes.body.existingReport.originalFileName).toBe('dup.pdf');
+    expect(secondRes.body.existingReport.createdAt).toBeTruthy();
+  });
+
+  it('POST /reports?duplicateAction=upload_anyway with duplicate file → 201 and second report created', async () => {
+    const firstRes = await request(app.getHttpServer())
+      .post('/v1/reports')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .attach('file', pdfBuffer, 'force-dup.pdf')
+      .expect(201);
+    const firstReportId = firstRes.body.data.reportId as string;
+
+    const secondRes = await request(app.getHttpServer())
+      .post('/v1/reports')
+      .query({ duplicateAction: 'upload_anyway' })
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .attach('file', pdfBuffer, 'force-dup.pdf')
+      .expect(201);
+
+    const secondReportId = secondRes.body.data.reportId as string;
+    expect(secondReportId).toBeTruthy();
+    expect(secondReportId).not.toBe(firstReportId);
+    expect(secondRes.body.data.fileName).toBe('force-dup.pdf');
+  });
+
   it('POST /reports/:id/retry for non-existent report → 404 REPORT_NOT_FOUND', async () => {
     const res = await request(app.getHttpServer())
       .post('/v1/reports/00000000-0000-0000-0000-000000000000/retry')

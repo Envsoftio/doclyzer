@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { getCorrelationId } from './correlation-id.middleware';
-import type { ApiErrorResponse } from './response-envelope';
 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
@@ -23,6 +22,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     let status: number = HttpStatus.INTERNAL_SERVER_ERROR;
     let code = 'INTERNAL_ERROR';
     let message = 'An unexpected error occurred';
+    let extraKeys: Record<string, unknown> = {};
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -34,9 +34,16 @@ export class ApiExceptionFilter implements ExceptionFilter {
         'code' in response &&
         'message' in response
       ) {
-        const typed = response as { code: string; message: string };
-        code = typed.code;
-        message = typed.message;
+        const typed = response as Record<string, unknown>;
+        code = typed.code as string;
+        message = typed.message as string;
+        // Whitelist extra keys allowed in error response (e.g. existingReport for 409 duplicate).
+        const allowedExtraKeys = ['existingReport'];
+        for (const key of allowedExtraKeys) {
+          if (key in typed && typed[key] !== undefined) {
+            extraKeys[key] = typed[key];
+          }
+        }
       } else if (typeof response === 'string') {
         message = response;
       }
@@ -61,13 +68,14 @@ export class ApiExceptionFilter implements ExceptionFilter {
       );
     }
 
-    const body: ApiErrorResponse = {
+    const body: Record<string, unknown> = {
       success: false,
       error: {
         code,
         message,
       },
       correlationId,
+      ...extraKeys,
     };
 
     res.status(status).json(body);

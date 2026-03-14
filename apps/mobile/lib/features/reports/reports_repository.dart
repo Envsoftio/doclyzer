@@ -40,7 +40,9 @@ class Report {
 
 abstract class ReportsRepository {
   /// Upload a report file. Returns metadata including reportId and status.
-  Future<UploadedReport> uploadReport(String filePath);
+  /// When [forceUploadAnyway] is true, bypasses duplicate check (use after user chooses "Upload anyway").
+  Future<UploadedReport> uploadReport(String filePath,
+      {bool forceUploadAnyway = false});
 
   /// Fetch a report by id.
   Future<Report> getReport(String reportId);

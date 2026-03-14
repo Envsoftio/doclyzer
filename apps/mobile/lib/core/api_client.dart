@@ -78,7 +78,7 @@ class ApiClient {
       final error = body['error'] as Map<String, dynamic>?;
       final code = error?['code'] as String? ?? 'UNKNOWN';
       final message = error?['message'] as String? ?? 'Request failed';
-      throw ApiException(code, message);
+      throw ApiException(code, message, body);
     }, auth);
   }
 
@@ -117,9 +117,13 @@ class ApiClient {
     String fieldName,
     String filePath, {
     bool auth = true,
+    Map<String, String>? queryParams,
   }) async {
     return _requestWithRefresh(() async {
-      final uri = Uri.parse(_url(path));
+      var uri = Uri.parse(_url(path));
+      if (queryParams != null && queryParams.isNotEmpty) {
+        uri = uri.replace(queryParameters: queryParams);
+      }
       final request = http.MultipartRequest('POST', uri);
       if (auth && _accessToken != null) {
         request.headers['Authorization'] = 'Bearer $_accessToken';
@@ -169,15 +173,17 @@ class ApiClient {
     final error = body['error'] as Map<String, dynamic>?;
     final code = error?['code'] as String? ?? 'UNKNOWN';
     final message = error?['message'] as String? ?? 'Request failed';
-    throw ApiException(code, message);
+    throw ApiException(code, message, body);
   }
 }
 
 class ApiException implements Exception {
-  ApiException(this.code, this.message);
+  ApiException(this.code, this.message, [this.data]);
 
   final String code;
   final String message;
+  /// Full error response body (e.g. contains existingReport for REPORT_DUPLICATE_DETECTED).
+  final Map<String, dynamic>? data;
 
   @override
   String toString() => message;

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
 import type { FileStorageService } from '../../common/storage/file-storage.interface';
@@ -14,6 +14,7 @@ import { FILE_STORAGE } from '../../common/storage/storage.module';
 import type { ReportStatus } from '../../database/entities/report.entity';
 import { ReportEntity } from '../../database/entities/report.entity';
 import { ProfilesService } from '../profiles/profiles.service';
+import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
 import { ReportNotFoundException } from './exceptions/report-not-found.exception';
 import { ReportUploadException } from './exceptions/report-upload.exception';
@@ -76,6 +77,7 @@ export class ReportsService {
       mimetype: string;
       size: number;
     },
+    options?: { duplicateAction?: 'upload_anyway' },
   ): Promise<UploadReportResult> {
     const activeProfileId =
       await this.profilesService.getActiveProfileId(userId);
@@ -105,6 +107,25 @@ export class ReportsService {
       );
     }
 
+    const contentHash = this.computeContentHash(file.buffer);
+    const forceUploadAnyway =
+      options?.duplicateAction === 'upload_anyway';
+
+    // Duplicate check: best-effort per profile; concurrent uploads of same file can both pass (no locking).
+    const existing = await this.reportRepo.findOne({
+      where: { profileId: activeProfileId, contentHash },
+    });
+
+    if (!forceUploadAnyway) {
+      if (existing) {
+        throw new ReportDuplicateDetectedException({
+          id: existing.id,
+          originalFileName: existing.originalFileName,
+          createdAt: existing.createdAt.toISOString(),
+        });
+      }
+    }
+
     const reportId = randomUUID();
     const storageKey = `reports/${userId}/${activeProfileId}/${reportId}.pdf`;
     const originalFileName = file.originalname?.trim() || 'report.pdf';
@@ -121,6 +142,7 @@ export class ReportsService {
       sizeBytes: file.buffer.length,
       originalFileStorageKey: storageKey,
       status,
+      contentHash,
     });
 
     try {
@@ -136,14 +158,24 @@ export class ReportsService {
       throw err;
     }
 
+    if (forceUploadAnyway && existing) {
+      this.logger.log(
+        `Duplicate resolution: upload_anyway existingReportId=${existing.id} newReportId=${reportId}`,
+      );
+    }
+
     return {
       reportId,
       profileId: activeProfileId,
       fileName: entity.originalFileName,
       contentType: entity.contentType,
       sizeBytes: entity.sizeBytes,
-      status: entity.status, // parsed when sync stub runs
+      status: entity.status,
     };
+  }
+
+  private computeContentHash(buffer: Buffer): string {
+    return createHash('sha256').update(buffer).digest('hex');
   }
 
   async getReportFile(

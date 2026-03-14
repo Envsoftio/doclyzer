@@ -50,6 +50,9 @@ export class ReportEntity {
   @Column({ type: 'varchar', name: 'original_file_storage_key', length: 1024 })
   originalFileStorageKey!: string;
 
+  @Column({ type: 'varchar', name: 'content_hash', length: 64, nullable: true })
+  contentHash!: string | null;
+
   @Column({
     type: 'varchar',
     length: 32,

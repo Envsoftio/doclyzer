@@ -1,6 +1,6 @@
 # Story 2.5: Duplicate Report Detection and User Choice
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -35,31 +35,31 @@ so that accidental duplicates are reduced.
 
 ## Tasks / Subtasks
 
-- [ ] Backend: content hash and duplicate check (AC: 1, 4, 5)
-  - [ ] Add `contentHash` (e.g. SHA-256 hex string) to Report entity; add migration (nullable initially for existing rows; backfill optional or leave null for old reports).
-  - [ ] In `reports.service.ts` before creating a new report: compute hash of file buffer (e.g. `crypto.createHash('sha256').update(buffer).digest('hex')`); query for existing report with same `profileId` and `contentHash`; if found, do not upload to storage or insert new row; return a structured duplicate response (see API contract below).
-  - [ ] When no duplicate: set `contentHash` on new entity and save as today. When duplicate and user later chooses "upload anyway", create report with same hash (allowed; duplicate check only blocks first creation until user confirms).
-  - [ ] Add error/response code e.g. `REPORT_DUPLICATE_DETECTED` in `reports.types.ts` and a DTO/shape for duplicate payload (existingReportId, existingFileName, existingCreatedAt, etc.).
+- [x] Backend: content hash and duplicate check (AC: 1, 4, 5)
+  - [x] Add `contentHash` (e.g. SHA-256 hex string) to Report entity; add migration (nullable initially for existing rows; backfill optional or leave null for old reports).
+  - [x] In `reports.service.ts` before creating a new report: compute hash of file buffer (e.g. `crypto.createHash('sha256').update(buffer).digest('hex')`); query for existing report with same `profileId` and `contentHash`; if found, do not upload to storage or insert new row; return a structured duplicate response (see API contract below).
+  - [x] When no duplicate: set `contentHash` on new entity and save as today. When duplicate and user later chooses "upload anyway", create report with same hash (allowed; duplicate check only blocks first creation until user confirms).
+  - [x] Add error/response code e.g. `REPORT_DUPLICATE_DETECTED` in `reports.types.ts` and a DTO/shape for duplicate payload (existingReportId, existingFileName, existingCreatedAt, etc.).
 
-- [ ] Backend: upload-anyway path and audit (AC: 2, 3)
-  - [ ] Extend upload API to accept an optional parameter indicating "upload anyway" (e.g. query `?duplicateAction=upload_anyway` or body field when multipart). When present and request would have been a duplicate, skip duplicate response and proceed with normal upload; store the new report with same contentHash.
-  - [ ] Audit: when user uploads anyway, log or persist a minimal audit event (e.g. duplicateResolution: 'upload_anyway', existingReportId, newReportId, timestamp); no PHI in logs (project-context). If no audit table exists yet, logging with correlation ID and report ids is acceptable.
+- [x] Backend: upload-anyway path and audit (AC: 2, 3)
+  - [x] Extend upload API to accept an optional parameter indicating "upload anyway" (e.g. query `?duplicateAction=upload_anyway` or body field when multipart). When present and request would have been a duplicate, skip duplicate response and proceed with normal upload; store the new report with same contentHash.
+  - [x] Audit: when user uploads anyway, log or persist a minimal audit event (e.g. duplicateResolution: 'upload_anyway', existingReportId, newReportId, timestamp); no PHI in logs (project-context). If no audit table exists yet, logging with correlation ID and report ids is acceptable.
 
-- [ ] API contract
-  - [ ] `POST /reports` (no duplicate): 201, body = current success envelope with report (id, profileId, fileName, contentType, sizeBytes, status, etc.).
-  - [ ] `POST /reports` (duplicate detected, no override): 409 with body e.g. `{ success: false, code: 'REPORT_DUPLICATE_DETECTED', existingReport: { id, originalFileName, createdAt }, message: '...' }` (or 200 with duplicate flag per product preference; keep consistent).
-  - [ ] `POST /reports?duplicateAction=upload_anyway` (or equivalent): same as current upload; 201 with new report.
+- [x] API contract
+  - [x] `POST /reports` (no duplicate): 201, body = current success envelope with report (id, profileId, fileName, contentType, sizeBytes, status, etc.).
+  - [x] `POST /reports` (duplicate detected, no override): 409 with body e.g. `{ success: false, code: 'REPORT_DUPLICATE_DETECTED', existingReport: { id, originalFileName, createdAt }, message: '...' }` (or 200 with duplicate flag per product preference; keep consistent).
+  - [x] `POST /reports?duplicateAction=upload_anyway` (or equivalent): same as current upload; 201 with new report.
 
-- [ ] Flutter: duplicate UX (AC: 1, 2, 3)
-  - [ ] When upload returns duplicate response (409 or duplicate flag): show dialog/sheet "This report looks like a duplicate of [name/date]. [Keep existing] [Upload anyway]". Wire "Keep existing" to navigate to existing report (e.g. by existingReportId) or call existing getReport and show success state for that report; do not create a second report.
-  - [ ] Wire "Upload anyway" to retry upload with `duplicateAction=upload_anyway` (or equivalent), then show normal success for the new report.
-  - [ ] Widget keys for duplicate dialog: e.g. `Key('duplicate-dialog')`, `Key('duplicate-keep-existing')`, `Key('duplicate-upload-anyway')` for tests.
+- [x] Flutter: duplicate UX (AC: 1, 2, 3)
+  - [x] When upload returns duplicate response (409 or duplicate flag): show dialog/sheet "This report looks like a duplicate of [name/date]. [Keep existing] [Upload anyway]". Wire "Keep existing" to navigate to existing report (e.g. by existingReportId) or call existing getReport and show success state for that report; do not create a second report.
+  - [x] Wire "Upload anyway" to retry upload with `duplicateAction=upload_anyway` (or equivalent), then show normal success for the new report.
+  - [x] Widget keys for duplicate dialog: e.g. `Key('duplicate-dialog')`, `Key('duplicate-keep-existing')`, `Key('duplicate-upload-anyway')` for tests.
 
-- [ ] Tests
-  - [ ] Service: upload when same profile + same content hash returns duplicate info and does not save new report; upload when hash different or different profile creates report; upload with duplicateAction and same hash creates second report.
-  - [ ] Controller: 409 (or chosen contract) when duplicate; 201 with duplicateAction; 201 when no duplicate. Auth and validation unchanged.
-  - [ ] E2E: upload same file twice (same profile) → second request gets duplicate response; with duplicateAction → 201 and second report exists.
-  - [ ] Flutter: widget test that duplicate response shows dialog and "Upload anyway" triggers second request with override and shows success.
+- [x] Tests
+  - [x] Service: upload when same profile + same content hash returns duplicate info and does not save new report; upload when hash different or different profile creates report; upload with duplicateAction and same hash creates second report.
+  - [x] Controller: 409 (or chosen contract) when duplicate; 201 with duplicateAction; 201 when no duplicate. Auth and validation unchanged.
+  - [x] E2E: upload same file twice (same profile) → second request gets duplicate response; with duplicateAction → 201 and second report exists.
+  - [x] Flutter: widget test that duplicate response shows dialog and "Upload anyway" triggers second request with override and shows success.
 
 ## Dev Notes
 
@@ -147,8 +147,32 @@ so that accidental duplicates are reduced.
 
 ### Completion Notes List
 
-(To be filled by dev agent.)
+- API: Report entity + contentHash (nullable); migration AddContentHashToReports; ReportsService.uploadReport computes SHA-256, finds duplicate by profileId+contentHash, throws ReportDuplicateDetectedException(409) with existingReport; optional options.duplicateAction=upload_anyway skips duplicate response and creates report; audit log on upload_anyway includes existingReportId and newReportId. Controller reads @Query('duplicateAction'). ApiExceptionFilter whitelists extra keys (existingReport) onto 409 response.
+- Flutter: ApiClient.uploadFile(queryParams), ApiException.data; getBytes now passes body to ApiException. ReportsRepository.uploadReport(path, {forceUploadAnyway}); ApiReportsRepository passes duplicateAction query; UploadReportScreen duplicate state, dialog (Keep existing / Upload anyway), getReport on Keep existing, uploadReport(forceUploadAnyway: true) on Upload anyway; initialDuplicateExistingReport/initialDuplicatePendingPath for tests.
+- Tests: Service 3 new tests (duplicate returns exception, upload_anyway creates report); controller 3 (duplicateAction param, 409); E2E 2 (same file 409, duplicateAction 201); Flutter widget test for duplicate dialog and Upload anyway. E2E global-setup runs migrations; if "relation reports does not exist" appears, check DATABASE_URL and data-source migration list.
+- Code review fixes: Audit log now logs existingReportId + newReportId when upload_anyway; duplicate lookup always run (used for both throw and audit); ApiExceptionFilter whitelists allowed extra keys; getBytes passes body to ApiException; race condition documented as best-effort in comment.
 
 ### File List
 
-(To be filled by dev agent.)
+- apps/api/src/common/api-exception.filter.ts
+- apps/api/src/database/entities/report.entity.ts
+- apps/api/src/database/migrations/1730813300000-AddContentHashToReports.ts
+- apps/api/src/database/migrations/index.ts
+- apps/api/src/modules/reports/reports.types.ts
+- apps/api/src/modules/reports/exceptions/report-duplicate-detected.exception.ts
+- apps/api/src/modules/reports/reports.service.ts
+- apps/api/src/modules/reports/reports.controller.ts
+- apps/api/src/modules/reports/reports.service.spec.ts
+- apps/api/src/modules/reports/reports.controller.spec.ts
+- apps/api/test/app.e2e-spec.ts
+- apps/mobile/lib/core/api_client.dart
+- apps/mobile/lib/features/reports/reports_repository.dart
+- apps/mobile/lib/features/reports/api_reports_repository.dart
+- apps/mobile/lib/features/reports/screens/upload_report_screen.dart
+- apps/mobile/test/upload_report_test.dart
+
+## Change Log
+
+| Date       | Author | Change |
+|------------|--------|--------|
+| 2026-03-14 | AI     | Story implemented: duplicate detection (contentHash, 409 + existingReport), upload_anyway path, Flutter dialog and Keep existing / Upload anyway; tests added (service, controller, E2E, Flutter widget). |

@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { StreamableFile } from '@nestjs/common/file-stream';
 import type { Request } from 'express';
 import type { RequestUser } from '../auth/auth.types';
+import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { ReportNotFoundException } from './exceptions/report-not-found.exception';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
@@ -109,11 +110,53 @@ describe('ReportsController', () => {
           originalname: 'lab.pdf',
           mimetype: 'application/pdf',
         }),
+        undefined,
       );
       expect(authService.enforceRateLimit).toHaveBeenCalledWith(
         'report-upload',
         '127.0.0.1',
         10,
+      );
+    });
+
+    it('passes duplicateAction=upload_anyway when query param set', async () => {
+      const req = makeReq({
+        file: {
+          buffer: pdfBuffer,
+          originalname: 'lab.pdf',
+          mimetype: 'application/pdf',
+          size: pdfBuffer.length,
+        },
+      });
+
+      await controller.uploadReport(req, 'upload_anyway');
+
+      expect(reportsService.uploadReport).toHaveBeenCalledWith(
+        'user-1',
+        expect.any(Object),
+        { duplicateAction: 'upload_anyway' },
+      );
+    });
+
+    it('returns 409 when service throws ReportDuplicateDetectedException', async () => {
+      reportsService.uploadReport.mockRejectedValueOnce(
+        new ReportDuplicateDetectedException({
+          id: 'existing-id',
+          originalFileName: 'existing.pdf',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        }),
+      );
+      const req = makeReq({
+        file: {
+          buffer: pdfBuffer,
+          originalname: 'lab.pdf',
+          mimetype: 'application/pdf',
+          size: pdfBuffer.length,
+        },
+      });
+
+      await expect(controller.uploadReport(req)).rejects.toThrow(
+        ReportDuplicateDetectedException,
       );
     });
 

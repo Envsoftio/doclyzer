@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -64,7 +65,10 @@ export class ReportsController {
       limits: { fileSize: MAX_REPORT_SIZE_BYTES },
     }),
   )
-  async uploadReport(@Req() req: Request): Promise<object> {
+  async uploadReport(
+    @Req() req: Request,
+    @Query('duplicateAction') duplicateAction?: string,
+  ): Promise<object> {
     const file = (req as Request & { file?: Express.Multer.File }).file;
     if (!file) {
       throw new BadRequestException({
@@ -74,12 +78,20 @@ export class ReportsController {
     }
     this.authService.enforceRateLimit('report-upload', getClientIp(req), 10);
     const { id: userId } = req.user as RequestUser;
-    const data = await this.reportsService.uploadReport(userId, {
-      buffer: file.buffer,
-      originalname: file.originalname ?? 'report.pdf',
-      mimetype: file.mimetype ?? 'application/pdf',
-      size: file.size ?? 0,
-    });
+    const options =
+      duplicateAction === 'upload_anyway'
+        ? { duplicateAction: 'upload_anyway' as const }
+        : undefined;
+    const data = await this.reportsService.uploadReport(
+      userId,
+      {
+        buffer: file.buffer,
+        originalname: file.originalname ?? 'report.pdf',
+        mimetype: file.mimetype ?? 'application/pdf',
+        size: file.size ?? 0,
+      },
+      options,
+    );
     return successResponse(data, getCorrelationId(req));
   }
 

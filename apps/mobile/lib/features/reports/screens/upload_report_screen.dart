@@ -1,10 +1,11 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/api_client.dart';
 import '../reports_repository.dart';
 import 'pdf_viewer_screen.dart';
 
-enum _UploadState { idle, uploading, reading, success, error }
+enum _UploadState { idle, uploading, reading, success, error, duplicate }
 
 class UploadReportScreen extends StatefulWidget {
   const UploadReportScreen({
@@ -14,6 +15,8 @@ class UploadReportScreen extends StatefulWidget {
     required this.onBack,
     required this.onComplete,
     this.initialReport,
+    this.initialDuplicateExistingReport,
+    this.initialDuplicatePendingPath,
   });
 
   final ReportsRepository reportsRepository;
@@ -22,6 +25,9 @@ class UploadReportScreen extends StatefulWidget {
   final VoidCallback onComplete;
   /// For testing: when set, shows result state immediately (bypasses file pick).
   final UploadedReport? initialReport;
+  /// For testing duplicate UX: when set with [initialDuplicatePendingPath], shows duplicate dialog immediately.
+  final Map<String, dynamic>? initialDuplicateExistingReport;
+  final String? initialDuplicatePendingPath;
 
   @override
   State<UploadReportScreen> createState() => _UploadReportScreenState();
@@ -31,6 +37,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   _UploadState _state = _UploadState.idle;
   String? _errorMessage;
   UploadedReport? _result;
+  String? _pendingDuplicatePath;
+  Map<String, dynamic>? _existingReport;
 
   @override
   void initState() {
@@ -38,6 +46,11 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     if (widget.initialReport != null) {
       _result = widget.initialReport;
       _state = _UploadState.success;
+    } else if (widget.initialDuplicateExistingReport != null &&
+        widget.initialDuplicatePendingPath != null) {
+      _existingReport = widget.initialDuplicateExistingReport;
+      _pendingDuplicatePath = widget.initialDuplicatePendingPath;
+      _state = _UploadState.duplicate;
     }
   }
 
@@ -65,12 +78,99 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     });
 
     try {
-      // Show "Uploading…" for the whole request (network transfer); server does upload+parse in one call
       final report = await widget.reportsRepository.uploadReport(path);
       if (mounted) {
         setState(() {
           _state = _UploadState.success;
           _result = report;
+          _pendingDuplicatePath = null;
+          _existingReport = null;
+        });
+      }
+    } on ApiException catch (e) {
+      if (mounted && e.code == 'REPORT_DUPLICATE_DETECTED') {
+        final existing = e.data?['existingReport'] as Map<String, dynamic>?;
+        if (existing != null) {
+          setState(() {
+            _state = _UploadState.duplicate;
+            _pendingDuplicatePath = path;
+            _existingReport = existing;
+            _errorMessage = null;
+          });
+          return;
+        }
+        setState(() {
+          _state = _UploadState.error;
+          _errorMessage = e.message;
+        });
+      } else if (mounted) {
+        setState(() {
+          _state = _UploadState.error;
+          _errorMessage = e.message;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _state = _UploadState.error;
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    }
+  }
+
+  Future<void> _onDuplicateKeepExisting() async {
+    final existing = _existingReport;
+    if (existing == null) return;
+    final id = existing['id'] as String?;
+    if (id == null) return;
+    setState(() {
+      _state = _UploadState.reading;
+      _errorMessage = null;
+    });
+    try {
+      final report = await widget.reportsRepository.getReport(id);
+      if (mounted) {
+        setState(() {
+          _state = _UploadState.success;
+          _result = UploadedReport(
+            reportId: report.id,
+            profileId: report.profileId,
+            fileName: report.originalFileName,
+            contentType: report.contentType,
+            sizeBytes: report.sizeBytes,
+            status: report.status,
+          );
+          _pendingDuplicatePath = null;
+          _existingReport = null;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _state = _UploadState.duplicate;
+          _errorMessage = 'Could not load existing report';
+        });
+      }
+    }
+  }
+
+  Future<void> _onDuplicateUploadAnyway() async {
+    final path = _pendingDuplicatePath;
+    if (path == null) return;
+    setState(() {
+      _state = _UploadState.uploading;
+      _errorMessage = null;
+    });
+    try {
+      final report = await widget.reportsRepository.uploadReport(path,
+          forceUploadAnyway: true);
+      if (mounted) {
+        setState(() {
+          _state = _UploadState.success;
+          _result = report;
+          _pendingDuplicatePath = null;
+          _existingReport = null;
         });
       }
     } catch (e) {
@@ -110,6 +210,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
               _UploadState.success => _isParseFailure()
                   ? _buildParseFailure()
                   : _buildSuccess(),
+              _UploadState.duplicate => _buildDuplicateDialog(),
               _UploadState.error => _buildError(),
             },
           ],
@@ -282,6 +383,58 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             widget.onComplete();
           },
           child: const Text('Done'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDuplicateDialog() {
+    final existing = _existingReport;
+    final name = existing?['originalFileName'] as String? ?? 'existing report';
+    final createdAt = existing?['createdAt'] as String?;
+    final subtitle = createdAt != null
+        ? 'Added ${DateTime.tryParse(createdAt)?.toString().substring(0, 10) ?? createdAt}'
+        : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Icon(
+          Icons.copy_outlined,
+          color: Theme.of(context).colorScheme.primary,
+          size: 48,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'This report looks like a duplicate',
+          key: const Key('duplicate-dialog'),
+          style: Theme.of(context).textTheme.titleMedium,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          name,
+          style: Theme.of(context).textTheme.bodyMedium,
+          textAlign: TextAlign.center,
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodySmall,
+            textAlign: TextAlign.center,
+          ),
+        ],
+        const SizedBox(height: 24),
+        FilledButton(
+          key: const Key('duplicate-keep-existing'),
+          onPressed: _onDuplicateKeepExisting,
+          child: const Text('Keep existing'),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          key: const Key('duplicate-upload-anyway'),
+          onPressed: _onDuplicateUploadAnyway,
+          child: const Text('Upload anyway'),
         ),
       ],
     );

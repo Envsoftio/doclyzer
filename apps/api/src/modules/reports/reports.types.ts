@@ -10,6 +10,13 @@ export const REPORT_FILE_REQUIRED = 'REPORT_FILE_REQUIRED';
 export const REPORT_FILE_EMPTY = 'REPORT_FILE_EMPTY';
 export const REPORT_FILE_TOO_LARGE = 'REPORT_FILE_TOO_LARGE';
 export const REPORT_FILE_TYPE_UNSUPPORTED = 'REPORT_FILE_TYPE_UNSUPPORTED';
+export const REPORT_DUPLICATE_DETECTED = 'REPORT_DUPLICATE_DETECTED';
+
+export interface DuplicateReportInfo {
+  id: string;
+  originalFileName: string;
+  createdAt: string;
+}
 
 export const MAX_REPORT_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 export const ALLOWED_CONTENT_TYPES = ['application/pdf'] as const;

@@ -7,8 +7,17 @@ class ApiReportsRepository implements ReportsRepository {
   final ApiClient _client;
 
   @override
-  Future<UploadedReport> uploadReport(String filePath) async {
-    final data = await _client.uploadFile('v1/reports', 'file', filePath);
+  Future<UploadedReport> uploadReport(String filePath,
+      {bool forceUploadAnyway = false}) async {
+    final queryParams = forceUploadAnyway
+        ? <String, String>{'duplicateAction': 'upload_anyway'}
+        : null;
+    final data = await _client.uploadFile(
+      'v1/reports',
+      'file',
+      filePath,
+      queryParams: queryParams,
+    );
     final d = data['data'] as Map<String, dynamic>;
     return UploadedReport(
       reportId: d['reportId'] as String,

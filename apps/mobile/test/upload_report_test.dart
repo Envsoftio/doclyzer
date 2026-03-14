@@ -223,4 +223,46 @@ void main() {
     // PdfViewerScreen shows (viewer or error state after load)
     expect(find.text('x.pdf'), findsOneWidget);
   });
+
+  testWidgets('Duplicate dialog shows Keep existing and Upload anyway; Upload anyway calls uploadReport with forceUploadAnyway',
+      (WidgetTester tester) async {
+    when(() => reportsRepo.uploadReport(any(), forceUploadAnyway: true))
+        .thenAnswer((_) async => const UploadedReport(
+              reportId: 'new-id',
+              profileId: 'p1',
+              fileName: 'same.pdf',
+              contentType: 'application/pdf',
+              sizeBytes: 100,
+              status: 'parsed',
+            ));
+
+    const existingReport = {
+      'id': 'existing-id',
+      'originalFileName': 'same.pdf',
+      'createdAt': '2026-01-15T12:00:00.000Z',
+    };
+
+    await tester.pumpWidget(MaterialApp(
+      home: UploadReportScreen(
+        reportsRepository: reportsRepo,
+        activeProfileName: 'Me',
+        onBack: () {},
+        onComplete: () {},
+        initialDuplicateExistingReport: existingReport,
+        initialDuplicatePendingPath: '/fake/path/same.pdf',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('duplicate-dialog')), findsOneWidget);
+    expect(find.byKey(const Key('duplicate-keep-existing')), findsOneWidget);
+    expect(find.byKey(const Key('duplicate-upload-anyway')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('duplicate-upload-anyway')));
+    await tester.pumpAndSettle();
+
+    verify(() => reportsRepo.uploadReport(any(), forceUploadAnyway: true))
+        .called(1);
+    expect(find.text('Report added to Me'), findsOneWidget);
+  });
 }

@@ -7,6 +7,7 @@ import { ProfilesService } from '../profiles/profiles.service';
 import { FILE_STORAGE } from '../../common/storage/storage.module';
 import type { FileStorageService } from '../../common/storage/file-storage.interface';
 import { ReportUploadException } from './exceptions/report-upload.exception';
+import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
 import { ReportNotFoundException } from './exceptions/report-not-found.exception';
 import {
@@ -55,6 +56,7 @@ describe('ReportsService', () => {
     fileStorage = makeFileStorage();
     profilesService = makeProfilesService();
     reportRepo = makeReportRepo();
+    reportRepo.findOne.mockResolvedValue(null);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -94,12 +96,72 @@ describe('ReportsService', () => {
     expect(result.sizeBytes).toBe(pdfBuffer.length);
     expect(result.status).toBe('parsed');
 
+    expect(reportRepo.findOne).toHaveBeenCalledWith({
+      where: { profileId: 'profile-1', contentHash: expect.any(String) },
+    });
     expect(fileStorage.upload).toHaveBeenCalledWith(
       expect.stringMatching(/^reports\/user-1\/profile-1\/[a-f0-9-]+\.pdf$/),
       pdfBuffer,
       'application/pdf',
     );
     expect(reportRepo.save).toHaveBeenCalled();
+    expect(reportRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ contentHash: expect.any(String) }),
+    );
+  });
+
+  it('returns duplicate info when same profile has report with same content hash', async () => {
+    const existingEntity = {
+      id: 'existing-report-id',
+      profileId: 'profile-1',
+      originalFileName: 'same.pdf',
+      createdAt: new Date('2026-01-15T12:00:00.000Z'),
+    } as ReportEntity;
+    reportRepo.findOne.mockResolvedValue(existingEntity);
+
+    await expect(
+      service.uploadReport('user-1', {
+        buffer: pdfBuffer,
+        originalname: 'same.pdf',
+        mimetype: 'application/pdf',
+        size: pdfBuffer.length,
+      }),
+    ).rejects.toThrow(ReportDuplicateDetectedException);
+
+    expect(reportRepo.findOne).toHaveBeenCalledWith({
+      where: { profileId: 'profile-1', contentHash: expect.any(String) },
+    });
+    expect(fileStorage.upload).not.toHaveBeenCalled();
+    expect(reportRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('creates report when duplicateAction is upload_anyway despite same hash', async () => {
+    const existingEntity = {
+      id: 'existing-report-id',
+      profileId: 'profile-1',
+      originalFileName: 'same.pdf',
+      createdAt: new Date('2026-01-15T12:00:00.000Z'),
+    } as ReportEntity;
+    reportRepo.findOne.mockResolvedValue(existingEntity);
+
+    const result = await service.uploadReport(
+      'user-1',
+      {
+        buffer: pdfBuffer,
+        originalname: 'same.pdf',
+        mimetype: 'application/pdf',
+        size: pdfBuffer.length,
+      },
+      { duplicateAction: 'upload_anyway' },
+    );
+
+    expect(result.reportId).toBeTruthy();
+    expect(result.profileId).toBe('profile-1');
+    expect(fileStorage.upload).toHaveBeenCalled();
+    expect(reportRepo.save).toHaveBeenCalled();
+    expect(reportRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ contentHash: expect.any(String) }),
+    );
   });
 
   it('rejects upload when user has no active profile', async () => {
