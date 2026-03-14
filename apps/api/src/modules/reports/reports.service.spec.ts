@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportEntity } from '../../database/entities/report.entity';
+import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
 import { ReportsService } from './reports.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { FILE_STORAGE } from '../../common/storage/storage.module';
@@ -32,7 +33,9 @@ function makeProfilesService(): jest.Mocked<
 > {
   return {
     getActiveProfileId: jest.fn().mockResolvedValue('profile-1'),
-    getProfile: jest.fn().mockResolvedValue({ id: 'profile-1', userId: 'user-1' }),
+    getProfile: jest
+      .fn()
+      .mockResolvedValue({ id: 'profile-1', userId: 'user-1' }),
   };
 }
 
@@ -49,16 +52,23 @@ function makeReportRepo() {
   return { save, create, findOne, find };
 }
 
+function makeReportLabValueRepo() {
+  const find = jest.fn().mockResolvedValue([]);
+  return { find };
+}
+
 describe('ReportsService', () => {
   let service: ReportsService;
   let fileStorage: ReturnType<typeof makeFileStorage>;
   let profilesService: ReturnType<typeof makeProfilesService>;
   let reportRepo: ReturnType<typeof makeReportRepo>;
+  let reportLabValueRepo: ReturnType<typeof makeReportLabValueRepo>;
 
   beforeEach(async () => {
     fileStorage = makeFileStorage();
     profilesService = makeProfilesService();
     reportRepo = makeReportRepo();
+    reportLabValueRepo = makeReportLabValueRepo();
     reportRepo.findOne.mockResolvedValue(null);
 
     const module: TestingModule = await Test.createTestingModule({
@@ -72,6 +82,10 @@ describe('ReportsService', () => {
             findOne: reportRepo.findOne,
             find: reportRepo.find,
           },
+        },
+        {
+          provide: getRepositoryToken(ReportLabValueEntity),
+          useValue: { find: reportLabValueRepo.find },
         },
         { provide: ProfilesService, useValue: profilesService },
         { provide: FILE_STORAGE, useValue: fileStorage },
@@ -111,6 +125,47 @@ describe('ReportsService', () => {
     expect(reportRepo.save).toHaveBeenCalled();
     expect(reportRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({ contentHash: expect.any(String) }),
+    );
+  });
+
+  it('uploads with status content_not_recognized when stub indicates not a health report', async () => {
+    const configGet = jest.fn().mockImplementation((key: string) => {
+      if (key === 'reports.parseStubFail') return true;
+      if (key === 'reports.parseStubContentNotRecognized') return true;
+      return false;
+    });
+    const module = await Test.createTestingModule({
+      providers: [
+        ReportsService,
+        {
+          provide: getRepositoryToken(ReportEntity),
+          useValue: {
+            create: reportRepo.create,
+            save: reportRepo.save,
+            findOne: reportRepo.findOne,
+            find: reportRepo.find,
+          },
+        },
+        {
+          provide: getRepositoryToken(ReportLabValueEntity),
+          useValue: { find: reportLabValueRepo.find },
+        },
+        { provide: ProfilesService, useValue: profilesService },
+        { provide: FILE_STORAGE, useValue: fileStorage },
+        { provide: ConfigService, useValue: { get: configGet } },
+      ],
+    }).compile();
+    const svc = module.get(ReportsService);
+
+    const result = await svc.uploadReport('user-1', {
+      buffer: pdfBuffer,
+      originalname: 'brochure.pdf',
+      mimetype: 'application/pdf',
+      size: pdfBuffer.length,
+    });
+    expect(result.status).toBe('content_not_recognized');
+    expect(reportRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'content_not_recognized' }),
     );
   });
 
@@ -296,6 +351,11 @@ describe('ReportsService', () => {
       expect(result.id).toBe(validReportId);
       expect(result.profileId).toBe('p1');
       expect(result.status).toBe('queued');
+      expect(result.extractedLabValues).toEqual([]);
+      expect(reportLabValueRepo.find).toHaveBeenCalledWith({
+        where: { reportId: validReportId },
+        order: { sortOrder: 'ASC', parameterName: 'ASC' },
+      });
     });
 
     it('throws ReportNotFoundException when report not found', async () => {
@@ -319,6 +379,51 @@ describe('ReportsService', () => {
       await expect(
         service.getReport('u1', 'b2c3d4e5-f6a7-8901-bcde-f12345678901'),
       ).rejects.toThrow(ReportNotFoundException);
+    });
+
+    it('returns extractedLabValues when present', async () => {
+      const entity = {
+        id: validReportId,
+        userId: 'u1',
+        profileId: 'p1',
+        originalFileName: 'x.pdf',
+        contentType: 'application/pdf',
+        sizeBytes: 100,
+        status: 'parsed',
+        createdAt: new Date('2026-01-01'),
+      } as ReportEntity;
+      reportRepo.findOne.mockResolvedValue(entity);
+      const labEntities = [
+        {
+          parameterName: 'HbA1c',
+          value: '5.8',
+          unit: '%',
+          sampleDate: '2026-01-01',
+          sortOrder: 0,
+        },
+        {
+          parameterName: 'Glucose',
+          value: '98',
+          unit: 'mg/dL',
+          sampleDate: null,
+          sortOrder: 1,
+        },
+      ] as ReportLabValueEntity[];
+      reportLabValueRepo.find.mockResolvedValue(labEntities);
+
+      const result = await service.getReport('u1', validReportId);
+      expect(result.extractedLabValues).toHaveLength(2);
+      expect(result.extractedLabValues[0]).toEqual({
+        parameterName: 'HbA1c',
+        value: '5.8',
+        unit: '%',
+        sampleDate: '2026-01-01',
+      });
+      expect(result.extractedLabValues[1]).toEqual({
+        parameterName: 'Glucose',
+        value: '98',
+        unit: 'mg/dL',
+      });
     });
   });
 
@@ -377,6 +482,7 @@ describe('ReportsService', () => {
       const configGet = jest.fn().mockImplementation((key: string) => {
         if (key === 'reports.parseStubFail') return true;
         if (key === 'reports.parseStubRetrySucceeds') return false;
+        if (key === 'reports.parseStubContentNotRecognized') return false;
         return false;
       });
       const module = await Test.createTestingModule({
@@ -388,7 +494,12 @@ describe('ReportsService', () => {
               create: reportRepo.create,
               save: reportRepo.save,
               findOne: reportRepo.findOne,
+              find: reportRepo.find,
             },
+          },
+          {
+            provide: getRepositoryToken(ReportLabValueEntity),
+            useValue: { find: reportLabValueRepo.find },
           },
           { provide: ProfilesService, useValue: profilesService },
           { provide: FILE_STORAGE, useValue: fileStorage },
@@ -472,6 +583,26 @@ describe('ReportsService', () => {
         },
       );
     });
+
+    it('sets status to unparsed when current status is content_not_recognized', async () => {
+      const entity = {
+        id: validReportId,
+        userId: 'u1',
+        profileId: 'p1',
+        originalFileName: 'x.pdf',
+        contentType: 'application/pdf',
+        sizeBytes: 100,
+        status: 'content_not_recognized',
+        createdAt: new Date('2026-01-01'),
+      } as ReportEntity;
+      reportRepo.findOne.mockResolvedValue(entity);
+
+      const result = await service.keepFile('u1', validReportId);
+      expect(result.status).toBe('unparsed');
+      expect(reportRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'unparsed' }),
+      );
+    });
   });
 
   describe('getReportFile', () => {
@@ -503,9 +634,9 @@ describe('ReportsService', () => {
     it('throws ReportNotFoundException when report not found', async () => {
       reportRepo.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.getReportFile('u1', validReportId),
-      ).rejects.toThrow(ReportNotFoundException);
+      await expect(service.getReportFile('u1', validReportId)).rejects.toThrow(
+        ReportNotFoundException,
+      );
       expect(fileStorage.get).not.toHaveBeenCalled();
     });
 
@@ -524,9 +655,9 @@ describe('ReportsService', () => {
       reportRepo.findOne.mockResolvedValue(entity);
       fileStorage.get.mockRejectedValue(new Error('Key not found'));
 
-      await expect(
-        service.getReportFile('u1', validReportId),
-      ).rejects.toThrow(ReportFileUnavailableException);
+      await expect(service.getReportFile('u1', validReportId)).rejects.toThrow(
+        ReportFileUnavailableException,
+      );
     });
   });
 
@@ -556,7 +687,10 @@ describe('ReportsService', () => {
 
       const result = await service.listReportsByProfile('user-1', 'profile-1');
 
-      expect(profilesService.getProfile).toHaveBeenCalledWith('user-1', 'profile-1');
+      expect(profilesService.getProfile).toHaveBeenCalledWith(
+        'user-1',
+        'profile-1',
+      );
       expect(reportRepo.find).toHaveBeenCalledWith({
         where: { profileId: 'profile-1' },
         order: { createdAt: 'DESC' },
@@ -587,7 +721,10 @@ describe('ReportsService', () => {
 
       await service.listReports('user-1', 'profile-99');
 
-      expect(profilesService.getProfile).toHaveBeenCalledWith('user-1', 'profile-99');
+      expect(profilesService.getProfile).toHaveBeenCalledWith(
+        'user-1',
+        'profile-99',
+      );
       expect(profilesService.getActiveProfileId).not.toHaveBeenCalled();
       expect(reportRepo.find).toHaveBeenCalledWith({
         where: { profileId: 'profile-99' },

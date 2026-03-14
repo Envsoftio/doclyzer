@@ -218,12 +218,12 @@ _This file contains critical rules and patterns that AI agents must follow when 
   ```json
   { "success": true, "data": { ... }, "correlationId": "uuid" }
   ```
-- **Standard error envelope:**
+- **Standard error envelope:** (nested `error` object; extra keys e.g. `existingReport` at top level when applicable)
   ```json
-  { "success": false, "code": "AUTH_INVALID_CREDENTIALS", "message": "...", "correlationId": "uuid" }
+  { "success": false, "error": { "code": "AUTH_INVALID_CREDENTIALS", "message": "..." }, "correlationId": "uuid" }
   ```
   All errors flow through `ApiExceptionFilter`; unhandled errors are sanitized to
-  `{ code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' }`; stack
+  `{ success: false, error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' }, correlationId }`; stack
   traces and DB error details are never returned to clients
 - **Redis key format:** `doclyzer:<namespace>:<identifier>` —
   e.g. `doclyzer:session:<tokenHash>`, `doclyzer:rl:register:<ip>`,

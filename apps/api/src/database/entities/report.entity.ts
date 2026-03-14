@@ -16,6 +16,7 @@ export type ReportStatus =
   | 'parsing'
   | 'parsed'
   | 'unparsed'
+  | 'content_not_recognized'
   | 'failed_transient'
   | 'failed_terminal';
 

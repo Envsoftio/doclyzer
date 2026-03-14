@@ -994,7 +994,9 @@ describe('Reports', () => {
     expect(res.body.data.fileName).toBe('lab-report.pdf');
     expect(res.body.data.contentType).toBe('application/pdf');
     expect(res.body.data.sizeBytes).toBe(pdfBuffer.length);
-    expect(['queued', 'parsed']).toContain(res.body.data.status);
+    expect(['queued', 'parsed', 'unparsed', 'content_not_recognized']).toContain(
+      res.body.data.status,
+    );
     expect(typeof res.body.correlationId).toBe('string');
   });
 
@@ -1101,8 +1103,12 @@ describe('Reports', () => {
 
     expect(getRes.body.success).toBe(true);
     expect(getRes.body.data.id).toBe(reportId);
-    expect(['queued', 'parsed']).toContain(getRes.body.data.status);
+    expect(['queued', 'parsed', 'unparsed', 'content_not_recognized']).toContain(
+      getRes.body.data.status,
+    );
     expect(getRes.body.data.originalFileName).toBe('x.pdf');
+    expect(Array.isArray(getRes.body.data.extractedLabValues)).toBe(true);
+    expect(getRes.body.data.extractedLabValues).toHaveLength(0);
   });
 
   it('GET /reports/:id without token → 401 AUTH_UNAUTHORIZED', async () => {

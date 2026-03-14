@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../reports_repository.dart';
-import 'pdf_viewer_screen.dart';
+import 'report_detail_screen.dart';
 
 enum _TimelineState { loading, loaded, error }
 
@@ -71,10 +71,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
   void _openReport(Report report) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (ctx) => PdfViewerScreen(
+        builder: (ctx) => ReportDetailScreen(
           reportsRepository: widget.reportsRepository,
           reportId: report.id,
-          fileName: report.originalFileName,
+          profileId: report.profileId,
           onBack: () => Navigator.of(ctx).pop(),
         ),
       ),
@@ -157,7 +157,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
           child: ListTile(
             title: Text(report.originalFileName),
             subtitle: Text(
-              '${report.status} · ${_formatDate(report.createdAt)}',
+              '${_statusLabel(report.status)} · ${_formatDate(report.createdAt)}',
             ),
             onTap: () => _openReport(report),
           ),
@@ -168,5 +168,16 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   String _formatDate(DateTime d) {
     return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  }
+
+  static String _statusLabel(String status) {
+    switch (status) {
+      case 'content_not_recognized':
+        return 'Not a health report';
+      case 'unparsed':
+        return 'Unparsed';
+      default:
+        return status;
+    }
   }
 }

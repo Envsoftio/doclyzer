@@ -245,7 +245,17 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   bool _isParseFailure() {
     final r = _result;
     return r != null &&
-        (r.status == 'unparsed' || r.status == 'failed_terminal');
+        (r.status == 'unparsed' ||
+            r.status == 'content_not_recognized' ||
+            r.status == 'failed_terminal');
+  }
+
+  String _parseFailureMessage() {
+    final r = _result;
+    if (r?.status == 'content_not_recognized') {
+      return 'This doesn\'t look like a health report. Your file is saved.';
+    }
+    return 'We couldn\'t read this format. Your file is saved.';
   }
 
   Future<void> _onRetry() async {
@@ -318,7 +328,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'We couldn\'t read this format. Your file is saved.',
+          _parseFailureMessage(),
           key: const Key('parse-failure-message'),
           style: Theme.of(context).textTheme.titleMedium,
           textAlign: TextAlign.center,

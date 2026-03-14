@@ -53,7 +53,7 @@ export class AccountController {
     @Inject(FILE_STORAGE) private readonly fileStorage: FileStorageService,
   ) {}
 
-  @Get('restriction')
+  @Get(['restriction', 'restriction-status'])
   async getRestrictionStatus(@Req() req: Request): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const data = await this.accountService.getRestrictionStatus(userId);

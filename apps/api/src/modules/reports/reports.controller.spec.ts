@@ -62,6 +62,7 @@ describe('ReportsController', () => {
         sizeBytes: 100,
         status: 'queued',
         createdAt: '2026-01-01T00:00:00.000Z',
+        extractedLabValues: [],
       }),
       retryParse: jest.fn().mockResolvedValue({
         id: validReportId,
@@ -71,6 +72,7 @@ describe('ReportsController', () => {
         sizeBytes: 100,
         status: 'parsed',
         createdAt: '2026-01-01T00:00:00.000Z',
+        extractedLabValues: [],
       }),
       keepFile: jest.fn().mockResolvedValue({
         id: validReportId,
@@ -80,6 +82,7 @@ describe('ReportsController', () => {
         sizeBytes: 100,
         status: 'unparsed',
         createdAt: '2026-01-01T00:00:00.000Z',
+        extractedLabValues: [],
       }),
       listReports: jest.fn().mockResolvedValue([
         {
@@ -90,6 +93,7 @@ describe('ReportsController', () => {
           sizeBytes: 100,
           status: 'queued',
           createdAt: '2026-01-01T00:00:00.000Z',
+          extractedLabValues: [],
         },
       ]),
     };

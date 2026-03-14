@@ -17,6 +17,21 @@ class UploadedReport {
   final String status;
 }
 
+/// A single extracted lab value (parameter name, value, unit, date).
+class ExtractedLabValue {
+  const ExtractedLabValue({
+    required this.parameterName,
+    required this.value,
+    this.unit,
+    this.sampleDate,
+  });
+
+  final String parameterName;
+  final String value;
+  final String? unit;
+  final String? sampleDate;
+}
+
 /// Report for display (from GET /reports/:id).
 class Report {
   const Report({
@@ -27,6 +42,7 @@ class Report {
     required this.sizeBytes,
     required this.status,
     required this.createdAt,
+    this.extractedLabValues = const [],
   });
 
   final String id;
@@ -36,6 +52,7 @@ class Report {
   final int sizeBytes;
   final String status;
   final DateTime createdAt;
+  final List<ExtractedLabValue> extractedLabValues;
 }
 
 abstract class ReportsRepository {

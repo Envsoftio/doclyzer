@@ -115,6 +115,7 @@ void main() {
           sizeBytes: 100,
           status: 'parsed',
           createdAt: DateTime(2026, 1, 1),
+          extractedLabValues: const [],
         ));
     when(() => reportsRepo.keepFile(any())).thenAnswer((_) async => Report(
           id: 'r1',
@@ -124,6 +125,7 @@ void main() {
           sizeBytes: 100,
           status: 'unparsed',
           createdAt: DateTime(2026, 1, 1),
+          extractedLabValues: const [],
         ));
 
     var onCompleteCalled = false;
@@ -157,6 +159,34 @@ void main() {
     expect(onCompleteCalled, isTrue);
   });
 
+  testWidgets('Upload result with status content_not_recognized shows not-a-health-report message',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: UploadReportScreen(
+        reportsRepository: reportsRepo,
+        activeProfileName: 'Me',
+        onBack: () {},
+        onComplete: () {},
+        initialReport: const UploadedReport(
+          reportId: 'r1',
+          profileId: 'p1',
+          fileName: 'brochure.pdf',
+          contentType: 'application/pdf',
+          sizeBytes: 100,
+          status: 'content_not_recognized',
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('parse-failure-message')), findsOneWidget);
+    expect(
+        find.text(
+            'This doesn\'t look like a health report. Your file is saved.'),
+        findsOneWidget);
+    expect(find.byKey(const Key('parse-failure-retry')), findsOneWidget);
+    expect(find.byKey(const Key('parse-failure-keep-file')), findsOneWidget);
+  });
+
   testWidgets('Tapping Retry calls retryParse on repository',
       (WidgetTester tester) async {
     when(() => reportsRepo.retryParse(any())).thenAnswer((_) async => Report(
@@ -167,6 +197,7 @@ void main() {
           sizeBytes: 100,
           status: 'parsed',
           createdAt: DateTime(2026, 1, 1),
+          extractedLabValues: const [],
         ));
 
     await tester.pumpWidget(MaterialApp(
@@ -217,10 +248,10 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('view-pdf-button')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     verify(() => reportsRepo.getReportFile('r1')).called(1);
-    // PdfViewerScreen shows (viewer or error state after load)
     expect(find.text('x.pdf'), findsOneWidget);
   });
 
@@ -264,5 +295,72 @@ void main() {
     verify(() => reportsRepo.uploadReport(any(), forceUploadAnyway: true))
         .called(1);
     expect(find.text('Report added to Me'), findsOneWidget);
+  });
+
+  testWidgets('Duplicate dialog Keep existing calls getReport and shows success',
+      (WidgetTester tester) async {
+    when(() => reportsRepo.getReport('existing-id')).thenAnswer((_) async =>
+        Report(
+          id: 'existing-id',
+          profileId: 'p1',
+          originalFileName: 'same.pdf',
+          contentType: 'application/pdf',
+          sizeBytes: 100,
+          status: 'parsed',
+          createdAt: DateTime(2026, 1, 15),
+          extractedLabValues: const [],
+        ));
+
+    const existingReport = {
+      'id': 'existing-id',
+      'originalFileName': 'same.pdf',
+      'createdAt': '2026-01-15T12:00:00.000Z',
+    };
+
+    await tester.pumpWidget(MaterialApp(
+      home: UploadReportScreen(
+        reportsRepository: reportsRepo,
+        activeProfileName: 'Me',
+        onBack: () {},
+        onComplete: () {},
+        initialDuplicateExistingReport: existingReport,
+        initialDuplicatePendingPath: '/fake/path/same.pdf',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('duplicate-keep-existing')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('duplicate-keep-existing')));
+    await tester.pumpAndSettle();
+
+    verify(() => reportsRepo.getReport('existing-id')).called(1);
+    expect(find.text('Report added to Me'), findsOneWidget);
+  });
+
+  testWidgets('Duplicate state from API (e.g. 409) shows dialog with existing file name',
+      (WidgetTester tester) async {
+    const existingReport = {
+      'id': 'existing-id',
+      'originalFileName': 'dup.pdf',
+      'createdAt': '2026-01-15T12:00:00.000Z',
+    };
+
+    await tester.pumpWidget(MaterialApp(
+      home: UploadReportScreen(
+        reportsRepository: reportsRepo,
+        activeProfileName: 'Me',
+        onBack: () {},
+        onComplete: () {},
+        initialDuplicateExistingReport: existingReport,
+        initialDuplicatePendingPath: '/fake/dup.pdf',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('duplicate-dialog')), findsOneWidget);
+    expect(find.text('This report looks like a duplicate'), findsOneWidget);
+    expect(find.text('dup.pdf'), findsOneWidget);
+    expect(find.byKey(const Key('duplicate-keep-existing')), findsOneWidget);
+    expect(find.byKey(const Key('duplicate-upload-anyway')), findsOneWidget);
   });
 }

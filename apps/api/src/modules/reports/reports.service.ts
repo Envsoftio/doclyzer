@@ -13,6 +13,7 @@ import type { FileStorageService } from '../../common/storage/file-storage.inter
 import { FILE_STORAGE } from '../../common/storage/storage.module';
 import type { ReportStatus } from '../../database/entities/report.entity';
 import { ReportEntity } from '../../database/entities/report.entity';
+import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
@@ -38,6 +39,13 @@ export interface UploadReportResult {
   status: string;
 }
 
+export interface ExtractedLabValueDto {
+  parameterName: string;
+  value: string;
+  unit?: string;
+  sampleDate?: string;
+}
+
 export interface ReportDto {
   id: string;
   profileId: string;
@@ -46,6 +54,7 @@ export interface ReportDto {
   sizeBytes: number;
   status: string;
   createdAt: string;
+  extractedLabValues: ExtractedLabValueDto[];
 }
 
 @Injectable()
@@ -55,6 +64,8 @@ export class ReportsService {
   constructor(
     @InjectRepository(ReportEntity)
     private readonly reportRepo: Repository<ReportEntity>,
+    @InjectRepository(ReportLabValueEntity)
+    private readonly reportLabValueRepo: Repository<ReportLabValueEntity>,
     private readonly profilesService: ProfilesService,
     @Inject(FILE_STORAGE) private readonly fileStorage: FileStorageService,
     private readonly configService: ConfigService,
@@ -108,8 +119,7 @@ export class ReportsService {
     }
 
     const contentHash = this.computeContentHash(file.buffer);
-    const forceUploadAnyway =
-      options?.duplicateAction === 'upload_anyway';
+    const forceUploadAnyway = options?.duplicateAction === 'upload_anyway';
 
     // Duplicate check: best-effort per profile; concurrent uploads of same file can both pass (no locking).
     const existing = await this.reportRepo.findOne({
@@ -181,7 +191,11 @@ export class ReportsService {
   async getReportFile(
     userId: string,
     reportId: string,
-  ): Promise<{ buffer: Buffer; contentType: string; originalFileName: string }> {
+  ): Promise<{
+    buffer: Buffer;
+    contentType: string;
+    originalFileName: string;
+  }> {
     if (!isUUID(reportId)) throw new ReportNotFoundException();
     const entity = await this.reportRepo.findOne({
       where: { id: reportId, userId },
@@ -208,7 +222,11 @@ export class ReportsService {
       where: { id: reportId, userId },
     });
     if (!entity) throw new ReportNotFoundException();
-    return this.toDto(entity);
+    const labValues = await this.reportLabValueRepo.find({
+      where: { reportId },
+      order: { sortOrder: 'ASC', parameterName: 'ASC' },
+    });
+    return this.toDto(entity, labValues);
   }
 
   /** List reports for a profile. Validates user owns the profile (throws if not). */
@@ -227,10 +245,7 @@ export class ReportsService {
   /**
    * List reports: if profileId provided, use it (validates ownership); otherwise use active profile.
    */
-  async listReports(
-    userId: string,
-    profileId?: string,
-  ): Promise<ReportDto[]> {
+  async listReports(userId: string, profileId?: string): Promise<ReportDto[]> {
     const resolved =
       profileId ??
       (await this.profilesService.getActiveProfileId(userId)) ??
@@ -266,7 +281,7 @@ export class ReportsService {
     });
     if (!entity) throw new ReportNotFoundException();
     this.throwIfAlreadyParsed(entity.status);
-
+    // Sets to unparsed so user sees "View PDF"; applies to unparsed and content_not_recognized
     entity.status = 'unparsed';
     await this.reportRepo.save(entity);
     return this.toDto(entity);
@@ -278,11 +293,19 @@ export class ReportsService {
     const retrySucceeds =
       this.configService.get<boolean>('reports.parseStubRetrySucceeds') ??
       false;
+    const contentNotRecognized =
+      this.configService.get<boolean>(
+        'reports.parseStubContentNotRecognized',
+      ) ?? false;
     if (isRetry && retrySucceeds) return 'parsed';
-    return fail ? 'unparsed' : 'parsed';
+    if (fail) return contentNotRecognized ? 'content_not_recognized' : 'unparsed';
+    return 'parsed';
   }
 
-  private toDto(e: ReportEntity): ReportDto {
+  private toDto(
+    e: ReportEntity,
+    labValues: ReportLabValueEntity[] = [],
+  ): ReportDto {
     return {
       id: e.id,
       profileId: e.profileId,
@@ -291,6 +314,12 @@ export class ReportsService {
       sizeBytes: e.sizeBytes,
       status: e.status,
       createdAt: e.createdAt.toISOString(),
+      extractedLabValues: labValues.map((lv) => ({
+        parameterName: lv.parameterName,
+        value: lv.value,
+        ...(lv.unit != null && lv.unit !== '' && { unit: lv.unit }),
+        ...(lv.sampleDate != null && { sampleDate: lv.sampleDate }),
+      })),
     };
   }
 }

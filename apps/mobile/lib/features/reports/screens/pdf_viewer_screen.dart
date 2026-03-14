@@ -43,7 +43,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       if (!mounted) return;
       setState(() {
         _controller = PdfControllerPinch(
-          document: doc,
+          document: Future.value(doc),
           initialPage: 1,
         );
         _loading = false;

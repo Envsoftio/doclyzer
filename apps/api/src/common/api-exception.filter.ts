@@ -49,10 +49,19 @@ export class ApiExceptionFilter implements ExceptionFilter {
       }
     } else if (exception instanceof Error) {
       this.logger.error(
-        `Unhandled error: ${exception.name}`,
-        undefined,
+        `Unhandled error: ${exception.name} - ${exception.message ?? '(no message)'}`,
+        exception.stack,
         `correlationId=${correlationId}`,
       );
+      // Multer and similar errors expose .code (e.g. LIMIT_FILE_SIZE)
+      const errWithCode = exception as Error & { code?: string };
+      if (errWithCode.code === 'LIMIT_FILE_SIZE') {
+        status = HttpStatus.PAYLOAD_TOO_LARGE;
+        code = 'REPORT_FILE_TOO_LARGE';
+        message =
+          exception.message ||
+          'File is too large. Maximum size is 10 MB for reports.';
+      }
     }
 
     if (status >= 500) {

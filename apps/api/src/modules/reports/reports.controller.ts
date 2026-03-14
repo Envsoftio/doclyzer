@@ -64,9 +64,13 @@ export class ReportsController {
           cb(new Error('No file'), false);
           return;
         }
-        if (
-          !ALLOWED_CONTENT_TYPES.includes(file.mimetype as 'application/pdf')
-        ) {
+        const isPdfType = ALLOWED_CONTENT_TYPES.includes(
+          file.mimetype as 'application/pdf',
+        );
+        const isOctetStreamWithPdfName =
+          file.mimetype === 'application/octet-stream' &&
+          /\.pdf$/i.test(file.originalname ?? '');
+        if (!isPdfType && !isOctetStreamWithPdfName) {
           cb(new Error('Only PDF files are allowed'), false);
           return;
         }
@@ -92,12 +96,17 @@ export class ReportsController {
       duplicateAction === 'upload_anyway'
         ? { duplicateAction: 'upload_anyway' as const }
         : undefined;
+    const mimetype =
+      file.mimetype === 'application/octet-stream' &&
+      /\.pdf$/i.test(file.originalname ?? '')
+        ? 'application/pdf'
+        : file.mimetype ?? 'application/pdf';
     const data = await this.reportsService.uploadReport(
       userId,
       {
         buffer: file.buffer,
         originalname: file.originalname ?? 'report.pdf',
-        mimetype: file.mimetype ?? 'application/pdf',
+        mimetype,
         size: file.size ?? 0,
       },
       options,
