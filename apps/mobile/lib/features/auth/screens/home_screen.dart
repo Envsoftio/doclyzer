@@ -13,6 +13,7 @@ class HomeScreen extends StatefulWidget {
     required this.onGoToCommunicationPreferences,
     required this.onGoToDataRights,
     required this.onGoToUploadReport,
+    required this.onGoToTimeline,
     required this.restrictionRepository,
   });
 
@@ -23,6 +24,7 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onGoToCommunicationPreferences;
   final VoidCallback onGoToDataRights;
   final Future<void> Function() onGoToUploadReport;
+  final Future<void> Function() onGoToTimeline;
   final RestrictionRepository restrictionRepository;
 
   @override
@@ -123,6 +125,12 @@ class _HomeScreenState extends State<HomeScreen> {
               key: const Key('go-to-upload-report'),
               onPressed: widget.onGoToUploadReport,
               child: const Text('Upload Report'),
+            ),
+            const SizedBox(height: 8),
+            FilledButton(
+              key: const Key('go-to-timeline'),
+              onPressed: widget.onGoToTimeline,
+              child: const Text('Timeline'),
             ),
             const SizedBox(height: 8),
             FilledButton(

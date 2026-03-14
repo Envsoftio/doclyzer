@@ -44,6 +44,16 @@ export class ReportsController {
     private readonly authService: AuthService,
   ) {}
 
+  @Get()
+  async listReports(
+    @Query('profileId') profileId: string | undefined,
+    @Req() req: Request,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.reportsService.listReports(userId, profileId);
+    return successResponse({ reports: data }, getCorrelationId(req));
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(

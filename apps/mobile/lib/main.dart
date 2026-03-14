@@ -31,6 +31,7 @@ import 'features/profiles/screens/create_edit_profile_screen.dart';
 import 'features/profiles/screens/profile_list_screen.dart';
 import 'features/reports/reports_repository.dart';
 import 'features/reports/api_reports_repository.dart';
+import 'features/reports/screens/timeline_screen.dart';
 import 'features/reports/screens/upload_report_screen.dart';
 
 void main() {
@@ -52,6 +53,7 @@ enum _AuthView {
   communicationPreferences,
   dataRights,
   uploadReport,
+  timeline,
 }
 
 class DoclyzerApp extends StatefulWidget {
@@ -95,6 +97,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
   String? _prefillEmail;
   Profile? _editingProfile;
   String _activeProfileNameForUpload = '';
+  String? _timelineProfileId;
   bool _initialized = false;
 
   @override
@@ -267,6 +270,21 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
                 _activeProfileNameForUpload = active!.name;
               });
             },
+            onGoToTimeline: () async {
+              final profiles = await _profilesRepository.getProfiles();
+              Profile? active;
+              for (final p in profiles) {
+                if (p.isActive) {
+                  active = p;
+                  break;
+                }
+              }
+              if (active == null || !mounted) return;
+              setState(() {
+                _authView = _AuthView.timeline;
+                _timelineProfileId = active!.id;
+              });
+            },
             restrictionRepository: _restrictionRepository,
           ),
         _AuthView.accountProfile => AccountProfileScreen(
@@ -367,6 +385,17 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
               setState(() => _authView = _AuthView.home);
             },
           ),
+        _AuthView.timeline => _timelineProfileId != null
+            ? TimelineScreen(
+                reportsRepository: _reportsRepository,
+                profileId: _timelineProfileId!,
+                onBack: () {
+                  setState(() => _authView = _AuthView.home);
+                },
+              )
+            : const Scaffold(
+                body: Center(child: Text('No active profile')),
+              ),
       },
     );
   }

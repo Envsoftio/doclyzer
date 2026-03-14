@@ -3,6 +3,7 @@ import { StreamableFile } from '@nestjs/common/file-stream';
 import type { Request } from 'express';
 import type { RequestUser } from '../auth/auth.types';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
+import { ProfileNotFoundException } from '../profiles/exceptions/profile-not-found.exception';
 import { ReportNotFoundException } from './exceptions/report-not-found.exception';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
@@ -26,7 +27,12 @@ describe('ReportsController', () => {
   let reportsService: jest.Mocked<
     Pick<
       ReportsService,
-      'uploadReport' | 'getReport' | 'getReportFile' | 'retryParse' | 'keepFile'
+      | 'uploadReport'
+      | 'listReports'
+      | 'getReport'
+      | 'getReportFile'
+      | 'retryParse'
+      | 'keepFile'
     >
   >;
   let authService: jest.Mocked<
@@ -75,6 +81,17 @@ describe('ReportsController', () => {
         status: 'unparsed',
         createdAt: '2026-01-01T00:00:00.000Z',
       }),
+      listReports: jest.fn().mockResolvedValue([
+        {
+          id: validReportId,
+          profileId: 'p1',
+          originalFileName: 'x.pdf',
+          contentType: 'application/pdf',
+          sizeBytes: 100,
+          status: 'queued',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ]),
     };
     authService = { enforceRateLimit: jest.fn() };
     controller = new ReportsController(
@@ -170,6 +187,41 @@ describe('ReportsController', () => {
         },
       });
       expect(reportsService.uploadReport).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('listReports', () => {
+    it('delegates to service with profileId and returns success envelope with reports', async () => {
+      const result = (await controller.listReports('profile-1', makeReq())) as {
+        success: boolean;
+        data: { reports: { id: string; profileId: string }[] };
+        correlationId: string;
+      };
+      expect(result.success).toBe(true);
+      expect(result.data.reports).toHaveLength(1);
+      expect(result.data.reports[0].id).toBe(validReportId);
+      expect(result.data.reports[0].profileId).toBe('p1');
+      expect(result.correlationId).toBe('test-cid');
+      expect(reportsService.listReports).toHaveBeenCalledWith(
+        'user-1',
+        'profile-1',
+      );
+    });
+
+    it('delegates to service without profileId when query param omitted', async () => {
+      await controller.listReports(undefined, makeReq());
+
+      expect(reportsService.listReports).toHaveBeenCalledWith('user-1', undefined);
+    });
+
+    it('propagates when service throws (e.g. profile not found)', async () => {
+      reportsService.listReports.mockRejectedValueOnce(
+        new ProfileNotFoundException(),
+      );
+
+      await expect(
+        controller.listReports('other-profile', makeReq()),
+      ).rejects.toThrow(ProfileNotFoundException);
     });
   });
 

@@ -30,6 +30,25 @@ class ApiReportsRepository implements ReportsRepository {
   }
 
   @override
+  Future<List<Report>> listReports(String profileId) async {
+    final data = await _client.get('v1/reports?profileId=$profileId');
+    final list = data['data']?['reports'] as List<dynamic>? ?? [];
+    return list.map((d) {
+      final map = d as Map<String, dynamic>;
+      final createdAt = map['createdAt'] as String?;
+      return Report(
+        id: map['id'] as String,
+        profileId: map['profileId'] as String,
+        originalFileName: map['originalFileName'] as String,
+        contentType: map['contentType'] as String,
+        sizeBytes: map['sizeBytes'] as int,
+        status: map['status'] as String,
+        createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
+      );
+    }).toList();
+  }
+
+  @override
   Future<Report> getReport(String reportId) async {
     final data = await _client.get('v1/reports/$reportId');
     final d = data['data'] as Map<String, dynamic>;

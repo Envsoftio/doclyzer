@@ -6,6 +6,7 @@ import { ReportsService } from './reports.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { FILE_STORAGE } from '../../common/storage/storage.module';
 import type { FileStorageService } from '../../common/storage/file-storage.interface';
+import { ProfileNotFoundException } from '../profiles/exceptions/profile-not-found.exception';
 import { ReportUploadException } from './exceptions/report-upload.exception';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
@@ -27,10 +28,11 @@ function makeFileStorage(): jest.Mocked<FileStorageService> {
 }
 
 function makeProfilesService(): jest.Mocked<
-  Pick<ProfilesService, 'getActiveProfileId'>
+  Pick<ProfilesService, 'getActiveProfileId' | 'getProfile'>
 > {
   return {
     getActiveProfileId: jest.fn().mockResolvedValue('profile-1'),
+    getProfile: jest.fn().mockResolvedValue({ id: 'profile-1', userId: 'user-1' }),
   };
 }
 
@@ -43,7 +45,8 @@ function makeReportRepo() {
       id: data.id ?? 'report-1',
     }));
   const findOne = jest.fn();
-  return { save, create, findOne };
+  const find = jest.fn().mockResolvedValue([]);
+  return { save, create, findOne, find };
 }
 
 describe('ReportsService', () => {
@@ -67,6 +70,7 @@ describe('ReportsService', () => {
             create: reportRepo.create,
             save: reportRepo.save,
             findOne: reportRepo.findOne,
+            find: reportRepo.find,
           },
         },
         { provide: ProfilesService, useValue: profilesService },
@@ -523,6 +527,103 @@ describe('ReportsService', () => {
       await expect(
         service.getReportFile('u1', validReportId),
       ).rejects.toThrow(ReportFileUnavailableException);
+    });
+  });
+
+  describe('listReportsByProfile', () => {
+    it('returns only reports for the given profile ordered by createdAt DESC', async () => {
+      const entities = [
+        {
+          id: 'r2',
+          profileId: 'profile-1',
+          originalFileName: 'b.pdf',
+          contentType: 'application/pdf',
+          sizeBytes: 200,
+          status: 'parsed',
+          createdAt: new Date('2026-01-02T00:00:00.000Z'),
+        } as ReportEntity,
+        {
+          id: 'r1',
+          profileId: 'profile-1',
+          originalFileName: 'a.pdf',
+          contentType: 'application/pdf',
+          sizeBytes: 100,
+          status: 'queued',
+          createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        } as ReportEntity,
+      ];
+      reportRepo.find.mockResolvedValue(entities);
+
+      const result = await service.listReportsByProfile('user-1', 'profile-1');
+
+      expect(profilesService.getProfile).toHaveBeenCalledWith('user-1', 'profile-1');
+      expect(reportRepo.find).toHaveBeenCalledWith({
+        where: { profileId: 'profile-1' },
+        order: { createdAt: 'DESC' },
+      });
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('r2');
+      expect(result[0].originalFileName).toBe('b.pdf');
+      expect(result[1].id).toBe('r1');
+      expect(result[1].originalFileName).toBe('a.pdf');
+    });
+
+    it('throws when user does not own profile', async () => {
+      (profilesService.getProfile as jest.Mock).mockRejectedValueOnce(
+        new ProfileNotFoundException(),
+      );
+
+      await expect(
+        service.listReportsByProfile('user-1', 'other-profile-id'),
+      ).rejects.toThrow(ProfileNotFoundException);
+
+      expect(reportRepo.find).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('listReports', () => {
+    it('uses profileId when provided', async () => {
+      reportRepo.find.mockResolvedValue([]);
+
+      await service.listReports('user-1', 'profile-99');
+
+      expect(profilesService.getProfile).toHaveBeenCalledWith('user-1', 'profile-99');
+      expect(profilesService.getActiveProfileId).not.toHaveBeenCalled();
+      expect(reportRepo.find).toHaveBeenCalledWith({
+        where: { profileId: 'profile-99' },
+        order: { createdAt: 'DESC' },
+      });
+    });
+
+    it('uses active profile when profileId not provided', async () => {
+      profilesService.getActiveProfileId.mockResolvedValue('active-profile-id');
+      reportRepo.find.mockResolvedValue([]);
+
+      await service.listReports('user-1');
+
+      expect(profilesService.getActiveProfileId).toHaveBeenCalledWith('user-1');
+      expect(profilesService.getProfile).toHaveBeenCalledWith(
+        'user-1',
+        'active-profile-id',
+      );
+      expect(reportRepo.find).toHaveBeenCalledWith({
+        where: { profileId: 'active-profile-id' },
+        order: { createdAt: 'DESC' },
+      });
+    });
+
+    it('throws REPORT_NO_ACTIVE_PROFILE when no profileId and no active profile', async () => {
+      profilesService.getActiveProfileId.mockResolvedValue(null);
+
+      await expect(service.listReports('user-1')).rejects.toThrow(
+        ReportUploadException,
+      );
+      await expect(service.listReports('user-1')).rejects.toMatchObject({
+        message: expect.stringContaining('No active profile'),
+      });
+
+      expect(profilesService.getProfile).not.toHaveBeenCalled();
+      expect(reportRepo.find).not.toHaveBeenCalled();
     });
   });
 });

@@ -1019,6 +1019,73 @@ describe('Reports', () => {
     expect(res.body.error.code).toBe('REPORT_NO_ACTIVE_PROFILE');
   });
 
+  it('GET /reports without token → 401 AUTH_UNAUTHORIZED', async () => {
+    const res = await request(app.getHttpServer()).get('/v1/reports').expect(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+  });
+
+  it('GET /reports?profileId= with valid token and owned profile → 200, reports array', async () => {
+    const profilesRes = await request(app.getHttpServer())
+      .get('/v1/profiles')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .expect(200);
+    const profileId = (profilesRes.body.data as Array<{ id: string }>)[0].id;
+
+    const listRes = await request(app.getHttpServer())
+      .get(`/v1/reports?profileId=${profileId}`)
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .expect(200);
+
+    expect(listRes.body.success).toBe(true);
+    expect(Array.isArray(listRes.body.data.reports)).toBe(true);
+    if (listRes.body.data.reports.length > 0) {
+      expect(listRes.body.data.reports[0]).toMatchObject({
+        id: expect.any(String),
+        profileId,
+        originalFileName: expect.any(String),
+        status: expect.any(String),
+        createdAt: expect.any(String),
+      });
+    }
+  });
+
+  it('GET /reports without profileId uses active profile → 200', async () => {
+    const listRes = await request(app.getHttpServer())
+      .get('/v1/reports')
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .expect(200);
+
+    expect(listRes.body.success).toBe(true);
+    expect(Array.isArray(listRes.body.data.reports)).toBe(true);
+  });
+
+  it('GET /reports?profileId= other user profile → 404 PROFILE_NOT_FOUND', async () => {
+    await request(app.getHttpServer())
+      .post('/v1/auth/register')
+      .send({ email: 'other-reports@example.com', password: reportsPassword })
+      .expect(201);
+    const otherLogin = await request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send({ email: 'other-reports@example.com', password: reportsPassword })
+      .expect(200);
+    const otherToken = otherLogin.body.data.accessToken as string;
+    const otherProfileRes = await request(app.getHttpServer())
+      .post('/v1/profiles')
+      .set('Authorization', `Bearer ${otherToken}`)
+      .send({ name: 'Other' })
+      .expect(201);
+    const otherProfileId = otherProfileRes.body.data.id as string;
+
+    const res = await request(app.getHttpServer())
+      .get(`/v1/reports?profileId=${otherProfileId}`)
+      .set('Authorization', `Bearer ${reportsToken}`)
+      .expect(404);
+
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
+  });
+
   it('GET /reports/:id with valid token and owned report → 200', async () => {
     const uploadRes = await request(app.getHttpServer())
       .post('/v1/reports')

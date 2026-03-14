@@ -68,7 +68,7 @@ development_status:
   2-3-parse-failure-recovery-retry-keep-file-anyway: done
   2-4-original-pdf-viewing-parsed-and-unparsed: done
   2-5-duplicate-report-detection-and-user-choice: review
-  2-6-timeline-view-scoped-to-active-profile: backlog
+  2-6-timeline-view-scoped-to-active-profile: review
   2-7-structured-lab-extraction-display: backlog
   2-8-trend-chart-rendering-for-chartable-parameters: backlog
   2-9-report-level-summary-display-with-safe-framing: backlog

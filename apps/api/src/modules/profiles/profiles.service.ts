@@ -25,6 +25,19 @@ export class ProfilesService {
     return active?.id ?? null;
   }
 
+  /** Returns profile if user owns it; throws ProfileNotFoundException otherwise. */
+  async getProfile(
+    userId: string,
+    profileId: string,
+  ): Promise<ProfileWithActive> {
+    if (!isUUID(profileId)) throw new ProfileNotFoundException();
+    const entity = await this.profileRepo.findOne({
+      where: { id: profileId, userId },
+    });
+    if (!entity) throw new ProfileNotFoundException();
+    return this.toDto(entity);
+  }
+
   async getProfiles(userId: string): Promise<ProfileWithActive[]> {
     const profiles = await this.profileRepo.find({
       where: { userId },

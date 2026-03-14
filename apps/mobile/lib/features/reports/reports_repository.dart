@@ -44,6 +44,9 @@ abstract class ReportsRepository {
   Future<UploadedReport> uploadReport(String filePath,
       {bool forceUploadAnyway = false});
 
+  /// List reports for the given profile, newest first.
+  Future<List<Report>> listReports(String profileId);
+
   /// Fetch a report by id.
   Future<Report> getReport(String reportId);
 

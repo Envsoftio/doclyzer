@@ -1,0 +1,172 @@
+import 'package:flutter/material.dart';
+
+import '../reports_repository.dart';
+import 'pdf_viewer_screen.dart';
+
+enum _TimelineState { loading, loaded, error }
+
+class TimelineScreen extends StatefulWidget {
+  const TimelineScreen({
+    super.key,
+    required this.reportsRepository,
+    required this.profileId,
+    required this.onBack,
+  });
+
+  final ReportsRepository reportsRepository;
+  final String profileId;
+  final VoidCallback onBack;
+
+  @override
+  State<TimelineScreen> createState() => _TimelineScreenState();
+}
+
+class _TimelineScreenState extends State<TimelineScreen> {
+  _TimelineState _state = _TimelineState.loading;
+  List<Report> _reports = [];
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReports();
+  }
+
+  @override
+  void didUpdateWidget(covariant TimelineScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.profileId != widget.profileId) {
+      setState(() {
+        _state = _TimelineState.loading;
+        _reports = [];
+        _errorMessage = null;
+      });
+      _loadReports();
+    }
+  }
+
+  Future<void> _loadReports() async {
+    setState(() {
+      _state = _TimelineState.loading;
+      _errorMessage = null;
+    });
+    try {
+      final list = await widget.reportsRepository.listReports(widget.profileId);
+      if (mounted) {
+        setState(() {
+          _reports = list;
+          _state = _TimelineState.loaded;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _state = _TimelineState.error;
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    }
+  }
+
+  void _openReport(Report report) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (ctx) => PdfViewerScreen(
+          reportsRepository: widget.reportsRepository,
+          reportId: report.id,
+          fileName: report.originalFileName,
+          onBack: () => Navigator.of(ctx).pop(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Reports'),
+        leading: IconButton(
+          key: const Key('timeline-back'),
+          icon: const Icon(Icons.arrow_back),
+          onPressed: widget.onBack,
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: _buildBody(),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_state == _TimelineState.loading) {
+      return const Center(
+        key: const Key('timeline-loading'),
+        child: CircularProgressIndicator(),
+      );
+    }
+    if (_state == _TimelineState.error) {
+      return Center(
+        key: const Key('timeline-error'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _errorMessage ?? 'Something went wrong',
+              style: TextStyle(color: Colors.red.shade700),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: _loadReports,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_reports.isEmpty) {
+      return Center(
+        key: const Key('timeline-empty'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'No reports yet',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Upload a report from the home screen to see it here.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+    return ListView.builder(
+      key: const Key('timeline-list'),
+      itemCount: _reports.length,
+      itemBuilder: (context, index) {
+        final report = _reports[index];
+        return Card(
+          key: Key('timeline-report-${report.id}'),
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            title: Text(report.originalFileName),
+            subtitle: Text(
+              '${report.status} · ${_formatDate(report.createdAt)}',
+            ),
+            onTap: () => _openReport(report),
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatDate(DateTime d) {
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  }
+}

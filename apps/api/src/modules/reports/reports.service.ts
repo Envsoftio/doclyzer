@@ -211,6 +211,39 @@ export class ReportsService {
     return this.toDto(entity);
   }
 
+  /** List reports for a profile. Validates user owns the profile (throws if not). */
+  async listReportsByProfile(
+    userId: string,
+    profileId: string,
+  ): Promise<ReportDto[]> {
+    await this.profilesService.getProfile(userId, profileId);
+    const entities = await this.reportRepo.find({
+      where: { profileId },
+      order: { createdAt: 'DESC' },
+    });
+    return entities.map((e) => this.toDto(e));
+  }
+
+  /**
+   * List reports: if profileId provided, use it (validates ownership); otherwise use active profile.
+   */
+  async listReports(
+    userId: string,
+    profileId?: string,
+  ): Promise<ReportDto[]> {
+    const resolved =
+      profileId ??
+      (await this.profilesService.getActiveProfileId(userId)) ??
+      null;
+    if (!resolved) {
+      throw new ReportUploadException(
+        REPORT_NO_ACTIVE_PROFILE,
+        'No active profile. Provide profileId or set an active profile.',
+      );
+    }
+    return this.listReportsByProfile(userId, resolved);
+  }
+
   async retryParse(userId: string, reportId: string): Promise<ReportDto> {
     if (!isUUID(reportId)) throw new ReportNotFoundException();
     const entity = await this.reportRepo.findOne({
