@@ -99,6 +99,36 @@ class ApiReportsRepository implements ReportsRepository {
   }
 
   @override
+  Future<LabTrendsResult> getLabTrends(
+    String profileId, {
+    String? parameterName,
+  }) async {
+    final query = parameterName != null
+        ? 'v1/reports/lab-trends?profileId=$profileId&parameterName=${Uri.encodeComponent(parameterName)}'
+        : 'v1/reports/lab-trends?profileId=$profileId';
+    final data = await _client.get(query);
+    final paramList =
+        data['data']?['parameters'] as List<dynamic>? ?? [];
+    final parameters = paramList.map((p) {
+      final pm = p as Map<String, dynamic>;
+      final dpList = pm['dataPoints'] as List<dynamic>? ?? [];
+      final dataPoints = dpList.map((dp) {
+        final dpm = dp as Map<String, dynamic>;
+        return TrendDataPoint(
+          date: DateTime.parse(dpm['date'] as String),
+          value: (dpm['value'] as num).toDouble(),
+        );
+      }).toList();
+      return TrendParameter(
+        parameterName: pm['parameterName'] as String,
+        unit: pm['unit'] as String?,
+        dataPoints: dataPoints,
+      );
+    }).toList();
+    return LabTrendsResult(parameters: parameters);
+  }
+
+  @override
   Future<Report> keepFile(String reportId) async {
     final data = await _client.post('v1/reports/$reportId/keep-file');
     final d = data['data'] as Map<String, dynamic>;

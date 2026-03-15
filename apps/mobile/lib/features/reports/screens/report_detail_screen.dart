@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../reports_repository.dart';
 import 'pdf_viewer_screen.dart';
+import 'trend_chart_screen.dart';
 
 enum _ReportDetailState { loading, loaded, error }
 
@@ -57,6 +58,19 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         });
       }
     }
+  }
+
+  void _openTrendChart(String parameterName) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (ctx) => TrendChartScreen(
+          reportsRepository: widget.reportsRepository,
+          profileId: widget.profileId,
+          parameterName: parameterName,
+          onBack: () => Navigator.of(ctx).pop(),
+        ),
+      ),
+    );
   }
 
   void _openPdf() {
@@ -241,47 +255,52 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 separatorBuilder: (_, __) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final lab = report.extractedLabValues[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            lab.parameterName.isNotEmpty
-                                ? lab.parameterName
-                                : '—',
-                            style:
-                                Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            lab.value.isNotEmpty ? lab.value : '—',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ),
-                        if (lab.unit != null && lab.unit!.isNotEmpty)
-                          Text(
-                            lab.unit!,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        if (lab.sampleDate != null &&
-                            lab.sampleDate!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8),
+                  return InkWell(
+                    key: Key('lab-row-${lab.parameterName}'),
+                    onTap: () => _openTrendChart(lab.parameterName),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 2,
                             child: Text(
-                              lab.sampleDate!,
-                              style: Theme.of(context).textTheme.bodySmall,
+                              lab.parameterName.isNotEmpty
+                                  ? lab.parameterName
+                                  : '—',
+                              style:
+                                  Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                      ),
                             ),
                           ),
-                      ],
+                          Expanded(
+                            child: Text(
+                              lab.value.isNotEmpty ? lab.value : '—',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                          if (lab.unit != null && lab.unit!.isNotEmpty)
+                            Text(
+                              lab.unit!,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          if (lab.sampleDate != null &&
+                              lab.sampleDate!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Text(
+                                lab.sampleDate!,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                          const Icon(Icons.chevron_right, size: 16),
+                        ],
+                      ),
                     ),
                   );
                 },

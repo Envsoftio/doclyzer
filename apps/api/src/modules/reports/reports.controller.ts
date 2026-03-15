@@ -44,6 +44,27 @@ export class ReportsController {
     private readonly authService: AuthService,
   ) {}
 
+  @Get('lab-trends')
+  async getLabTrends(
+    @Query('profileId') profileId: string | undefined,
+    @Query('parameterName') parameterName: string | undefined,
+    @Req() req: Request,
+  ): Promise<object> {
+    if (!profileId) {
+      throw new BadRequestException({
+        code: 'PROFILE_ID_REQUIRED',
+        message: 'profileId query parameter is required',
+      });
+    }
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.reportsService.getLabTrends(
+      userId,
+      profileId,
+      parameterName,
+    );
+    return successResponse(data, getCorrelationId(req));
+  }
+
   @Get()
   async listReports(
     @Query('profileId') profileId: string | undefined,

@@ -55,6 +55,34 @@ class Report {
   final List<ExtractedLabValue> extractedLabValues;
 }
 
+/// A single trend data point (date + numeric value).
+class TrendDataPoint {
+  const TrendDataPoint({required this.date, required this.value});
+
+  final DateTime date;
+  final double value;
+}
+
+/// Trend data for a single parameter across time.
+class TrendParameter {
+  const TrendParameter({
+    required this.parameterName,
+    this.unit,
+    required this.dataPoints,
+  });
+
+  final String parameterName;
+  final String? unit;
+  final List<TrendDataPoint> dataPoints;
+}
+
+/// Result from GET /reports/lab-trends.
+class LabTrendsResult {
+  const LabTrendsResult({required this.parameters});
+
+  final List<TrendParameter> parameters;
+}
+
 abstract class ReportsRepository {
   /// Upload a report file. Returns metadata including reportId and status.
   /// When [forceUploadAnyway] is true, bypasses duplicate check (use after user chooses "Upload anyway").
@@ -75,4 +103,7 @@ abstract class ReportsRepository {
 
   /// Fetch original file bytes for viewing (PDF).
   Future<List<int>> getReportFile(String reportId);
+
+  /// Fetch lab trend data for a profile, optionally filtered by parameterName.
+  Future<LabTrendsResult> getLabTrends(String profileId, {String? parameterName});
 }

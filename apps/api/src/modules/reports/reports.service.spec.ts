@@ -54,7 +54,15 @@ function makeReportRepo() {
 
 function makeReportLabValueRepo() {
   const find = jest.fn().mockResolvedValue([]);
-  return { find };
+  const getMany = jest.fn().mockResolvedValue([]);
+  const mockQb = {
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    getMany,
+  };
+  const createQueryBuilder = jest.fn().mockReturnValue(mockQb);
+  return { find, createQueryBuilder, mockQb, getMany };
 }
 
 describe('ReportsService', () => {
@@ -85,7 +93,10 @@ describe('ReportsService', () => {
         },
         {
           provide: getRepositoryToken(ReportLabValueEntity),
-          useValue: { find: reportLabValueRepo.find },
+          useValue: {
+            find: reportLabValueRepo.find,
+            createQueryBuilder: reportLabValueRepo.createQueryBuilder,
+          },
         },
         { provide: ProfilesService, useValue: profilesService },
         { provide: FILE_STORAGE, useValue: fileStorage },
@@ -148,7 +159,10 @@ describe('ReportsService', () => {
         },
         {
           provide: getRepositoryToken(ReportLabValueEntity),
-          useValue: { find: reportLabValueRepo.find },
+          useValue: {
+            find: reportLabValueRepo.find,
+            createQueryBuilder: reportLabValueRepo.createQueryBuilder,
+          },
         },
         { provide: ProfilesService, useValue: profilesService },
         { provide: FILE_STORAGE, useValue: fileStorage },
@@ -761,6 +775,162 @@ describe('ReportsService', () => {
 
       expect(profilesService.getProfile).not.toHaveBeenCalled();
       expect(reportRepo.find).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getLabTrends', () => {
+    function setupTrendsReports(
+      reports: { id: string; createdAt: Date }[],
+    ) {
+      reportRepo.find.mockResolvedValueOnce(reports as never);
+    }
+
+    function setupTrendsLabValues(
+      labValues: {
+        reportId: string;
+        parameterName: string;
+        value: string;
+        unit: string | null;
+        sampleDate: string | null;
+      }[],
+    ) {
+      reportLabValueRepo.getMany.mockResolvedValueOnce(
+        labValues as never,
+      );
+    }
+
+    it('returns aggregated numeric trend data grouped by parameterName', async () => {
+      profilesService.getProfile.mockResolvedValue({
+        id: 'profile-1',
+        userId: 'user-1',
+      } as never);
+      setupTrendsReports([
+        { id: 'r1', createdAt: new Date('2026-01-01') },
+        { id: 'r2', createdAt: new Date('2026-02-01') },
+        { id: 'r3', createdAt: new Date('2026-03-01') },
+      ]);
+      setupTrendsLabValues([
+        { reportId: 'r1', parameterName: 'HbA1c', value: '5.8', unit: '%', sampleDate: '2026-01-01' },
+        { reportId: 'r2', parameterName: 'HbA1c', value: '6.1', unit: '%', sampleDate: '2026-02-01' },
+        { reportId: 'r3', parameterName: 'Glucose', value: '98', unit: 'mg/dL', sampleDate: null },
+      ]);
+
+      const result = await service.getLabTrends('user-1', 'profile-1');
+
+      expect(profilesService.getProfile).toHaveBeenCalledWith('user-1', 'profile-1');
+      expect(result.parameters).toHaveLength(2);
+
+      const hba1c = result.parameters.find((p) => p.parameterName === 'HbA1c');
+      expect(hba1c).toBeDefined();
+      expect(hba1c!.unit).toBe('%');
+      expect(hba1c!.dataPoints).toHaveLength(2);
+      expect(hba1c!.dataPoints[0]).toEqual({ date: '2026-01-01', value: 5.8 });
+      expect(hba1c!.dataPoints[1]).toEqual({ date: '2026-02-01', value: 6.1 });
+
+      const glucose = result.parameters.find((p) => p.parameterName === 'Glucose');
+      expect(glucose).toBeDefined();
+      expect(glucose!.unit).toBe('mg/dL');
+      expect(glucose!.dataPoints[0].date).toBe('2026-03-01');
+      expect(glucose!.dataPoints[0].value).toBe(98);
+    });
+
+    it('excludes non-numeric values from trend data', async () => {
+      profilesService.getProfile.mockResolvedValue({
+        id: 'profile-1',
+        userId: 'user-1',
+      } as never);
+      setupTrendsReports([
+        { id: 'r1', createdAt: new Date('2026-01-01') },
+        { id: 'r2', createdAt: new Date('2026-02-01') },
+      ]);
+      setupTrendsLabValues([
+        { reportId: 'r1', parameterName: 'Result', value: 'Positive', unit: null, sampleDate: '2026-01-01' },
+        { reportId: 'r2', parameterName: 'Result', value: '5.0', unit: null, sampleDate: '2026-02-01' },
+      ]);
+
+      const result = await service.getLabTrends('user-1', 'profile-1');
+
+      const param = result.parameters.find((p) => p.parameterName === 'Result');
+      expect(param).toBeDefined();
+      expect(param!.dataPoints).toHaveLength(1);
+      expect(param!.dataPoints[0].value).toBe(5.0);
+    });
+
+    it('uses report createdAt as date fallback when sampleDate is null', async () => {
+      profilesService.getProfile.mockResolvedValue({
+        id: 'profile-1',
+        userId: 'user-1',
+      } as never);
+      setupTrendsReports([
+        { id: 'r1', createdAt: new Date('2026-03-15T10:00:00.000Z') },
+      ]);
+      setupTrendsLabValues([
+        { reportId: 'r1', parameterName: 'TSH', value: '2.5', unit: 'mIU/L', sampleDate: null },
+      ]);
+
+      const result = await service.getLabTrends('user-1', 'profile-1');
+
+      const param = result.parameters.find((p) => p.parameterName === 'TSH');
+      expect(param!.dataPoints[0].date).toBe('2026-03-15');
+    });
+
+    it('filters by parameterName when provided', async () => {
+      profilesService.getProfile.mockResolvedValue({
+        id: 'profile-1',
+        userId: 'user-1',
+      } as never);
+      setupTrendsReports([
+        { id: 'r1', createdAt: new Date('2026-01-01') },
+      ]);
+      setupTrendsLabValues([
+        { reportId: 'r1', parameterName: 'HbA1c', value: '5.8', unit: '%', sampleDate: '2026-01-01' },
+      ]);
+
+      const result = await service.getLabTrends('user-1', 'profile-1', 'HbA1c');
+
+      expect(reportLabValueRepo.mockQb.andWhere).toHaveBeenCalledWith(
+        'lv.parameter_name = :parameterName',
+        { parameterName: 'HbA1c' },
+      );
+      expect(result.parameters).toHaveLength(1);
+    });
+
+    it('returns empty when profile has no reports', async () => {
+      profilesService.getProfile.mockResolvedValue({
+        id: 'profile-1',
+        userId: 'user-1',
+      } as never);
+      reportRepo.find.mockResolvedValueOnce([]);
+
+      const result = await service.getLabTrends('user-1', 'profile-1');
+
+      expect(result.parameters).toHaveLength(0);
+      expect(reportLabValueRepo.createQueryBuilder).not.toHaveBeenCalled();
+    });
+
+    it('throws ProfileNotFoundException when user does not own profile', async () => {
+      profilesService.getProfile.mockRejectedValueOnce(new ProfileNotFoundException());
+
+      await expect(
+        service.getLabTrends('user-1', 'other-profile'),
+      ).rejects.toThrow(ProfileNotFoundException);
+    });
+
+    it('excludes parameters with zero numeric data points', async () => {
+      profilesService.getProfile.mockResolvedValue({
+        id: 'profile-1',
+        userId: 'user-1',
+      } as never);
+      setupTrendsReports([
+        { id: 'r1', createdAt: new Date('2026-01-01') },
+      ]);
+      setupTrendsLabValues([
+        { reportId: 'r1', parameterName: 'Status', value: 'Normal', unit: null, sampleDate: '2026-01-01' },
+      ]);
+
+      const result = await service.getLabTrends('user-1', 'profile-1');
+
+      expect(result.parameters).toHaveLength(0);
     });
   });
 });

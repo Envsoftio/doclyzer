@@ -114,6 +114,12 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 ## Framework-Specific Rules
 
+### Input Validation Rules (Learned from Code Review)
+
+- **Required query parameters must be explicitly validated in the controller** — NestJS injects `undefined` when a `@Query()` param is absent, even if typed as `string`. TypeORM silently drops `undefined` values from `where` clauses, which removes the filter entirely and can leak cross-user or cross-profile data. Always guard required params: `if (!profileId) throw new BadRequestException({ code: 'X_REQUIRED', message: '...' })`. This applies to any param used in a scoped DB query (profileId, reportId, etc).
+- **Always add array bounds check before index access in touch/gesture handlers** — In Flutter chart or list touch callbacks (e.g. `getTooltipItems`, `getTitlesWidget`), always validate `idx >= 0 && idx < list.length` before accessing `list[idx]`. Float rounding from gesture coordinates can produce out-of-range indices and cause a `RangeError` that crashes the widget.
+- **Handle equal min/max edge case in any range or chart calculation** — When computing padding or axis range from a data series, `minY == maxY` produces zero padding, which collapses the y-axis range to zero. fl_chart and similar libraries may render incorrectly with `minY == maxY`. Always clamp: `final padding = rawPadding == 0 ? (minY.abs() * 0.1).clamp(0.5, double.maxFinite) : rawPadding`.
+
 ### NestJS Framework Rules
 
 - **Module structure per domain:** `<domain>.module.ts`, `<domain>.controller.ts`,
@@ -171,6 +177,19 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **Error display pattern** — `String? _error` state variable; shown inline below
   the relevant field or button with `TextStyle(color: Colors.red)`; never use
   `SnackBar` for form validation errors
+
+---
+
+## Dev Agent Testing Policy
+
+**⚠️ SKIP ALL TESTS during implementation — manual QA only.**
+
+- Do NOT write unit tests, integration tests, E2E tests, or widget tests
+- Do NOT run test suites as part of story completion
+- Do NOT add spec files or test files
+- Focus solely on implementing the production code and marking tasks complete
+- Story completion does not require passing tests — just working implementation
+- This applies to all backend (Jest) and mobile (Flutter) tests
 
 ---
 

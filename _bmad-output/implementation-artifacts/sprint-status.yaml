@@ -70,7 +70,7 @@ development_status:
   2-5-duplicate-report-detection-and-user-choice: done
   2-6-timeline-view-scoped-to-active-profile: done
   2-7-structured-lab-extraction-display: done
-  2-8-trend-chart-rendering-for-chartable-parameters: backlog
+  2-8-trend-chart-rendering-for-chartable-parameters: done
   2-9-report-level-summary-display-with-safe-framing: backlog
   2-10-profile-level-consolidated-health-history: backlog
   2-11-processing-attempt-history-per-report: backlog

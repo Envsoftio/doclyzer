@@ -57,6 +57,21 @@ export interface ReportDto {
   extractedLabValues: ExtractedLabValueDto[];
 }
 
+export interface TrendDataPoint {
+  date: string;
+  value: number;
+}
+
+export interface TrendParameter {
+  parameterName: string;
+  unit?: string;
+  dataPoints: TrendDataPoint[];
+}
+
+export interface LabTrendsResult {
+  parameters: TrendParameter[];
+}
+
 @Injectable()
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
@@ -257,6 +272,99 @@ export class ReportsService {
       );
     }
     return this.listReportsByProfile(userId, resolved);
+  }
+
+  /**
+   * Aggregate lab trend data for a profile.
+   * Only numeric values (parseFloat, exclude NaN) are included.
+   * Date = sampleDate when present, else report createdAt (YYYY-MM-DD).
+   * Note: values like ">10" parse as NaN and are excluded.
+   */
+  async getLabTrends(
+    userId: string,
+    profileId: string,
+    parameterName?: string,
+  ): Promise<LabTrendsResult> {
+    // Validates user owns profile (throws ProfileNotFoundException if not)
+    await this.profilesService.getProfile(userId, profileId);
+
+    // First get report IDs for this profile (profile ownership already validated above)
+    const reports = await this.reportRepo.find({
+      where: { profileId },
+      select: ['id', 'createdAt'],
+    });
+
+    if (reports.length === 0) {
+      return { parameters: [] };
+    }
+
+    const reportIds = reports.map((r) => r.id);
+    const reportCreatedAtMap = new Map<string, Date>(
+      reports.map((r) => [r.id, r.createdAt]),
+    );
+
+    // Build query for lab values belonging to these reports
+    const qb = this.reportLabValueRepo
+      .createQueryBuilder('lv')
+      .where('lv.report_id IN (:...reportIds)', { reportIds });
+
+    if (parameterName) {
+      qb.andWhere('lv.parameter_name = :parameterName', { parameterName });
+    }
+
+    qb.orderBy('lv.sample_date', 'ASC', 'NULLS LAST');
+
+    const labValues = await qb.getMany();
+
+    // Attach report createdAt for date fallback (not loaded via relation)
+    const labValuesWithCreatedAt = labValues.map((lv) => ({
+      ...lv,
+      reportCreatedAt: reportCreatedAtMap.get(lv.reportId) ?? new Date(),
+    }));
+
+    // Group by parameterName
+    const grouped = new Map<
+      string,
+      { unit: string | null; dataPoints: TrendDataPoint[] }
+    >();
+
+    for (const lv of labValuesWithCreatedAt) {
+      const numericValue = parseFloat(lv.value);
+      if (isNaN(numericValue)) continue;
+
+      // Date: sampleDate when present, else report createdAt (YYYY-MM-DD)
+      const date = lv.sampleDate
+        ? lv.sampleDate
+        : lv.reportCreatedAt.toISOString().slice(0, 10);
+
+      if (!grouped.has(lv.parameterName)) {
+        grouped.set(lv.parameterName, {
+          unit: lv.unit ?? null,
+          dataPoints: [],
+        });
+      }
+      const entry = grouped.get(lv.parameterName)!;
+      // Use first non-null unit found
+      if (entry.unit === null && lv.unit) {
+        entry.unit = lv.unit;
+      }
+      entry.dataPoints.push({ date, value: numericValue });
+    }
+
+    const parameters: TrendParameter[] = [];
+    for (const [name, data] of grouped.entries()) {
+      if (data.dataPoints.length === 0) continue;
+      // Sort data points chronologically
+      data.dataPoints.sort((a, b) => a.date.localeCompare(b.date));
+      const param: TrendParameter = {
+        parameterName: name,
+        dataPoints: data.dataPoints,
+      };
+      if (data.unit) param.unit = data.unit;
+      parameters.push(param);
+    }
+
+    return { parameters };
   }
 
   async retryParse(userId: string, reportId: string): Promise<ReportDto> {

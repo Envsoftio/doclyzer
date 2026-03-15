@@ -5,6 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mobile/features/reports/reports_repository.dart';
 import 'package:mobile/features/reports/screens/pdf_viewer_screen.dart';
 import 'package:mobile/features/reports/screens/report_detail_screen.dart';
+import 'package:mobile/features/reports/screens/trend_chart_screen.dart';
 import 'mocks.dart';
 
 void main() {
@@ -147,6 +148,47 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(backCalled, isTrue);
+  });
+
+  testWidgets('Report detail tapping lab row navigates to trend chart screen',
+      (WidgetTester tester) async {
+    when(() => reportsRepo.getReport(any())).thenAnswer((_) async => Report(
+          id: 'r1',
+          profileId: 'p1',
+          originalFileName: 'lab.pdf',
+          contentType: 'application/pdf',
+          sizeBytes: 100,
+          status: 'parsed',
+          createdAt: DateTime(2026, 1, 15),
+          extractedLabValues: [
+            const ExtractedLabValue(
+              parameterName: 'HbA1c',
+              value: '5.8',
+              unit: '%',
+              sampleDate: '2026-01-15',
+            ),
+          ],
+        ));
+    when(() => reportsRepo.getLabTrends(any(), parameterName: any(named: 'parameterName')))
+        .thenAnswer((_) async => const LabTrendsResult(parameters: []));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportDetailScreen(
+          reportsRepository: reportsRepo,
+          reportId: 'r1',
+          profileId: 'p1',
+          onBack: () {},
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('lab-row-HbA1c')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TrendChartScreen), findsOneWidget);
   });
 
   testWidgets('Report detail with content_not_recognized shows Retry and Keep file',

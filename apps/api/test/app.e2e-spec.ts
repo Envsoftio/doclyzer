@@ -1362,6 +1362,86 @@ describe('Reports', () => {
     });
   });
 
+  describe('GET /reports/lab-trends', () => {
+    const trendsEmail = 'lab-trends@example.com';
+    const trendsPassword = 'StrongPass123!';
+    let trendsToken: string;
+    let trendsProfileId: string;
+    const pdfBuffer2 = Buffer.from('%PDF-1.4 minimal pdf content');
+
+    beforeAll(async () => {
+      await clearDatabase(app.get<DataSource>(DataSource));
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .send({ email: trendsEmail, password: trendsPassword })
+        .expect(201);
+      const loginRes = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({ email: trendsEmail, password: trendsPassword })
+        .expect(200);
+      trendsToken = loginRes.body.data.accessToken as string;
+      const profileRes = await request(app.getHttpServer())
+        .post('/v1/profiles')
+        .set('Authorization', `Bearer ${trendsToken}`)
+        .send({ name: 'Me' })
+        .expect(201);
+      trendsProfileId = profileRes.body.data.id as string;
+      // Upload a report so the profile has data
+      await request(app.getHttpServer())
+        .post('/v1/reports')
+        .set('Authorization', `Bearer ${trendsToken}`)
+        .attach('file', pdfBuffer2, 'lab-report.pdf')
+        .expect(201);
+    });
+
+    it('GET /reports/lab-trends for own profile → 200 with parameters array', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/v1/reports/lab-trends?profileId=${trendsProfileId}`)
+        .set('Authorization', `Bearer ${trendsToken}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data.parameters)).toBe(true);
+    });
+
+    it('GET /reports/lab-trends without token → 401 AUTH_UNAUTHORIZED', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/v1/reports/lab-trends?profileId=${trendsProfileId}`)
+        .expect(401);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('AUTH_UNAUTHORIZED');
+    });
+
+    it('GET /reports/lab-trends for other user profile → 404 PROFILE_NOT_FOUND', async () => {
+      // Create a second user and their profile
+      await request(app.getHttpServer())
+        .post('/v1/auth/register')
+        .send({ email: 'other-trends@example.com', password: trendsPassword })
+        .expect(201);
+      const otherLogin = await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send({ email: 'other-trends@example.com', password: trendsPassword })
+        .expect(200);
+      const otherToken = otherLogin.body.data.accessToken as string;
+      const otherProfileRes = await request(app.getHttpServer())
+        .post('/v1/profiles')
+        .set('Authorization', `Bearer ${otherToken}`)
+        .send({ name: 'Other' })
+        .expect(201);
+      const otherProfileId = otherProfileRes.body.data.id as string;
+
+      // Request other user's profile trends using main user's token → 404
+      const res = await request(app.getHttpServer())
+        .get(`/v1/reports/lab-trends?profileId=${otherProfileId}`)
+        .set('Authorization', `Bearer ${trendsToken}`)
+        .expect(404);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.code).toBe('PROFILE_NOT_FOUND');
+    });
+  });
+
   describe('Communication Preferences', () => {
     const commPrefEmail = 'comm-prefs@example.com';
     const commPrefPassword = 'StrongPass123!';

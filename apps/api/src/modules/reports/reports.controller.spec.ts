@@ -33,6 +33,7 @@ describe('ReportsController', () => {
       | 'getReportFile'
       | 'retryParse'
       | 'keepFile'
+      | 'getLabTrends'
     >
   >;
   let authService: jest.Mocked<
@@ -83,6 +84,18 @@ describe('ReportsController', () => {
         status: 'unparsed',
         createdAt: '2026-01-01T00:00:00.000Z',
         extractedLabValues: [],
+      }),
+      getLabTrends: jest.fn().mockResolvedValue({
+        parameters: [
+          {
+            parameterName: 'HbA1c',
+            unit: '%',
+            dataPoints: [
+              { date: '2026-01-01', value: 5.8 },
+              { date: '2026-02-01', value: 6.1 },
+            ],
+          },
+        ],
       }),
       listReports: jest.fn().mockResolvedValue([
         {
@@ -191,6 +204,69 @@ describe('ReportsController', () => {
         },
       });
       expect(reportsService.uploadReport).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getLabTrends', () => {
+    it('delegates to service with profileId and returns trend data', async () => {
+      const result = (await controller.getLabTrends(
+        'profile-1',
+        undefined,
+        makeReq(),
+      )) as {
+        success: boolean;
+        data: {
+          parameters: {
+            parameterName: string;
+            unit: string;
+            dataPoints: { date: string; value: number }[];
+          }[];
+        };
+        correlationId: string;
+      };
+
+      expect(result.success).toBe(true);
+      expect(result.data.parameters).toHaveLength(1);
+      expect(result.data.parameters[0].parameterName).toBe('HbA1c');
+      expect(result.data.parameters[0].unit).toBe('%');
+      expect(result.data.parameters[0].dataPoints).toHaveLength(2);
+      expect(result.correlationId).toBe('test-cid');
+      expect(reportsService.getLabTrends).toHaveBeenCalledWith(
+        'user-1',
+        'profile-1',
+        undefined,
+      );
+    });
+
+    it('delegates with parameterName filter when provided', async () => {
+      await controller.getLabTrends('profile-1', 'HbA1c', makeReq());
+
+      expect(reportsService.getLabTrends).toHaveBeenCalledWith(
+        'user-1',
+        'profile-1',
+        'HbA1c',
+      );
+    });
+
+    it('throws BadRequestException when profileId is missing', async () => {
+      await expect(
+        controller.getLabTrends(undefined, undefined, makeReq()),
+      ).rejects.toMatchObject({
+        response: {
+          code: 'PROFILE_ID_REQUIRED',
+        },
+      });
+      expect(reportsService.getLabTrends).not.toHaveBeenCalled();
+    });
+
+    it('propagates when service throws (e.g. profile not found)', async () => {
+      reportsService.getLabTrends.mockRejectedValueOnce(
+        new ProfileNotFoundException(),
+      );
+
+      await expect(
+        controller.getLabTrends('other-profile', undefined, makeReq()),
+      ).rejects.toThrow(ProfileNotFoundException);
     });
   });
 

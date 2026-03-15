@@ -20,3 +20,5 @@ apps/mobile/build/
 _bmad/
 .agents/
 .cursor/
+.claude/
+.cline/
