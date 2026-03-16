@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { getCorrelationId } from './correlation-id.middleware';
+import { redactSecrets } from './redact-secrets';
 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
@@ -49,8 +50,10 @@ export class ApiExceptionFilter implements ExceptionFilter {
       }
     } else if (exception instanceof Error) {
       this.logger.error(
-        `Unhandled error: ${exception.name} - ${exception.message ?? '(no message)'}`,
-        exception.stack,
+        redactSecrets(
+          `Unhandled error: ${exception.name} - ${exception.message ?? '(no message)'}`,
+        ),
+        redactSecrets(exception.stack ?? ''),
         `correlationId=${correlationId}`,
       );
       // Multer and similar errors expose .code (e.g. LIMIT_FILE_SIZE)

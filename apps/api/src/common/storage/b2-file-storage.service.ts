@@ -17,6 +17,7 @@ import {
   FILE_STORAGE_UPLOAD_FAILED,
   StorageConfigurationException,
 } from './file-storage.types';
+import { redactSecrets } from '../redact-secrets';
 
 @Injectable()
 export class B2FileStorageService implements FileStorageService {
@@ -65,7 +66,7 @@ export class B2FileStorageService implements FileStorageService {
       return key;
     } catch (err) {
       this.logger.warn(
-        `Upload failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+        redactSecrets(`Upload failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`),
       );
       throw new FileStorageException(
         FILE_STORAGE_UPLOAD_FAILED,
@@ -96,7 +97,7 @@ export class B2FileStorageService implements FileStorageService {
       return Buffer.concat(chunks);
     } catch (err) {
       this.logger.warn(
-        `Get failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+        redactSecrets(`Get failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`),
       );
       throw new FileStorageException(
         FILE_STORAGE_GET_FAILED,
@@ -115,7 +116,7 @@ export class B2FileStorageService implements FileStorageService {
       );
     } catch (err) {
       this.logger.warn(
-        `Delete failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+        redactSecrets(`Delete failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`),
       );
       throw new FileStorageException(
         FILE_STORAGE_DELETE_FAILED,
@@ -135,7 +136,7 @@ export class B2FileStorageService implements FileStorageService {
       });
     } catch (err) {
       this.logger.warn(
-        `getSignedUrl failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+        redactSecrets(`getSignedUrl failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`),
       );
       throw new FileStorageException(
         FILE_STORAGE_GET_URL_FAILED,

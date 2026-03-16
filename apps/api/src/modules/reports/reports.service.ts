@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { createHash, randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
+import { redactSecrets } from '../../common/redact-secrets';
 import type { FileStorageService } from '../../common/storage/file-storage.interface';
 import { FILE_STORAGE } from '../../common/storage/storage.module';
 import type { ReportStatus } from '../../database/entities/report.entity';
@@ -182,7 +183,7 @@ export class ReportsService {
         await this.fileStorage.delete(storageKey);
       } catch (deleteErr) {
         this.logger.warn(
-          `Cleanup: failed to delete orphaned file ${storageKey}: ${deleteErr instanceof Error ? deleteErr.message : String(deleteErr)}`,
+          redactSecrets(`Cleanup: failed to delete orphaned file ${storageKey}: ${deleteErr instanceof Error ? deleteErr.message : String(deleteErr)}`),
         );
       }
       throw err;
@@ -230,7 +231,7 @@ export class ReportsService {
       };
     } catch (err) {
       this.logger.warn(
-        `Report file unavailable in storage: ${err instanceof Error ? err.message : String(err)}`,
+        redactSecrets(`Report file unavailable in storage: ${err instanceof Error ? err.message : String(err)}`),
       );
       throw new ReportFileUnavailableException();
     }
