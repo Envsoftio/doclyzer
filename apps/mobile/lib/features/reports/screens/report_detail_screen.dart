@@ -184,6 +184,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       );
     }
     final report = _report!;
+    final summary = report.summary;
     return SingleChildScrollView(
       key: const Key('report-detail-content'),
       child: Column(
@@ -208,6 +209,50 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               ),
             ),
           ),
+          if (summary != null && summary.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Card(
+              key: const Key('report-detail-summary'),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Summary',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      summary,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      key: const Key('report-detail-summary-disclaimer'),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Informational only — not medical advice. Discuss with your doctor.',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           FilledButton.icon(
             key: const Key('report-detail-view-pdf'),

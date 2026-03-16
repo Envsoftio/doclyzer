@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../reports_repository.dart';
+import 'health_history_screen.dart';
 import 'report_detail_screen.dart';
 
 enum _TimelineState { loading, loaded, error }
@@ -91,6 +92,21 @@ class _TimelineScreenState extends State<TimelineScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: widget.onBack,
         ),
+        actions: [
+          IconButton(
+            key: const Key('timeline-health-history-button'),
+            icon: const Icon(Icons.health_and_safety_outlined),
+            tooltip: 'Health History',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => HealthHistoryScreen(
+                  profileId: widget.profileId,
+                  reportsRepository: widget.reportsRepository,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -102,7 +118,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
   Widget _buildBody() {
     if (_state == _TimelineState.loading) {
       return const Center(
-        key: const Key('timeline-loading'),
+        key: Key('timeline-loading'),
         child: CircularProgressIndicator(),
       );
     }

@@ -42,6 +42,7 @@ class Report {
     required this.sizeBytes,
     required this.status,
     required this.createdAt,
+    this.summary,
     this.extractedLabValues = const [],
   });
 
@@ -52,6 +53,7 @@ class Report {
   final int sizeBytes;
   final String status;
   final DateTime createdAt;
+  final String? summary;
   final List<ExtractedLabValue> extractedLabValues;
 }
 

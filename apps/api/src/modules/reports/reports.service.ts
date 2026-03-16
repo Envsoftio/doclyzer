@@ -30,6 +30,9 @@ import {
   REPORT_NO_ACTIVE_PROFILE,
 } from './reports.types';
 
+const STUB_SUMMARY =
+  'This report has been processed. Lab values have been extracted and are listed below.';
+
 export interface UploadReportResult {
   reportId: string;
   profileId: string;
@@ -54,6 +57,7 @@ export interface ReportDto {
   sizeBytes: number;
   status: string;
   createdAt: string;
+  summary?: string;
   extractedLabValues: ExtractedLabValueDto[];
 }
 
@@ -157,7 +161,7 @@ export class ReportsService {
 
     await this.fileStorage.upload(storageKey, file.buffer, file.mimetype);
 
-    const status = this.runParseStub(file.buffer);
+    const { status, summary } = this.runParseStub(file.buffer);
     const entity = this.reportRepo.create({
       id: reportId,
       userId,
@@ -167,6 +171,7 @@ export class ReportsService {
       sizeBytes: file.buffer.length,
       originalFileStorageKey: storageKey,
       status,
+      summary,
       contentHash,
     });
 
@@ -376,8 +381,9 @@ export class ReportsService {
     this.throwIfAlreadyParsed(entity.status);
 
     const buffer = await this.fileStorage.get(entity.originalFileStorageKey);
-    const status = this.runParseStub(buffer, true);
+    const { status, summary } = this.runParseStub(buffer, true);
     entity.status = status;
+    entity.summary = summary;
     await this.reportRepo.save(entity);
     return this.toDto(entity);
   }
@@ -391,11 +397,15 @@ export class ReportsService {
     this.throwIfAlreadyParsed(entity.status);
     // Sets to unparsed so user sees "View PDF"; applies to unparsed and content_not_recognized
     entity.status = 'unparsed';
+    entity.summary = null;
     await this.reportRepo.save(entity);
     return this.toDto(entity);
   }
 
-  private runParseStub(_buffer: Buffer, isRetry = false): ReportStatus {
+  private runParseStub(
+    _buffer: Buffer,
+    isRetry = false,
+  ): { status: ReportStatus; summary: string | null } {
     const fail =
       this.configService.get<boolean>('reports.parseStubFail') ?? false;
     const retrySucceeds =
@@ -405,9 +415,14 @@ export class ReportsService {
       this.configService.get<boolean>(
         'reports.parseStubContentNotRecognized',
       ) ?? false;
-    if (isRetry && retrySucceeds) return 'parsed';
-    if (fail) return contentNotRecognized ? 'content_not_recognized' : 'unparsed';
-    return 'parsed';
+    if (isRetry && retrySucceeds)
+      return { status: 'parsed', summary: STUB_SUMMARY };
+    if (fail)
+      return {
+        status: contentNotRecognized ? 'content_not_recognized' : 'unparsed',
+        summary: null,
+      };
+    return { status: 'parsed', summary: STUB_SUMMARY };
   }
 
   private toDto(
@@ -422,6 +437,7 @@ export class ReportsService {
       sizeBytes: e.sizeBytes,
       status: e.status,
       createdAt: e.createdAt.toISOString(),
+      ...(e.summary != null && { summary: e.summary }),
       extractedLabValues: labValues.map((lv) => ({
         parameterName: lv.parameterName,
         value: lv.value,

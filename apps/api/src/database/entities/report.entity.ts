@@ -61,6 +61,9 @@ export class ReportEntity {
   })
   status!: ReportStatus;
 
+  @Column({ type: 'text', nullable: true })
+  summary!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

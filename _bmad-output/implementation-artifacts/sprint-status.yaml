@@ -1,4 +1,4 @@
-# generated: 2026-03-03
+# generated: 2026-03-16
 # project: doclyzer
 # project_key: NOKEY
 # tracking_system: file-system
@@ -33,7 +33,7 @@
 # - SM typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 2026-03-03
+generated: 2026-03-15
 project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
@@ -71,9 +71,9 @@ development_status:
   2-6-timeline-view-scoped-to-active-profile: done
   2-7-structured-lab-extraction-display: done
   2-8-trend-chart-rendering-for-chartable-parameters: done
-  2-9-report-level-summary-display-with-safe-framing: backlog
-  2-10-profile-level-consolidated-health-history: backlog
-  2-11-processing-attempt-history-per-report: backlog
+  2-9-report-level-summary-display-with-safe-framing: done
+  2-10-profile-level-consolidated-health-history: done
+  2-11-processing-attempt-history-per-report: ready-for-dev
   2-12-post-upload-report-reassignment-to-correct-profile: backlog
   epic-2-retrospective: optional
 

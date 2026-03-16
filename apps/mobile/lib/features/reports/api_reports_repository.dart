@@ -72,6 +72,7 @@ class ApiReportsRepository implements ReportsRepository {
       sizeBytes: d['sizeBytes'] as int,
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
+      summary: d['summary'] as String?,
       extractedLabValues: extractedLabValues,
     );
   }
@@ -89,6 +90,7 @@ class ApiReportsRepository implements ReportsRepository {
       sizeBytes: d['sizeBytes'] as int,
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
+      summary: d['summary'] as String?,
       extractedLabValues: const [],
     );
   }
