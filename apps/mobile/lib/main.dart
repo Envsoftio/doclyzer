@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/api_client.dart';
+import 'core/theme/app_theme.dart';
 import 'core/api_config.dart';
 import 'core/token_storage.dart';
 import 'features/account/api_account_repository.dart';
@@ -200,10 +201,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
   Widget build(BuildContext context) {
     if (!_initialized) {
       return MaterialApp(
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0A7C8C)),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.light,
         home: const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         ),
@@ -212,10 +210,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
 
     return MaterialApp(
       title: 'Doclyzer',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0A7C8C)),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light,
       home: switch (_authView) {
         _AuthView.login => LoginScreen(
             onLogin: _login,

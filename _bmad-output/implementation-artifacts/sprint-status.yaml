@@ -75,6 +75,8 @@ development_status:
   2-10-profile-level-consolidated-health-history: done
   2-11-processing-attempt-history-per-report: ready-for-dev
   2-12-post-upload-report-reassignment-to-correct-profile: backlog
+  2-13-real-ai-report-summary-pipeline: backlog
+  2-14-persist-docling-parsed-transcript-in-db: backlog
   epic-2-retrospective: optional
 
   epic-3: backlog

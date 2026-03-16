@@ -708,6 +708,45 @@ So that profile organization remains accurate.
 **When** operation succeeds
 **Then** report and derived views move to target profile without leakage.
 
+### Story 2.13: Real AI Report Summary Pipeline (Replace Stub)
+
+As an authenticated user,
+I want each parsed report to have a real AI-generated summary (not stub text),
+so that I get meaningful, report-specific summaries.
+
+**Acceptance Criteria:**
+
+**Given** a report is successfully parsed
+**When** the parse pipeline completes
+**Then** the AI summariser is invoked and the result is persisted to `report.summary`
+**And** the same summary is returned via existing report endpoints (no API contract change)
+
+**Given** the AI summariser fails or is disabled
+**When** the report is saved with status `parsed`
+**Then** `report.summary` is null (or a defined fallback); no PHI in logs
+
+**Given** parsing fails
+**Then** no AI call; `report.summary` remains null
+
+### Story 2.14: Persist Docling Parsed Report Transcript in DB
+
+As a developer,
+I want the parsed report transcript (Docling output) stored in the database,
+so that we have a durable record for summarisation, re-use without re-parsing, and optional future display.
+
+**Acceptance Criteria:**
+
+**Given** a report is successfully parsed
+**When** the parser returns a transcript
+**Then** the transcript is persisted (e.g. `parsed_transcript` column on `reports`)
+
+**Given** parsing fails or no transcript is returned
+**Then** the transcript column remains `null`
+
+**Given** a report has a stored transcript
+**When** the API returns the report via `GET /reports/:id`
+**Then** the response includes the transcript for backend and client use; no transcript content in logs (PHI-safe)
+
 ## Epic 3: Web Experience - Share Recipient + SEO Landing (Nuxt)
 
 Users can share profile-scoped data to recipients and provide SEO-ready landing experience with route isolation.
