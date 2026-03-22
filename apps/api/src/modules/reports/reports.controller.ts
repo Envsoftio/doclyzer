@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -135,6 +136,17 @@ export class ReportsController {
     return successResponse(data, getCorrelationId(req));
   }
 
+  @Get(':id/attempts')
+  async getProcessingAttempts(
+    @Param('id') reportId: string,
+    @Req() req: Request,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data =
+      await this.reportsService.getProcessingAttempts(userId, reportId);
+    return successResponse({ attempts: data }, getCorrelationId(req));
+  }
+
   @Get(':id/file')
   async getReportFile(
     @Param('id') reportId: string,
@@ -153,6 +165,27 @@ export class ReportsController {
     res.setHeader('Content-Disposition', disposition);
     res.setHeader('Content-Type', contentType);
     return new StreamableFile(buffer);
+  }
+
+  @Post(':id/reassign')
+  async reassignReport(
+    @Param('id') reportId: string,
+    @Body() body: { targetProfileId?: string },
+    @Req() req: Request,
+  ): Promise<object> {
+    if (!body?.targetProfileId) {
+      throw new BadRequestException({
+        code: 'TARGET_PROFILE_ID_REQUIRED',
+        message: 'targetProfileId is required in request body.',
+      });
+    }
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.reportsService.reassignReport(
+      userId,
+      reportId,
+      body.targetProfileId,
+    );
+    return successResponse(data, getCorrelationId(req));
   }
 
   @Get(':id')

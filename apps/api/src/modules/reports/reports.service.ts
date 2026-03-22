@@ -14,8 +14,11 @@ import type { FileStorageService } from '../../common/storage/file-storage.inter
 import { FILE_STORAGE } from '../../common/storage/storage.module';
 import type { ReportStatus } from '../../database/entities/report.entity';
 import { ReportEntity } from '../../database/entities/report.entity';
+import type { AttemptTrigger } from '../../database/entities/report-processing-attempt.entity';
+import { ReportProcessingAttemptEntity } from '../../database/entities/report-processing-attempt.entity';
 import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
 import { ProfilesService } from '../profiles/profiles.service';
+import { ReportSummaryService } from './report-summary/report-summary.service';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
 import { ReportNotFoundException } from './exceptions/report-not-found.exception';
@@ -30,9 +33,6 @@ import {
   REPORT_FILE_TYPE_UNSUPPORTED,
   REPORT_NO_ACTIVE_PROFILE,
 } from './reports.types';
-
-const STUB_SUMMARY =
-  'This report has been processed. Lab values have been extracted and are listed below.';
 
 export interface UploadReportResult {
   reportId: string;
@@ -59,6 +59,7 @@ export interface ReportDto {
   status: string;
   createdAt: string;
   summary?: string;
+  parsedTranscript?: string;
   extractedLabValues: ExtractedLabValueDto[];
 }
 
@@ -77,6 +78,13 @@ export interface LabTrendsResult {
   parameters: TrendParameter[];
 }
 
+export interface ProcessingAttemptDto {
+  id: string;
+  trigger: string;
+  outcome: string;
+  attemptedAt: string;
+}
+
 @Injectable()
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
@@ -86,9 +94,12 @@ export class ReportsService {
     private readonly reportRepo: Repository<ReportEntity>,
     @InjectRepository(ReportLabValueEntity)
     private readonly reportLabValueRepo: Repository<ReportLabValueEntity>,
+    @InjectRepository(ReportProcessingAttemptEntity)
+    private readonly attemptRepo: Repository<ReportProcessingAttemptEntity>,
     private readonly profilesService: ProfilesService,
     @Inject(FILE_STORAGE) private readonly fileStorage: FileStorageService,
     private readonly configService: ConfigService,
+    private readonly reportSummaryService: ReportSummaryService,
   ) {}
 
   private throwIfAlreadyParsed(status: string): void {
@@ -162,7 +173,12 @@ export class ReportsService {
 
     await this.fileStorage.upload(storageKey, file.buffer, file.mimetype);
 
-    const { status, summary } = this.runParseStub(file.buffer);
+    const { status, transcript } = this.runParseStub(file.buffer);
+    const summary =
+      status === 'parsed'
+        ? await this.reportSummaryService.generateSummary(file.buffer)
+        : null;
+
     const entity = this.reportRepo.create({
       id: reportId,
       userId,
@@ -173,6 +189,7 @@ export class ReportsService {
       originalFileStorageKey: storageKey,
       status,
       summary,
+      parsedTranscript: status === 'parsed' ? transcript : null,
       contentHash,
     });
 
@@ -188,6 +205,7 @@ export class ReportsService {
       }
       throw err;
     }
+    await this.recordAttempt(entity.id, 'initial_upload', entity.status);
 
     if (forceUploadAnyway && existing) {
       this.logger.log(
@@ -247,7 +265,7 @@ export class ReportsService {
       where: { reportId },
       order: { sortOrder: 'ASC', parameterName: 'ASC' },
     });
-    return this.toDto(entity, labValues);
+    return this.toDto(entity, labValues, true);
   }
 
   /** List reports for a profile. Validates user owns the profile (throws if not). */
@@ -382,9 +400,81 @@ export class ReportsService {
     this.throwIfAlreadyParsed(entity.status);
 
     const buffer = await this.fileStorage.get(entity.originalFileStorageKey);
-    const { status, summary } = this.runParseStub(buffer, true);
+    const { status, transcript } = this.runParseStub(buffer, true);
     entity.status = status;
-    entity.summary = summary;
+    entity.summary =
+      status === 'parsed'
+        ? await this.reportSummaryService.generateSummary(buffer)
+        : null;
+    // Only overwrite transcript on success; preserve existing on failure (AC3)
+    if (status === 'parsed') {
+      entity.parsedTranscript = transcript;
+    }
+    await this.reportRepo.save(entity);
+    await this.recordAttempt(entity.id, 'retry', entity.status);
+    return this.toDto(entity, [], true);
+  }
+
+  private async recordAttempt(
+    reportId: string,
+    trigger: AttemptTrigger,
+    outcome: string,
+  ): Promise<void> {
+    const attempt = this.attemptRepo.create({
+      reportId,
+      trigger,
+      outcome,
+      attemptedAt: new Date(),
+    });
+    await this.attemptRepo.save(attempt);
+  }
+
+  async getProcessingAttempts(
+    userId: string,
+    reportId: string,
+  ): Promise<ProcessingAttemptDto[]> {
+    if (!isUUID(reportId)) throw new ReportNotFoundException();
+    const report = await this.reportRepo.findOne({
+      where: { id: reportId, userId },
+    });
+    if (!report) throw new ReportNotFoundException();
+    const attempts = await this.attemptRepo.find({
+      where: { reportId },
+      order: { attemptedAt: 'ASC' },
+    });
+    return attempts.map((a) => ({
+      id: a.id,
+      trigger: a.trigger,
+      outcome: a.outcome,
+      attemptedAt: a.attemptedAt.toISOString(),
+    }));
+  }
+
+  async reassignReport(
+    userId: string,
+    reportId: string,
+    targetProfileId: string,
+  ): Promise<ReportDto> {
+    if (!isUUID(reportId)) throw new ReportNotFoundException();
+    if (!isUUID(targetProfileId)) {
+      throw new BadRequestException({
+        code: 'TARGET_PROFILE_ID_INVALID',
+        message: 'targetProfileId must be a valid UUID.',
+      });
+    }
+    const entity = await this.reportRepo.findOne({
+      where: { id: reportId, userId },
+    });
+    if (!entity) throw new ReportNotFoundException();
+    // Validates user owns targetProfileId (throws ProfileNotFoundException → 404 if not)
+    await this.profilesService.getProfile(userId, targetProfileId);
+    if (entity.profileId === targetProfileId) {
+      throw new BadRequestException({
+        code: 'REPORT_ALREADY_IN_PROFILE',
+        message: 'Report is already in the specified profile.',
+      });
+    }
+    entity.profileId = targetProfileId;
     await this.reportRepo.save(entity);
     return this.toDto(entity);
   }
@@ -399,6 +489,7 @@ export class ReportsService {
     // Sets to unparsed so user sees "View PDF"; applies to unparsed and content_not_recognized
     entity.status = 'unparsed';
     entity.summary = null;
+    entity.parsedTranscript = null;
     await this.reportRepo.save(entity);
     return this.toDto(entity);
   }
@@ -406,7 +497,7 @@ export class ReportsService {
   private runParseStub(
     _buffer: Buffer,
     isRetry = false,
-  ): { status: ReportStatus; summary: string | null } {
+  ): { status: ReportStatus; transcript: string | null } {
     const fail =
       this.configService.get<boolean>('reports.parseStubFail') ?? false;
     const retrySucceeds =
@@ -417,18 +508,20 @@ export class ReportsService {
         'reports.parseStubContentNotRecognized',
       ) ?? false;
     if (isRetry && retrySucceeds)
-      return { status: 'parsed', summary: STUB_SUMMARY };
-    if (fail)
+      return { status: 'parsed', transcript: 'Stub transcript: lab values extracted.' };
+    if (fail) {
       return {
         status: contentNotRecognized ? 'content_not_recognized' : 'unparsed',
-        summary: null,
+        transcript: null,
       };
-    return { status: 'parsed', summary: STUB_SUMMARY };
+    }
+    return { status: 'parsed', transcript: 'Stub transcript: lab values extracted.' };
   }
 
   private toDto(
     e: ReportEntity,
     labValues: ReportLabValueEntity[] = [],
+    includeTranscript = false,
   ): ReportDto {
     return {
       id: e.id,
@@ -439,6 +532,7 @@ export class ReportsService {
       status: e.status,
       createdAt: e.createdAt.toISOString(),
       ...(e.summary != null && { summary: e.summary }),
+      ...(includeTranscript && e.parsedTranscript != null && { parsedTranscript: e.parsedTranscript }),
       extractedLabValues: labValues.map((lv) => ({
         parameterName: lv.parameterName,
         value: lv.value,

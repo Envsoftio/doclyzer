@@ -43,6 +43,7 @@ class Report {
     required this.status,
     required this.createdAt,
     this.summary,
+    this.parsedTranscript,
     this.extractedLabValues = const [],
   });
 
@@ -54,6 +55,7 @@ class Report {
   final String status;
   final DateTime createdAt;
   final String? summary;
+  final String? parsedTranscript;
   final List<ExtractedLabValue> extractedLabValues;
 }
 
@@ -85,6 +87,21 @@ class LabTrendsResult {
   final List<TrendParameter> parameters;
 }
 
+/// A single processing attempt record (immutable).
+class ProcessingAttempt {
+  const ProcessingAttempt({
+    required this.id,
+    required this.trigger,
+    required this.outcome,
+    required this.attemptedAt,
+  });
+
+  final String id;
+  final String trigger;
+  final String outcome;
+  final DateTime attemptedAt;
+}
+
 abstract class ReportsRepository {
   /// Upload a report file. Returns metadata including reportId and status.
   /// When [forceUploadAnyway] is true, bypasses duplicate check (use after user chooses "Upload anyway").
@@ -108,4 +125,10 @@ abstract class ReportsRepository {
 
   /// Fetch lab trend data for a profile, optionally filtered by parameterName.
   Future<LabTrendsResult> getLabTrends(String profileId, {String? parameterName});
+
+  /// Fetch processing attempt history for a report, oldest first.
+  Future<List<ProcessingAttempt>> getProcessingAttempts(String reportId);
+
+  /// Reassign a report to a different profile. Returns updated report.
+  Future<Report> reassignReport(String reportId, String targetProfileId);
 }

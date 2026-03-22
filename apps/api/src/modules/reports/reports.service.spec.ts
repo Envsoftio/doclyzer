@@ -3,8 +3,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportEntity } from '../../database/entities/report.entity';
 import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
+import { ReportProcessingAttemptEntity } from '../../database/entities/report-processing-attempt.entity';
 import { ReportsService } from './reports.service';
 import { ProfilesService } from '../profiles/profiles.service';
+import { ReportSummaryService } from './report-summary/report-summary.service';
 import { FILE_STORAGE } from '../../common/storage/storage.module';
 import type { FileStorageService } from '../../common/storage/file-storage.interface';
 import { ProfileNotFoundException } from '../profiles/exceptions/profile-not-found.exception';
@@ -52,6 +54,17 @@ function makeReportRepo() {
   return { save, create, findOne, find };
 }
 
+function makeAttemptRepo() {
+  const save = jest.fn().mockResolvedValue(undefined);
+  const create = jest.fn().mockImplementation((data: unknown) => data);
+  const find = jest.fn().mockResolvedValue([]);
+  return { save, create, find };
+}
+
+function makeReportSummaryService(): jest.Mocked<Pick<ReportSummaryService, 'generateSummary'>> {
+  return { generateSummary: jest.fn().mockResolvedValue(null) };
+}
+
 function makeReportLabValueRepo() {
   const find = jest.fn().mockResolvedValue([]);
   const getMany = jest.fn().mockResolvedValue([]);
@@ -71,12 +84,16 @@ describe('ReportsService', () => {
   let profilesService: ReturnType<typeof makeProfilesService>;
   let reportRepo: ReturnType<typeof makeReportRepo>;
   let reportLabValueRepo: ReturnType<typeof makeReportLabValueRepo>;
+  let attemptRepo: ReturnType<typeof makeAttemptRepo>;
+  let reportSummaryService: ReturnType<typeof makeReportSummaryService>;
 
   beforeEach(async () => {
     fileStorage = makeFileStorage();
     profilesService = makeProfilesService();
     reportRepo = makeReportRepo();
     reportLabValueRepo = makeReportLabValueRepo();
+    attemptRepo = makeAttemptRepo();
+    reportSummaryService = makeReportSummaryService();
     reportRepo.findOne.mockResolvedValue(null);
 
     const module: TestingModule = await Test.createTestingModule({
@@ -98,12 +115,21 @@ describe('ReportsService', () => {
             createQueryBuilder: reportLabValueRepo.createQueryBuilder,
           },
         },
+        {
+          provide: getRepositoryToken(ReportProcessingAttemptEntity),
+          useValue: {
+            create: attemptRepo.create,
+            save: attemptRepo.save,
+            find: attemptRepo.find,
+          },
+        },
         { provide: ProfilesService, useValue: profilesService },
         { provide: FILE_STORAGE, useValue: fileStorage },
         {
           provide: ConfigService,
           useValue: { get: jest.fn().mockReturnValue(false) },
         },
+        { provide: ReportSummaryService, useValue: reportSummaryService },
       ],
     }).compile();
 
@@ -167,6 +193,11 @@ describe('ReportsService', () => {
         { provide: ProfilesService, useValue: profilesService },
         { provide: FILE_STORAGE, useValue: fileStorage },
         { provide: ConfigService, useValue: { get: configGet } },
+        {
+          provide: getRepositoryToken(ReportProcessingAttemptEntity),
+          useValue: { create: attemptRepo.create, save: attemptRepo.save, find: attemptRepo.find },
+        },
+        { provide: ReportSummaryService, useValue: makeReportSummaryService() },
       ],
     }).compile();
     const svc = module.get(ReportsService);
@@ -515,9 +546,14 @@ describe('ReportsService', () => {
             provide: getRepositoryToken(ReportLabValueEntity),
             useValue: { find: reportLabValueRepo.find },
           },
+          {
+            provide: getRepositoryToken(ReportProcessingAttemptEntity),
+            useValue: { create: attemptRepo.create, save: attemptRepo.save, find: attemptRepo.find },
+          },
           { provide: ProfilesService, useValue: profilesService },
           { provide: FILE_STORAGE, useValue: fileStorage },
           { provide: ConfigService, useValue: { get: configGet } },
+          { provide: ReportSummaryService, useValue: makeReportSummaryService() },
         ],
       }).compile();
       const svc = module.get(ReportsService);

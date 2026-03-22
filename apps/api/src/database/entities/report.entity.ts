@@ -64,6 +64,9 @@ export class ReportEntity {
   @Column({ type: 'text', nullable: true })
   summary!: string | null;
 
+  @Column({ type: 'text', nullable: true, name: 'parsed_transcript' })
+  parsedTranscript!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

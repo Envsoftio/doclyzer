@@ -34,6 +34,8 @@ import 'features/reports/reports_repository.dart';
 import 'features/reports/api_reports_repository.dart';
 import 'features/reports/screens/timeline_screen.dart';
 import 'features/reports/screens/upload_report_screen.dart';
+import 'features/sharing/sharing_repository.dart';
+import 'features/sharing/api_sharing_repository.dart';
 
 void main() {
   runApp(const DoclyzerApp());
@@ -68,6 +70,7 @@ class DoclyzerApp extends StatefulWidget {
     this.dataRightsRepository,
     this.restrictionRepository,
     this.reportsRepository,
+    this.sharingRepository,
   });
 
   final AuthRepository? authRepository;
@@ -78,6 +81,7 @@ class DoclyzerApp extends StatefulWidget {
   final DataRightsRepository? dataRightsRepository;
   final RestrictionRepository? restrictionRepository;
   final ReportsRepository? reportsRepository;
+  final SharingRepository? sharingRepository;
 
   @override
   State<DoclyzerApp> createState() => _DoclyzerAppState();
@@ -93,12 +97,14 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
   late final DataRightsRepository _dataRightsRepository;
   late final RestrictionRepository _restrictionRepository;
   late final ReportsRepository _reportsRepository;
+  late final SharingRepository _sharingRepository;
 
   _AuthView _authView = _AuthView.login;
   String? _prefillEmail;
   Profile? _editingProfile;
   String _activeProfileNameForUpload = '';
   String? _timelineProfileId;
+  String? _timelineProfileName;
   bool _initialized = false;
 
   @override
@@ -113,6 +119,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
       _dataRightsRepository = widget.dataRightsRepository!;
       _restrictionRepository = widget.restrictionRepository!;
       _reportsRepository = widget.reportsRepository!;
+      _sharingRepository = widget.sharingRepository!;
       setState(() => _initialized = true);
     } else {
       final tokenStorage = TokenStorage();
@@ -129,6 +136,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
       _dataRightsRepository = ApiDataRightsRepository(_apiClient!);
       _restrictionRepository = ApiRestrictionRepository(_apiClient!);
       _reportsRepository = ApiReportsRepository(_apiClient!);
+      _sharingRepository = widget.sharingRepository ?? ApiSharingRepository(_apiClient!);
       _initAuth();
     }
   }
@@ -278,6 +286,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
               setState(() {
                 _authView = _AuthView.timeline;
                 _timelineProfileId = active!.id;
+                _timelineProfileName = active.name;
               });
             },
             restrictionRepository: _restrictionRepository,
@@ -383,7 +392,10 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
         _AuthView.timeline => _timelineProfileId != null
             ? TimelineScreen(
                 reportsRepository: _reportsRepository,
+                profilesRepository: _profilesRepository,
                 profileId: _timelineProfileId!,
+                profileName: _timelineProfileName!,
+                sharingRepository: _sharingRepository,
                 onBack: () {
                   setState(() => _authView = _AuthView.home);
                 },

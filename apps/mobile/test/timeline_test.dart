@@ -8,9 +8,13 @@ import 'mocks.dart';
 
 void main() {
   late MockReportsRepository reportsRepo;
+  late MockProfilesRepository profilesRepo;
+  late MockSharingRepository sharingRepo;
 
   setUp(() {
     reportsRepo = MockReportsRepository();
+    profilesRepo = MockProfilesRepository();
+    sharingRepo = MockSharingRepository();
   });
 
   testWidgets('Timeline shows loading then empty state when no reports',
@@ -21,7 +25,10 @@ void main() {
       MaterialApp(
         home: TimelineScreen(
           reportsRepository: reportsRepo,
+          profilesRepository: profilesRepo,
           profileId: 'profile-1',
+          profileName: 'Test Profile',
+          sharingRepository: sharingRepo,
           onBack: () {},
         ),
       ),
@@ -52,7 +59,10 @@ void main() {
       MaterialApp(
         home: TimelineScreen(
           reportsRepository: reportsRepo,
+          profilesRepository: profilesRepo,
           profileId: 'profile-1',
+          profileName: 'Test Profile',
+          sharingRepository: sharingRepo,
           onBack: () {},
         ),
       ),
@@ -72,7 +82,10 @@ void main() {
       MaterialApp(
         home: TimelineScreen(
           reportsRepository: reportsRepo,
+          profilesRepository: profilesRepo,
           profileId: 'profile-1',
+          profileName: 'Test Profile',
+          sharingRepository: sharingRepo,
           onBack: () => backCalled = true,
         ),
       ),
@@ -108,7 +121,10 @@ void main() {
       MaterialApp(
         home: TimelineScreen(
           reportsRepository: reportsRepo,
+          profilesRepository: profilesRepo,
           profileId: 'profile-1',
+          profileName: 'Test Profile',
+          sharingRepository: sharingRepo,
           onBack: () {},
         ),
       ),
@@ -121,7 +137,10 @@ void main() {
       MaterialApp(
         home: TimelineScreen(
           reportsRepository: reportsRepo,
+          profilesRepository: profilesRepo,
           profileId: 'profile-2',
+          profileName: 'Test Profile',
+          sharingRepository: sharingRepo,
           onBack: () {},
         ),
       ),

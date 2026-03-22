@@ -97,6 +97,21 @@ class ApiClient {
     }, auth);
   }
 
+  Future<Map<String, dynamic>> put(
+    String path, {
+    Map<String, dynamic>? body,
+    bool auth = true,
+  }) async {
+    return _requestWithRefresh(() async {
+      final res = await http.put(
+        Uri.parse(_url(path)),
+        headers: _headers(auth: auth),
+        body: body != null ? jsonEncode(body) : null,
+      );
+      return _handleResponse(res);
+    }, auth);
+  }
+
   Future<Map<String, dynamic>> patch(
     String path, {
     Map<String, dynamic>? body,

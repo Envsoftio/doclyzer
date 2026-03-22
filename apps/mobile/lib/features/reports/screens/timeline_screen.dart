@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../profiles/profiles_repository.dart';
+import '../../sharing/sharing_repository.dart';
+import '../../sharing/screens/create_share_link_screen.dart';
 import '../reports_repository.dart';
 import 'health_history_screen.dart';
 import 'report_detail_screen.dart';
@@ -10,13 +13,19 @@ class TimelineScreen extends StatefulWidget {
   const TimelineScreen({
     super.key,
     required this.reportsRepository,
+    required this.profilesRepository,
     required this.profileId,
     required this.onBack,
+    required this.sharingRepository,
+    required this.profileName,
   });
 
   final ReportsRepository reportsRepository;
+  final ProfilesRepository profilesRepository;
   final String profileId;
   final VoidCallback onBack;
+  final SharingRepository sharingRepository;
+  final String profileName;
 
   @override
   State<TimelineScreen> createState() => _TimelineScreenState();
@@ -69,17 +78,20 @@ class _TimelineScreenState extends State<TimelineScreen> {
     }
   }
 
-  void _openReport(Report report) {
-    Navigator.of(context).push(
+  Future<void> _openReport(Report report) async {
+    await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (ctx) => ReportDetailScreen(
           reportsRepository: widget.reportsRepository,
+          profilesRepository: widget.profilesRepository,
           reportId: report.id,
           profileId: report.profileId,
           onBack: () => Navigator.of(ctx).pop(),
         ),
       ),
     );
+    if (!mounted) return;
+    await _loadReports();
   }
 
   @override
@@ -106,12 +118,23 @@ class _TimelineScreenState extends State<TimelineScreen> {
               ),
             ),
           ),
+          IconButton(
+            key: const Key('timeline-share-button'),
+            icon: const Icon(Icons.share_outlined),
+            tooltip: 'Share Profile',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => CreateShareLinkScreen(
+                  profileId: widget.profileId,
+                  profileName: widget.profileName,
+                  sharingRepository: widget.sharingRepository,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: _buildBody(),
-      ),
+      body: Padding(padding: const EdgeInsets.all(16), child: _buildBody()),
     );
   }
 
@@ -134,10 +157,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _loadReports,
-              child: const Text('Retry'),
-            ),
+            FilledButton(onPressed: _loadReports, child: const Text('Retry')),
           ],
         ),
       );

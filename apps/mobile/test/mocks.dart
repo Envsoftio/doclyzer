@@ -8,6 +8,7 @@ import 'package:mobile/features/auth/auth_repository.dart';
 import 'package:mobile/features/auth/sessions_repository.dart';
 import 'package:mobile/features/profiles/profiles_repository.dart';
 import 'package:mobile/features/reports/reports_repository.dart';
+import 'package:mobile/features/sharing/sharing_repository.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -25,3 +26,5 @@ class MockDataRightsRepository extends Mock implements DataRightsRepository {}
 class MockRestrictionRepository extends Mock implements RestrictionRepository {}
 
 class MockReportsRepository extends Mock implements ReportsRepository {}
+
+class MockSharingRepository extends Mock implements SharingRepository {}

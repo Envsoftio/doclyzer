@@ -14,6 +14,8 @@ import { PasswordResetTokenEntity } from './database/entities/password-reset-tok
 import { ProfileEntity } from './database/entities/profile.entity';
 import { ReportEntity } from './database/entities/report.entity';
 import { RestrictionEntity } from './database/entities/restriction.entity';
+import { ShareLinkEntity } from './database/entities/share-link.entity';
+import { UserSharePolicyEntity } from './database/entities/user-share-policy.entity';
 import { SessionEntity } from './database/entities/session.entity';
 import { UserEntity } from './database/entities/user.entity';
 import { migrations } from './database/migrations';
@@ -23,6 +25,7 @@ import { ConsentModule } from './modules/consent/consent.module';
 import { EntitlementsModule } from './modules/entitlements/entitlements.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { SharingModule } from './modules/sharing/sharing.module';
 import { randomUUID } from 'node:crypto';
 
 const typeOrmEntities = [
@@ -36,6 +39,8 @@ const typeOrmEntities = [
   PasswordResetTokenEntity,
   ConsentRecordEntity,
   ReportEntity,
+  ShareLinkEntity,
+  UserSharePolicyEntity,
 ];
 
 @Module({
@@ -132,6 +137,7 @@ const typeOrmEntities = [
     EntitlementsModule,
     ProfilesModule,
     ReportsModule,
+    SharingModule,
   ],
 })
 export class AppModule {}

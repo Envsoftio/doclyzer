@@ -1,6 +1,6 @@
 # Story 2.11: Processing Attempt History per Report
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -38,50 +38,50 @@ so that retries and outcomes are transparent and I can understand what happened 
 
 ## Tasks / Subtasks
 
-- [ ] Backend: migration — create `report_processing_attempts` table (AC: 5)
-  - [ ] Create `apps/api/src/database/migrations/1730813600000-CreateReportProcessingAttemptsTable.ts`
-  - [ ] SQL: create table with columns: `id` (uuid PK), `report_id` (uuid FK → reports), `trigger` (varchar 32), `outcome` (varchar 32), `attempted_at` (timestamptz); index on `report_id`
-  - [ ] Register migration in `apps/api/src/database/migrations/index.ts`
+- [x] Backend: migration — create `report_processing_attempts` table (AC: 5)
+  - [x] Create `apps/api/src/database/migrations/1730813600000-CreateReportProcessingAttemptsTable.ts`
+  - [x] SQL: create table with columns: `id` (uuid PK), `report_id` (uuid FK → reports), `trigger` (varchar 32), `outcome` (varchar 32), `attempted_at` (timestamptz); index on `report_id`
+  - [x] Register migration in `apps/api/src/database/migrations/index.ts`
 
-- [ ] Backend: entity (AC: 5)
-  - [ ] Create `apps/api/src/database/entities/report-processing-attempt.entity.ts`
-  - [ ] Entity: `@Entity('report_processing_attempts')` with id, reportId, trigger, outcome, attemptedAt columns
-  - [ ] No `@UpdateDateColumn` — rows are immutable (insert-only)
+- [x] Backend: entity (AC: 5)
+  - [x] Create `apps/api/src/database/entities/report-processing-attempt.entity.ts`
+  - [x] Entity: `@Entity('report_processing_attempts')` with id, reportId, trigger, outcome, attemptedAt columns
+  - [x] No `@UpdateDateColumn` — rows are immutable (insert-only)
 
-- [ ] Backend: register entity + service method (AC: 5, 6)
-  - [ ] In `apps/api/src/modules/reports/reports.module.ts`: add `ReportProcessingAttemptEntity` to `TypeOrmModule.forFeature([...])`
-  - [ ] Inject `@InjectRepository(ReportProcessingAttemptEntity)` in `ReportsService` constructor
-  - [ ] Add private `recordAttempt(reportId, trigger, outcome)` — inserts one row; called after successful report save in `uploadReport` and `retryParse`
-  - [ ] Add public `getProcessingAttempts(userId, reportId)` — verifies ownership via existing `reportRepo.findOne({ where: { id, userId } })`, then returns attempts ordered by `attemptedAt ASC`
+- [x] Backend: register entity + service method (AC: 5, 6)
+  - [x] In `apps/api/src/modules/reports/reports.module.ts`: add `ReportProcessingAttemptEntity` to `TypeOrmModule.forFeature([...])`
+  - [x] Inject `@InjectRepository(ReportProcessingAttemptEntity)` in `ReportsService` constructor
+  - [x] Add private `recordAttempt(reportId, trigger, outcome)` — inserts one row; called after successful report save in `uploadReport` and `retryParse`
+  - [x] Add public `getProcessingAttempts(userId, reportId)` — verifies ownership via existing `reportRepo.findOne({ where: { id, userId } })`, then returns attempts ordered by `attemptedAt ASC`
 
-- [ ] Backend: controller endpoint (AC: 5, 6)
-  - [ ] In `apps/api/src/modules/reports/reports.controller.ts`: add `GET :id/attempts` endpoint
-  - [ ] Call `reportsService.getProcessingAttempts(userId, reportId)`, wrap in `successResponse`
-  - [ ] Must be declared BEFORE `GET :id` to avoid route shadowing (NestJS route order matters)
+- [x] Backend: controller endpoint (AC: 5, 6)
+  - [x] In `apps/api/src/modules/reports/reports.controller.ts`: add `GET :id/attempts` endpoint
+  - [x] Call `reportsService.getProcessingAttempts(userId, reportId)`, wrap in `successResponse`
+  - [x] Must be declared BEFORE `GET :id` to avoid route shadowing (NestJS route order matters)
 
-- [ ] Flutter: model + repository interface (AC: 1, 3, 4)
-  - [ ] Add `ProcessingAttempt` class to `apps/mobile/lib/features/reports/reports_repository.dart`
+- [x] Flutter: model + repository interface (AC: 1, 3, 4)
+  - [x] Add `ProcessingAttempt` class to `apps/mobile/lib/features/reports/reports_repository.dart`
     - Fields: `id` (String), `trigger` (String), `outcome` (String), `attemptedAt` (DateTime)
-  - [ ] Add `getProcessingAttempts(String reportId)` → `Future<List<ProcessingAttempt>>` to abstract `ReportsRepository`
+  - [x] Add `getProcessingAttempts(String reportId)` → `Future<List<ProcessingAttempt>>` to abstract `ReportsRepository`
 
-- [ ] Flutter: API implementation (AC: 1, 5)
-  - [ ] Implement `getProcessingAttempts` in `apps/mobile/lib/features/reports/api_reports_repository.dart`
-  - [ ] Calls `GET v1/reports/$reportId/attempts`; parses `data['attempts']` list into `List<ProcessingAttempt>`
+- [x] Flutter: API implementation (AC: 1, 5)
+  - [x] Implement `getProcessingAttempts` in `apps/mobile/lib/features/reports/api_reports_repository.dart`
+  - [x] Calls `GET v1/reports/$reportId/attempts`; parses `data['attempts']` list into `List<ProcessingAttempt>`
 
-- [ ] Flutter: ProcessingHistoryScreen (AC: 1, 2, 3, 4)
-  - [ ] Create `apps/mobile/lib/features/reports/screens/processing_history_screen.dart`
-  - [ ] Screen accepts `reportId` and `reportsRepository` as constructor parameters
-  - [ ] `initState` calls `getProcessingAttempts(reportId)`
-  - [ ] Loading: `CircularProgressIndicator` centered (`Key('processing-history-loading')`)
-  - [ ] Error: inline message + retry button (`Key('processing-history-error')`)
-  - [ ] Empty: centered text "No attempt history available." (`Key('processing-history-empty')`)
-  - [ ] List: `ListView` of `ListTile` rows, each showing trigger label, outcome label, date (`Key('processing-history-attempt-$id')`)
-  - [ ] Full `Scaffold` with `AppBar(title: Text('Attempt History'))` and `Padding(16)`
+- [x] Flutter: ProcessingHistoryScreen (AC: 1, 2, 3, 4)
+  - [x] Create `apps/mobile/lib/features/reports/screens/processing_history_screen.dart`
+  - [x] Screen accepts `reportId` and `reportsRepository` as constructor parameters
+  - [x] `initState` calls `getProcessingAttempts(reportId)`
+  - [x] Loading: `CircularProgressIndicator` centered (`Key('processing-history-loading')`)
+  - [x] Error: inline message + retry button (`Key('processing-history-error')`)
+  - [x] Empty: centered text "No attempt history available." (`Key('processing-history-empty')`)
+  - [x] List: `ListView` of `ListTile` rows, each showing trigger label, outcome label, date (`Key('processing-history-attempt-$id')`)
+  - [x] Full `Scaffold` with `AppBar(title: Text('Attempt History'))` and `Padding(16)`
 
-- [ ] Flutter: wire entry point from ReportDetailScreen (AC: 1)
-  - [ ] In `apps/mobile/lib/features/reports/screens/report_detail_screen.dart`: add `OutlinedButton` "View attempt history" after the "View PDF" button (or after the retry/keep-file block)
-  - [ ] Key: `Key('report-detail-view-attempts')`
-  - [ ] Tapping pushes `ProcessingHistoryScreen(reportId: report.id, reportsRepository: widget.reportsRepository)`
+- [x] Flutter: wire entry point from ReportDetailScreen (AC: 1)
+  - [x] In `apps/mobile/lib/features/reports/screens/report_detail_screen.dart`: add `OutlinedButton` "View attempt history" after the "View PDF" button (or after the retry/keep-file block)
+  - [x] Key: `Key('report-detail-view-attempts')`
+  - [x] Tapping pushes `ProcessingHistoryScreen(reportId: report.id, reportsRepository: widget.reportsRepository)`
 
 ## Dev Notes
 
@@ -447,6 +447,10 @@ Import: `import 'processing_history_screen.dart';`
 - [Source: _bmad-output/planning-artifacts/architecture.md] — DB naming conventions, API response envelope, profile-scoped ownership
 - [Source: _bmad-output/project-context.md] — no `!`, no business logic in widgets, Material 3, navigator patterns, NestJS rules, TypeORM Data Mapper, `successResponse`, route order
 
+## Change Log
+
+- 2026-03-17: Implemented processing attempt history — backend migration, entity, service/controller GET :id/attempts; Flutter ProcessingAttempt model, getProcessingAttempts API, ProcessingHistoryScreen, ReportDetailScreen "View attempt history" entry point.
+
 ## Dev Agent Record
 
 ### Agent Model Used
@@ -457,4 +461,20 @@ claude-sonnet-4-6
 
 ### Completion Notes List
 
+- Backend: migration `1730813600000-CreateReportProcessingAttemptsTable` creates `report_processing_attempts` with id, report_id (FK CASCADE), trigger, outcome, attempted_at and index on report_id. Entity `ReportProcessingAttemptEntity` added; registered in ReportsModule. ReportsService: `recordAttempt` called after save in `uploadReport` and `retryParse`; `getProcessingAttempts` checks ownership via reportRepo then returns attempts ASC by attemptedAt. Controller: `GET :id/attempts` added before `GET :id` to avoid route shadowing; returns `{ attempts: ProcessingAttemptDto[] }`.
+- Flutter: `ProcessingAttempt` model and `getProcessingAttempts(reportId)` on ReportsRepository; ApiReportsRepository calls `v1/reports/$reportId/attempts` and parses attempts. ProcessingHistoryScreen: loading/error/empty/list states with required keys; static _triggerLabel/_outcomeLabel and _formatDateTime for display. ReportDetailScreen: "View attempt history" OutlinedButton after View PDF pushes ProcessingHistoryScreen.
+- [Code Review Fix 2026-03-23] HIGH: Moved `recordAttempt` call outside the file-cleanup try/catch in `uploadReport` so that a DB failure in attempt recording no longer triggers storage file deletion for an already-persisted report entity.
+- [Code Review Fix 2026-03-23] LOW: Removed explicit `leading` IconButton from ProcessingHistoryScreen AppBar; Flutter's default back button is used instead (simpler, same behaviour).
+
 ### File List
+
+- apps/api/src/database/migrations/1730813600000-CreateReportProcessingAttemptsTable.ts (new)
+- apps/api/src/database/entities/report-processing-attempt.entity.ts (new)
+- apps/api/src/database/migrations/index.ts (modified)
+- apps/api/src/modules/reports/reports.module.ts (modified)
+- apps/api/src/modules/reports/reports.service.ts (modified)
+- apps/api/src/modules/reports/reports.controller.ts (modified)
+- apps/mobile/lib/features/reports/reports_repository.dart (modified)
+- apps/mobile/lib/features/reports/api_reports_repository.dart (modified)
+- apps/mobile/lib/features/reports/screens/processing_history_screen.dart (new)
+- apps/mobile/lib/features/reports/screens/report_detail_screen.dart (modified)

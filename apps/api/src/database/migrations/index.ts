@@ -6,6 +6,12 @@ import { CreateReportsTable1730813200000 } from './1730813200000-CreateReportsTa
 import { AddContentHashToReports1730813300000 } from './1730813300000-AddContentHashToReports';
 import { AddReportLabValuesTable1730813400000 } from './1730813400000-AddReportLabValuesTable';
 import { AddSummaryToReports1730813500000 } from './1730813500000-AddSummaryToReports';
+import { CreateReportProcessingAttemptsTable1730813600000 } from './1730813600000-CreateReportProcessingAttemptsTable';
+import { AddParsedTranscriptToReports1730813700000 } from './1730813700000-AddParsedTranscriptToReports';
+import { CreateShareLinksTable1730813800000 } from './1730813800000-CreateShareLinksTable';
+import { AddExpiresAtToShareLinks1730813900000 } from './1730813900000-AddExpiresAtToShareLinks';
+import { CreateUserSharePoliciesTable1730814000000 } from './1730814000000-CreateUserSharePoliciesTable';
+import { CreateShareAccessEventsTable1730814100000 } from './1730814100000-CreateShareAccessEventsTable';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -16,4 +22,10 @@ export const migrations = [
   AddContentHashToReports1730813300000,
   AddReportLabValuesTable1730813400000,
   AddSummaryToReports1730813500000,
+  CreateReportProcessingAttemptsTable1730813600000,
+  AddParsedTranscriptToReports1730813700000,
+  CreateShareLinksTable1730813800000,
+  AddExpiresAtToShareLinks1730813900000,
+  CreateUserSharePoliciesTable1730814000000,
+  CreateShareAccessEventsTable1730814100000,
 ];

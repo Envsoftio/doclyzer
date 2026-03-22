@@ -2,20 +2,26 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ReportEntity } from '../../database/entities/report.entity';
 import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
+import { ReportProcessingAttemptEntity } from '../../database/entities/report-processing-attempt.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { StorageModule } from '../../common/storage/storage.module';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
+import { ReportSummaryService } from './report-summary/report-summary.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ReportEntity, ReportLabValueEntity]),
+    TypeOrmModule.forFeature([
+      ReportEntity,
+      ReportLabValueEntity,
+      ReportProcessingAttemptEntity,
+    ]),
     AuthModule,
     ProfilesModule,
     StorageModule,
   ],
   controllers: [ReportsController],
-  providers: [ReportsService],
+  providers: [ReportsService, ReportSummaryService],
 })
 export class ReportsModule {}

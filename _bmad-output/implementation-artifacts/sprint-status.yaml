@@ -33,11 +33,12 @@
 # - SM typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 2026-03-15
+generated: 2026-03-19
 project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
+last_updated: 2026-03-23  # story 3-9 review
 
 development_status:
   epic-0: in-progress
@@ -73,22 +74,22 @@ development_status:
   2-8-trend-chart-rendering-for-chartable-parameters: done
   2-9-report-level-summary-display-with-safe-framing: done
   2-10-profile-level-consolidated-health-history: done
-  2-11-processing-attempt-history-per-report: ready-for-dev
-  2-12-post-upload-report-reassignment-to-correct-profile: backlog
-  2-13-real-ai-report-summary-pipeline: backlog
-  2-14-persist-docling-parsed-transcript-in-db: backlog
+  2-11-processing-attempt-history-per-report: done
+  2-12-post-upload-report-reassignment-to-correct-profile: done
+  2-13-real-ai-report-summary-pipeline: done
+  2-14-persist-docling-parsed-transcript-in-db: done
   epic-2-retrospective: optional
 
-  epic-3: backlog
-  3-1-create-share-link-for-active-profile-scope: backlog
-  3-2-share-link-expiry-and-revocation-controls: backlog
-  3-3-default-share-policy-settings-for-new-links: backlog
-  3-4-copy-distribute-share-link-ux: backlog
-  3-5-recipient-access-via-valid-link-no-account: backlog
-  3-6-doctor-friendly-share-page-timeline-trends-print-friendly: backlog
-  3-7-share-access-event-history-for-link-owner: backlog
-  3-8-enforce-profile-isolation-in-shared-output: backlog
-  3-9-landing-seo-mvp-metadata-canonical-sitemap-robots-structured-data: backlog
+  epic-3: in-progress
+  3-1-create-share-link-for-active-profile-scope: review
+  3-2-share-link-expiry-and-revocation-controls: review
+  3-3-default-share-policy-settings-for-new-links: review
+  3-4-copy-distribute-share-link-ux: review
+  3-5-recipient-access-via-valid-link-no-account: review
+  3-6-doctor-friendly-share-page-timeline-trends-print-friendly: review
+  3-7-share-access-event-history-for-link-owner: review
+  3-8-enforce-profile-isolation-in-shared-output: review
+  3-9-landing-seo-mvp-metadata-canonical-sitemap-robots-structured-data: review
   3-10-route-isolation-rules-indexable-landing-vs-non-indexable-share: backlog
   epic-3-retrospective: optional
 

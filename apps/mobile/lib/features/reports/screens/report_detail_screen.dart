@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../profiles/profiles_repository.dart';
 import '../reports_repository.dart';
 import 'pdf_viewer_screen.dart';
+import 'processing_history_screen.dart';
 import 'trend_chart_screen.dart';
 
 enum _ReportDetailState { loading, loaded, error }
@@ -10,12 +12,14 @@ class ReportDetailScreen extends StatefulWidget {
   const ReportDetailScreen({
     super.key,
     required this.reportsRepository,
+    required this.profilesRepository,
     required this.reportId,
     required this.profileId,
     required this.onBack,
   });
 
   final ReportsRepository reportsRepository;
+  final ProfilesRepository profilesRepository;
   final String reportId;
   final String profileId;
   final VoidCallback onBack;
@@ -28,11 +32,24 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   _ReportDetailState _state = _ReportDetailState.loading;
   Report? _report;
   String? _errorMessage;
+  List<Profile> _profiles = [];
 
   @override
   void initState() {
     super.initState();
     _loadReport();
+    _loadProfiles();
+  }
+
+  Future<void> _loadProfiles() async {
+    try {
+      final profiles = await widget.profilesRepository.getProfiles();
+      if (mounted) {
+        setState(() => _profiles = profiles);
+      }
+    } catch (_) {
+      // Fail-open: if profiles can't be loaded, hide the reassign button
+    }
   }
 
   Future<void> _loadReport() async {
@@ -41,8 +58,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       _errorMessage = null;
     });
     try {
-      final report =
-          await widget.reportsRepository.getReport(widget.reportId);
+      final report = await widget.reportsRepository.getReport(widget.reportId);
       if (mounted) {
         setState(() {
           _report = report;
@@ -53,8 +69,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       if (mounted) {
         setState(() {
           _state = _ReportDetailState.error;
-          _errorMessage =
-              e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -94,8 +109,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       _errorMessage = null;
     });
     try {
-      final report =
-          await widget.reportsRepository.retryParse(_report!.id);
+      final report = await widget.reportsRepository.retryParse(_report!.id);
       if (mounted) {
         setState(() {
           _report = report;
@@ -106,8 +120,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       if (mounted) {
         setState(() {
           _state = _ReportDetailState.loaded;
-          _errorMessage =
-              e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -119,6 +132,51 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       await widget.reportsRepository.keepFile(_report!.id);
       if (mounted) _loadReport();
     } catch (_) {}
+  }
+
+  Future<void> _onReassign(String targetProfileId) async {
+    if (_report == null) return;
+    setState(() {
+      _state = _ReportDetailState.loading;
+      _errorMessage = null;
+    });
+    try {
+      await widget.reportsRepository.reassignReport(
+        _report!.id,
+        targetProfileId,
+      );
+      if (mounted) widget.onBack();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _state = _ReportDetailState.loaded;
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    }
+  }
+
+  Future<void> _showReassignDialog() async {
+    final otherProfiles = _profiles
+        .where((p) => p.id != widget.profileId)
+        .toList();
+    if (otherProfiles.isEmpty) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Reassign to profile'),
+        children: otherProfiles.map((profile) {
+          return SimpleDialogOption(
+            key: Key('reassign-profile-${profile.id}'),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _onReassign(profile.id);
+            },
+            child: Text(profile.name),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   String _formatDate(DateTime? d) {
@@ -149,17 +207,14 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           onPressed: widget.onBack,
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: _buildBody(),
-      ),
+      body: Padding(padding: const EdgeInsets.all(16), child: _buildBody()),
     );
   }
 
   Widget _buildBody() {
     if (_state == _ReportDetailState.loading) {
       return const Center(
-        key: const Key('report-detail-loading'),
+        key: Key('report-detail-loading'),
         child: CircularProgressIndicator(),
       );
     }
@@ -175,10 +230,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _loadReport,
-              child: const Text('Retry'),
-            ),
+            FilledButton(onPressed: _loadReport, child: const Text('Retry')),
           ],
         ),
       );
@@ -241,8 +293,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         Expanded(
                           child: Text(
                             'Informational only — not medical advice. Discuss with your doctor.',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                           ),
                         ),
@@ -260,6 +315,41 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             icon: const Icon(Icons.picture_as_pdf),
             label: const Text('View PDF'),
           ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            key: const Key('report-detail-view-attempts'),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => ProcessingHistoryScreen(
+                  reportId: report.id,
+                  reportsRepository: widget.reportsRepository,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.history),
+            label: const Text('View attempt history'),
+          ),
+          if (_profiles.where((p) => p.id != widget.profileId).isNotEmpty) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              key: const Key('report-detail-reassign'),
+              onPressed: _showReassignDialog,
+              icon: const Icon(Icons.swap_horiz),
+              label: const Text('Reassign to profile'),
+            ),
+            if (_errorMessage != null &&
+                report.status != 'unparsed' &&
+                report.status != 'content_not_recognized') ...[
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage!,
+                key: const Key('report-detail-reassign-error'),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
           if (report.status == 'unparsed' ||
               report.status == 'content_not_recognized') ...[
             const SizedBox(height: 12),
@@ -286,10 +376,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           ],
           if (report.extractedLabValues.isNotEmpty) ...[
             const SizedBox(height: 24),
-            Text(
-              'Lab values',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
+            Text('Lab values', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             Card(
               key: const Key('report-detail-lab-values'),
@@ -297,7 +384,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: report.extractedLabValues.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final lab = report.extractedLabValues[index];
                   return InkWell(
@@ -317,10 +404,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                               lab.parameterName.isNotEmpty
                                   ? lab.parameterName
                                   : '—',
-                              style:
-                                  Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w500),
                             ),
                           ),
                           Expanded(
@@ -356,8 +441,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             Text(
               'No structured data',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ],

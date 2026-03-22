@@ -73,6 +73,7 @@ class ApiReportsRepository implements ReportsRepository {
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
       summary: d['summary'] as String?,
+      parsedTranscript: d['parsedTranscript'] as String?,
       extractedLabValues: extractedLabValues,
     );
   }
@@ -91,6 +92,7 @@ class ApiReportsRepository implements ReportsRepository {
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
       summary: d['summary'] as String?,
+      parsedTranscript: d['parsedTranscript'] as String?,
       extractedLabValues: const [],
     );
   }
@@ -128,6 +130,45 @@ class ApiReportsRepository implements ReportsRepository {
       );
     }).toList();
     return LabTrendsResult(parameters: parameters);
+  }
+
+  @override
+  Future<List<ProcessingAttempt>> getProcessingAttempts(String reportId) async {
+    final data = await _client.get('v1/reports/$reportId/attempts');
+    final list = data['data']?['attempts'] as List<dynamic>? ?? [];
+    return list.map((e) {
+      final m = e as Map<String, dynamic>;
+      final attemptedAt = m['attemptedAt'] as String?;
+      return ProcessingAttempt(
+        id: m['id'] as String,
+        trigger: m['trigger'] as String,
+        outcome: m['outcome'] as String,
+        attemptedAt: attemptedAt != null
+            ? DateTime.parse(attemptedAt)
+            : DateTime.now(),
+      );
+    }).toList();
+  }
+
+  @override
+  Future<Report> reassignReport(String reportId, String targetProfileId) async {
+    final data = await _client.post(
+      'v1/reports/$reportId/reassign',
+      body: {'targetProfileId': targetProfileId},
+    );
+    final d = data['data'] as Map<String, dynamic>;
+    final createdAt = d['createdAt'] as String?;
+    return Report(
+      id: d['id'] as String,
+      profileId: d['profileId'] as String,
+      originalFileName: d['originalFileName'] as String,
+      contentType: d['contentType'] as String,
+      sizeBytes: d['sizeBytes'] as int,
+      status: d['status'] as String,
+      createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
+      summary: d['summary'] as String?,
+      extractedLabValues: const [],
+    );
   }
 
   @override
