@@ -17,7 +17,6 @@ import { RazorpayService } from './razorpay.service';
 import {
   BILLING_ALREADY_SUBSCRIBED,
   BILLING_INVALID_SIGNATURE,
-  BILLING_ORDER_ALREADY_PROCESSED,
   BILLING_ORDER_NOT_FOUND,
   BILLING_PACK_INACTIVE,
   BILLING_PACK_NOT_FOUND,
@@ -31,18 +30,19 @@ import {
   BILLING_PROMO_USER_CAP_REACHED,
   BILLING_SUBSCRIPTION_INVALID_SIGNATURE,
   BILLING_SUBSCRIPTION_NOT_FOUND,
-  BILLING_WEBHOOK_INVALID_SIGNATURE,
 } from './billing.types';
 import type {
   CreditPackResponseDto,
   CreateOrderResponseDto,
   CreateSubscriptionResponseDto,
+  OrderStatusDto,
   PlanResponseDto,
   PromoProductType,
   PromoValidationResponseDto,
   VerifyPaymentResponseDto,
   VerifySubscriptionResponseDto,
 } from './billing.types';
+import { toOrderStatusDto } from './billing.types';
 
 @Injectable()
 export class BillingService {
@@ -75,6 +75,17 @@ export class BillingService {
       priceInr: parseFloat(p.priceInr),
       priceUsd: parseFloat(p.priceUsd),
     }));
+  }
+
+  async listRecentOrders(userId: string, limit = 5): Promise<OrderStatusDto[]> {
+    const safeLimit = Math.max(1, Math.min(limit, 5));
+    const orders = await this.orderRepo.find({
+      where: { userId },
+      order: { updatedAt: 'DESC' },
+      take: safeLimit,
+    });
+
+    return orders.map((order) => toOrderStatusDto(order));
   }
 
   async createOrder(
@@ -208,44 +219,31 @@ export class BillingService {
       });
     }
 
-    // Idempotent: if already credited, ensure promo redemption is recorded
-    if (order.credited) {
+    // Idempotent: if already reconciled, keep response stable.
+    if (this.isReconciled(order.status, order.credited)) {
       await this.recordPromoRedemption(order);
       const summary =
         await this.entitlementsService.getEntitlementSummary(userId);
       return {
         creditsAdded: order.creditPack.credits,
+        orderStatus: 'reconciled',
         entitlementSummary: summary,
       };
     }
 
-    // Credit user atomically in a transaction
-    await this.dataSource.transaction(async (manager) => {
-      // Atomic increment of credit balance
-      await manager
-        .createQueryBuilder()
-        .update(UserEntitlementEntity)
-        .set({
-          creditBalance: () => `credit_balance + ${order.creditPack.credits}`,
-        })
-        .where('user_id = :userId', { userId })
-        .execute();
-
-      // Mark order as paid + credited
-      await manager.update(OrderEntity, order.id, {
-        status: 'paid',
-        razorpayPaymentId,
-        razorpaySignature,
-        credited: true,
-      });
-
-      await this.recordPromoRedemption(order, manager);
-    });
+    // Capture verification proves payment auth, but reconciliation happens on webhook.
+    order.status = 'paid';
+    order.razorpayPaymentId = razorpayPaymentId;
+    order.razorpaySignature = razorpaySignature;
+    order.credited = false;
+    order.metadata = this.withoutFailureReason(order.metadata);
+    await this.orderRepo.save(order);
 
     const summary =
       await this.entitlementsService.getEntitlementSummary(userId);
     return {
-      creditsAdded: order.creditPack.credits,
+      creditsAdded: 0,
+      orderStatus: 'paid',
       entitlementSummary: summary,
     };
   }
@@ -295,7 +293,10 @@ export class BillingService {
     );
   }
 
-  async handleWebhookPaymentFailed(razorpayOrderId: string): Promise<void> {
+  async handleWebhookPaymentFailed(
+    razorpayOrderId: string,
+    reason?: string,
+  ): Promise<void> {
     const order = await this.orderRepo.findOne({
       where: { razorpayOrderId },
     });
@@ -309,7 +310,9 @@ export class BillingService {
     // Don't downgrade reconciled/paid orders
     if (order.status === 'reconciled' || order.status === 'paid') return;
 
-    await this.orderRepo.update(order.id, { status: 'failed' });
+    order.status = 'failed';
+    order.metadata = this.withFailureReason(order.metadata, reason);
+    await this.orderRepo.save(order);
     await this.voidPromoReservation(order.id);
     this.logger.log(
       `Webhook: order ${order.id} marked failed (razorpay_order_id=${razorpayOrderId})`,
@@ -785,6 +788,39 @@ export class BillingService {
 
   private normalizePromoCode(code: string): string {
     return code.trim().toUpperCase();
+  }
+
+  private isReconciled(status: string, credited: boolean): boolean {
+    return status === 'reconciled' || credited;
+  }
+
+  private withFailureReason(
+    metadata: Record<string, unknown> | null,
+    reason?: string,
+  ): Record<string, unknown> | null {
+    if (!reason || reason.trim().length === 0) {
+      return metadata;
+    }
+
+    return {
+      ...(metadata ?? {}),
+      reason: reason.trim(),
+    };
+  }
+
+  private withoutFailureReason(
+    metadata: Record<string, unknown> | null,
+  ): Record<string, unknown> | null {
+    if (
+      !metadata ||
+      !Object.prototype.hasOwnProperty.call(metadata, 'reason')
+    ) {
+      return metadata;
+    }
+
+    const copy = { ...metadata };
+    delete copy.reason;
+    return Object.keys(copy).length === 0 ? null : copy;
   }
 
   private async reservePromoRedemption(

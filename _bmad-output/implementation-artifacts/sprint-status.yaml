@@ -38,7 +38,7 @@ project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
-last_updated: 2026-03-29 04:19  # 5-1 moved to review
+last_updated: 2026-03-29 06:02  # 4-6 moved to review
 
 development_status:
   epic-0: in-progress
@@ -99,7 +99,7 @@ development_status:
   4-3-subscription-purchase-flow: review
   4-4-promo-code-apply-validate-at-checkout: done  # subscription promos deferred until Razorpay Offers configured
   4-5-usage-limit-enforcement-free-paid-tiers: review
-  4-6-billing-outcome-states-pending-failed-reconciled: ready-for-dev
+  4-6-billing-outcome-states-pending-failed-reconciled: review
   4-7-entitlement-change-reason-visibility: backlog
   epic-4-retrospective: optional
 

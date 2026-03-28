@@ -69,8 +69,30 @@ class ApiBillingRepository implements BillingRepository {
     final summaryJson = d['entitlementSummary'] as Map<String, dynamic>;
     return VerifyPaymentResult(
       creditsAdded: d['creditsAdded'] as int,
+      orderStatus: _orderStatusFromString(d['orderStatus'] as String),
       entitlementSummary: _summaryFromJson(summaryJson),
     );
+  }
+
+  @override
+  Future<List<BillingOrderStatusItem>> listRecentOrders({int limit = 5}) async {
+    final clampedLimit = limit.clamp(1, 5);
+    final data = await _client.get('v1/billing/orders?limit=$clampedLimit');
+    final list = data['data'] as List<dynamic>;
+    return list.map((item) {
+      final json = item as Map<String, dynamic>;
+      return BillingOrderStatusItem(
+        id: json['id'] as String,
+        status: _orderStatusFromString(json['status'] as String),
+        statusLabel: json['statusLabel'] as String,
+        finalAmount: (json['finalAmount'] as num).toDouble(),
+        currency: json['currency'] as String,
+        credited: json['credited'] as bool,
+        razorpayOrderId: json['razorpayOrderId'] as String,
+        updatedAt: DateTime.parse(json['updatedAt'] as String),
+        failureReason: json['failureReason'] as String?,
+      );
+    }).toList();
   }
 
   @override
@@ -177,5 +199,20 @@ class ApiBillingRepository implements BillingRepository {
           : DateTime.now(),
       expiresAt: expiresAt != null ? DateTime.parse(expiresAt) : null,
     );
+  }
+
+  BillingOrderStatus _orderStatusFromString(String status) {
+    switch (status) {
+      case 'pending':
+        return BillingOrderStatus.pending;
+      case 'paid':
+        return BillingOrderStatus.paid;
+      case 'reconciled':
+        return BillingOrderStatus.reconciled;
+      case 'failed':
+        return BillingOrderStatus.failed;
+      default:
+        return BillingOrderStatus.pending;
+    }
   }
 }

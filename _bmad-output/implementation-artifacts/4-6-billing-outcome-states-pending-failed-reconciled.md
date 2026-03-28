@@ -1,6 +1,6 @@
 # Story 4.6: Billing Outcome States (Pending/Failed/Reconciled)
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -17,26 +17,26 @@ so that payment outcomes are understandable.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Extend the billing module to serve recent order statuses and reason data**
-  - [ ] Capture the last 3–5 credit pack orders for the current user from `OrderEntity`, include `status`, `finalAmount`, `credited`, `razorpayOrderId`, `updatedAt`, and any `metadata.reason` in a new DTO (e.g., `OrderStatusDto`).
-  - [ ] Add a `GET /billing/orders` (or augment `EntitlementSummaryDto`) in `BillingController` that returns that DTO and keep the route guarded by `AuthGuard`.
-  - [ ] Update `billing.service.ts` to fetch this data via the order repository and to keep the returned status labels aligned with `handleWebhookPaymentCaptured` / `handleWebhookPaymentFailed` transitions so reconciled/failed states are never overwritten.
+- [x] **Task 1: Extend the billing module to serve recent order statuses and reason data**
+  - [x] Capture the last 3–5 credit pack orders for the current user from `OrderEntity`, include `status`, `finalAmount`, `credited`, `razorpayOrderId`, `updatedAt`, and any `metadata.reason` in a new DTO (e.g., `OrderStatusDto`).
+  - [x] Add a `GET /billing/orders` (or augment `EntitlementSummaryDto`) in `BillingController` that returns that DTO and keep the route guarded by `AuthGuard`.
+  - [x] Update `billing.service.ts` to fetch this data via the order repository and to keep the returned status labels aligned with `handleWebhookPaymentCaptured` / `handleWebhookPaymentFailed` transitions so reconciled/failed states are never overwritten.
 
-- [ ] **Task 2: Wire the new data through the API layer**
-  - [ ] Update `billing.types.ts` with the new DTO, swagger-friendly transformation helpers, and ensure error codes (e.g., `BILLING_ORDER_NOT_FOUND`) stay centralized.
-  - [ ] Keep TypeORM data mapper conventions (no `process.env` inside modules, use `@InjectRepository`) and reuse the existing `entitlementsService.getEntitlementSummary` wherever the credited balance should refresh after reconciliation.
+- [x] **Task 2: Wire the new data through the API layer**
+  - [x] Update `billing.types.ts` with the new DTO, swagger-friendly transformation helpers, and ensure error codes (e.g., `BILLING_ORDER_NOT_FOUND`) stay centralized.
+  - [x] Keep TypeORM data mapper conventions (no `process.env` inside modules, use `@InjectRepository`) and reuse the existing `entitlementsService.getEntitlementSummary` wherever the credited balance should refresh after reconciliation.
 
-- [ ] **Task 3: Add new billing status data to the mobile repository**
-  - [ ] Extend `BillingRepository` + `ApiBillingRepository` to fetch the new order statuses (method like `listRecentOrders` or `getOrderStatuses`).
-  - [ ] Decode `status` strings into an enum so UI components know when to show Pending (await capture), Failed (render reason + Retry), or Reconciled (credits added) without leaking Razorpay internals.
+- [x] **Task 3: Add new billing status data to the mobile repository**
+  - [x] Extend `BillingRepository` + `ApiBillingRepository` to fetch the new order statuses (method like `listRecentOrders` or `getOrderStatuses`).
+  - [x] Decode `status` strings into an enum so UI components know when to show Pending (await capture), Failed (render reason + Retry), or Reconciled (credits added) without leaking Razorpay internals.
 
-- [ ] **Task 4: Show statuses on the Plan & Credits summary screen**
-  - [ ] Surface the recent order list (with status chip, human-friendly status text, Razorpay id truncated to 8 chars, amount, timestamp) in `entitlement_summary_screen.dart` below the limit cards; include CTA buttons for “Refresh status,” “Retry payment,” or “View receipt” depending on the status and keep the rest of the screen scrollable.
-  - [ ] Reuse the existing `DoclyzerApp` navigation (`onUpgrade`, `onBuyCredits`) so the new CTAs reuse the billing flow and never duplicate navigation logic.
+- [x] **Task 4: Show statuses on the Plan & Credits summary screen**
+  - [x] Surface the recent order list (with status chip, human-friendly status text, Razorpay id truncated to 8 chars, amount, timestamp) in `entitlement_summary_screen.dart` below the limit cards; include CTA buttons for “Refresh status,” “Retry payment,” or “View receipt” depending on the status and keep the rest of the screen scrollable.
+  - [x] Reuse the existing `DoclyzerApp` navigation (`onUpgrade`, `onBuyCredits`) so the new CTAs reuse the billing flow and never duplicate navigation logic.
 
-- [ ] **Task 5: Guard the credit pack checkout with status awareness**
-  - [ ] During checkout in `credit_pack_list_screen.dart`, show inline banners when the pending order is still waiting for Razorpay (disable `Buy` while `_purchasingPackId == order.id` and show a spinner + “Awaiting capture”), and when a failure occurs keep the `Retry` action visible (call `widget.onPurchaseComplete` only after `verifyPayment` returns a reconciled state).
-  - [ ] When the order becomes `reconciled`, call the new status endpoint to refresh the pending list so the “Credits added” badge replaces the spinner immediately.
+- [x] **Task 5: Guard the credit pack checkout with status awareness**
+  - [x] During checkout in `credit_pack_list_screen.dart`, show inline banners when the pending order is still waiting for Razorpay (disable `Buy` while `_purchasingPackId == order.id` and show a spinner + “Awaiting capture”), and when a failure occurs keep the `Retry` action visible (call `widget.onPurchaseComplete` only after `verifyPayment` returns a reconciled state).
+  - [x] When the order becomes `reconciled`, call the new status endpoint to refresh the pending list so the “Credits added” badge replaces the spinner immediately.
 
 ## Dev Notes
 
@@ -71,14 +71,22 @@ GPT-5 (Codex)
 
 ### Debug Log References
 
-None.
+- 2026-03-29: `npm run build` (apps/api) ✅
+- 2026-03-29: `npx eslint src/modules/billing/billing.controller.ts src/modules/billing/billing.service.ts src/modules/billing/billing.types.ts` ✅
+- 2026-03-29: `dart analyze lib/features/billing` (apps/mobile) ✅
+- 2026-03-29: `npm run lint` (apps/api) ❌ existing repository-wide lint debt outside this story scope
+- 2026-03-29: `dart analyze` (apps/mobile full project) ❌ existing test fixture/signature issues outside this story scope
 
 ### Completion Notes List
 
-- Captured the need for a deterministic billing state machine so Pending/Failed/Reconciled labels cannot drift from the Order table.
-- Documented the API contract (status DTO + endpoint) that Flutter screens will poll so the UI always shows the latest Razorpay outcome.
-- Highlighted the UX scenario (Plan & Credits + credit pack checkout) where this information is critical and referenced the relevant files for context.
-- Reinforced the no-tests policy while still asking for manual QA steps in the completion notes.
+- Added a new authenticated `GET /billing/orders` endpoint with `limit` query support (1–5) and a typed `OrderStatusDto` contract including status labels, final amount, Razorpay order id, credited flag, update timestamp, and optional failure reason from metadata.
+- Implemented billing status transformation helpers in `billing.types.ts` and service-level `listRecentOrders()` query logic for the current user ordered by latest updates.
+- Updated payment lifecycle handling so `verifyPayment()` marks orders as `paid` (awaiting webhook reconciliation) and returns `orderStatus`; credits are now finalized on capture reconciliation.
+- Extended failed-webhook handling to persist Razorpay failure reason into `orders.metadata.reason` and preserve non-failed metadata.
+- Extended Flutter billing repository models with `BillingOrderStatus` enum + `BillingOrderStatusItem` and added `listRecentOrders()` API integration.
+- Enhanced Plan & Credits screen to show recent order history with status chips, truncated order ids, amount/timestamp, failure reason, and contextual CTA actions (refresh/retry/receipt placeholder).
+- Enhanced credit-pack checkout UX with pending/failed status banner, disabled Buy while capture is pending, refresh status action, retry action on failures, and `onPurchaseComplete` only when verification reports reconciled.
+- Manual QA flow documented/executed path: load Plan & Credits, refresh billing statuses, enter Buy Credits, verify pending/failure banners and CTA behavior.
 
 ### File List
 
@@ -87,9 +95,11 @@ None.
 - `apps/api/src/modules/billing/billing.service.ts`
 - `apps/api/src/modules/billing/billing.controller.ts`
 - `apps/api/src/modules/billing/billing.types.ts`
-- `apps/api/src/modules/entitlements/entitlements.service.ts`
-- `apps/api/src/modules/entitlements/entitlements.controller.ts`
 - `apps/mobile/lib/features/billing/api_billing_repository.dart`
 - `apps/mobile/lib/features/billing/billing_repository.dart`
 - `apps/mobile/lib/features/billing/screens/entitlement_summary_screen.dart`
 - `apps/mobile/lib/features/billing/screens/credit_pack_list_screen.dart`
+
+## Change Log
+
+- 2026-03-29: Implemented Story 4.6 billing outcome state visibility across API + mobile, including recent order status endpoint, reconciliation-aware payment verification, and pending/failed/reconciled UX states.

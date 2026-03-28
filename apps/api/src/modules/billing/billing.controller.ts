@@ -5,6 +5,7 @@ import {
   Get,
   Logger,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { RazorpayService } from './razorpay.service';
 import {
   CreateOrderDto,
   CreateSubscriptionDto,
+  ListOrdersQueryDto,
   PromoValidationDto,
   VerifyPaymentDto,
   VerifySubscriptionDto,
@@ -37,6 +39,20 @@ export class BillingController {
   @UseGuards(AuthGuard)
   async getCreditPacks(@Req() req: Request): Promise<object> {
     const data = await this.billingService.listCreditPacks();
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Get('orders')
+  @UseGuards(AuthGuard)
+  async getRecentOrders(
+    @Req() req: Request,
+    @Query() query: ListOrdersQueryDto,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.billingService.listRecentOrders(
+      userId,
+      query.limit ?? 5,
+    );
     return successResponse(data, getCorrelationId(req));
   }
 
@@ -171,7 +187,13 @@ export class BillingController {
       );
     } else if (event === 'payment.failed') {
       const razorpayOrderId = payload.payload.payment?.entity?.order_id ?? '';
-      await this.billingService.handleWebhookPaymentFailed(razorpayOrderId);
+      const reason = this.extractPaymentFailureReason(
+        payload.payload.payment?.entity ?? {},
+      );
+      await this.billingService.handleWebhookPaymentFailed(
+        razorpayOrderId,
+        reason,
+      );
     } else if (event === 'subscription.activated') {
       const subId = payload.payload.subscription?.entity?.id ?? '';
       const paymentId = payload.payload.payment?.entity?.id ?? '';
@@ -188,5 +210,25 @@ export class BillingController {
     }
 
     return { status: 'ok' };
+  }
+
+  private extractPaymentFailureReason(
+    payment: Record<string, unknown>,
+  ): string | undefined {
+    const candidates = [
+      payment['error_description'],
+      payment['error_reason'],
+      payment['error_source'],
+      payment['error_step'],
+      payment['error_code'],
+    ];
+
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string' && candidate.trim().length > 0) {
+        return candidate.trim();
+      }
+    }
+
+    return undefined;
   }
 }

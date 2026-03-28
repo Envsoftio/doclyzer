@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
@@ -22,9 +24,12 @@ class CreditPackListScreen extends StatefulWidget {
 
 class _CreditPackListScreenState extends State<CreditPackListScreen> {
   List<CreditPack>? _packs;
+  List<BillingOrderStatusItem> _recentOrders = const [];
   bool _loading = true;
+  bool _refreshingStatuses = false;
   String? _error;
   String? _purchasingPackId;
+  String? _statusBannerMessage;
   late final Razorpay _razorpay;
 
   @override
@@ -35,6 +40,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
     _loadPacks();
+    unawaited(_refreshOrderStatuses());
   }
 
   @override
@@ -68,6 +74,13 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
 
   Future<void> _startPurchase(CreditPack pack, {String? promoCode}) async {
     if (_purchasingPackId != null) return;
+    if (_latestPendingOrder != null) {
+      setState(() {
+        _statusBannerMessage =
+            'A payment is pending capture. Refresh status before starting another checkout.';
+      });
+      return;
+    }
 
     setState(() => _purchasingPackId = pack.id);
     try {
@@ -96,6 +109,32 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
             ),
           ),
         );
+      }
+    }
+  }
+
+  Future<void> _refreshOrderStatuses() async {
+    if (_refreshingStatuses) return;
+    setState(() {
+      _refreshingStatuses = true;
+    });
+    try {
+      final orders = await widget.billingRepository.listRecentOrders();
+      if (mounted) {
+        setState(() {
+          _recentOrders = orders;
+          if (_latestPendingOrder == null && _statusBannerMessage != null) {
+            _statusBannerMessage = null;
+          }
+        });
+      }
+    } catch (_) {
+      // Keep UI functional even if status polling fails.
+    } finally {
+      if (mounted) {
+        setState(() {
+          _refreshingStatuses = false;
+        });
       }
     }
   }
@@ -358,31 +397,47 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
 
   Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
     try {
-      await widget.billingRepository.verifyPayment(
+      final verification = await widget.billingRepository.verifyPayment(
         response.orderId ?? '',
         response.paymentId ?? '',
         response.signature ?? '',
       );
+      await _refreshOrderStatuses();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Credits added!'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-        widget.onPurchaseComplete();
+        if (verification.orderStatus == BillingOrderStatus.reconciled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Credits added!'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+          widget.onPurchaseComplete();
+        } else {
+          setState(() {
+            _statusBannerMessage =
+                'Payment received. Awaiting Razorpay capture before credits are added.';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Payment verified. Capture is pending, please refresh status shortly.',
+              ),
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
       }
     } catch (e) {
+      await _refreshOrderStatuses();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Payment received but verification failed. Credits will be added shortly.',
+              'Payment received but verification is still pending. Please refresh status.',
             ),
             duration: Duration(seconds: 5),
           ),
         );
-        widget.onPurchaseComplete();
       }
     } finally {
       if (mounted) setState(() => _purchasingPackId = null);
@@ -391,7 +446,12 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
 
   void _handlePaymentError(PaymentFailureResponse response) {
     if (mounted) {
-      setState(() => _purchasingPackId = null);
+      setState(() {
+        _purchasingPackId = null;
+        _statusBannerMessage =
+            'Payment failed. You can retry checkout when ready.';
+      });
+      unawaited(_refreshOrderStatuses());
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Payment failed. Try again.'),
@@ -403,6 +463,24 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
 
   void _handleExternalWallet(ExternalWalletResponse response) {
     // External wallet selected — Razorpay handles the flow
+  }
+
+  BillingOrderStatusItem? get _latestPendingOrder {
+    for (final order in _recentOrders) {
+      if (order.isAwaitingCapture) {
+        return order;
+      }
+    }
+    return null;
+  }
+
+  BillingOrderStatusItem? get _latestFailedOrder {
+    for (final order in _recentOrders) {
+      if (order.canRetry) {
+        return order;
+      }
+    }
+    return null;
   }
 
   @override
@@ -458,16 +536,21 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
       );
     }
 
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.all(16),
-      itemCount: packs.length,
-      itemBuilder: (context, index) => _buildPackCard(theme, packs[index]),
+      children: [
+        if (_latestPendingOrder != null ||
+            _latestFailedOrder != null ||
+            _statusBannerMessage != null)
+          _buildStatusBanner(theme),
+        ...packs.map((pack) => _buildPackCard(theme, pack)),
+      ],
     );
   }
 
   Widget _buildPackCard(ThemeData theme, CreditPack pack) {
     final isPurchasing = _purchasingPackId == pack.id;
-    final isDisabled = _purchasingPackId != null;
+    final isDisabled = _purchasingPackId != null || _latestPendingOrder != null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -520,5 +603,83 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildStatusBanner(ThemeData theme) {
+    final pending = _latestPendingOrder;
+    final failed = _latestFailedOrder;
+    final isPending = pending != null;
+    final heading = isPending ? 'Awaiting capture' : 'Last payment failed';
+    final description =
+        _statusBannerMessage ??
+        (isPending
+            ? 'Order ${_shortOrderId(pending.razorpayOrderId)} is waiting for Razorpay capture. Buying is paused until reconciliation.'
+            : failed?.failureReason ?? 'You can retry checkout safely.');
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      color: isPending
+          ? theme.colorScheme.secondaryContainer
+          : theme.colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                if (isPending)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  Icon(
+                    Icons.error_outline,
+                    color: theme.colorScheme.onErrorContainer,
+                  ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    heading,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(description),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                OutlinedButton(
+                  onPressed: _refreshingStatuses ? null : _refreshOrderStatuses,
+                  child: const Text('Refresh status'),
+                ),
+                if (!isPending)
+                  FilledButton.tonal(
+                    onPressed: () {
+                      final packs = _packs ?? [];
+                      if (packs.isNotEmpty) {
+                        _openCheckoutSheet(packs.first);
+                      }
+                    },
+                    child: const Text('Retry payment'),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _shortOrderId(String orderId) {
+    if (orderId.length <= 8) return orderId;
+    return orderId.substring(0, 8);
   }
 }

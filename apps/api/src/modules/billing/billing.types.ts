@@ -2,9 +2,14 @@ import {
   IsIn,
   IsNotEmpty,
   IsOptional,
+  IsInt,
+  Max,
+  Min,
   IsString,
   IsUUID,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import type { OrderEntity } from '../../database/entities/order.entity';
 
 export const BILLING_PACK_NOT_FOUND = 'BILLING_PACK_NOT_FOUND';
 export const BILLING_PACK_INACTIVE = 'BILLING_PACK_INACTIVE';
@@ -73,7 +78,17 @@ export interface CreateOrderResponseDto {
 
 export interface VerifyPaymentResponseDto {
   creditsAdded: number;
+  orderStatus: OrderStatus;
   entitlementSummary: object;
+}
+
+export class ListOrdersQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  limit?: number;
 }
 
 export class CreateSubscriptionDto {
@@ -140,4 +155,70 @@ export interface PromoValidationResponseDto {
   finalAmount: number;
   currency: string;
   promoCodeId: string;
+}
+
+export interface OrderStatusDto {
+  id: string;
+  status: OrderStatus;
+  statusLabel: string;
+  finalAmount: number;
+  currency: string;
+  credited: boolean;
+  razorpayOrderId: string;
+  updatedAt: string;
+  failureReason: string | null;
+}
+
+export function toOrderStatusDto(order: OrderEntity): OrderStatusDto {
+  const status = normalizeOrderStatus(order.status);
+
+  return {
+    id: order.id,
+    status,
+    statusLabel: orderStatusLabel(status),
+    finalAmount: parseFloat(order.finalAmount ?? order.amount),
+    currency: order.currency,
+    credited: order.credited,
+    razorpayOrderId: order.razorpayOrderId,
+    updatedAt: order.updatedAt.toISOString(),
+    failureReason: orderFailureReason(order.metadata),
+  };
+}
+
+function normalizeOrderStatus(status: string): OrderStatus {
+  if (
+    status === 'pending' ||
+    status === 'paid' ||
+    status === 'reconciled' ||
+    status === 'failed'
+  ) {
+    return status;
+  }
+  return 'pending';
+}
+
+function orderStatusLabel(status: OrderStatus): string {
+  switch (status) {
+    case 'pending':
+      return 'Pending payment';
+    case 'paid':
+      return 'Payment pending - awaiting Razorpay capture';
+    case 'reconciled':
+      return 'Reconciled';
+    case 'failed':
+      return 'Payment failed';
+  }
+}
+
+function orderFailureReason(
+  metadata: Record<string, unknown> | null,
+): string | null {
+  if (!metadata) {
+    return null;
+  }
+
+  const reason = metadata['reason'];
+  return typeof reason === 'string' && reason.trim().length > 0
+    ? reason.trim()
+    : null;
 }

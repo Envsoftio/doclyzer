@@ -85,11 +85,44 @@ class PromoValidationResult {
 class VerifyPaymentResult {
   const VerifyPaymentResult({
     required this.creditsAdded,
+    required this.orderStatus,
     required this.entitlementSummary,
   });
 
   final int creditsAdded;
+  final BillingOrderStatus orderStatus;
   final EntitlementSummary entitlementSummary;
+}
+
+enum BillingOrderStatus { pending, paid, reconciled, failed }
+
+class BillingOrderStatusItem {
+  const BillingOrderStatusItem({
+    required this.id,
+    required this.status,
+    required this.statusLabel,
+    required this.finalAmount,
+    required this.currency,
+    required this.credited,
+    required this.razorpayOrderId,
+    required this.updatedAt,
+    this.failureReason,
+  });
+
+  final String id;
+  final BillingOrderStatus status;
+  final String statusLabel;
+  final double finalAmount;
+  final String currency;
+  final bool credited;
+  final String razorpayOrderId;
+  final DateTime updatedAt;
+  final String? failureReason;
+
+  bool get isAwaitingCapture =>
+      status == BillingOrderStatus.pending || status == BillingOrderStatus.paid;
+  bool get canRetry => status == BillingOrderStatus.failed;
+  bool get isReconciled => status == BillingOrderStatus.reconciled;
 }
 
 class Plan {
@@ -137,12 +170,16 @@ class VerifySubscriptionResult {
 abstract class BillingRepository {
   Future<EntitlementSummary> getEntitlementSummary();
   Future<List<CreditPack>> listCreditPacks();
-  Future<CreateOrderResult> createOrder(String creditPackId, {String? promoCode});
+  Future<CreateOrderResult> createOrder(
+    String creditPackId, {
+    String? promoCode,
+  });
   Future<VerifyPaymentResult> verifyPayment(
     String razorpayOrderId,
     String razorpayPaymentId,
     String razorpaySignature,
   );
+  Future<List<BillingOrderStatusItem>> listRecentOrders({int limit = 5});
   Future<PromoValidationResult> validatePromoCode({
     required String promoCode,
     required String productType,
