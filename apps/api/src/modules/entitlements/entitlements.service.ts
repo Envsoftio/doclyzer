@@ -1,14 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { PlanEntity } from '../../database/entities/plan.entity';
+import { PlanConfigAuditEventEntity } from '../../database/entities/plan-config-audit-event.entity';
 import { UserEntitlementEntity } from '../../database/entities/user-entitlement.entity';
 import type { PlanLimits } from '../../database/entities/plan.entity';
-import type { EntitlementSummaryDto, PlanTier } from './entitlements.types';
+import type {
+  EntitlementSummaryDto,
+  PlanConfigRecalculationDto,
+  PlanConfigSummaryDto,
+  PlanTier,
+} from './entitlements.types';
+import { PLAN_CONFIG_VERSION_CONFLICT } from './entitlements.types';
+import type { UpdatePlanConfigDto } from './entitlements.dto';
+import { PlanConfigNotFoundException } from './exceptions/plan-config-not-found.exception';
+import { PlanConfigValidationException } from './exceptions/plan-config-validation.exception';
+import { PlanConfigVersionConflictException } from './exceptions/plan-config-version-conflict.exception';
 
 @Injectable()
 export class EntitlementsService {
+  private readonly logger = new Logger(EntitlementsService.name);
+
   constructor(
     private readonly configService: ConfigService,
     @InjectRepository(PlanEntity)
@@ -108,6 +121,138 @@ export class EntitlementsService {
   }
 
   /**
+   * Lists plan configurations for superadmin management.
+   */
+  async listPlanConfigurations(): Promise<PlanConfigSummaryDto[]> {
+    const plans = await this.planRepo.find({
+      order: { createdAt: 'ASC' },
+    });
+    return plans.map((plan) => this.toPlanConfigSummary(plan));
+  }
+
+  /**
+   * Updates plan limits with optimistic locking, deterministic no-op semantics,
+   * and versioned audit traces for governance.
+   */
+  async updatePlanConfiguration(input: {
+    actorUserId: string;
+    planId: string;
+    dto: UpdatePlanConfigDto;
+    correlationId: string;
+  }): Promise<{
+    plan: PlanConfigSummaryDto;
+    recalculation: PlanConfigRecalculationDto;
+    state: 'pending' | 'success' | 'failure' | 'reverted';
+  }> {
+    return this.planRepo.manager.transaction(async (manager) => {
+      const repo = manager.getRepository(PlanEntity);
+
+      const plan = await repo
+        .createQueryBuilder('plan')
+        .setLock('pessimistic_write')
+        .where('plan.id = :planId', { planId: input.planId })
+        .getOne();
+
+      if (!plan) {
+        throw new PlanConfigNotFoundException(input.planId);
+      }
+
+      this.validatePlanLimits(input.dto);
+
+      const previousVersion = plan.configVersion;
+      if (
+        input.dto.expectedConfigVersion !== undefined &&
+        input.dto.expectedConfigVersion !== previousVersion
+      ) {
+        await this.recordPlanConfigAudit({
+          manager,
+          actorUserId: input.actorUserId,
+          planId: plan.id,
+          action: 'PLAN_CONFIG_UPDATE',
+          target: `plan:${plan.id}`,
+          outcome: 'reverted',
+          correlationId: input.correlationId,
+          previousConfigVersion: previousVersion,
+          newConfigVersion: previousVersion,
+          errorCode: PLAN_CONFIG_VERSION_CONFLICT,
+          metadata: {
+            expectedConfigVersion: input.dto.expectedConfigVersion,
+            actualConfigVersion: previousVersion,
+          },
+        });
+
+        throw new PlanConfigVersionConflictException(
+          input.dto.expectedConfigVersion,
+          previousVersion,
+        );
+      }
+
+      const nextLimits = this.toPlanLimits(input.dto);
+      const limitsChanged = !this.sameLimits(plan.limits, nextLimits);
+
+      if (!limitsChanged) {
+        const recalculation = this.buildRecalculationDescriptor(
+          previousVersion,
+          previousVersion,
+        );
+        await this.recordPlanConfigAudit({
+          manager,
+          actorUserId: input.actorUserId,
+          planId: plan.id,
+          action: 'PLAN_CONFIG_UPDATE',
+          target: `plan:${plan.id}`,
+          outcome: 'success',
+          correlationId: input.correlationId,
+          previousConfigVersion: previousVersion,
+          newConfigVersion: previousVersion,
+          metadata: {
+            noOp: true,
+            deterministic: true,
+          },
+        });
+
+        return {
+          plan: this.toPlanConfigSummary(plan),
+          recalculation,
+          state: 'success',
+        };
+      }
+
+      plan.limits = nextLimits;
+      const saved = await repo.save(plan);
+
+      const recalculation = this.buildRecalculationDescriptor(
+        previousVersion,
+        saved.configVersion,
+      );
+
+      await this.recordPlanConfigAudit({
+        manager,
+        actorUserId: input.actorUserId,
+        planId: saved.id,
+        action: 'PLAN_CONFIG_UPDATE',
+        target: `plan:${saved.id}`,
+        outcome: 'success',
+        correlationId: input.correlationId,
+        previousConfigVersion: previousVersion,
+        newConfigVersion: saved.configVersion,
+        metadata: {
+          maxProfilesPerPlan: nextLimits.maxProfiles,
+          reportCap: nextLimits.maxReports,
+          shareLinkLimit: nextLimits.maxShareLinks,
+          aiChatEnabled: nextLimits.aiChatEnabled,
+        },
+      });
+
+      return {
+        plan: this.toPlanConfigSummary(saved),
+        recalculation,
+        state: 'success',
+      };
+    });
+  }
+
+  /**
    * Upgrades user's plan. Does NOT reset credit balance.
    */
   async upgradePlan(
@@ -171,5 +316,118 @@ export class EntitlementsService {
       where: { id: saved.id },
     });
     return reloaded;
+  }
+
+  private validatePlanLimits(dto: UpdatePlanConfigDto): void {
+    if (dto.maxProfilesPerPlan < 1) {
+      throw new PlanConfigValidationException(
+        'maxProfilesPerPlan must be at least 1',
+      );
+    }
+
+    if (dto.reportCap < 1) {
+      throw new PlanConfigValidationException('reportCap must be at least 1');
+    }
+
+    if (dto.shareLinkLimit < 0) {
+      throw new PlanConfigValidationException(
+        'shareLinkLimit must be zero or greater',
+      );
+    }
+  }
+
+  private toPlanLimits(dto: UpdatePlanConfigDto): PlanLimits {
+    return {
+      maxProfiles: dto.maxProfilesPerPlan,
+      maxReports: dto.reportCap,
+      maxShareLinks: dto.shareLinkLimit,
+      aiChatEnabled: dto.aiChatEnabled,
+    };
+  }
+
+  private sameLimits(left: PlanLimits, right: PlanLimits): boolean {
+    return (
+      left.maxProfiles === right.maxProfiles &&
+      left.maxReports === right.maxReports &&
+      left.maxShareLinks === right.maxShareLinks &&
+      left.aiChatEnabled === right.aiChatEnabled
+    );
+  }
+
+  private toPlanConfigSummary(plan: PlanEntity): PlanConfigSummaryDto {
+    return {
+      planId: plan.id,
+      planName: plan.name,
+      tier: plan.tier as PlanTier,
+      isActive: plan.isActive,
+      configVersion: plan.configVersion,
+      limits: {
+        maxProfilesPerPlan: plan.limits.maxProfiles,
+        reportCap: plan.limits.maxReports,
+        shareLinkLimit: plan.limits.maxShareLinks,
+        aiChatEnabled: plan.limits.aiChatEnabled,
+      },
+      updatedAt: plan.updatedAt.toISOString(),
+    };
+  }
+
+  private buildRecalculationDescriptor(
+    previousConfigVersion: number,
+    newConfigVersion: number,
+  ): PlanConfigRecalculationDto {
+    return {
+      mode: 'deterministic_non_destructive',
+      backwardCompatible: true,
+      previousConfigVersion,
+      newConfigVersion,
+      impact: {
+        activeEntitlementsUnaffected: true,
+        enforcementOnNewOperationsOnly: true,
+      },
+    };
+  }
+
+  private async recordPlanConfigAudit(input: {
+    manager: EntityManager;
+    actorUserId: string;
+    planId: string;
+    action: string;
+    target: string;
+    outcome: 'success' | 'failure' | 'denied' | 'reverted';
+    correlationId: string;
+    previousConfigVersion: number;
+    newConfigVersion: number;
+    errorCode?: string;
+    metadata?: Record<string, string | number | boolean | null>;
+  }): Promise<void> {
+    const auditRepo = input.manager.getRepository(PlanConfigAuditEventEntity);
+    await auditRepo.save(
+      auditRepo.create({
+        actorUserId: input.actorUserId,
+        planId: input.planId,
+        action: input.action,
+        target: input.target,
+        outcome: input.outcome,
+        correlationId: input.correlationId,
+        previousConfigVersion: input.previousConfigVersion,
+        newConfigVersion: input.newConfigVersion,
+        errorCode: input.errorCode ?? null,
+        metadata: input.metadata ?? null,
+      }),
+    );
+
+    this.logger.log(
+      JSON.stringify({
+        action: input.action,
+        target: input.target,
+        outcome: input.outcome,
+        correlationId: input.correlationId,
+        actorUserId: input.actorUserId,
+        planId: input.planId,
+        previousConfigVersion: input.previousConfigVersion,
+        newConfigVersion: input.newConfigVersion,
+        errorCode: input.errorCode,
+      }),
+    );
   }
 }

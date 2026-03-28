@@ -38,7 +38,7 @@ project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
-last_updated: 2026-03-29 06:02  # 4-6 moved to review
+last_updated: 2026-03-29 11:10  # 5-2 moved to review
 
 development_status:
   epic-0: in-progress
@@ -105,7 +105,7 @@ development_status:
 
   epic-5: in-progress
   5-1-superadmin-authentication-hardening-mfa-role-guard-baseline: review
-  5-2-plan-definition-and-limit-configuration-management: ready-for-dev
+  5-2-plan-definition-and-limit-configuration-management: review
   5-3-promo-code-crud-and-lifecycle-management: ready-for-dev
   5-4-promo-redemption-and-revenue-impact-analytics: ready-for-dev
   5-5-core-product-analytics-dashboard-signups-usage-monetization-behavior: ready-for-dev

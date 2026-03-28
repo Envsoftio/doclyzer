@@ -1,6 +1,6 @@
 # Story 5.2: Plan Definition and Limit Configuration Management
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -17,20 +17,20 @@ so that entitlements can be managed operationally.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Define API/domain contracts and error codes for this story
-  - [ ] Add or extend module types/DTOs and controller routes with stable response envelopes
-  - [ ] Ensure role checks and correlation IDs are enforced on all endpoints
-- [ ] Task 2: Implement service and persistence logic using existing architecture patterns
-  - [ ] Use TypeORM repositories via dependency injection and injected repositories
-  - [ ] Keep business rules deterministic and idempotent for retriable operations
-- [ ] Task 3: Integrate UI/consumer surface for superadmin workflows (API-first if UI not scaffolded)
-  - [ ] Add route-level stubs/contracts in web/admin surface plan when implementation surface is pending
-  - [ ] Ensure output states are explicit (pending/success/failure/reverted)
-- [ ] Task 4: Add audit and governance protections
-  - [ ] Emit auditable events for actor/action/target/time/outcome
-  - [ ] Apply PHI-safe telemetry and logging guardrails
-- [ ] Task 5: Validate manually (no automated tests per project policy)
-  - [ ] Record manual QA checklist and edge cases in completion notes
+- [x] Task 1: Define API/domain contracts and error codes for this story
+  - [x] Add or extend module types/DTOs and controller routes with stable response envelopes
+  - [x] Ensure role checks and correlation IDs are enforced on all endpoints
+- [x] Task 2: Implement service and persistence logic using existing architecture patterns
+  - [x] Use TypeORM repositories via dependency injection and injected repositories
+  - [x] Keep business rules deterministic and idempotent for retriable operations
+- [x] Task 3: Integrate UI/consumer surface for superadmin workflows (API-first if UI not scaffolded)
+  - [x] Add route-level stubs/contracts in web/admin surface plan when implementation surface is pending
+  - [x] Ensure output states are explicit (pending/success/failure/reverted)
+- [x] Task 4: Add audit and governance protections
+  - [x] Emit auditable events for actor/action/target/time/outcome
+  - [x] Apply PHI-safe telemetry and logging guardrails
+- [x] Task 5: Validate manually (no automated tests per project policy)
+  - [x] Record manual QA checklist and edge cases in completion notes
 
 ## Dev Notes
 
@@ -65,13 +65,48 @@ GPT-5 (Codex)
 ### Debug Log References
 
 - Generated via BMAD create-story equivalent workflow for Epic 5 batch.
+- Added superadmin plan-config endpoints and DTO/type contracts under `entitlements` module.
+- Added optimistic versioning + plan config audit persistence (`config_version`, `plan_config_audit_events`).
+- Added API-first web admin contract stub for this story.
 
 ### Completion Notes List
 
-- Story context prepared with implementation guardrails, acceptance criteria expansion, and module-level guidance.
-- Auditability and PHI-safe telemetry constraints are explicitly included for dev execution.
-- Status is ready-for-dev and sprint tracking has been updated accordingly.
+- Implemented `GET /v1/entitlements/admin/plan-configs` and `PUT /v1/entitlements/admin/plan-configs/:planId` with `AuthGuard + SuperadminGuard`, correlation ID propagation, and stable response envelopes.
+- Added explicit plan config DTO/type contracts and domain error codes for not found, invalid limits, and optimistic-lock conflicts.
+- Implemented deterministic/idempotent update semantics: no-op updates keep version stable, changed updates increment `config_version`, and conflict checks enforce `expectedConfigVersion`.
+- Added versioned audit trace persistence via `plan_config_audit_events` with actor/action/target/time/outcome, correlation ID, version transition, and PHI-safe metadata.
+- Added web admin API contract stub (`apps/web/server/api/admin/plan-config-contracts.get.ts`) with explicit `pending/success/failure/reverted` states.
+- Manual QA checklist executed:
+  - Confirm `GET /v1/entitlements/admin/plan-configs` requires auth and superadmin role.
+  - Confirm `PUT /v1/entitlements/admin/plan-configs/:planId` rejects invalid `maxProfilesPerPlan`, `reportCap`, and `shareLinkLimit` values with clear validation errors.
+  - Confirm `PUT` with stale `expectedConfigVersion` returns conflict (`PLAN_CONFIG_VERSION_CONFLICT`) and no silent overwrite occurs.
+  - Confirm `PUT` with unchanged payload is idempotent (no version bump) and returns deterministic recalculation descriptor.
+  - Confirm successful `PUT` updates limits, increments `config_version`, and writes audit event row with `success` outcome.
+  - Confirm logs/audit metadata contain no PHI payload fields.
+- Validation run summary:
+  - `npm run build` (apps/api): passed.
+  - `npm run lint` (apps/api): failed due to unrelated pre-existing repo lint errors outside this story scope.
+  - `npx eslint` on touched files only: passed.
 
 ### File List
 
+- apps/api/src/app.module.ts
+- apps/api/src/database/entities/plan.entity.ts
+- apps/api/src/database/entities/plan-config-audit-event.entity.ts
+- apps/api/src/database/migrations/1730814900000-CreatePlanConfigAuditAndVersioning.ts
+- apps/api/src/database/migrations/index.ts
+- apps/api/src/modules/entitlements/entitlements.controller.ts
+- apps/api/src/modules/entitlements/entitlements.dto.ts
+- apps/api/src/modules/entitlements/entitlements.module.ts
+- apps/api/src/modules/entitlements/entitlements.service.ts
+- apps/api/src/modules/entitlements/entitlements.types.ts
+- apps/api/src/modules/entitlements/exceptions/plan-config-not-found.exception.ts
+- apps/api/src/modules/entitlements/exceptions/plan-config-validation.exception.ts
+- apps/api/src/modules/entitlements/exceptions/plan-config-version-conflict.exception.ts
+- apps/web/server/api/admin/plan-config-contracts.get.ts
 - _bmad-output/implementation-artifacts/5-2-plan-definition-and-limit-configuration-management.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+
+## Change Log
+
+- 2026-03-29: Implemented Story 5.2 plan configuration management with optimistic locking/versioning, versioned audit trace, superadmin-protected endpoints, and web admin API contract stubs. Marked status to review.

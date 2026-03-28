@@ -19,6 +19,7 @@ import { UserSharePolicyEntity } from './database/entities/user-share-policy.ent
 import { CreditPackEntity } from './database/entities/credit-pack.entity';
 import { OrderEntity } from './database/entities/order.entity';
 import { PlanEntity } from './database/entities/plan.entity';
+import { PlanConfigAuditEventEntity } from './database/entities/plan-config-audit-event.entity';
 import { PromoCodeEntity } from './database/entities/promo-code.entity';
 import { PromoRedemptionEntity } from './database/entities/promo-redemption.entity';
 import { SubscriptionEntity } from './database/entities/subscription.entity';
@@ -51,6 +52,7 @@ const typeOrmEntities = [
   ShareLinkEntity,
   UserSharePolicyEntity,
   PlanEntity,
+  PlanConfigAuditEventEntity,
   UserEntitlementEntity,
   CreditPackEntity,
   OrderEntity,

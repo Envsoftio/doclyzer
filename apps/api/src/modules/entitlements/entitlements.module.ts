@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PlanEntity } from '../../database/entities/plan.entity';
+import { PlanConfigAuditEventEntity } from '../../database/entities/plan-config-audit-event.entity';
 import { ReportEntity } from '../../database/entities/report.entity';
 import { ShareLinkEntity } from '../../database/entities/share-link.entity';
 import { UserEntitlementEntity } from '../../database/entities/user-entitlement.entity';
@@ -13,6 +14,7 @@ import { UsageLimitsService } from './usage-limits.service';
   imports: [
     TypeOrmModule.forFeature([
       PlanEntity,
+      PlanConfigAuditEventEntity,
       UserEntitlementEntity,
       ReportEntity,
       ShareLinkEntity,
