@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddContentHashToReports1730813300000
-  implements MigrationInterface
-{
+export class AddContentHashToReports1730813300000 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       ALTER TABLE "reports"

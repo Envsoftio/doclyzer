@@ -14,7 +14,7 @@ export class CreateShareAccessEventsTable1730814100000 implements MigrationInter
       )
     `);
     await queryRunner.query(
-      `CREATE INDEX "IDX_share_access_events_share_link_id" ON "share_access_events" ("share_link_id")`
+      `CREATE INDEX "IDX_share_access_events_share_link_id" ON "share_access_events" ("share_link_id")`,
     );
   }
 

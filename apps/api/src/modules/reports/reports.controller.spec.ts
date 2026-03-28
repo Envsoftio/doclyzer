@@ -291,7 +291,10 @@ describe('ReportsController', () => {
     it('delegates to service without profileId when query param omitted', async () => {
       await controller.listReports(undefined, makeReq());
 
-      expect(reportsService.listReports).toHaveBeenCalledWith('user-1', undefined);
+      expect(reportsService.listReports).toHaveBeenCalledWith(
+        'user-1',
+        undefined,
+      );
     });
 
     it('propagates when service throws (e.g. profile not found)', async () => {
@@ -336,7 +339,9 @@ describe('ReportsController', () => {
       reportsService.getReportFile.mockRejectedValueOnce(
         new ReportNotFoundException(),
       );
-      const res = { setHeader: jest.fn() } as unknown as import('express').Response;
+      const res = {
+        setHeader: jest.fn(),
+      } as unknown as import('express').Response;
 
       await expect(
         controller.getReportFile(validReportId, makeReq(), res),

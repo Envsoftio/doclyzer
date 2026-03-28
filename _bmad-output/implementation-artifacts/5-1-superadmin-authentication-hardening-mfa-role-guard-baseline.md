@@ -1,6 +1,6 @@
 # Story 5.1: Superadmin Authentication Hardening (MFA + Role Guard Baseline)
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -17,20 +17,20 @@ so that admin operations are protected.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Define API/domain contracts and error codes for this story
-  - [ ] Add or extend module types/DTOs and controller routes with stable response envelopes
-  - [ ] Ensure role checks and correlation IDs are enforced on all endpoints
-- [ ] Task 2: Implement service and persistence logic using existing architecture patterns
-  - [ ] Use TypeORM repositories via dependency injection and injected repositories
-  - [ ] Keep business rules deterministic and idempotent for retriable operations
-- [ ] Task 3: Integrate UI/consumer surface for superadmin workflows (API-first if UI not scaffolded)
-  - [ ] Add route-level stubs/contracts in web/admin surface plan when implementation surface is pending
-  - [ ] Ensure output states are explicit (pending/success/failure/reverted)
-- [ ] Task 4: Add audit and governance protections
-  - [ ] Emit auditable events for actor/action/target/time/outcome
-  - [ ] Apply PHI-safe telemetry and logging guardrails
-- [ ] Task 5: Validate manually (no automated tests per project policy)
-  - [ ] Record manual QA checklist and edge cases in completion notes
+- [x] Task 1: Define API/domain contracts and error codes for this story
+  - [x] Add or extend module types/DTOs and controller routes with stable response envelopes
+  - [x] Ensure role checks and correlation IDs are enforced on all endpoints
+- [x] Task 2: Implement service and persistence logic using existing architecture patterns
+  - [x] Use TypeORM repositories via dependency injection and injected repositories
+  - [x] Keep business rules deterministic and idempotent for retriable operations
+- [x] Task 3: Integrate UI/consumer surface for superadmin workflows (API-first if UI not scaffolded)
+  - [x] Add route-level stubs/contracts in web/admin surface plan when implementation surface is pending
+  - [x] Ensure output states are explicit (pending/success/failure/reverted)
+- [x] Task 4: Add audit and governance protections
+  - [x] Emit auditable events for actor/action/target/time/outcome
+  - [x] Apply PHI-safe telemetry and logging guardrails
+- [x] Task 5: Validate manually (no automated tests per project policy)
+  - [x] Record manual QA checklist and edge cases in completion notes
 
 ## Dev Notes
 
@@ -64,14 +64,53 @@ GPT-5 (Codex)
 
 ### Debug Log References
 
-- Generated via BMAD create-story equivalent workflow for Epic 5 batch.
+- `npm run build` (apps/api) passed after implementation updates.
+- `npx eslint ...` focused lint run for touched API files passed.
+- `npm run build` (apps/web) passed with superadmin contract stub route.
+- `npm run lint` (apps/api full) reports pre-existing unrelated lint violations outside this story scope.
 
 ### Completion Notes List
 
-- Story context prepared with implementation guardrails, acceptance criteria expansion, and module-level guidance.
-- Auditability and PHI-safe telemetry constraints are explicitly included for dev execution.
-- Status is ready-for-dev and sprint tracking has been updated accordingly.
+- Implemented new superadmin elevation API routes: `/v1/auth/superadmin/elevation/challenge`, `/v1/auth/superadmin/elevation/verify`, and `/v1/auth/superadmin/elevation/token`.
+- Added strict superadmin role guard (`AUTHZ_SUPERADMIN_REQUIRED`) and stable MFA error codes for challenge-required, invalid-code, lockout, and re-challenge-required outcomes.
+- Added persistence layer for deterministic MFA challenge lifecycle and lockout/retry controls via `superadmin_mfa_challenges` (TypeORM entity + migration).
+- Added auditable governance event persistence via `superadmin_auth_audit_events` with actor/action/target/time/outcome fields and PHI-safe metadata-only logging.
+- Added API-first web admin stub contract route (`/api/admin/superadmin-auth-contracts`) with explicit `pending/success/failure/reverted` states.
+- Manual QA checklist:
+  - Build validation: API build passed, web build passed.
+  - Executed endpoint flow with live server:
+    - Non-superadmin challenge call returned `403 AUTHZ_SUPERADMIN_REQUIRED`.
+    - Superadmin challenge call returned `200` with challenge ID.
+    - Wrong MFA code returned `401 AUTH_MFA_INVALID_CODE`.
+    - Correct MFA code returned `200` with `state=success`.
+    - Token issuance after successful challenge returned `200` with admin action token.
+    - Risk posture change (`x-risk-posture: high-risk`) returned `401 AUTH_MFA_CHALLENGE_REQUIRED`.
+    - Lockout test (5 invalid attempts) returned `429 AUTH_MFA_LOCKED` on attempt 5.
+  - Database migration validation: `CreateSuperadminMfaAndAuditTables1730814800000` present in `migrations` table.
+- Edge cases tracked:
+  - Missing/unknown `currentSessionId` falls back to `unknown-session`; challenge remains bound and deterministic for retry.
+  - Repeated challenge creation with same active risk/session returns existing pending challenge for idempotent retries.
 
 ### File List
 
+- .env
+- .env.example
 - _bmad-output/implementation-artifacts/5-1-superadmin-authentication-hardening-mfa-role-guard-baseline.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- apps/api/src/app.module.ts
+- apps/api/src/database/entities/superadmin-auth-audit-event.entity.ts
+- apps/api/src/database/entities/superadmin-mfa-challenge.entity.ts
+- apps/api/src/database/migrations/1730814800000-CreateSuperadminMfaAndAuditTables.ts
+- apps/api/src/database/migrations/index.ts
+- apps/api/src/modules/auth/auth.dto.ts
+- apps/api/src/modules/auth/auth.module.ts
+- apps/api/src/modules/auth/auth.types.ts
+- apps/api/src/modules/auth/superadmin-auth.controller.ts
+- apps/api/src/modules/auth/superadmin-auth.service.ts
+- apps/api/src/modules/auth/superadmin.guard.ts
+- apps/web/app/pages/admin/index.vue
+- apps/web/server/api/admin/superadmin-auth-contracts.get.ts
+
+## Change Log
+
+- 2026-03-29: Implemented Story 5.1 baseline for superadmin MFA hardening, role guard enforcement, auditable events, and API-first web contract stubs.

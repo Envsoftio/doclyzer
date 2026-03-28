@@ -14,7 +14,13 @@ import { SharingService } from './sharing.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ShareLinkEntity, UserSharePolicyEntity, ReportEntity, ReportLabValueEntity, ShareAccessEventEntity]),
+    TypeOrmModule.forFeature([
+      ShareLinkEntity,
+      UserSharePolicyEntity,
+      ReportEntity,
+      ReportLabValueEntity,
+      ShareAccessEventEntity,
+    ]),
     AuthModule,
     EntitlementsModule,
     ProfilesModule,

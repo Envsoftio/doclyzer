@@ -38,3 +38,19 @@ export class ResetPasswordDto {
   @IsNotEmpty({ message: 'New password is required' })
   newPassword!: string;
 }
+
+export class SuperadminMfaVerifyDto {
+  @IsString()
+  @IsNotEmpty()
+  challengeId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  mfaCode!: string;
+}
+
+export class SuperadminAdminActionTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  challengeId!: string;
+}

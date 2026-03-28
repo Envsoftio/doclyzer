@@ -22,7 +22,12 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 255, unique: true })
   email!: string;
 
-  @Column({ type: 'varchar', length: 255, name: 'password_hash', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'password_hash',
+    nullable: true,
+  })
   passwordHash!: string | null;
 
   @Column({

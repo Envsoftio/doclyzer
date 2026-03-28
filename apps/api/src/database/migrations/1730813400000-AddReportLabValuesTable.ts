@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddReportLabValuesTable1730813400000
-  implements MigrationInterface
-{
+export class AddReportLabValuesTable1730813400000 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       CREATE TABLE "report_lab_values" (

@@ -24,6 +24,8 @@ import { PromoRedemptionEntity } from './database/entities/promo-redemption.enti
 import { SubscriptionEntity } from './database/entities/subscription.entity';
 import { UserEntitlementEntity } from './database/entities/user-entitlement.entity';
 import { SessionEntity } from './database/entities/session.entity';
+import { SuperadminAuthAuditEventEntity } from './database/entities/superadmin-auth-audit-event.entity';
+import { SuperadminMfaChallengeEntity } from './database/entities/superadmin-mfa-challenge.entity';
 import { UserEntity } from './database/entities/user.entity';
 import { migrations } from './database/migrations';
 import { AccountModule } from './modules/account/account.module';
@@ -55,6 +57,8 @@ const typeOrmEntities = [
   PromoCodeEntity,
   PromoRedemptionEntity,
   SubscriptionEntity,
+  SuperadminMfaChallengeEntity,
+  SuperadminAuthAuditEventEntity,
 ];
 
 @Module({

@@ -226,8 +226,7 @@ export class BillingService {
         .createQueryBuilder()
         .update(UserEntitlementEntity)
         .set({
-          creditBalance: () =>
-            `credit_balance + ${order.creditPack.credits}`,
+          creditBalance: () => `credit_balance + ${order.creditPack.credits}`,
         })
         .where('user_id = :userId', { userId })
         .execute();
@@ -276,8 +275,7 @@ export class BillingService {
           .createQueryBuilder()
           .update(UserEntitlementEntity)
           .set({
-            creditBalance: () =>
-              `credit_balance + ${order.creditPack.credits}`,
+            creditBalance: () => `credit_balance + ${order.creditPack.credits}`,
           })
           .where('user_id = :userId', { userId: order.userId })
           .execute();

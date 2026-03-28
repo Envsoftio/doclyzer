@@ -134,7 +134,10 @@ export class BillingController {
         ? (req as { rawBody?: Buffer }).rawBody!.toString()
         : JSON.stringify(req.body);
 
-    if (!signature || !this.razorpayService.verifyWebhookSignature(rawBody, signature)) {
+    if (
+      !signature ||
+      !this.razorpayService.verifyWebhookSignature(rawBody, signature)
+    ) {
       throw new BadRequestException({
         code: BILLING_WEBHOOK_INVALID_SIGNATURE,
         message: 'Invalid webhook signature',
@@ -160,17 +163,14 @@ export class BillingController {
     this.logger.log(`Webhook event received: ${event}`);
 
     if (event === 'payment.captured') {
-      const razorpayOrderId =
-        payload.payload.payment?.entity?.order_id ?? '';
-      const razorpayPaymentId =
-        payload.payload.payment?.entity?.id ?? '';
+      const razorpayOrderId = payload.payload.payment?.entity?.order_id ?? '';
+      const razorpayPaymentId = payload.payload.payment?.entity?.id ?? '';
       await this.billingService.handleWebhookPaymentCaptured(
         razorpayOrderId,
         razorpayPaymentId,
       );
     } else if (event === 'payment.failed') {
-      const razorpayOrderId =
-        payload.payload.payment?.entity?.order_id ?? '';
+      const razorpayOrderId = payload.payload.payment?.entity?.order_id ?? '';
       await this.billingService.handleWebhookPaymentFailed(razorpayOrderId);
     } else if (event === 'subscription.activated') {
       const subId = payload.payload.subscription?.entity?.id ?? '';

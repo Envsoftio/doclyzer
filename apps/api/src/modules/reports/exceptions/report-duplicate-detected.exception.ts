@@ -6,8 +6,7 @@ export class ReportDuplicateDetectedException extends ConflictException {
   constructor(existingReport: DuplicateReportInfo) {
     super({
       code: REPORT_DUPLICATE_DETECTED,
-      message:
-        'A report with the same content already exists in this profile.',
+      message: 'A report with the same content already exists in this profile.',
       existingReport,
     });
   }

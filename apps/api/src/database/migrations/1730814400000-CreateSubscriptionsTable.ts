@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateSubscriptionsTable1730814400000
-  implements MigrationInterface
-{
+export class CreateSubscriptionsTable1730814400000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Add razorpay_plan_id column to plans table
     await queryRunner.query(

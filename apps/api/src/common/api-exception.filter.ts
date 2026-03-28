@@ -23,7 +23,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     let status: number = HttpStatus.INTERNAL_SERVER_ERROR;
     let code = 'INTERNAL_ERROR';
     let message = 'An unexpected error occurred';
-    let extraKeys: Record<string, unknown> = {};
+    const extraKeys: Record<string, unknown> = {};
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();

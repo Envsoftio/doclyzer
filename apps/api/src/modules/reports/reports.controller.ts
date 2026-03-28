@@ -122,7 +122,7 @@ export class ReportsController {
       file.mimetype === 'application/octet-stream' &&
       /\.pdf$/i.test(file.originalname ?? '')
         ? 'application/pdf'
-        : file.mimetype ?? 'application/pdf';
+        : (file.mimetype ?? 'application/pdf');
     const data = await this.reportsService.uploadReport(
       userId,
       {
@@ -142,8 +142,10 @@ export class ReportsController {
     @Req() req: Request,
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data =
-      await this.reportsService.getProcessingAttempts(userId, reportId);
+    const data = await this.reportsService.getProcessingAttempts(
+      userId,
+      reportId,
+    );
     return successResponse({ attempts: data }, getCorrelationId(req));
   }
 

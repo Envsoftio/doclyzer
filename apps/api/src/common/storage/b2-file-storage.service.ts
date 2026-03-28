@@ -66,7 +66,9 @@ export class B2FileStorageService implements FileStorageService {
       return key;
     } catch (err) {
       this.logger.warn(
-        redactSecrets(`Upload failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`),
+        redactSecrets(
+          `Upload failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+        ),
       );
       throw new FileStorageException(
         FILE_STORAGE_UPLOAD_FAILED,
@@ -97,7 +99,9 @@ export class B2FileStorageService implements FileStorageService {
       return Buffer.concat(chunks);
     } catch (err) {
       this.logger.warn(
-        redactSecrets(`Get failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`),
+        redactSecrets(
+          `Get failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+        ),
       );
       throw new FileStorageException(
         FILE_STORAGE_GET_FAILED,
@@ -116,7 +120,9 @@ export class B2FileStorageService implements FileStorageService {
       );
     } catch (err) {
       this.logger.warn(
-        redactSecrets(`Delete failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`),
+        redactSecrets(
+          `Delete failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+        ),
       );
       throw new FileStorageException(
         FILE_STORAGE_DELETE_FAILED,
@@ -136,7 +142,9 @@ export class B2FileStorageService implements FileStorageService {
       });
     } catch (err) {
       this.logger.warn(
-        redactSecrets(`getSignedUrl failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`),
+        redactSecrets(
+          `getSignedUrl failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+        ),
       );
       throw new FileStorageException(
         FILE_STORAGE_GET_URL_FAILED,

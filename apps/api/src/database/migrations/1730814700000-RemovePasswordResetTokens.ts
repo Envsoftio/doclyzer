@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class RemovePasswordResetTokens1730814700000
-  implements MigrationInterface
-{
+export class RemovePasswordResetTokens1730814700000 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP TABLE IF EXISTS "password_reset_tokens"`);
   }

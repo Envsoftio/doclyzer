@@ -21,9 +21,7 @@ export class EntitlementsService {
    * Returns the full entitlement summary for a user.
    * Auto-provisions a free-tier entitlement if none exists (lazy provisioning).
    */
-  async getEntitlementSummary(
-    userId: string,
-  ): Promise<EntitlementSummaryDto> {
+  async getEntitlementSummary(userId: string): Promise<EntitlementSummaryDto> {
     const entitlement = await this.findOrProvision(userId);
 
     return {

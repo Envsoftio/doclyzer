@@ -135,7 +135,11 @@ export class AuthService {
 
       this.logger.log(`Auth login success userId=${userId}`);
       return {
-        data: { accessToken: token, refreshToken: token, expiresIn: this.accessTtlSec },
+        data: {
+          accessToken: token,
+          refreshToken: token,
+          expiresIn: this.accessTtlSec,
+        },
         headers: result?.headers ?? null,
       };
     } catch (error: unknown) {
@@ -187,7 +191,11 @@ export class AuthService {
       const token = session.token || refreshToken;
       this.logger.log(`Auth token refresh userId=${user.id}`);
       return {
-        data: { accessToken: token, refreshToken: token, expiresIn: this.accessTtlSec },
+        data: {
+          accessToken: token,
+          refreshToken: token,
+          expiresIn: this.accessTtlSec,
+        },
         headers: result?.headers ?? null,
       };
     } catch (error: unknown) {

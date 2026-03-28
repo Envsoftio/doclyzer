@@ -63,9 +63,12 @@ export class UsageLimitsService {
       .createQueryBuilder('share_link')
       .where('share_link.userId = :userId', { userId })
       .andWhere('share_link.isActive = true')
-      .andWhere('(share_link.expiresAt IS NULL OR share_link.expiresAt > :now)', {
-        now,
-      })
+      .andWhere(
+        '(share_link.expiresAt IS NULL OR share_link.expiresAt > :now)',
+        {
+          now,
+        },
+      )
       .getCount();
     return {
       limit: resolvedPlanInfo.limits.maxShareLinks,

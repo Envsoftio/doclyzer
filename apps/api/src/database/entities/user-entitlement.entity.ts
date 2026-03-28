@@ -16,13 +16,21 @@ export class UserEntitlementEntity {
 
   @Column({ type: 'uuid', name: 'user_id' }) userId!: string;
   @ManyToOne('UserEntity', { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' }) user!: UserEntity;
+  @JoinColumn({ name: 'user_id' })
+  user!: UserEntity;
 
   @Column({ type: 'uuid', name: 'plan_id' }) planId!: string;
   @ManyToOne('PlanEntity', { eager: true }) // eager: plan data always needed with entitlement
-  @JoinColumn({ name: 'plan_id' }) plan!: PlanEntity;
+  @JoinColumn({ name: 'plan_id' })
+  plan!: PlanEntity;
 
-  @Column({ type: 'numeric', precision: 10, scale: 2, name: 'credit_balance', default: 0 })
+  @Column({
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    name: 'credit_balance',
+    default: 0,
+  })
   creditBalance!: string; // numeric columns return as string in TypeORM
 
   @Column({ type: 'varchar', length: 32, default: 'active' }) status!: string;

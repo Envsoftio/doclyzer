@@ -16,11 +16,13 @@ export class SubscriptionEntity {
 
   @Column({ type: 'uuid', name: 'user_id' }) userId!: string;
   @ManyToOne('UserEntity', { onDelete: 'CASCADE' }) // user owns subscriptions
-  @JoinColumn({ name: 'user_id' }) user!: UserEntity;
+  @JoinColumn({ name: 'user_id' })
+  user!: UserEntity;
 
   @Column({ type: 'uuid', name: 'plan_id' }) planId!: string;
   @ManyToOne('PlanEntity') // no cascade — subscriptions reference plans
-  @JoinColumn({ name: 'plan_id' }) plan!: PlanEntity;
+  @JoinColumn({ name: 'plan_id' })
+  plan!: PlanEntity;
 
   @Column({ type: 'varchar', length: 32, default: 'created' }) status!: string;
 

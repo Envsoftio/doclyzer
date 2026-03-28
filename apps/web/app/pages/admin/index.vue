@@ -18,6 +18,11 @@ useHead({
   <main class="admin-page">
     <h1>Doclyzer Admin</h1>
     <p>The superadmin dashboard is being set up.</p>
+    <p>
+      API-first contracts are available at
+      <code>/api/admin/superadmin-auth-contracts</code> for pending/success/failure/reverted
+      elevation states.
+    </p>
     <p>Please check back soon or contact platform support for access.</p>
     <NuxtLink to="/">Back to Home</NuxtLink>
   </main>

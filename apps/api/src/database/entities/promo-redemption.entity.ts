@@ -18,11 +18,13 @@ export class PromoRedemptionEntity {
 
   @Column({ type: 'uuid', name: 'promo_code_id' }) promoCodeId!: string;
   @ManyToOne('PromoCodeEntity', { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'promo_code_id' }) promoCode!: PromoCodeEntity;
+  @JoinColumn({ name: 'promo_code_id' })
+  promoCode!: PromoCodeEntity;
 
   @Column({ type: 'uuid', name: 'user_id' }) userId!: string;
   @ManyToOne('UserEntity', { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' }) user!: UserEntity;
+  @JoinColumn({ name: 'user_id' })
+  user!: UserEntity;
 
   @Column({ type: 'varchar', length: 32, name: 'product_type' })
   productType!: 'credit_pack' | 'subscription';
@@ -33,7 +35,8 @@ export class PromoRedemptionEntity {
   @Column({ type: 'uuid', name: 'order_id', nullable: true })
   orderId!: string | null;
   @ManyToOne('OrderEntity', { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'order_id' }) order!: OrderEntity | null;
+  @JoinColumn({ name: 'order_id' })
+  order!: OrderEntity | null;
 
   @Column({ type: 'uuid', name: 'subscription_id', nullable: true })
   subscriptionId!: string | null;

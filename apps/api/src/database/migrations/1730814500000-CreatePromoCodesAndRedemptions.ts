@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreatePromoCodesAndRedemptions1730814500000
-  implements MigrationInterface
-{
+export class CreatePromoCodesAndRedemptions1730814500000 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       CREATE TABLE "promo_codes" (
@@ -82,9 +80,13 @@ export class CreatePromoCodesAndRedemptions1730814500000
 
   async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP INDEX "IDX_orders_promo_code_id"`);
-    await queryRunner.query(`ALTER TABLE "orders" DROP CONSTRAINT "FK_orders_promo_code_id"`);
+    await queryRunner.query(
+      `ALTER TABLE "orders" DROP CONSTRAINT "FK_orders_promo_code_id"`,
+    );
     await queryRunner.query(`ALTER TABLE "orders" DROP COLUMN "final_amount"`);
-    await queryRunner.query(`ALTER TABLE "orders" DROP COLUMN "discount_amount"`);
+    await queryRunner.query(
+      `ALTER TABLE "orders" DROP COLUMN "discount_amount"`,
+    );
     await queryRunner.query(`ALTER TABLE "orders" DROP COLUMN "promo_code_id"`);
 
     await queryRunner.query(`DROP INDEX "IDX_promo_redemptions_promo_user"`);

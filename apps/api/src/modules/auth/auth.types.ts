@@ -86,3 +86,38 @@ export const INVALID_REFRESH_TOKEN = 'INVALID_REFRESH_TOKEN' as const;
 export interface RequestUser {
   id: string;
 }
+
+export const AUTHZ_SUPERADMIN_REQUIRED = 'AUTHZ_SUPERADMIN_REQUIRED' as const;
+export const AUTH_MFA_CHALLENGE_REQUIRED =
+  'AUTH_MFA_CHALLENGE_REQUIRED' as const;
+export const AUTH_MFA_INVALID_CODE = 'AUTH_MFA_INVALID_CODE' as const;
+export const AUTH_MFA_LOCKED = 'AUTH_MFA_LOCKED' as const;
+export const AUTH_MFA_RECHALLENGE_REQUIRED =
+  'AUTH_MFA_RECHALLENGE_REQUIRED' as const;
+
+export type SuperadminChallengeState =
+  | 'pending'
+  | 'success'
+  | 'failure'
+  | 'reverted';
+
+export interface SuperadminElevationChallengeResponse {
+  challengeId: string;
+  state: SuperadminChallengeState;
+  expiresAt: string;
+  attemptsRemaining: number;
+  lockoutUntil: string | null;
+}
+
+export interface SuperadminElevationVerifyResponse {
+  challengeId: string;
+  state: SuperadminChallengeState;
+  trustExpiresAt: string | null;
+}
+
+export interface SuperadminAdminActionTokenResponse {
+  challengeId: string;
+  state: SuperadminChallengeState;
+  adminActionToken: string;
+  trustExpiresAt: string;
+}

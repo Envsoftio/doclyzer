@@ -1,7 +1,18 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { FindOptionsWhere, In, IsNull, MoreThan, Or, Repository } from 'typeorm';
+import {
+  FindOptionsWhere,
+  In,
+  IsNull,
+  MoreThan,
+  Or,
+  Repository,
+} from 'typeorm';
 import { randomUUID } from 'node:crypto';
 import { ShareLinkEntity } from '../../database/entities/share-link.entity';
 import { UserSharePolicyEntity } from '../../database/entities/user-share-policy.entity';
@@ -12,15 +23,20 @@ import { ProfilesService } from '../profiles/profiles.service';
 import { ShareLinkNotFoundException } from './exceptions/share-link-not-found.exception';
 import { ShareLinkExpiredException } from './exceptions/share-link-expired.exception';
 import { ShareLinkLimitExceededException } from './exceptions/share-link-limit-exceeded.exception';
-import { EXPIRY_MUST_BE_FUTURE, INVALID_EXPIRES_IN_DAYS } from './sharing.types';
+import {
+  EXPIRY_MUST_BE_FUTURE,
+  INVALID_EXPIRES_IN_DAYS,
+} from './sharing.types';
 import { UsageLimitsService } from '../entitlements/usage-limits.service';
 
-export interface SharePolicyDto { defaultExpiresInDays: number | null; }
+export interface SharePolicyDto {
+  defaultExpiresInDays: number | null;
+}
 
 export interface AccessEventDto {
   id: string;
   accessedAt: string; // ISO string
-  outcome: string;    // 'accessed' | 'expired_or_revoked'
+  outcome: string; // 'accessed' | 'expired_or_revoked'
 }
 
 export interface PublicLabValueDto {
@@ -52,7 +68,7 @@ export interface ShareLinkDto {
   scope: string;
   isActive: boolean;
   expiresAt: string | null; // ISO string or null
-  createdAt: string;        // ISO string
+  createdAt: string; // ISO string
 }
 
 @Injectable()
@@ -74,14 +90,23 @@ export class SharingService {
     private readonly configService: ConfigService,
     private readonly usageLimitsService: UsageLimitsService,
   ) {
-    this.shareBaseUrl = this.configService.get<string>('SHARE_BASE_URL', 'http://localhost:3001');
+    this.shareBaseUrl = this.configService.get<string>(
+      'SHARE_BASE_URL',
+      'http://localhost:3001',
+    );
   }
 
   // scope='all' is the only defined value today; extend this switch for future scope types (e.g. date-range, specific-reports)
-  private buildScopedReportWhere(link: ShareLinkEntity): FindOptionsWhere<ReportEntity> {
+  private buildScopedReportWhere(
+    link: ShareLinkEntity,
+  ): FindOptionsWhere<ReportEntity> {
     // Double isolation: profileId (profile boundary) + userId (owner boundary)
     // scope='all' is the only defined value today; extend for future scope types
-    const base: FindOptionsWhere<ReportEntity> = { profileId: link.profileId, userId: link.userId, status: 'parsed' as const };
+    const base: FindOptionsWhere<ReportEntity> = {
+      profileId: link.profileId,
+      userId: link.userId,
+      status: 'parsed' as const,
+    };
     switch (link.scope) {
       case 'all':
       default:
@@ -121,17 +146,29 @@ export class SharingService {
 
     if (!this.isLinkValid(link)) throw new ShareLinkExpiredException();
 
-    const profile = await this.profilesService.getProfile(link.userId, link.profileId);
+    const profile = await this.profilesService.getProfile(
+      link.userId,
+      link.profileId,
+    );
     const reports = await this.reportRepo.find({
       where: this.buildScopedReportWhere(link), // Double isolation: profileId scopes to the shared profile; userId prevents cross-user data access if profileId were ever reused or guessed
       order: { createdAt: 'DESC' },
-      select: ['id', 'originalFileName', 'status', 'summary', 'createdAt', 'profileId'],
+      select: [
+        'id',
+        'originalFileName',
+        'status',
+        'summary',
+        'createdAt',
+        'profileId',
+      ],
     });
 
     // Defense-in-depth: assert isolation holds (should never trigger in normal operation — canary for data access bugs)
     for (const r of reports) {
       if (r.profileId !== link.profileId) {
-        throw new InternalServerErrorException('Isolation violation: unexpected report in shared output');
+        throw new InternalServerErrorException(
+          'Isolation violation: unexpected report in shared output',
+        );
       }
     }
 
@@ -174,7 +211,10 @@ export class SharingService {
     expiresAt?: Date,
   ): Promise<ShareLinkDto> {
     if (expiresAt && expiresAt <= new Date()) {
-      throw new BadRequestException({ code: EXPIRY_MUST_BE_FUTURE, message: 'expiresAt must be a future date' });
+      throw new BadRequestException({
+        code: EXPIRY_MUST_BE_FUTURE,
+        message: 'expiresAt must be a future date',
+      });
     }
     // Throws ProfileNotFoundException (404) if user doesn't own profile
     await this.profilesService.getProfile(userId, profileId);
@@ -202,7 +242,10 @@ export class SharingService {
     });
   }
 
-  async listShareLinks(userId: string, profileId: string): Promise<ShareLinkDto[]> {
+  async listShareLinks(
+    userId: string,
+    profileId: string,
+  ): Promise<ShareLinkDto[]> {
     // Ownership check: ProfilesService throws ProfileNotFoundException if not owned
     await this.profilesService.getProfile(userId, profileId);
     const now = new Date();
@@ -219,17 +262,28 @@ export class SharingService {
   }
 
   async revokeShareLink(userId: string, linkId: string): Promise<void> {
-    const link = await this.shareLinkRepo.findOne({ where: { id: linkId, userId } });
+    const link = await this.shareLinkRepo.findOne({
+      where: { id: linkId, userId },
+    });
     if (!link) throw new ShareLinkNotFoundException();
     link.isActive = false;
     await this.shareLinkRepo.save(link);
   }
 
-  async updateExpiry(userId: string, linkId: string, expiresAt: Date | null): Promise<ShareLinkDto> {
+  async updateExpiry(
+    userId: string,
+    linkId: string,
+    expiresAt: Date | null,
+  ): Promise<ShareLinkDto> {
     if (expiresAt && expiresAt <= new Date()) {
-      throw new BadRequestException({ code: EXPIRY_MUST_BE_FUTURE, message: 'expiresAt must be a future date' });
+      throw new BadRequestException({
+        code: EXPIRY_MUST_BE_FUTURE,
+        message: 'expiresAt must be a future date',
+      });
     }
-    const link = await this.shareLinkRepo.findOne({ where: { id: linkId, userId } });
+    const link = await this.shareLinkRepo.findOne({
+      where: { id: linkId, userId },
+    });
     if (!link) throw new ShareLinkNotFoundException();
     link.expiresAt = expiresAt;
     const saved = await this.shareLinkRepo.save(link);
@@ -241,9 +295,18 @@ export class SharingService {
     return { defaultExpiresInDays: row?.defaultExpiresInDays ?? null };
   }
 
-  async upsertPolicy(userId: string, defaultExpiresInDays: number | null): Promise<SharePolicyDto> {
-    if (defaultExpiresInDays !== null && (defaultExpiresInDays <= 0 || !Number.isInteger(defaultExpiresInDays))) {
-      throw new BadRequestException({ code: INVALID_EXPIRES_IN_DAYS, message: 'defaultExpiresInDays must be a positive integer or null' });
+  async upsertPolicy(
+    userId: string,
+    defaultExpiresInDays: number | null,
+  ): Promise<SharePolicyDto> {
+    if (
+      defaultExpiresInDays !== null &&
+      (defaultExpiresInDays <= 0 || !Number.isInteger(defaultExpiresInDays))
+    ) {
+      throw new BadRequestException({
+        code: INVALID_EXPIRES_IN_DAYS,
+        message: 'defaultExpiresInDays must be a positive integer or null',
+      });
     }
     let row = await this.policyRepo.findOne({ where: { userId } });
     if (row) {
@@ -255,9 +318,14 @@ export class SharingService {
     return { defaultExpiresInDays };
   }
 
-  async listAccessEvents(userId: string, linkId: string): Promise<AccessEventDto[]> {
+  async listAccessEvents(
+    userId: string,
+    linkId: string,
+  ): Promise<AccessEventDto[]> {
     // Ownership check — reuse same ownership pattern as revokeShareLink
-    const link = await this.shareLinkRepo.findOne({ where: { id: linkId, userId } });
+    const link = await this.shareLinkRepo.findOne({
+      where: { id: linkId, userId },
+    });
     if (!link) throw new ShareLinkNotFoundException();
     const events = await this.accessEventRepo.find({
       where: { shareLinkId: linkId },

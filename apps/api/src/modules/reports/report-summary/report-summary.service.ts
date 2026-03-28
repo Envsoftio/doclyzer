@@ -17,7 +17,11 @@ export class ReportSummaryService implements ReportSummarizer {
     const url =
       this.configService.get<string>('reports.reportSummaryHttpUrl') ?? '';
     if (!url) {
-      this.logger.warn(redactSecrets('Report summarisation enabled but REPORT_SUMMARY_HTTP_URL is not set'));
+      this.logger.warn(
+        redactSecrets(
+          'Report summarisation enabled but REPORT_SUMMARY_HTTP_URL is not set',
+        ),
+      );
       return null;
     }
 
@@ -25,13 +29,16 @@ export class ReportSummaryService implements ReportSummarizer {
       this.configService.get<string>('reports.reportSummaryProvider') ?? 'http';
     if (provider !== 'http') {
       this.logger.warn(
-        redactSecrets(`Unsupported summariser provider '${provider}'; only 'http' is supported`),
+        redactSecrets(
+          `Unsupported summariser provider '${provider}'; only 'http' is supported`,
+        ),
       );
       return null;
     }
 
     const timeoutMs =
-      this.configService.get<number>('reports.reportSummaryTimeoutMs') ?? 10_000;
+      this.configService.get<number>('reports.reportSummaryTimeoutMs') ??
+      10_000;
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -46,7 +53,9 @@ export class ReportSummaryService implements ReportSummarizer {
 
       if (!response.ok) {
         this.logger.warn(
-          redactSecrets(`Summariser returned non-OK status: ${response.status}`),
+          redactSecrets(
+            `Summariser returned non-OK status: ${response.status}`,
+          ),
         );
         return null;
       }

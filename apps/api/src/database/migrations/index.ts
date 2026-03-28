@@ -18,6 +18,7 @@ import { CreateSubscriptionsTable1730814400000 } from './1730814400000-CreateSub
 import { CreatePromoCodesAndRedemptions1730814500000 } from './1730814500000-CreatePromoCodesAndRedemptions';
 import { MigrateToBetterAuth1730814600000 } from './1730814600000-MigrateToBetterAuth';
 import { RemovePasswordResetTokens1730814700000 } from './1730814700000-RemovePasswordResetTokens';
+import { CreateSuperadminMfaAndAuditTables1730814800000 } from './1730814800000-CreateSuperadminMfaAndAuditTables';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -40,4 +41,5 @@ export const migrations = [
   CreatePromoCodesAndRedemptions1730814500000,
   MigrateToBetterAuth1730814600000,
   RemovePasswordResetTokens1730814700000,
+  CreateSuperadminMfaAndAuditTables1730814800000,
 ];

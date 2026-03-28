@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateCreditPacksAndOrders1730814300000
-  implements MigrationInterface
-{
+export class CreateCreditPacksAndOrders1730814300000 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     // Create credit_packs table
     await queryRunner.query(`

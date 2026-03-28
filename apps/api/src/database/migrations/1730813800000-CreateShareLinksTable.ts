@@ -21,10 +21,10 @@ export class CreateShareLinksTable1730813800000 implements MigrationInterface {
       )
     `);
     await queryRunner.query(
-      `CREATE INDEX "IDX_share_links_profile_id" ON "share_links" ("profile_id")`
+      `CREATE INDEX "IDX_share_links_profile_id" ON "share_links" ("profile_id")`,
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_share_links_user_id" ON "share_links" ("user_id")`
+      `CREATE INDEX "IDX_share_links_user_id" ON "share_links" ("user_id")`,
     );
   }
 

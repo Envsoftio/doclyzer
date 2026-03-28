@@ -61,7 +61,9 @@ function makeAttemptRepo() {
   return { save, create, find };
 }
 
-function makeReportSummaryService(): jest.Mocked<Pick<ReportSummaryService, 'generateSummary'>> {
+function makeReportSummaryService(): jest.Mocked<
+  Pick<ReportSummaryService, 'generateSummary'>
+> {
   return { generateSummary: jest.fn().mockResolvedValue(null) };
 }
 
@@ -195,7 +197,11 @@ describe('ReportsService', () => {
         { provide: ConfigService, useValue: { get: configGet } },
         {
           provide: getRepositoryToken(ReportProcessingAttemptEntity),
-          useValue: { create: attemptRepo.create, save: attemptRepo.save, find: attemptRepo.find },
+          useValue: {
+            create: attemptRepo.create,
+            save: attemptRepo.save,
+            find: attemptRepo.find,
+          },
         },
         { provide: ReportSummaryService, useValue: makeReportSummaryService() },
       ],
@@ -548,12 +554,19 @@ describe('ReportsService', () => {
           },
           {
             provide: getRepositoryToken(ReportProcessingAttemptEntity),
-            useValue: { create: attemptRepo.create, save: attemptRepo.save, find: attemptRepo.find },
+            useValue: {
+              create: attemptRepo.create,
+              save: attemptRepo.save,
+              find: attemptRepo.find,
+            },
           },
           { provide: ProfilesService, useValue: profilesService },
           { provide: FILE_STORAGE, useValue: fileStorage },
           { provide: ConfigService, useValue: { get: configGet } },
-          { provide: ReportSummaryService, useValue: makeReportSummaryService() },
+          {
+            provide: ReportSummaryService,
+            useValue: makeReportSummaryService(),
+          },
         ],
       }).compile();
       const svc = module.get(ReportsService);
@@ -815,9 +828,7 @@ describe('ReportsService', () => {
   });
 
   describe('getLabTrends', () => {
-    function setupTrendsReports(
-      reports: { id: string; createdAt: Date }[],
-    ) {
+    function setupTrendsReports(reports: { id: string; createdAt: Date }[]) {
       reportRepo.find.mockResolvedValueOnce(reports as never);
     }
 
@@ -830,9 +841,7 @@ describe('ReportsService', () => {
         sampleDate: string | null;
       }[],
     ) {
-      reportLabValueRepo.getMany.mockResolvedValueOnce(
-        labValues as never,
-      );
+      reportLabValueRepo.getMany.mockResolvedValueOnce(labValues as never);
     }
 
     it('returns aggregated numeric trend data grouped by parameterName', async () => {
@@ -846,14 +855,35 @@ describe('ReportsService', () => {
         { id: 'r3', createdAt: new Date('2026-03-01') },
       ]);
       setupTrendsLabValues([
-        { reportId: 'r1', parameterName: 'HbA1c', value: '5.8', unit: '%', sampleDate: '2026-01-01' },
-        { reportId: 'r2', parameterName: 'HbA1c', value: '6.1', unit: '%', sampleDate: '2026-02-01' },
-        { reportId: 'r3', parameterName: 'Glucose', value: '98', unit: 'mg/dL', sampleDate: null },
+        {
+          reportId: 'r1',
+          parameterName: 'HbA1c',
+          value: '5.8',
+          unit: '%',
+          sampleDate: '2026-01-01',
+        },
+        {
+          reportId: 'r2',
+          parameterName: 'HbA1c',
+          value: '6.1',
+          unit: '%',
+          sampleDate: '2026-02-01',
+        },
+        {
+          reportId: 'r3',
+          parameterName: 'Glucose',
+          value: '98',
+          unit: 'mg/dL',
+          sampleDate: null,
+        },
       ]);
 
       const result = await service.getLabTrends('user-1', 'profile-1');
 
-      expect(profilesService.getProfile).toHaveBeenCalledWith('user-1', 'profile-1');
+      expect(profilesService.getProfile).toHaveBeenCalledWith(
+        'user-1',
+        'profile-1',
+      );
       expect(result.parameters).toHaveLength(2);
 
       const hba1c = result.parameters.find((p) => p.parameterName === 'HbA1c');
@@ -863,7 +893,9 @@ describe('ReportsService', () => {
       expect(hba1c!.dataPoints[0]).toEqual({ date: '2026-01-01', value: 5.8 });
       expect(hba1c!.dataPoints[1]).toEqual({ date: '2026-02-01', value: 6.1 });
 
-      const glucose = result.parameters.find((p) => p.parameterName === 'Glucose');
+      const glucose = result.parameters.find(
+        (p) => p.parameterName === 'Glucose',
+      );
       expect(glucose).toBeDefined();
       expect(glucose!.unit).toBe('mg/dL');
       expect(glucose!.dataPoints[0].date).toBe('2026-03-01');
@@ -880,8 +912,20 @@ describe('ReportsService', () => {
         { id: 'r2', createdAt: new Date('2026-02-01') },
       ]);
       setupTrendsLabValues([
-        { reportId: 'r1', parameterName: 'Result', value: 'Positive', unit: null, sampleDate: '2026-01-01' },
-        { reportId: 'r2', parameterName: 'Result', value: '5.0', unit: null, sampleDate: '2026-02-01' },
+        {
+          reportId: 'r1',
+          parameterName: 'Result',
+          value: 'Positive',
+          unit: null,
+          sampleDate: '2026-01-01',
+        },
+        {
+          reportId: 'r2',
+          parameterName: 'Result',
+          value: '5.0',
+          unit: null,
+          sampleDate: '2026-02-01',
+        },
       ]);
 
       const result = await service.getLabTrends('user-1', 'profile-1');
@@ -901,7 +945,13 @@ describe('ReportsService', () => {
         { id: 'r1', createdAt: new Date('2026-03-15T10:00:00.000Z') },
       ]);
       setupTrendsLabValues([
-        { reportId: 'r1', parameterName: 'TSH', value: '2.5', unit: 'mIU/L', sampleDate: null },
+        {
+          reportId: 'r1',
+          parameterName: 'TSH',
+          value: '2.5',
+          unit: 'mIU/L',
+          sampleDate: null,
+        },
       ]);
 
       const result = await service.getLabTrends('user-1', 'profile-1');
@@ -915,11 +965,15 @@ describe('ReportsService', () => {
         id: 'profile-1',
         userId: 'user-1',
       } as never);
-      setupTrendsReports([
-        { id: 'r1', createdAt: new Date('2026-01-01') },
-      ]);
+      setupTrendsReports([{ id: 'r1', createdAt: new Date('2026-01-01') }]);
       setupTrendsLabValues([
-        { reportId: 'r1', parameterName: 'HbA1c', value: '5.8', unit: '%', sampleDate: '2026-01-01' },
+        {
+          reportId: 'r1',
+          parameterName: 'HbA1c',
+          value: '5.8',
+          unit: '%',
+          sampleDate: '2026-01-01',
+        },
       ]);
 
       const result = await service.getLabTrends('user-1', 'profile-1', 'HbA1c');
@@ -945,7 +999,9 @@ describe('ReportsService', () => {
     });
 
     it('throws ProfileNotFoundException when user does not own profile', async () => {
-      profilesService.getProfile.mockRejectedValueOnce(new ProfileNotFoundException());
+      profilesService.getProfile.mockRejectedValueOnce(
+        new ProfileNotFoundException(),
+      );
 
       await expect(
         service.getLabTrends('user-1', 'other-profile'),
@@ -957,11 +1013,15 @@ describe('ReportsService', () => {
         id: 'profile-1',
         userId: 'user-1',
       } as never);
-      setupTrendsReports([
-        { id: 'r1', createdAt: new Date('2026-01-01') },
-      ]);
+      setupTrendsReports([{ id: 'r1', createdAt: new Date('2026-01-01') }]);
       setupTrendsLabValues([
-        { reportId: 'r1', parameterName: 'Status', value: 'Normal', unit: null, sampleDate: '2026-01-01' },
+        {
+          reportId: 'r1',
+          parameterName: 'Status',
+          value: 'Normal',
+          unit: null,
+          sampleDate: '2026-01-01',
+        },
       ]);
 
       const result = await service.getLabTrends('user-1', 'profile-1');

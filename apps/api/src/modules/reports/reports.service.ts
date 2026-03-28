@@ -208,7 +208,9 @@ export class ReportsService {
         await this.fileStorage.delete(storageKey);
       } catch (deleteErr) {
         this.logger.warn(
-          redactSecrets(`Cleanup: failed to delete orphaned file ${storageKey}: ${deleteErr instanceof Error ? deleteErr.message : String(deleteErr)}`),
+          redactSecrets(
+            `Cleanup: failed to delete orphaned file ${storageKey}: ${deleteErr instanceof Error ? deleteErr.message : String(deleteErr)}`,
+          ),
         );
       }
       throw err;
@@ -257,7 +259,9 @@ export class ReportsService {
       };
     } catch (err) {
       this.logger.warn(
-        redactSecrets(`Report file unavailable in storage: ${err instanceof Error ? err.message : String(err)}`),
+        redactSecrets(
+          `Report file unavailable in storage: ${err instanceof Error ? err.message : String(err)}`,
+        ),
       );
       throw new ReportFileUnavailableException();
     }
@@ -516,14 +520,20 @@ export class ReportsService {
         'reports.parseStubContentNotRecognized',
       ) ?? false;
     if (isRetry && retrySucceeds)
-      return { status: 'parsed', transcript: 'Stub transcript: lab values extracted.' };
+      return {
+        status: 'parsed',
+        transcript: 'Stub transcript: lab values extracted.',
+      };
     if (fail) {
       return {
         status: contentNotRecognized ? 'content_not_recognized' : 'unparsed',
         transcript: null,
       };
     }
-    return { status: 'parsed', transcript: 'Stub transcript: lab values extracted.' };
+    return {
+      status: 'parsed',
+      transcript: 'Stub transcript: lab values extracted.',
+    };
   }
 
   private toDto(
@@ -540,7 +550,8 @@ export class ReportsService {
       status: e.status,
       createdAt: e.createdAt.toISOString(),
       ...(e.summary != null && { summary: e.summary }),
-      ...(includeTranscript && e.parsedTranscript != null && { parsedTranscript: e.parsedTranscript }),
+      ...(includeTranscript &&
+        e.parsedTranscript != null && { parsedTranscript: e.parsedTranscript }),
       extractedLabValues: labValues.map((lv) => ({
         parameterName: lv.parameterName,
         value: lv.value,

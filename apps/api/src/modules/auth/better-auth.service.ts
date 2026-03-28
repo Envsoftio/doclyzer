@@ -76,12 +76,11 @@ export class BetterAuthService {
   }
 
   private async createAuthInstance(): Promise<BetterAuthInstance> {
-    const [{ betterAuth }, { Pool: PgPool }, { bearer }] =
-      await Promise.all([
-        import('better-auth'),
-        import('pg'),
-        import('better-auth/plugins'),
-      ]);
+    const [{ betterAuth }, { Pool: PgPool }, { bearer }] = await Promise.all([
+      import('better-auth'),
+      import('pg'),
+      import('better-auth/plugins'),
+    ]);
 
     const databaseUrl = this.configService.getOrThrow<string>('DATABASE_URL');
     const baseURL = this.configService.getOrThrow<string>('BETTER_AUTH_URL');

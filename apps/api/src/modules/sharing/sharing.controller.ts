@@ -1,6 +1,18 @@
 import {
-  BadRequestException, Body, Controller, Delete, Get, HttpCode,
-  HttpStatus, Param, Patch, Post, Put, Query, Req, UseGuards
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import type { RequestUser } from '../auth/auth.types';
@@ -22,17 +34,28 @@ export class SharingController {
     @Req() req: Request,
   ): Promise<object> {
     if (!body?.profileId) {
-      throw new BadRequestException({ code: PROFILE_ID_REQUIRED, message: 'profileId is required' });
+      throw new BadRequestException({
+        code: PROFILE_ID_REQUIRED,
+        message: 'profileId is required',
+      });
     }
     const { id: userId } = req.user as RequestUser;
     let expiresAt: Date | undefined;
     if (body.expiresAt) {
       expiresAt = new Date(body.expiresAt);
       if (isNaN(expiresAt.getTime())) {
-        throw new BadRequestException({ code: EXPIRY_MUST_BE_FUTURE, message: 'expiresAt must be a valid ISO datetime' });
+        throw new BadRequestException({
+          code: EXPIRY_MUST_BE_FUTURE,
+          message: 'expiresAt must be a valid ISO datetime',
+        });
       }
     }
-    const data = await this.sharingService.createShareLink(userId, body.profileId, 'all', expiresAt);
+    const data = await this.sharingService.createShareLink(
+      userId,
+      body.profileId,
+      'all',
+      expiresAt,
+    );
     return successResponse(data, getCorrelationId(req));
   }
 
@@ -42,7 +65,10 @@ export class SharingController {
     @Req() req: Request,
   ): Promise<object> {
     if (!profileId) {
-      throw new BadRequestException({ code: PROFILE_ID_REQUIRED, message: 'profileId is required' });
+      throw new BadRequestException({
+        code: PROFILE_ID_REQUIRED,
+        message: 'profileId is required',
+      });
     }
     const { id: userId } = req.user as RequestUser;
     const data = await this.sharingService.listShareLinks(userId, profileId);
@@ -71,10 +97,17 @@ export class SharingController {
     if (body.expiresAt) {
       expiresAt = new Date(body.expiresAt);
       if (isNaN(expiresAt.getTime())) {
-        throw new BadRequestException({ code: EXPIRY_MUST_BE_FUTURE, message: 'expiresAt must be a valid ISO datetime' });
+        throw new BadRequestException({
+          code: EXPIRY_MUST_BE_FUTURE,
+          message: 'expiresAt must be a valid ISO datetime',
+        });
       }
     }
-    const data = await this.sharingService.updateExpiry(userId, linkId, expiresAt);
+    const data = await this.sharingService.updateExpiry(
+      userId,
+      linkId,
+      expiresAt,
+    );
     return successResponse(data, getCorrelationId(req));
   }
 
@@ -101,7 +134,10 @@ export class SharingController {
     @Req() req: Request,
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = await this.sharingService.upsertPolicy(userId, body.defaultExpiresInDays ?? null);
+    const data = await this.sharingService.upsertPolicy(
+      userId,
+      body.defaultExpiresInDays ?? null,
+    );
     return successResponse(data, getCorrelationId(req));
   }
 }
