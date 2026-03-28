@@ -12,6 +12,11 @@ import { PasswordResetTokenEntity } from './entities/password-reset-token.entity
 import { ProfileEntity } from './entities/profile.entity';
 import { ReportEntity } from './entities/report.entity';
 import { ReportLabValueEntity } from './entities/report-lab-value.entity';
+import { CreditPackEntity } from './entities/credit-pack.entity';
+import { OrderEntity } from './entities/order.entity';
+import { PlanEntity } from './entities/plan.entity';
+import { SubscriptionEntity } from './entities/subscription.entity';
+import { UserEntitlementEntity } from './entities/user-entitlement.entity';
 import { RestrictionEntity } from './entities/restriction.entity';
 import { SessionEntity } from './entities/session.entity';
 import { UserEntity } from './entities/user.entity';
@@ -36,6 +41,11 @@ export const AppDataSource = new DataSource({
     ConsentRecordEntity,
     ReportEntity,
     ReportLabValueEntity,
+    PlanEntity,
+    UserEntitlementEntity,
+    CreditPackEntity,
+    OrderEntity,
+    SubscriptionEntity,
   ],
   migrations,
   synchronize: false,

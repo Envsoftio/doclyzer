@@ -12,6 +12,9 @@ import { CreateShareLinksTable1730813800000 } from './1730813800000-CreateShareL
 import { AddExpiresAtToShareLinks1730813900000 } from './1730813900000-AddExpiresAtToShareLinks';
 import { CreateUserSharePoliciesTable1730814000000 } from './1730814000000-CreateUserSharePoliciesTable';
 import { CreateShareAccessEventsTable1730814100000 } from './1730814100000-CreateShareAccessEventsTable';
+import { CreateBillingTables1730814200000 } from './1730814200000-CreateBillingTables';
+import { CreateCreditPacksAndOrders1730814300000 } from './1730814300000-CreateCreditPacksAndOrders';
+import { CreateSubscriptionsTable1730814400000 } from './1730814400000-CreateSubscriptionsTable';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -28,4 +31,7 @@ export const migrations = [
   AddExpiresAtToShareLinks1730813900000,
   CreateUserSharePoliciesTable1730814000000,
   CreateShareAccessEventsTable1730814100000,
+  CreateBillingTables1730814200000,
+  CreateCreditPacksAndOrders1730814300000,
+  CreateSubscriptionsTable1730814400000,
 ];

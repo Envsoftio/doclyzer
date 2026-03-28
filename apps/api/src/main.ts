@@ -9,7 +9,9 @@ import { redactSecrets } from './common/redact-secrets';
 const logger = new Logger('Bootstrap');
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
   app.use(correlationIdMiddleware);

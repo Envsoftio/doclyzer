@@ -15,6 +15,7 @@ class HomeScreen extends StatefulWidget {
     required this.onGoToDataRights,
     required this.onGoToUploadReport,
     required this.onGoToTimeline,
+    required this.onGoToBilling,
     required this.restrictionRepository,
   });
 
@@ -26,6 +27,7 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onGoToDataRights;
   final Future<void> Function() onGoToUploadReport;
   final Future<void> Function() onGoToTimeline;
+  final VoidCallback onGoToBilling;
   final RestrictionRepository restrictionRepository;
 
   @override
@@ -166,6 +168,13 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  _HomeNavCard(
+                    key: const Key('go-to-billing'),
+                    icon: Icons.credit_card_rounded,
+                    title: 'Plan & Credits',
+                    subtitle: 'View your plan and credit balance',
+                    onTap: widget.onGoToBilling,
+                  ),
                   _HomeNavCard(
                     key: const Key('go-to-account'),
                     icon: Icons.account_circle_rounded,

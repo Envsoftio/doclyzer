@@ -1,6 +1,7 @@
 import { join } from 'path';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { razorpayConfig } from './config/razorpay.config';
 import { reportsConfig } from './config/reports.config';
 import { storageConfig } from './config/storage.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -16,11 +17,17 @@ import { ReportEntity } from './database/entities/report.entity';
 import { RestrictionEntity } from './database/entities/restriction.entity';
 import { ShareLinkEntity } from './database/entities/share-link.entity';
 import { UserSharePolicyEntity } from './database/entities/user-share-policy.entity';
+import { CreditPackEntity } from './database/entities/credit-pack.entity';
+import { OrderEntity } from './database/entities/order.entity';
+import { PlanEntity } from './database/entities/plan.entity';
+import { SubscriptionEntity } from './database/entities/subscription.entity';
+import { UserEntitlementEntity } from './database/entities/user-entitlement.entity';
 import { SessionEntity } from './database/entities/session.entity';
 import { UserEntity } from './database/entities/user.entity';
 import { migrations } from './database/migrations';
 import { AccountModule } from './modules/account/account.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { BillingModule } from './modules/billing/billing.module';
 import { ConsentModule } from './modules/consent/consent.module';
 import { EntitlementsModule } from './modules/entitlements/entitlements.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
@@ -41,6 +48,11 @@ const typeOrmEntities = [
   ReportEntity,
   ShareLinkEntity,
   UserSharePolicyEntity,
+  PlanEntity,
+  UserEntitlementEntity,
+  CreditPackEntity,
+  OrderEntity,
+  SubscriptionEntity,
 ];
 
 @Module({
@@ -48,7 +60,7 @@ const typeOrmEntities = [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [join(__dirname, '../../../.env'), '.env'],
-      load: [storageConfig, reportsConfig],
+      load: [storageConfig, reportsConfig, razorpayConfig],
     }),
     TypeOrmModule.forRootAsync({
       useFactory: (config: ConfigService) => {
@@ -132,6 +144,7 @@ const typeOrmEntities = [
       },
     }),
     AuthModule,
+    BillingModule,
     ConsentModule,
     AccountModule,
     EntitlementsModule,

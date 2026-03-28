@@ -1,0 +1,318 @@
+import 'package:flutter/material.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+
+import '../billing_repository.dart';
+
+class PlanSelectionScreen extends StatefulWidget {
+  const PlanSelectionScreen({
+    super.key,
+    required this.billingRepository,
+    required this.onBack,
+    required this.onSubscribeComplete,
+  });
+
+  final BillingRepository billingRepository;
+  final VoidCallback onBack;
+  final VoidCallback onSubscribeComplete;
+
+  @override
+  State<PlanSelectionScreen> createState() => _PlanSelectionScreenState();
+}
+
+class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
+  List<Plan>? _plans;
+  bool _loading = true;
+  String? _error;
+  String? _subscribingPlanId;
+  late final Razorpay _razorpay;
+
+  @override
+  void initState() {
+    super.initState();
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    _loadPlans();
+  }
+
+  @override
+  void dispose() {
+    _razorpay.clear();
+    super.dispose();
+  }
+
+  Future<void> _loadPlans() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final plans = await widget.billingRepository.listPlans();
+      if (mounted) {
+        setState(() {
+          _plans = plans;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load plans. Please try again.';
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _subscribe(Plan plan) async {
+    if (_subscribingPlanId != null) return;
+
+    setState(() => _subscribingPlanId = plan.id);
+    try {
+      final result =
+          await widget.billingRepository.createSubscription(plan.id);
+
+      _razorpay.open({
+        'key': result.razorpayKeyId,
+        'subscription_id': result.razorpaySubscriptionId,
+        'name': 'Doclyzer',
+        'description': 'Monthly Plan - ${plan.name}',
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _subscribingPlanId = null);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                const Text('Failed to create subscription. Please try again.'),
+            action: SnackBarAction(
+              label: 'Try again',
+              onPressed: () => _subscribe(plan),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    try {
+      await widget.billingRepository.verifySubscription(
+        response.orderId ?? '',
+        response.paymentId ?? '',
+        response.signature ?? '',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Plan upgraded!'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        widget.onSubscribeComplete();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Payment received but verification failed. Plan will be upgraded shortly.'),
+            duration: Duration(seconds: 5),
+          ),
+        );
+        widget.onSubscribeComplete();
+      }
+    } finally {
+      if (mounted) setState(() => _subscribingPlanId = null);
+    }
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    if (mounted) {
+      setState(() => _subscribingPlanId = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Subscription failed. Try again.'),
+          duration: Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    // External wallet selected — Razorpay handles the flow
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Choose a Plan'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: widget.onBack,
+        ),
+      ),
+      body: SafeArea(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? _buildError(theme)
+                : _buildPlanList(theme),
+      ),
+    );
+  }
+
+  Widget _buildError(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _error!,
+              style: TextStyle(color: theme.colorScheme.error),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonal(
+              onPressed: _loadPlans,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlanList(ThemeData theme) {
+    final plans = _plans ?? [];
+    if (plans.isEmpty) {
+      return const Center(
+        child: Text('No plans available at this time.'),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: plans.length,
+      itemBuilder: (context, index) => _buildPlanCard(theme, plans[index]),
+    );
+  }
+
+  Widget _buildPlanCard(ThemeData theme, Plan plan) {
+    final isSubscribing = _subscribingPlanId == plan.id;
+    final isDisabled = _subscribingPlanId != null || plan.isCurrentPlan;
+
+    final monthlyInr =
+        plan.priceInfo != null ? plan.priceInfo!['monthlyInr'] : null;
+    final monthlyUsd =
+        plan.priceInfo != null ? plan.priceInfo!['monthlyUsd'] : null;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    plan.name,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (plan.isCurrentPlan)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      'CURRENT PLAN',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            if (monthlyInr != null || monthlyUsd != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                '\u20B9${(monthlyInr as num?)?.toStringAsFixed(0) ?? '-'} / \$${(monthlyUsd as num?)?.toStringAsFixed(2) ?? '-'} per month',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            _buildFeatureRow(theme, Icons.person_outline, 'Profiles',
+                '${plan.limits.maxProfiles}'),
+            _buildFeatureRow(theme, Icons.description_outlined, 'Reports',
+                '${plan.limits.maxReports}'),
+            _buildFeatureRow(theme, Icons.link, 'Share links',
+                '${plan.limits.maxShareLinks}'),
+            _buildFeatureRow(theme, Icons.smart_toy_outlined, 'AI Chat',
+                plan.limits.aiChatEnabled ? 'Enabled' : 'Not available'),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: isDisabled ? null : () => _subscribe(plan),
+                child: isSubscribing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(plan.isCurrentPlan ? 'Current Plan' : 'Subscribe'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureRow(
+    ThemeData theme,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(label, style: theme.textTheme.bodyMedium),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

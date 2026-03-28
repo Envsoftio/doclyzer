@@ -34,6 +34,11 @@ import 'features/reports/reports_repository.dart';
 import 'features/reports/api_reports_repository.dart';
 import 'features/reports/screens/timeline_screen.dart';
 import 'features/reports/screens/upload_report_screen.dart';
+import 'features/billing/billing_repository.dart';
+import 'features/billing/api_billing_repository.dart';
+import 'features/billing/screens/credit_pack_list_screen.dart';
+import 'features/billing/screens/entitlement_summary_screen.dart';
+import 'features/billing/screens/plan_selection_screen.dart';
 import 'features/sharing/sharing_repository.dart';
 import 'features/sharing/api_sharing_repository.dart';
 
@@ -57,6 +62,9 @@ enum _AuthView {
   dataRights,
   uploadReport,
   timeline,
+  billing,
+  creditPackList,
+  planSelection,
 }
 
 class DoclyzerApp extends StatefulWidget {
@@ -71,6 +79,7 @@ class DoclyzerApp extends StatefulWidget {
     this.restrictionRepository,
     this.reportsRepository,
     this.sharingRepository,
+    this.billingRepository,
   });
 
   final AuthRepository? authRepository;
@@ -82,6 +91,7 @@ class DoclyzerApp extends StatefulWidget {
   final RestrictionRepository? restrictionRepository;
   final ReportsRepository? reportsRepository;
   final SharingRepository? sharingRepository;
+  final BillingRepository? billingRepository;
 
   @override
   State<DoclyzerApp> createState() => _DoclyzerAppState();
@@ -98,6 +108,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
   late final RestrictionRepository _restrictionRepository;
   late final ReportsRepository _reportsRepository;
   late final SharingRepository _sharingRepository;
+  late final BillingRepository _billingRepository;
 
   _AuthView _authView = _AuthView.login;
   String? _prefillEmail;
@@ -120,6 +131,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
       _restrictionRepository = widget.restrictionRepository!;
       _reportsRepository = widget.reportsRepository!;
       _sharingRepository = widget.sharingRepository!;
+      _billingRepository = widget.billingRepository!;
       setState(() => _initialized = true);
     } else {
       final tokenStorage = TokenStorage();
@@ -137,6 +149,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
       _restrictionRepository = ApiRestrictionRepository(_apiClient!);
       _reportsRepository = ApiReportsRepository(_apiClient!);
       _sharingRepository = widget.sharingRepository ?? ApiSharingRepository(_apiClient!);
+      _billingRepository = widget.billingRepository ?? ApiBillingRepository(_apiClient!);
       _initAuth();
     }
   }
@@ -273,6 +286,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
                 _activeProfileNameForUpload = active!.name;
               });
             },
+            onGoToBilling: () {
+              setState(() => _authView = _AuthView.billing);
+            },
             onGoToTimeline: () async {
               final profiles = await _profilesRepository.getProfiles();
               Profile? active;
@@ -403,6 +419,36 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
             : const Scaffold(
                 body: Center(child: Text('No active profile')),
               ),
+        _AuthView.billing => EntitlementSummaryScreen(
+            billingRepository: _billingRepository,
+            onBack: () {
+              setState(() => _authView = _AuthView.home);
+            },
+            onBuyCredits: () {
+              setState(() => _authView = _AuthView.creditPackList);
+            },
+            onUpgrade: () {
+              setState(() => _authView = _AuthView.planSelection);
+            },
+          ),
+        _AuthView.creditPackList => CreditPackListScreen(
+            billingRepository: _billingRepository,
+            onBack: () {
+              setState(() => _authView = _AuthView.billing);
+            },
+            onPurchaseComplete: () {
+              setState(() => _authView = _AuthView.billing);
+            },
+          ),
+        _AuthView.planSelection => PlanSelectionScreen(
+            billingRepository: _billingRepository,
+            onBack: () {
+              setState(() => _authView = _AuthView.billing);
+            },
+            onSubscribeComplete: () {
+              setState(() => _authView = _AuthView.billing);
+            },
+          ),
       },
     );
   }

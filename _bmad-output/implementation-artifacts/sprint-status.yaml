@@ -38,7 +38,7 @@ project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
-last_updated: 2026-03-23  # story 3-9 review
+last_updated: 2026-03-24  # story 4-3 review
 
 development_status:
   epic-0: in-progress
@@ -90,13 +90,13 @@ development_status:
   3-7-share-access-event-history-for-link-owner: review
   3-8-enforce-profile-isolation-in-shared-output: review
   3-9-landing-seo-mvp-metadata-canonical-sitemap-robots-structured-data: review
-  3-10-route-isolation-rules-indexable-landing-vs-non-indexable-share: backlog
+  3-10-route-isolation-rules-indexable-landing-vs-non-indexable-share: review
   epic-3-retrospective: optional
 
-  epic-4: backlog
-  4-1-credit-balance-and-entitlement-summary-view: backlog
-  4-2-credit-pack-purchase-flow: backlog
-  4-3-subscription-purchase-flow: backlog
+  epic-4: in-progress
+  4-1-credit-balance-and-entitlement-summary-view: review
+  4-2-credit-pack-purchase-flow: review
+  4-3-subscription-purchase-flow: review
   4-4-promo-code-apply-validate-at-checkout: backlog
   4-5-usage-limit-enforcement-free-paid-tiers: backlog
   4-6-billing-outcome-states-pending-failed-reconciled: backlog

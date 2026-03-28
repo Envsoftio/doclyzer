@@ -51,7 +51,7 @@ export class ProfilesService {
     dto: CreateProfileDto,
   ): Promise<ProfileWithActive> {
     const count = await this.profileRepo.count({ where: { userId } });
-    const maxProfiles = this.entitlementsService.getMaxProfiles(userId);
+    const maxProfiles = await this.entitlementsService.getMaxProfiles(userId);
     if (count >= maxProfiles) throw new ProfileLimitExceededException();
 
     const isFirstProfile = count === 0;
