@@ -39,7 +39,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
         code = typed.code as string;
         message = typed.message as string;
         // Whitelist extra keys allowed in error response (e.g. existingReport for 409 duplicate).
-        const allowedExtraKeys = ['existingReport'];
+        const allowedExtraKeys = ['existingReport', 'data'];
         for (const key of allowedExtraKeys) {
           if (key in typed && typed[key] !== undefined) {
             extraKeys[key] = typed[key];

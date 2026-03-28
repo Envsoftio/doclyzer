@@ -8,10 +8,10 @@ import {
   Param,
   Post,
   Req,
-  UnauthorizedException,
+  Res,
   UseGuards,
 } from '@nestjs/common';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
@@ -24,6 +24,7 @@ import {
 } from './auth.dto';
 import type { RequestUser } from './auth.types';
 import { AuthService } from './auth.service';
+import { BetterAuthService } from './better-auth.service';
 import { PasswordRecoveryService } from './password-recovery.service';
 
 function getClientIp(req: Request): string {
@@ -37,6 +38,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly recoveryService: PasswordRecoveryService,
+    private readonly betterAuthService: BetterAuthService,
   ) {}
 
   @Post('register')
@@ -51,22 +53,30 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() body: LoginDto, @Req() req: Request): Promise<object> {
+  async login(
+    @Body() body: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<object> {
     this.authService.enforceRateLimit('login', getClientIp(req));
-    const data = await this.authService.login(
+    const { data, headers } = await this.authService.login(
       body,
-      getClientIp(req),
-      req.headers['user-agent'] ?? 'Unknown',
+      this.betterAuthService.buildHeadersFromRequest(req),
     );
+    this.applyAuthHeaders(res, headers);
     return successResponse(data, getCorrelationId(req));
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard)
-  async logout(@Req() req: Request): Promise<object> {
-    const token = this.extractBearerToken(req.header('authorization'));
-    await this.authService.logout(token);
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<object> {
+    const headers = this.betterAuthService.buildHeadersFromRequest(req);
+    const responseHeaders = await this.authService.logout(headers);
+    this.applyAuthHeaders(res, responseHeaders);
     return successResponse({ revoked: true }, getCorrelationId(req));
   }
 
@@ -104,9 +114,16 @@ export class AuthController {
   async refresh(
     @Body() body: RefreshDto,
     @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<object> {
     this.authService.enforceRateLimit('refresh', getClientIp(req));
-    const data = await this.authService.refresh(body.refreshToken);
+    const headers = this.betterAuthService.buildHeadersFromRequest(req);
+    headers.set('authorization', `Bearer ${body.refreshToken}`);
+    const { data, headers: responseHeaders } = await this.authService.refresh(
+      body.refreshToken,
+      headers,
+    );
+    this.applyAuthHeaders(res, responseHeaders);
     return successResponse(data, getCorrelationId(req));
   }
 
@@ -136,20 +153,19 @@ export class AuthController {
     return successResponse(data, getCorrelationId(req));
   }
 
-  private extractBearerToken(authorizationHeader?: string): string {
-    if (!authorizationHeader) {
-      throw new UnauthorizedException({
-        code: 'AUTH_TOKEN_REQUIRED',
-        message: 'Authorization bearer token is required',
-      });
+  private applyAuthHeaders(res: Response, headers: Headers | null): void {
+    if (!headers) return;
+    const setCookies = this.betterAuthService.extractSetCookie(headers);
+    if (setCookies.length > 0) {
+      res.setHeader('set-cookie', setCookies);
     }
-    const [scheme, token] = authorizationHeader.split(' ');
-    if (scheme !== 'Bearer' || !token) {
-      throw new UnauthorizedException({
-        code: 'AUTH_TOKEN_REQUIRED',
-        message: 'Authorization bearer token is required',
-      });
+    const authToken = headers.get('set-auth-token');
+    if (authToken) {
+      res.setHeader('set-auth-token', authToken);
     }
-    return token;
+    const exposeHeaders = headers.get('access-control-expose-headers');
+    if (exposeHeaders) {
+      res.setHeader('access-control-expose-headers', exposeHeaders);
+    }
   }
 }

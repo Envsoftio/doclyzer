@@ -4,6 +4,7 @@ import { ReportEntity } from '../../database/entities/report.entity';
 import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
 import { ReportProcessingAttemptEntity } from '../../database/entities/report-processing-attempt.entity';
 import { AuthModule } from '../auth/auth.module';
+import { EntitlementsModule } from '../entitlements/entitlements.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { StorageModule } from '../../common/storage/storage.module';
 import { ReportsController } from './reports.controller';
@@ -18,6 +19,7 @@ import { ReportSummaryService } from './report-summary/report-summary.service';
       ReportProcessingAttemptEntity,
     ]),
     AuthModule,
+    EntitlementsModule,
     ProfilesModule,
     StorageModule,
   ],

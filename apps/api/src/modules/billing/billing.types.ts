@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export const BILLING_PACK_NOT_FOUND = 'BILLING_PACK_NOT_FOUND';
 export const BILLING_PACK_INACTIVE = 'BILLING_PACK_INACTIVE';
@@ -11,6 +11,14 @@ export const BILLING_PLAN_INACTIVE = 'BILLING_PLAN_INACTIVE';
 export const BILLING_ALREADY_SUBSCRIBED = 'BILLING_ALREADY_SUBSCRIBED';
 export const BILLING_SUBSCRIPTION_NOT_FOUND = 'BILLING_SUBSCRIPTION_NOT_FOUND';
 export const BILLING_SUBSCRIPTION_INVALID_SIGNATURE = 'BILLING_SUBSCRIPTION_INVALID_SIGNATURE';
+export const BILLING_PROMO_NOT_FOUND = 'BILLING_PROMO_NOT_FOUND';
+export const BILLING_PROMO_INACTIVE = 'BILLING_PROMO_INACTIVE';
+export const BILLING_PROMO_EXPIRED = 'BILLING_PROMO_EXPIRED';
+export const BILLING_PROMO_NOT_APPLICABLE = 'BILLING_PROMO_NOT_APPLICABLE';
+export const BILLING_PROMO_CAP_REACHED = 'BILLING_PROMO_CAP_REACHED';
+export const BILLING_PROMO_USER_CAP_REACHED = 'BILLING_PROMO_USER_CAP_REACHED';
+
+export type PromoProductType = 'credit_pack' | 'subscription';
 
 export type OrderStatus = 'pending' | 'paid' | 'reconciled' | 'failed';
 
@@ -18,6 +26,10 @@ export class CreateOrderDto {
   @IsUUID()
   @IsNotEmpty()
   creditPackId!: string;
+
+  @IsString()
+  @IsOptional()
+  promoCode?: string;
 }
 
 export class VerifyPaymentDto {
@@ -59,6 +71,10 @@ export class CreateSubscriptionDto {
   @IsUUID()
   @IsNotEmpty()
   planId!: string;
+
+  @IsString()
+  @IsOptional()
+  promoCode?: string;
 }
 
 export class VerifySubscriptionDto {
@@ -94,4 +110,25 @@ export interface CreateSubscriptionResponseDto {
 export interface VerifySubscriptionResponseDto {
   planName: string;
   entitlementSummary: object;
+}
+
+export class PromoValidationDto {
+  @IsString()
+  @IsNotEmpty()
+  promoCode!: string;
+
+  @IsString()
+  @IsIn(['credit_pack', 'subscription'])
+  productType!: PromoProductType;
+
+  @IsUUID()
+  @IsNotEmpty()
+  productId!: string;
+}
+
+export interface PromoValidationResponseDto {
+  discountAmount: number;
+  finalAmount: number;
+  currency: string;
+  promoCodeId: string;
 }

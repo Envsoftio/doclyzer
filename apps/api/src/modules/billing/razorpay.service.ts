@@ -12,17 +12,30 @@ export class RazorpayService {
   readonly keyId: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.keyId = this.configService.get<string>('razorpay.keyId', '');
-    this.keySecret = this.configService.get<string>('razorpay.keySecret', '');
-    this.webhookSecret = this.configService.get<string>(
-      'razorpay.webhookSecret',
-      '',
+    this.keyId = this.getRequiredConfig('keyId', 'RAZORPAY_KEY_ID');
+    this.keySecret = this.getRequiredConfig('keySecret', 'RAZORPAY_KEY_SECRET');
+    this.webhookSecret = this.getRequiredConfig(
+      'webhookSecret',
+      'RAZORPAY_WEBHOOK_SECRET',
     );
 
     this.instance = new Razorpay({
       key_id: this.keyId,
       key_secret: this.keySecret,
     });
+  }
+
+  private getRequiredConfig(configKey: string, envVar: string): string {
+    const value = this.configService.get<string>(`razorpay.${configKey}`, '');
+    if (!value?.trim()) {
+      const message =
+        `Razorpay configuration missing: ${envVar}. ` +
+        'Set the environment variables listed in .env.example.';
+      this.logger.error(message);
+      throw new Error(message);
+    }
+
+    return value;
   }
 
   async createOrder(

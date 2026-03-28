@@ -5,9 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { CreditPackEntity } from '../../database/entities/credit-pack.entity';
 import { OrderEntity } from '../../database/entities/order.entity';
+import { PromoCodeEntity } from '../../database/entities/promo-code.entity';
+import { PromoRedemptionEntity } from '../../database/entities/promo-redemption.entity';
 import { SubscriptionEntity } from '../../database/entities/subscription.entity';
 import { UserEntitlementEntity } from '../../database/entities/user-entitlement.entity';
 import { EntitlementsService } from '../entitlements/entitlements.service';
@@ -21,6 +23,12 @@ import {
   BILLING_PACK_NOT_FOUND,
   BILLING_PLAN_INACTIVE,
   BILLING_PLAN_NOT_FOUND,
+  BILLING_PROMO_CAP_REACHED,
+  BILLING_PROMO_EXPIRED,
+  BILLING_PROMO_INACTIVE,
+  BILLING_PROMO_NOT_APPLICABLE,
+  BILLING_PROMO_NOT_FOUND,
+  BILLING_PROMO_USER_CAP_REACHED,
   BILLING_SUBSCRIPTION_INVALID_SIGNATURE,
   BILLING_SUBSCRIPTION_NOT_FOUND,
   BILLING_WEBHOOK_INVALID_SIGNATURE,
@@ -30,6 +38,8 @@ import type {
   CreateOrderResponseDto,
   CreateSubscriptionResponseDto,
   PlanResponseDto,
+  PromoProductType,
+  PromoValidationResponseDto,
   VerifyPaymentResponseDto,
   VerifySubscriptionResponseDto,
 } from './billing.types';
@@ -43,6 +53,8 @@ export class BillingService {
     private readonly creditPackRepo: Repository<CreditPackEntity>,
     @InjectRepository(OrderEntity)
     private readonly orderRepo: Repository<OrderEntity>,
+    @InjectRepository(PromoRedemptionEntity)
+    private readonly promoRedemptionRepo: Repository<PromoRedemptionEntity>,
     @InjectRepository(SubscriptionEntity)
     private readonly subscriptionRepo: Repository<SubscriptionEntity>,
     private readonly dataSource: DataSource,
@@ -68,6 +80,7 @@ export class BillingService {
   async createOrder(
     userId: string,
     creditPackId: string,
+    promoCode?: string,
   ): Promise<CreateOrderResponseDto> {
     const pack = await this.creditPackRepo.findOne({
       where: { id: creditPackId },
@@ -85,38 +98,84 @@ export class BillingService {
       });
     }
 
-    // Create Razorpay order (amount in paise for INR)
-    const amountInPaise = Math.round(parseFloat(pack.priceInr) * 100);
+    const baseAmount = parseFloat(pack.priceInr);
     const currency = 'INR';
 
-    const razorpayOrder = await this.razorpayService.createOrder(
-      amountInPaise,
-      currency,
-      `order_${userId}_${creditPackId}`,
-    );
+    if (!promoCode?.trim()) {
+      const amountInPaise = Math.round(baseAmount * 100);
+      const razorpayOrder = await this.razorpayService.createOrder(
+        amountInPaise,
+        currency,
+        `order_${userId}_${creditPackId}`,
+      );
 
-    // Persist order
-    const order = this.orderRepo.create({
-      userId,
-      creditPackId: pack.id,
-      amount: pack.priceInr,
-      currency,
-      status: 'pending',
-      razorpayOrderId: razorpayOrder.id,
-      razorpayPaymentId: null,
-      razorpaySignature: null,
-      credited: false,
-      metadata: null,
+      const order = this.orderRepo.create({
+        userId,
+        creditPackId: pack.id,
+        amount: pack.priceInr,
+        currency,
+        status: 'pending',
+        razorpayOrderId: razorpayOrder.id,
+        razorpayPaymentId: null,
+        razorpaySignature: null,
+        credited: false,
+        promoCodeId: null,
+        discountAmount: null,
+        finalAmount: baseAmount.toFixed(2),
+        metadata: null,
+      });
+      const saved = await this.orderRepo.save(order);
+
+      return {
+        orderId: saved.id,
+        razorpayOrderId: razorpayOrder.id,
+        amount: amountInPaise,
+        currency,
+        razorpayKeyId: this.razorpayService.keyId,
+      };
+    }
+
+    // Keep promo validation + reservation atomic to prevent cap over-redemption.
+    return this.dataSource.transaction(async (manager) => {
+      const promo = await this.validatePromoForCreditPack(
+        userId,
+        promoCode,
+        creditPackId,
+        manager,
+      );
+      const amountInPaise = Math.round(promo.finalAmount * 100);
+      const razorpayOrder = await this.razorpayService.createOrder(
+        amountInPaise,
+        currency,
+        `order_${userId}_${creditPackId}`,
+      );
+
+      const order = manager.create(OrderEntity, {
+        userId,
+        creditPackId: pack.id,
+        amount: pack.priceInr,
+        currency,
+        status: 'pending',
+        razorpayOrderId: razorpayOrder.id,
+        razorpayPaymentId: null,
+        razorpaySignature: null,
+        credited: false,
+        promoCodeId: promo.promoCodeId,
+        discountAmount: promo.discountAmount.toFixed(2),
+        finalAmount: promo.finalAmount.toFixed(2),
+        metadata: null,
+      });
+      const saved = await manager.save(OrderEntity, order);
+      await this.reservePromoRedemption(saved, manager);
+
+      return {
+        orderId: saved.id,
+        razorpayOrderId: razorpayOrder.id,
+        amount: amountInPaise,
+        currency,
+        razorpayKeyId: this.razorpayService.keyId,
+      };
     });
-    const saved = await this.orderRepo.save(order);
-
-    return {
-      orderId: saved.id,
-      razorpayOrderId: razorpayOrder.id,
-      amount: amountInPaise,
-      currency,
-      razorpayKeyId: this.razorpayService.keyId,
-    };
   }
 
   async verifyPayment(
@@ -149,8 +208,9 @@ export class BillingService {
       });
     }
 
-    // Idempotent: if already credited, just return current summary
+    // Idempotent: if already credited, ensure promo redemption is recorded
     if (order.credited) {
+      await this.recordPromoRedemption(order);
       const summary =
         await this.entitlementsService.getEntitlementSummary(userId);
       return {
@@ -179,6 +239,8 @@ export class BillingService {
         razorpaySignature,
         credited: true,
       });
+
+      await this.recordPromoRedemption(order, manager);
     });
 
     const summary =
@@ -226,6 +288,8 @@ export class BillingService {
         razorpayPaymentId,
         credited: true,
       });
+
+      await this.recordPromoRedemption(order, manager);
     });
 
     this.logger.log(
@@ -248,6 +312,7 @@ export class BillingService {
     if (order.status === 'reconciled' || order.status === 'paid') return;
 
     await this.orderRepo.update(order.id, { status: 'failed' });
+    await this.voidPromoReservation(order.id);
     this.logger.log(
       `Webhook: order ${order.id} marked failed (razorpay_order_id=${razorpayOrderId})`,
     );
@@ -273,7 +338,14 @@ export class BillingService {
   async createSubscription(
     userId: string,
     planId: string,
+    promoCode?: string,
   ): Promise<CreateSubscriptionResponseDto> {
+    if (promoCode?.trim()) {
+      throw new BadRequestException({
+        code: BILLING_PROMO_NOT_APPLICABLE,
+        message: 'Promo codes are not supported for subscriptions yet',
+      });
+    }
     const plan = await this.entitlementsService.getPlanById(planId);
     if (!plan) {
       throw new NotFoundException({
@@ -515,5 +587,289 @@ export class BillingService {
     this.logger.log(
       `Webhook: subscription ${subscription.id} cancelled (razorpay_subscription_id=${razorpaySubscriptionId})`,
     );
+  }
+
+  async validatePromoCode(
+    userId: string,
+    promoCode: string,
+    productType: PromoProductType,
+    productId: string,
+  ): Promise<PromoValidationResponseDto> {
+    const promo = await this.validatePromo(
+      userId,
+      promoCode,
+      productType,
+      productId,
+    );
+
+    return {
+      discountAmount: promo.discountAmount,
+      finalAmount: promo.finalAmount,
+      currency: promo.currency,
+      promoCodeId: promo.promoCodeId,
+    };
+  }
+
+  private async validatePromoForCreditPack(
+    userId: string,
+    promoCode: string,
+    creditPackId: string,
+    manager?: EntityManager,
+  ): Promise<{
+    promoCodeId: string;
+    discountAmount: number;
+    finalAmount: number;
+    currency: string;
+  }> {
+    return this.validatePromo(
+      userId,
+      promoCode,
+      'credit_pack',
+      creditPackId,
+      manager,
+    );
+  }
+
+  private async validatePromo(
+    userId: string,
+    promoCode: string,
+    productType: PromoProductType,
+    productId: string,
+    manager?: EntityManager,
+  ): Promise<{
+    promoCodeId: string;
+    discountAmount: number;
+    finalAmount: number;
+    currency: string;
+  }> {
+    if (productType === 'subscription') {
+      throw new BadRequestException({
+        code: BILLING_PROMO_NOT_APPLICABLE,
+        message: 'Promo codes are not supported for subscriptions yet',
+      });
+    }
+
+    const runValidation = async (tx: EntityManager) => {
+      const normalizedCode = this.normalizePromoCode(promoCode);
+      const promoRepo = tx.getRepository(PromoCodeEntity);
+      const redemptionRepo = tx.getRepository(PromoRedemptionEntity);
+      const packRepo = tx.getRepository(CreditPackEntity);
+
+      const promo = await promoRepo
+        .createQueryBuilder('promo')
+        .setLock('pessimistic_write')
+        .where('UPPER(promo.code) = :code', { code: normalizedCode })
+        .getOne();
+      if (!promo) {
+        throw new BadRequestException({
+          code: BILLING_PROMO_NOT_FOUND,
+          message: 'Promo code not found',
+        });
+      }
+      if (!promo.isActive) {
+        throw new BadRequestException({
+          code: BILLING_PROMO_INACTIVE,
+          message: 'Promo code is inactive',
+        });
+      }
+
+      const now = new Date();
+      if (
+        (promo.validFrom && now < promo.validFrom) ||
+        (promo.validUntil && now > promo.validUntil)
+      ) {
+        throw new BadRequestException({
+          code: BILLING_PROMO_EXPIRED,
+          message: 'Promo code is expired',
+        });
+      }
+
+      if (promo.appliesTo !== 'both' && promo.appliesTo !== 'credit_pack') {
+        throw new BadRequestException({
+          code: BILLING_PROMO_NOT_APPLICABLE,
+          message: 'Promo code is not applicable to this product',
+        });
+      }
+
+      if (promo.usageCapTotal !== null) {
+        const totalCount = await redemptionRepo
+          .createQueryBuilder('redemption')
+          .where('redemption.promo_code_id = :promoCodeId', {
+            promoCodeId: promo.id,
+          })
+          .andWhere("redemption.status IN ('reserved', 'redeemed')")
+          .getCount();
+        if (totalCount >= promo.usageCapTotal) {
+          throw new BadRequestException({
+            code: BILLING_PROMO_CAP_REACHED,
+            message: 'Promo code usage limit reached',
+          });
+        }
+      }
+
+      if (promo.usageCapPerUser !== null) {
+        const userCount = await redemptionRepo
+          .createQueryBuilder('redemption')
+          .where('redemption.promo_code_id = :promoCodeId', {
+            promoCodeId: promo.id,
+          })
+          .andWhere('redemption.user_id = :userId', { userId })
+          .andWhere("redemption.status IN ('reserved', 'redeemed')")
+          .getCount();
+        if (userCount >= promo.usageCapPerUser) {
+          throw new BadRequestException({
+            code: BILLING_PROMO_USER_CAP_REACHED,
+            message: 'Promo code usage limit reached for this user',
+          });
+        }
+      }
+
+      const pack = await packRepo.findOne({
+        where: { id: productId },
+      });
+      if (!pack) {
+        throw new NotFoundException({
+          code: BILLING_PACK_NOT_FOUND,
+          message: 'Credit pack not found',
+        });
+      }
+      if (!pack.isActive) {
+        throw new BadRequestException({
+          code: BILLING_PACK_INACTIVE,
+          message: 'Credit pack is no longer available',
+        });
+      }
+
+      const baseAmount = parseFloat(pack.priceInr);
+      const { discountAmount, finalAmount } = this.computeDiscount(
+        baseAmount,
+        promo,
+      );
+
+      return {
+        promoCodeId: promo.id,
+        discountAmount,
+        finalAmount,
+        currency: 'INR',
+      };
+    };
+
+    if (manager) {
+      return runValidation(manager);
+    }
+
+    return this.dataSource.transaction(runValidation);
+  }
+
+  private computeDiscount(
+    baseAmount: number,
+    promo: PromoCodeEntity,
+  ): { discountAmount: number; finalAmount: number } {
+    const discountValue = parseFloat(promo.discountValue);
+    const discount =
+      promo.discountType === 'percentage'
+        ? (baseAmount * discountValue) / 100
+        : discountValue;
+
+    const discountAmount = this.roundCurrency(
+      Math.min(Math.max(discount, 0), baseAmount),
+    );
+    const finalAmount = this.roundCurrency(
+      Math.max(baseAmount - discountAmount, 0),
+    );
+
+    return { discountAmount, finalAmount };
+  }
+
+  private roundCurrency(amount: number): number {
+    return Math.round(amount * 100) / 100;
+  }
+
+  private normalizePromoCode(code: string): string {
+    return code.trim().toUpperCase();
+  }
+
+  private async reservePromoRedemption(
+    order: OrderEntity,
+    manager?: EntityManager,
+  ): Promise<void> {
+    if (!order.promoCodeId) return;
+    if (!order.discountAmount) return;
+
+    const repo = manager
+      ? manager.getRepository(PromoRedemptionEntity)
+      : this.promoRedemptionRepo;
+
+    await repo
+      .createQueryBuilder()
+      .insert()
+      .into(PromoRedemptionEntity)
+      .values({
+        promoCodeId: order.promoCodeId,
+        userId: order.userId,
+        productType: 'credit_pack',
+        productRefId: order.creditPackId,
+        orderId: order.id,
+        subscriptionId: null,
+        discountAmount: order.discountAmount,
+        currency: order.currency,
+        status: 'reserved',
+      })
+      .orIgnore()
+      .execute();
+  }
+
+  private async recordPromoRedemption(
+    order: OrderEntity,
+    manager?: EntityManager,
+  ): Promise<void> {
+    if (!order.promoCodeId) return;
+    if (!order.discountAmount) return;
+
+    const repo = manager
+      ? manager.getRepository(PromoRedemptionEntity)
+      : this.promoRedemptionRepo;
+
+    const existingReserved = await repo
+      .createQueryBuilder()
+      .update(PromoRedemptionEntity)
+      .set({
+        status: 'redeemed',
+        discountAmount: order.discountAmount,
+        currency: order.currency,
+      })
+      .where('promo_code_id = :promoCodeId', { promoCodeId: order.promoCodeId })
+      .andWhere('order_id = :orderId', { orderId: order.id })
+      .andWhere("status = 'reserved'")
+      .execute();
+    if ((existingReserved.affected ?? 0) > 0) return;
+
+    await repo
+      .createQueryBuilder()
+      .insert()
+      .into(PromoRedemptionEntity)
+      .values({
+        promoCodeId: order.promoCodeId,
+        userId: order.userId,
+        productType: 'credit_pack',
+        productRefId: order.creditPackId,
+        orderId: order.id,
+        subscriptionId: null,
+        discountAmount: order.discountAmount,
+        currency: order.currency,
+        status: 'redeemed',
+      })
+      .orIgnore()
+      .execute();
+  }
+
+  private async voidPromoReservation(orderId: string): Promise<void> {
+    await this.promoRedemptionRepo
+      .createQueryBuilder()
+      .update(PromoRedemptionEntity)
+      .set({ status: 'void' })
+      .where('order_id = :orderId', { orderId })
+      .andWhere("status = 'reserved'")
+      .execute();
   }
 }

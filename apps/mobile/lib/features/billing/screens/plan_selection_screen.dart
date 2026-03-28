@@ -24,6 +24,8 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
   bool _loading = true;
   String? _error;
   String? _subscribingPlanId;
+  String? _promoError;
+  final TextEditingController _promoController = TextEditingController();
   late final Razorpay _razorpay;
 
   @override
@@ -39,6 +41,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
   @override
   void dispose() {
     _razorpay.clear();
+    _promoController.dispose();
     super.dispose();
   }
 
@@ -144,6 +147,19 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
     // External wallet selected — Razorpay handles the flow
   }
 
+  void _applySubscriptionPromo() {
+    final code = _promoController.text.trim();
+    if (code.isEmpty) {
+      setState(() {
+        _promoError = 'Enter a promo code to apply.';
+      });
+      return;
+    }
+    setState(() {
+      _promoError = 'Promo codes not supported for subscriptions yet.';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -197,10 +213,56 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
       );
     }
 
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.all(16),
-      itemCount: plans.length,
-      itemBuilder: (context, index) => _buildPlanCard(theme, plans[index]),
+      children: [
+        _buildPromoSection(theme),
+        const SizedBox(height: 16),
+        ...plans.map((plan) => _buildPlanCard(theme, plan)),
+      ],
+    );
+  }
+
+  Widget _buildPromoSection(ThemeData theme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Have a promo code?',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _promoController,
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(
+                labelText: 'Promo code',
+                hintText: 'Enter promo code',
+              ),
+            ),
+            if (_promoError != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                _promoError!,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ],
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonal(
+                onPressed: _applySubscriptionPromo,
+                child: const Text('Apply'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

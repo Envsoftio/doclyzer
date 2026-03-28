@@ -21,8 +21,10 @@ import { ProfilesService } from '../profiles/profiles.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
+import { ReportLimitExceededException } from './exceptions/report-limit-exceeded.exception';
 import { ReportNotFoundException } from './exceptions/report-not-found.exception';
 import { ReportUploadException } from './exceptions/report-upload.exception';
+import { UsageLimitsService } from '../entitlements/usage-limits.service';
 import {
   ALLOWED_CONTENT_TYPES,
   MAX_REPORT_SIZE_BYTES,
@@ -100,6 +102,7 @@ export class ReportsService {
     @Inject(FILE_STORAGE) private readonly fileStorage: FileStorageService,
     private readonly configService: ConfigService,
     private readonly reportSummaryService: ReportSummaryService,
+    private readonly usageLimitsService: UsageLimitsService,
   ) {}
 
   private throwIfAlreadyParsed(status: string): void {
@@ -128,6 +131,11 @@ export class ReportsService {
         REPORT_NO_ACTIVE_PROFILE,
         'No active profile. Create or select a profile first.',
       );
+    }
+
+    const reportUsage = await this.usageLimitsService.getReportUsage(userId);
+    if (reportUsage.current >= reportUsage.limit) {
+      throw new ReportLimitExceededException(reportUsage);
     }
 
     if (!file?.buffer) {

@@ -68,6 +68,20 @@ class CreateOrderResult {
   final String razorpayKeyId;
 }
 
+class PromoValidationResult {
+  const PromoValidationResult({
+    required this.discountAmount,
+    required this.finalAmount,
+    required this.currency,
+    required this.promoCodeId,
+  });
+
+  final double discountAmount;
+  final double finalAmount;
+  final String currency;
+  final String promoCodeId;
+}
+
 class VerifyPaymentResult {
   const VerifyPaymentResult({
     required this.creditsAdded,
@@ -123,12 +137,17 @@ class VerifySubscriptionResult {
 abstract class BillingRepository {
   Future<EntitlementSummary> getEntitlementSummary();
   Future<List<CreditPack>> listCreditPacks();
-  Future<CreateOrderResult> createOrder(String creditPackId);
+  Future<CreateOrderResult> createOrder(String creditPackId, {String? promoCode});
   Future<VerifyPaymentResult> verifyPayment(
     String razorpayOrderId,
     String razorpayPaymentId,
     String razorpaySignature,
   );
+  Future<PromoValidationResult> validatePromoCode({
+    required String promoCode,
+    required String productType,
+    required String productId,
+  });
   Future<List<Plan>> listPlans();
   Future<CreateSubscriptionResult> createSubscription(String planId);
   Future<VerifySubscriptionResult> verifySubscription(

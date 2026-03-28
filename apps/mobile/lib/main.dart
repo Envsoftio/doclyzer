@@ -404,6 +404,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
             onComplete: () {
               setState(() => _authView = _AuthView.home);
             },
+            onUpgrade: () {
+              setState(() => _authView = _AuthView.billing);
+            },
           ),
         _AuthView.timeline => _timelineProfileId != null
             ? TimelineScreen(
@@ -414,6 +417,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
                 sharingRepository: _sharingRepository,
                 onBack: () {
                   setState(() => _authView = _AuthView.home);
+                },
+                onUpgrade: () {
+                  setState(() => _authView = _AuthView.billing);
                 },
               )
             : const Scaffold(

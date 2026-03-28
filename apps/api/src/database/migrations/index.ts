@@ -15,6 +15,9 @@ import { CreateShareAccessEventsTable1730814100000 } from './1730814100000-Creat
 import { CreateBillingTables1730814200000 } from './1730814200000-CreateBillingTables';
 import { CreateCreditPacksAndOrders1730814300000 } from './1730814300000-CreateCreditPacksAndOrders';
 import { CreateSubscriptionsTable1730814400000 } from './1730814400000-CreateSubscriptionsTable';
+import { CreatePromoCodesAndRedemptions1730814500000 } from './1730814500000-CreatePromoCodesAndRedemptions';
+import { MigrateToBetterAuth1730814600000 } from './1730814600000-MigrateToBetterAuth';
+import { RemovePasswordResetTokens1730814700000 } from './1730814700000-RemovePasswordResetTokens';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -34,4 +37,7 @@ export const migrations = [
   CreateBillingTables1730814200000,
   CreateCreditPacksAndOrders1730814300000,
   CreateSubscriptionsTable1730814400000,
+  CreatePromoCodesAndRedemptions1730814500000,
+  MigrateToBetterAuth1730814600000,
+  RemovePasswordResetTokens1730814700000,
 ];

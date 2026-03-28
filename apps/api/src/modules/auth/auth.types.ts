@@ -23,7 +23,7 @@ export interface LoginResponse {
 export interface AuthUser {
   id: string;
   email: string;
-  passwordHash: string;
+  passwordHash: string | null;
   displayName: string | null;
   createdAt: Date;
 }

@@ -8,12 +8,8 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import * as bcrypt from 'bcryptjs';
+import { Repository } from 'typeorm';
 import { UserEntity } from '../../database/entities/user.entity';
 import { SessionEntity } from '../../database/entities/session.entity';
 import {
@@ -25,18 +21,26 @@ import {
   type RegisterResponse,
 } from './auth.types';
 import { SessionNotFoundException } from './exceptions/session-not-found.exception';
-
-const BCRYPT_ROUNDS = 12;
-const REFRESH_TTL_DAYS = 30;
+import { BetterAuthService } from './better-auth.service';
 
 interface RateLimitState {
   count: number;
   resetAt: number;
 }
 
-interface JwtPayload {
-  sub: string;
-  sessionId: string;
+interface BetterAuthErrorBody {
+  code?: string;
+  message?: string;
+}
+
+interface BetterAuthError extends Error {
+  body?: BetterAuthErrorBody;
+  statusCode?: number;
+}
+
+interface AuthResponseWithHeaders<T> {
+  data: T;
+  headers: Headers | null;
 }
 
 @Injectable()
@@ -52,12 +56,9 @@ export class AuthService {
     private readonly userRepo: Repository<UserEntity>,
     @InjectRepository(SessionEntity)
     private readonly sessionRepo: Repository<SessionEntity>,
-    private readonly jwtService: JwtService,
-    configService: ConfigService,
+    private readonly betterAuthService: BetterAuthService,
   ) {
-    const raw = configService.get<string>('JWT_ACCESS_TTL_SECONDS') ?? '900';
-    const n = parseInt(raw, 10);
-    this.accessTtlSec = Number.isNaN(n) ? 900 : n;
+    this.accessTtlSec = this.betterAuthService.getSessionExpiresInSeconds();
   }
 
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
@@ -65,110 +66,137 @@ export class AuthService {
     this.validatePassword(payload.password);
 
     const email = payload.email.trim().toLowerCase();
-    const existing = await this.userRepo.findOne({ where: { email } });
-    if (existing) {
-      throw new ConflictException({
-        code: 'AUTH_EMAIL_EXISTS',
-        message: 'An account with this email already exists',
+    const displayName = this.deriveDisplayName(email);
+    const auth = await this.betterAuthService.getAuth();
+
+    try {
+      const response = await auth.api.signUpEmail({
+        body: {
+          email,
+          password: payload.password,
+          name: displayName,
+        },
+      });
+
+      const userId = response?.user?.id;
+      if (!userId) {
+        throw new HttpException(
+          {
+            code: 'AUTH_REGISTRATION_FAILED',
+            message: 'Unable to register at this time',
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      this.logger.log(`Auth registration success userId=${userId}`);
+      return {
+        userId,
+        requiresVerification: true,
+        nextStep: 'verify_then_login',
+      };
+    } catch (error: unknown) {
+      this.throwMappedAuthError(error, {
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        code: 'AUTH_REGISTRATION_FAILED',
+        message: 'Unable to register at this time',
       });
     }
-
-    const passwordHash = await this.hashPassword(payload.password);
-    const user = this.userRepo.create({
-      email,
-      passwordHash,
-      displayName: null,
-    });
-    const saved = await this.userRepo.save(user);
-
-    this.logger.log(`Auth registration success userId=${saved.id}`);
-    return {
-      userId: saved.id,
-      requiresVerification: true,
-      nextStep: 'verify_then_login',
-    };
   }
 
   async login(
     payload: LoginRequest,
-    ip?: string,
-    userAgent?: string,
-  ): Promise<LoginResponse> {
+    headers: Headers,
+  ): Promise<AuthResponseWithHeaders<LoginResponse>> {
     this.validateEmail(payload.email);
     this.validatePassword(payload.password);
 
     const email = payload.email.trim().toLowerCase();
-    const user = await this.userRepo.findOne({ where: { email } });
-    if (!user) {
-      throw new UnauthorizedException({
+    const auth = await this.betterAuthService.getAuth();
+
+    try {
+      const result = await auth.api.signInEmail({
+        body: {
+          email,
+          password: payload.password,
+        },
+        headers,
+        returnHeaders: true,
+      });
+
+      const token = result?.response?.token;
+      const userId = result?.response?.user?.id ?? 'unknown';
+      if (!token) {
+        throw new UnauthorizedException({
+          code: 'AUTH_INVALID_CREDENTIALS',
+          message: 'Invalid credentials',
+        });
+      }
+
+      this.logger.log(`Auth login success userId=${userId}`);
+      return {
+        data: { accessToken: token, refreshToken: token, expiresIn: this.accessTtlSec },
+        headers: result?.headers ?? null,
+      };
+    } catch (error: unknown) {
+      this.throwMappedAuthError(error, {
+        status: HttpStatus.UNAUTHORIZED,
         code: 'AUTH_INVALID_CREDENTIALS',
         message: 'Invalid credentials',
       });
     }
+  }
 
-    const isValid = await this.verifyPassword(
-      payload.password,
-      user.passwordHash,
-    );
-    if (!isValid) {
-      throw new UnauthorizedException({
-        code: 'AUTH_INVALID_CREDENTIALS',
-        message: 'Invalid credentials',
+  async logout(headers: Headers): Promise<Headers | null> {
+    const auth = await this.betterAuthService.getAuth();
+    try {
+      const result = await auth.api.signOut({ headers, returnHeaders: true });
+      this.logger.log('Auth logout success');
+      return result?.headers ?? null;
+    } catch (error: unknown) {
+      this.throwMappedAuthError(error, {
+        status: HttpStatus.UNAUTHORIZED,
+        code: 'AUTH_UNAUTHORIZED',
+        message: 'Authentication required',
       });
     }
-
-    const { accessToken, refreshToken } = await this.createSession(
-      user.id,
-      ip ?? null,
-      userAgent ?? null,
-    );
-
-    this.logger.log(`Auth login success userId=${user.id}`);
-    return { accessToken, refreshToken, expiresIn: this.accessTtlSec };
   }
 
-  async logout(accessToken: string): Promise<void> {
-    const payload = this.jwtService.decode<JwtPayload>(accessToken);
-    if (!payload?.sessionId) return;
-    await this.sessionRepo.delete({
-      id: payload.sessionId,
-      userId: payload.sub,
-    });
-    this.logger.log(`Auth logout sessionId=${payload.sessionId}`);
-  }
+  async refresh(
+    refreshToken: string,
+    headers: Headers,
+  ): Promise<AuthResponseWithHeaders<LoginResponse>> {
+    const auth = await this.betterAuthService.getAuth();
 
-  async refresh(refreshToken: string): Promise<LoginResponse> {
-    const hash = createHash('sha256').update(refreshToken).digest('hex');
-    const now = new Date();
-    const session = await this.sessionRepo.findOne({
-      where: {
-        refreshTokenHash: hash,
-        expiresAt: MoreThan(now),
-      },
-    });
+    try {
+      const result = await auth.api.getSession({
+        method: 'POST',
+        headers,
+        returnHeaders: true,
+      });
 
-    if (!session) {
-      throw new UnauthorizedException({
+      const session = result?.response?.session;
+      const user = result?.response?.user;
+      if (!session || !user) {
+        throw new UnauthorizedException({
+          code: 'AUTH_SESSION_REVOKED',
+          message: 'Session has been revoked',
+        });
+      }
+
+      const token = session.token || refreshToken;
+      this.logger.log(`Auth token refresh userId=${user.id}`);
+      return {
+        data: { accessToken: token, refreshToken: token, expiresIn: this.accessTtlSec },
+        headers: result?.headers ?? null,
+      };
+    } catch (error: unknown) {
+      this.throwMappedAuthError(error, {
+        status: HttpStatus.UNAUTHORIZED,
         code: 'AUTH_SESSION_REVOKED',
         message: 'Session has been revoked',
       });
     }
-
-    await this.sessionRepo.delete(session.id);
-
-    const { accessToken, refreshToken: newRefreshToken } =
-      await this.createSession(
-        session.userId,
-        session.ipAddress,
-        session.userAgent,
-      );
-
-    this.logger.log(`Auth token refresh userId=${session.userId}`);
-    return {
-      accessToken,
-      refreshToken: newRefreshToken,
-      expiresIn: this.accessTtlSec,
-    };
   }
 
   async getSessions(
@@ -214,13 +242,6 @@ export class AuthService {
     );
   }
 
-  async findUserByEmail(email: string): Promise<AuthUser | null> {
-    const user = await this.userRepo.findOne({
-      where: { email: email.trim().toLowerCase() },
-    });
-    return user ? this.toAuthUser(user) : null;
-  }
-
   async findUserById(userId: string): Promise<AuthUser | null> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     return user ? this.toAuthUser(user) : null;
@@ -239,21 +260,6 @@ export class AuthService {
     }
     if (patch.displayName !== undefined) user.displayName = patch.displayName;
     await this.userRepo.save(user);
-  }
-
-  async updatePasswordHash(
-    userId: string,
-    newPasswordHash: string,
-  ): Promise<void> {
-    const result = await this.userRepo.update(userId, {
-      passwordHash: newPasswordHash,
-    });
-    if (!result.affected) {
-      throw new NotFoundException({
-        code: 'ACCOUNT_NOT_FOUND',
-        message: 'User not found',
-      });
-    }
   }
 
   async revokeAllSessionsForUser(userId: string): Promise<void> {
@@ -298,54 +304,19 @@ export class AuthService {
     this.validatePassword(password);
   }
 
-  async hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, BCRYPT_ROUNDS);
-  }
-
-  async verifyPassword(password: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(password, hash);
-  }
-
-  private async createSession(
-    userId: string,
-    ipAddress: string | null,
-    userAgent: string | null,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
-    const sessionId = randomUUID();
-    const rawRefresh = randomBytes(48).toString('hex');
-    const refreshTokenHash = createHash('sha256')
-      .update(rawRefresh)
-      .digest('hex');
-    const expiresAt = new Date(
-      Date.now() + REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000,
-    );
-
-    const session = this.sessionRepo.create({
-      id: sessionId,
-      userId,
-      refreshTokenHash,
-      ipAddress,
-      userAgent,
-      expiresAt,
-    });
-    await this.sessionRepo.insert(session);
-
-    const accessToken = this.jwtService.sign({
-      sub: userId,
-      sessionId,
-    });
-
-    return { accessToken, refreshToken: rawRefresh };
-  }
-
   private toAuthUser(user: UserEntity): AuthUser {
     return {
       id: user.id,
       email: user.email,
-      passwordHash: user.passwordHash,
+      passwordHash: user.passwordHash ?? null,
       displayName: user.displayName ?? null,
       createdAt: user.createdAt,
     };
+  }
+
+  private deriveDisplayName(email: string): string {
+    const localPart = email.split('@')[0]?.trim();
+    return localPart && localPart.length > 0 ? localPart : 'User';
   }
 
   private validateEmail(email: string): void {
@@ -384,5 +355,67 @@ export class AuthService {
           'Password must be at least 8 characters long and contain uppercase, lowercase, a digit, and a special character',
       });
     }
+  }
+
+  private getBetterAuthErrorCode(error: unknown): string | null {
+    if (!error || typeof error !== 'object') return null;
+    const err = error as BetterAuthError;
+    if (!err.body || typeof err.body !== 'object') return null;
+    return err.body.code ?? null;
+  }
+
+  private throwMappedAuthError(
+    error: unknown,
+    fallback: { status: HttpStatus; code: string; message: string },
+  ): never {
+    if (error instanceof HttpException) throw error;
+
+    const code = this.getBetterAuthErrorCode(error);
+    if (code) {
+      switch (code) {
+        case 'INVALID_EMAIL':
+          throw new BadRequestException({
+            code: 'AUTH_EMAIL_INVALID',
+            message: 'Email must be a valid email address',
+          });
+        case 'INVALID_PASSWORD':
+        case 'PASSWORD_TOO_SHORT':
+        case 'PASSWORD_TOO_LONG':
+          throw new BadRequestException({
+            code: 'AUTH_PASSWORD_INVALID',
+            message:
+              'Password must be at least 8 characters long and contain uppercase, lowercase, a digit, and a special character',
+          });
+        case 'INVALID_EMAIL_OR_PASSWORD':
+          throw new UnauthorizedException({
+            code: 'AUTH_INVALID_CREDENTIALS',
+            message: 'Invalid credentials',
+          });
+        case 'USER_ALREADY_EXISTS':
+        case 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL':
+          throw new ConflictException({
+            code: 'AUTH_EMAIL_EXISTS',
+            message: 'An account with this email already exists',
+          });
+        case 'SESSION_EXPIRED':
+        case 'INVALID_TOKEN':
+          throw new UnauthorizedException({
+            code: 'AUTH_SESSION_REVOKED',
+            message: 'Session has been revoked',
+          });
+        case 'EMAIL_NOT_VERIFIED':
+          throw new UnauthorizedException({
+            code: 'AUTH_UNAUTHORIZED',
+            message: 'Authentication required',
+          });
+        default:
+          break;
+      }
+    }
+
+    throw new HttpException(
+      { code: fallback.code, message: fallback.message },
+      fallback.status,
+    );
   }
 }

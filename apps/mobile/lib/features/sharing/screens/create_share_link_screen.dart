@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../core/api_client.dart';
 import '../sharing_repository.dart';
 import 'share_policy_screen.dart';
 import 'share_access_history_screen.dart';
@@ -13,10 +14,12 @@ class CreateShareLinkScreen extends StatefulWidget {
     required this.profileId,
     required this.profileName,
     required this.sharingRepository,
+    required this.onUpgrade,
   });
   final String profileId;
   final String profileName;
   final SharingRepository sharingRepository;
+  final VoidCallback onUpgrade;
 
   @override
   State<CreateShareLinkScreen> createState() => _CreateShareLinkScreenState();
@@ -33,6 +36,10 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
   ShareLink? _newLink;
   String? _createError;
   DateTime? _selectedExpiry; // null = no expiry
+  String? _limitMessage;
+  String? _limitUpgradeHint;
+  int? _limitCurrent;
+  int? _limitMax;
 
   // Policy
   SharePolicy? _policy;
@@ -81,15 +88,48 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
   }
 
   Future<void> _createLink() async {
-    setState(() { _createState = _CreateState.loading; _createError = null; });
+    setState(() {
+      _createState = _CreateState.loading;
+      _createError = null;
+      _limitMessage = null;
+      _limitUpgradeHint = null;
+      _limitCurrent = null;
+      _limitMax = null;
+    });
     try {
       final link = await widget.sharingRepository.createShareLink(
         widget.profileId,
         expiresAt: _selectedExpiry,
       );
       if (mounted) setState(() { _newLink = link; _createState = _CreateState.created; });
+    } on ApiException catch (e) {
+      if (mounted && e.code == 'SHARE_LINK_LIMIT_EXCEEDED') {
+        final data = e.data?['data'] as Map<String, dynamic>?;
+        setState(() {
+          _createState = _CreateState.error;
+          _createError = null;
+          _limitMessage = e.message;
+          _limitUpgradeHint = data?['upgradeHint'] as String?;
+          final current = data?['current'];
+          final max = data?['limit'];
+          _limitCurrent = current is num ? current.toInt() : null;
+          _limitMax = max is num ? max.toInt() : null;
+        });
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          _createState = _CreateState.error;
+          _createError = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() { _createState = _CreateState.error; _createError = e.toString().replaceFirst('Exception: ', ''); });
+      if (mounted) {
+        setState(() {
+          _createState = _CreateState.error;
+          _createError = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
     }
   }
 
@@ -240,6 +280,28 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
               if (_createState == _CreateState.idle || _createState == _CreateState.error) ...[
                 const Text('Create a new share link'),
                 const SizedBox(height: 12),
+                if (_limitMessage != null) ...[
+                  Text(
+                    _limitMessage!,
+                    key: const Key('share-limit-warning'),
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                  if (_limitCurrent != null && _limitMax != null) ...[
+                    const SizedBox(height: 4),
+                    Text('Using $_limitCurrent of $_limitMax active links.'),
+                  ],
+                  if (_limitUpgradeHint != null) ...[
+                    const SizedBox(height: 4),
+                    Text(_limitUpgradeHint!),
+                  ],
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    key: const Key('share-limit-upgrade'),
+                    onPressed: widget.onUpgrade,
+                    child: const Text('Upgrade or Manage'),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 // Expiry picker row
                 Row(
                   children: [

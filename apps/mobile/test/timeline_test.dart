@@ -30,6 +30,7 @@ void main() {
           profileName: 'Test Profile',
           sharingRepository: sharingRepo,
           onBack: () {},
+          onUpgrade: () {},
         ),
       ),
     );
@@ -64,6 +65,7 @@ void main() {
           profileName: 'Test Profile',
           sharingRepository: sharingRepo,
           onBack: () {},
+          onUpgrade: () {},
         ),
       ),
     );
@@ -87,6 +89,7 @@ void main() {
           profileName: 'Test Profile',
           sharingRepository: sharingRepo,
           onBack: () => backCalled = true,
+          onUpgrade: () {},
         ),
       ),
     );
@@ -126,6 +129,7 @@ void main() {
           profileName: 'Test Profile',
           sharingRepository: sharingRepo,
           onBack: () {},
+          onUpgrade: () {},
         ),
       ),
     );
@@ -142,6 +146,7 @@ void main() {
           profileName: 'Test Profile',
           sharingRepository: sharingRepo,
           onBack: () {},
+          onUpgrade: () {},
         ),
       ),
     );

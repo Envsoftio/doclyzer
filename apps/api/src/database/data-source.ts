@@ -8,13 +8,14 @@ import { AccountPreferenceEntity } from './entities/account-preference.entity';
 import { ClosureRequestEntity } from './entities/closure-request.entity';
 import { ConsentRecordEntity } from './entities/consent-record.entity';
 import { DataExportRequestEntity } from './entities/data-export-request.entity';
-import { PasswordResetTokenEntity } from './entities/password-reset-token.entity';
 import { ProfileEntity } from './entities/profile.entity';
 import { ReportEntity } from './entities/report.entity';
 import { ReportLabValueEntity } from './entities/report-lab-value.entity';
 import { CreditPackEntity } from './entities/credit-pack.entity';
 import { OrderEntity } from './entities/order.entity';
 import { PlanEntity } from './entities/plan.entity';
+import { PromoCodeEntity } from './entities/promo-code.entity';
+import { PromoRedemptionEntity } from './entities/promo-redemption.entity';
 import { SubscriptionEntity } from './entities/subscription.entity';
 import { UserEntitlementEntity } from './entities/user-entitlement.entity';
 import { RestrictionEntity } from './entities/restriction.entity';
@@ -37,7 +38,6 @@ export const AppDataSource = new DataSource({
     RestrictionEntity,
     DataExportRequestEntity,
     ClosureRequestEntity,
-    PasswordResetTokenEntity,
     ConsentRecordEntity,
     ReportEntity,
     ReportLabValueEntity,
@@ -45,6 +45,8 @@ export const AppDataSource = new DataSource({
     UserEntitlementEntity,
     CreditPackEntity,
     OrderEntity,
+    PromoCodeEntity,
+    PromoRedemptionEntity,
     SubscriptionEntity,
   ],
   migrations,

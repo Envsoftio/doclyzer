@@ -5,6 +5,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import type { UserEntity } from './user.entity';
 
@@ -20,8 +21,8 @@ export class SessionEntity {
   @JoinColumn({ name: 'user_id' })
   user!: UserEntity;
 
-  @Column({ type: 'varchar', length: 255, name: 'refresh_token_hash' })
-  refreshTokenHash!: string;
+  @Column({ type: 'varchar', length: 255, name: 'token', unique: true })
+  token!: string;
 
   @Column({ type: 'varchar', length: 45, name: 'ip_address', nullable: true })
   ipAddress!: string | null;
@@ -31,6 +32,9 @@ export class SessionEntity {
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt!: Date;
 
   @Column({ type: 'timestamptz', name: 'expires_at' })
   expiresAt!: Date;

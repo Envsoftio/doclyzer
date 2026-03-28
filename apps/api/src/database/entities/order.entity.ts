@@ -42,6 +42,27 @@ export class OrderEntity {
   @Column({ type: 'boolean', default: false })
   credited!: boolean;
 
+  @Column({ type: 'uuid', name: 'promo_code_id', nullable: true })
+  promoCodeId!: string | null;
+
+  @Column({
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    name: 'discount_amount',
+    nullable: true,
+  })
+  discountAmount!: string | null;
+
+  @Column({
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    name: 'final_amount',
+    nullable: true,
+  })
+  finalAmount!: string | null;
+
   @Column({ type: 'jsonb', nullable: true })
   metadata!: Record<string, unknown> | null;
 

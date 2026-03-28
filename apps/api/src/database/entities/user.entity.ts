@@ -10,7 +10,6 @@ import type { AccountPreferenceEntity } from './account-preference.entity';
 import type { ClosureRequestEntity } from './closure-request.entity';
 import type { ConsentRecordEntity } from './consent-record.entity';
 import type { DataExportRequestEntity } from './data-export-request.entity';
-import type { PasswordResetTokenEntity } from './password-reset-token.entity';
 import type { ProfileEntity } from './profile.entity';
 import type { RestrictionEntity } from './restriction.entity';
 import type { SessionEntity } from './session.entity';
@@ -23,8 +22,15 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 255, unique: true })
   email!: string;
 
-  @Column({ type: 'varchar', length: 255, name: 'password_hash' })
-  passwordHash!: string;
+  @Column({ type: 'varchar', length: 255, name: 'password_hash', nullable: true })
+  passwordHash!: string | null;
+
+  @Column({
+    type: 'boolean',
+    name: 'email_verified',
+    default: false,
+  })
+  emailVerified!: boolean;
 
   @Column({
     type: 'varchar',
@@ -61,9 +67,6 @@ export class UserEntity {
 
   @OneToMany('ClosureRequestEntity', 'user')
   closureRequests?: ClosureRequestEntity[];
-
-  @OneToMany('PasswordResetTokenEntity', 'user')
-  passwordResetTokens?: PasswordResetTokenEntity[];
 
   @OneToMany('ConsentRecordEntity', 'user')
   consentRecords?: ConsentRecordEntity[];

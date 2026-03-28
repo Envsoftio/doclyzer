@@ -11,7 +11,6 @@ import { AccountPreferenceEntity } from './database/entities/account-preference.
 import { ClosureRequestEntity } from './database/entities/closure-request.entity';
 import { ConsentRecordEntity } from './database/entities/consent-record.entity';
 import { DataExportRequestEntity } from './database/entities/data-export-request.entity';
-import { PasswordResetTokenEntity } from './database/entities/password-reset-token.entity';
 import { ProfileEntity } from './database/entities/profile.entity';
 import { ReportEntity } from './database/entities/report.entity';
 import { RestrictionEntity } from './database/entities/restriction.entity';
@@ -20,6 +19,8 @@ import { UserSharePolicyEntity } from './database/entities/user-share-policy.ent
 import { CreditPackEntity } from './database/entities/credit-pack.entity';
 import { OrderEntity } from './database/entities/order.entity';
 import { PlanEntity } from './database/entities/plan.entity';
+import { PromoCodeEntity } from './database/entities/promo-code.entity';
+import { PromoRedemptionEntity } from './database/entities/promo-redemption.entity';
 import { SubscriptionEntity } from './database/entities/subscription.entity';
 import { UserEntitlementEntity } from './database/entities/user-entitlement.entity';
 import { SessionEntity } from './database/entities/session.entity';
@@ -43,7 +44,6 @@ const typeOrmEntities = [
   RestrictionEntity,
   DataExportRequestEntity,
   ClosureRequestEntity,
-  PasswordResetTokenEntity,
   ConsentRecordEntity,
   ReportEntity,
   ShareLinkEntity,
@@ -52,6 +52,8 @@ const typeOrmEntities = [
   UserEntitlementEntity,
   CreditPackEntity,
   OrderEntity,
+  PromoCodeEntity,
+  PromoRedemptionEntity,
   SubscriptionEntity,
 ];
 

@@ -18,6 +18,7 @@ import { RazorpayService } from './razorpay.service';
 import {
   CreateOrderDto,
   CreateSubscriptionDto,
+  PromoValidationDto,
   VerifyPaymentDto,
   VerifySubscriptionDto,
   BILLING_WEBHOOK_INVALID_SIGNATURE,
@@ -49,6 +50,23 @@ export class BillingController {
     const data = await this.billingService.createOrder(
       userId,
       dto.creditPackId,
+      dto.promoCode,
+    );
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Post('promo/validate')
+  @UseGuards(AuthGuard)
+  async validatePromo(
+    @Req() req: Request,
+    @Body() dto: PromoValidationDto,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.billingService.validatePromoCode(
+      userId,
+      dto.promoCode,
+      dto.productType,
+      dto.productId,
     );
     return successResponse(data, getCorrelationId(req));
   }
@@ -87,6 +105,7 @@ export class BillingController {
     const data = await this.billingService.createSubscription(
       userId,
       dto.planId,
+      dto.promoCode,
     );
     return successResponse(data, getCorrelationId(req));
   }

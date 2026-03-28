@@ -30,10 +30,16 @@ class ApiBillingRepository implements BillingRepository {
   }
 
   @override
-  Future<CreateOrderResult> createOrder(String creditPackId) async {
+  Future<CreateOrderResult> createOrder(
+    String creditPackId, {
+    String? promoCode,
+  }) async {
     final data = await _client.post(
       'v1/billing/orders',
-      body: {'creditPackId': creditPackId},
+      body: {
+        'creditPackId': creditPackId,
+        if (promoCode != null && promoCode.isNotEmpty) 'promoCode': promoCode,
+      },
     );
     final d = data['data'] as Map<String, dynamic>;
     return CreateOrderResult(
@@ -64,6 +70,29 @@ class ApiBillingRepository implements BillingRepository {
     return VerifyPaymentResult(
       creditsAdded: d['creditsAdded'] as int,
       entitlementSummary: _summaryFromJson(summaryJson),
+    );
+  }
+
+  @override
+  Future<PromoValidationResult> validatePromoCode({
+    required String promoCode,
+    required String productType,
+    required String productId,
+  }) async {
+    final data = await _client.post(
+      'v1/billing/promo/validate',
+      body: {
+        'promoCode': promoCode,
+        'productType': productType,
+        'productId': productId,
+      },
+    );
+    final d = data['data'] as Map<String, dynamic>;
+    return PromoValidationResult(
+      discountAmount: (d['discountAmount'] as num).toDouble(),
+      finalAmount: (d['finalAmount'] as num).toDouble(),
+      currency: d['currency'] as String,
+      promoCodeId: d['promoCodeId'] as String,
     );
   }
 

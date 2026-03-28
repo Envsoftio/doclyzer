@@ -18,6 +18,7 @@ class TimelineScreen extends StatefulWidget {
     required this.onBack,
     required this.sharingRepository,
     required this.profileName,
+    required this.onUpgrade,
   });
 
   final ReportsRepository reportsRepository;
@@ -26,6 +27,7 @@ class TimelineScreen extends StatefulWidget {
   final VoidCallback onBack;
   final SharingRepository sharingRepository;
   final String profileName;
+  final VoidCallback onUpgrade;
 
   @override
   State<TimelineScreen> createState() => _TimelineScreenState();
@@ -128,6 +130,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   profileId: widget.profileId,
                   profileName: widget.profileName,
                   sharingRepository: widget.sharingRepository,
+                  onUpgrade: widget.onUpgrade,
                 ),
               ),
             ),

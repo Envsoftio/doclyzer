@@ -4,7 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PlanEntity } from '../../database/entities/plan.entity';
 import { UserEntitlementEntity } from '../../database/entities/user-entitlement.entity';
-import type { EntitlementSummaryDto } from './entitlements.types';
+import type { PlanLimits } from '../../database/entities/plan.entity';
+import type { EntitlementSummaryDto, PlanTier } from './entitlements.types';
 
 @Injectable()
 export class EntitlementsService {
@@ -85,6 +86,20 @@ export class EntitlementsService {
       where: { isActive: true },
       order: { createdAt: 'ASC' },
     });
+  }
+
+  /**
+   * Returns plan limits for the user's entitlement.
+   */
+  async getPlanLimits(
+    userId: string,
+  ): Promise<{ planName: string; tier: PlanTier; limits: PlanLimits }> {
+    const entitlement = await this.findOrProvision(userId);
+    return {
+      planName: entitlement.plan.name,
+      tier: entitlement.plan.tier as PlanTier,
+      limits: entitlement.plan.limits,
+    };
   }
 
   /**

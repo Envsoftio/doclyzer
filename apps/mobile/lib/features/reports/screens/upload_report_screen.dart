@@ -5,7 +5,7 @@ import '../../../core/api_client.dart';
 import '../reports_repository.dart';
 import 'pdf_viewer_screen.dart';
 
-enum _UploadState { idle, uploading, reading, success, error, duplicate }
+enum _UploadState { idle, uploading, reading, success, error, duplicate, limit }
 
 class UploadReportScreen extends StatefulWidget {
   const UploadReportScreen({
@@ -14,6 +14,7 @@ class UploadReportScreen extends StatefulWidget {
     required this.activeProfileName,
     required this.onBack,
     required this.onComplete,
+    this.onUpgrade,
     this.initialReport,
     this.initialDuplicateExistingReport,
     this.initialDuplicatePendingPath,
@@ -23,6 +24,7 @@ class UploadReportScreen extends StatefulWidget {
   final String activeProfileName;
   final VoidCallback onBack;
   final VoidCallback onComplete;
+  final VoidCallback? onUpgrade;
   /// For testing: when set, shows result state immediately (bypasses file pick).
   final UploadedReport? initialReport;
   /// For testing duplicate UX: when set with [initialDuplicatePendingPath], shows duplicate dialog immediately.
@@ -39,6 +41,10 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   UploadedReport? _result;
   String? _pendingDuplicatePath;
   Map<String, dynamic>? _existingReport;
+  String? _limitMessage;
+  String? _limitUpgradeHint;
+  int? _limitCurrent;
+  int? _limitMax;
 
   @override
   void initState() {
@@ -99,11 +105,22 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           });
           return;
         }
+      }
+      if (mounted && e.code == 'REPORT_LIMIT_EXCEEDED') {
+        final data = e.data?['data'] as Map<String, dynamic>?;
         setState(() {
-          _state = _UploadState.error;
-          _errorMessage = e.message;
+          _state = _UploadState.limit;
+          _limitMessage = e.message;
+          _limitUpgradeHint = data?['upgradeHint'] as String?;
+          final current = data?['current'];
+          final max = data?['limit'];
+          _limitCurrent = current is num ? current.toInt() : null;
+          _limitMax = max is num ? max.toInt() : null;
+          _errorMessage = null;
         });
-      } else if (mounted) {
+        return;
+      }
+      if (mounted) {
         setState(() {
           _state = _UploadState.error;
           _errorMessage = e.message;
@@ -211,6 +228,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
                   ? _buildParseFailure()
                   : _buildSuccess(),
               _UploadState.duplicate => _buildDuplicateDialog(),
+              _UploadState.limit => _buildLimitWarning(),
               _UploadState.error => _buildError(),
             },
           ],
@@ -445,6 +463,42 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           key: const Key('duplicate-upload-anyway'),
           onPressed: _onDuplicateUploadAnyway,
           child: const Text('Upload anyway'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLimitWarning() {
+    final usageText = (_limitCurrent != null && _limitMax != null)
+        ? 'Using $_limitCurrent of $_limitMax reports.'
+        : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Icon(Icons.info_outline, color: Theme.of(context).colorScheme.error),
+        const SizedBox(height: 16),
+        Text(
+          _limitMessage ?? 'You have reached your report limit.',
+          key: const Key('upload-limit-warning'),
+        ),
+        if (usageText != null) ...[
+          const SizedBox(height: 8),
+          Text(usageText),
+        ],
+        if (_limitUpgradeHint != null) ...[
+          const SizedBox(height: 8),
+          Text(_limitUpgradeHint!),
+        ],
+        const SizedBox(height: 24),
+        FilledButton(
+          key: const Key('upload-limit-upgrade'),
+          onPressed: widget.onUpgrade,
+          child: const Text('Upgrade'),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: widget.onBack,
+          child: const Text('Back'),
         ),
       ],
     );

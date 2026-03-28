@@ -11,7 +11,9 @@ import { ShareAccessEventEntity } from '../../database/entities/share-access-eve
 import { ProfilesService } from '../profiles/profiles.service';
 import { ShareLinkNotFoundException } from './exceptions/share-link-not-found.exception';
 import { ShareLinkExpiredException } from './exceptions/share-link-expired.exception';
+import { ShareLinkLimitExceededException } from './exceptions/share-link-limit-exceeded.exception';
 import { EXPIRY_MUST_BE_FUTURE, INVALID_EXPIRES_IN_DAYS } from './sharing.types';
+import { UsageLimitsService } from '../entitlements/usage-limits.service';
 
 export interface SharePolicyDto { defaultExpiresInDays: number | null; }
 
@@ -70,6 +72,7 @@ export class SharingService {
     private readonly accessEventRepo: Repository<ShareAccessEventEntity>,
     private readonly profilesService: ProfilesService,
     private readonly configService: ConfigService,
+    private readonly usageLimitsService: UsageLimitsService,
   ) {
     this.shareBaseUrl = this.configService.get<string>('SHARE_BASE_URL', 'http://localhost:3001');
   }
@@ -175,10 +178,28 @@ export class SharingService {
     }
     // Throws ProfileNotFoundException (404) if user doesn't own profile
     await this.profilesService.getProfile(userId, profileId);
-    const token = randomUUID();
-    const entity = this.shareLinkRepo.create({ userId, profileId, token, scope, expiresAt: expiresAt ?? null });
-    const saved = await this.shareLinkRepo.save(entity);
-    return this.toDto(saved);
+    const planInfo = await this.usageLimitsService.getPlanLimits(userId);
+    return this.shareLinkRepo.manager.transaction(async (manager) => {
+      await this.usageLimitsService.lockEntitlementForUpdate(userId, manager);
+      const usage = await this.usageLimitsService.getShareLinkUsage(
+        userId,
+        manager,
+        planInfo,
+      );
+      if (usage.current >= usage.limit) {
+        throw new ShareLinkLimitExceededException(usage);
+      }
+      const token = randomUUID();
+      const entity = manager.create(ShareLinkEntity, {
+        userId,
+        profileId,
+        token,
+        scope,
+        expiresAt: expiresAt ?? null,
+      });
+      const saved = await manager.save(entity);
+      return this.toDto(saved);
+    });
   }
 
   async listShareLinks(userId: string, profileId: string): Promise<ShareLinkDto[]> {

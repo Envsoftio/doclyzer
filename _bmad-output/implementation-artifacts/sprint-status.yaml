@@ -38,7 +38,7 @@ project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
-last_updated: 2026-03-24  # story 4-3 review
+last_updated: 2026-03-29 20:30  # story 8-1 ready-for-dev
 
 development_status:
   epic-0: in-progress
@@ -97,9 +97,9 @@ development_status:
   4-1-credit-balance-and-entitlement-summary-view: review
   4-2-credit-pack-purchase-flow: review
   4-3-subscription-purchase-flow: review
-  4-4-promo-code-apply-validate-at-checkout: backlog
-  4-5-usage-limit-enforcement-free-paid-tiers: backlog
-  4-6-billing-outcome-states-pending-failed-reconciled: backlog
+  4-4-promo-code-apply-validate-at-checkout: done  # subscription promos deferred until Razorpay Offers configured
+  4-5-usage-limit-enforcement-free-paid-tiers: review
+  4-6-billing-outcome-states-pending-failed-reconciled: ready-for-dev
   4-7-entitlement-change-reason-visibility: backlog
   epic-4-retrospective: optional
 
@@ -137,3 +137,7 @@ development_status:
   7-3-compliance-guardrail-test-gates-ci-cd-policy-checks: backlog
   7-4-cross-epic-guardrail-conformance-checklist-and-audit-evidence: backlog
   epic-7-retrospective: optional
+
+  epic-8: in-progress
+  8-1-better-auth-migration: review
+  epic-8-retrospective: optional

@@ -6,6 +6,7 @@ import { ReportEntity } from '../../database/entities/report.entity';
 import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
 import { ShareAccessEventEntity } from '../../database/entities/share-access-event.entity';
 import { AuthModule } from '../auth/auth.module';
+import { EntitlementsModule } from '../entitlements/entitlements.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { SharingController } from './sharing.controller';
 import { PublicSharingController } from './public-sharing.controller';
@@ -15,6 +16,7 @@ import { SharingService } from './sharing.service';
   imports: [
     TypeOrmModule.forFeature([ShareLinkEntity, UserSharePolicyEntity, ReportEntity, ReportLabValueEntity, ShareAccessEventEntity]),
     AuthModule,
+    EntitlementsModule,
     ProfilesModule,
   ],
   controllers: [SharingController, PublicSharingController],
