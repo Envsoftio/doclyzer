@@ -1,6 +1,6 @@
 # Story 5.3: Promo Code CRUD and Lifecycle Management
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -17,20 +17,20 @@ so that campaign operations are manageable.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Define API/domain contracts and error codes for this story
-  - [ ] Add or extend module types/DTOs and controller routes with stable response envelopes
-  - [ ] Ensure role checks and correlation IDs are enforced on all endpoints
-- [ ] Task 2: Implement service and persistence logic using existing architecture patterns
-  - [ ] Use TypeORM repositories via dependency injection and injected repositories
-  - [ ] Keep business rules deterministic and idempotent for retriable operations
-- [ ] Task 3: Integrate UI/consumer surface for superadmin workflows (API-first if UI not scaffolded)
-  - [ ] Add route-level stubs/contracts in web/admin surface plan when implementation surface is pending
-  - [ ] Ensure output states are explicit (pending/success/failure/reverted)
-- [ ] Task 4: Add audit and governance protections
-  - [ ] Emit auditable events for actor/action/target/time/outcome
-  - [ ] Apply PHI-safe telemetry and logging guardrails
-- [ ] Task 5: Validate manually (no automated tests per project policy)
-  - [ ] Record manual QA checklist and edge cases in completion notes
+- [x] Task 1: Define API/domain contracts and error codes for this story
+  - [x] Add or extend module types/DTOs and controller routes with stable response envelopes
+  - [x] Ensure role checks and correlation IDs are enforced on all endpoints
+- [x] Task 2: Implement service and persistence logic using existing architecture patterns
+  - [x] Use TypeORM repositories via dependency injection and injected repositories
+  - [x] Keep business rules deterministic and idempotent for retriable operations
+- [x] Task 3: Integrate UI/consumer surface for superadmin workflows (API-first if UI not scaffolded)
+  - [x] Add route-level stubs/contracts in web/admin surface plan when implementation surface is pending
+  - [x] Ensure output states are explicit (pending/success/failure/reverted)
+- [x] Task 4: Add audit and governance protections
+  - [x] Emit auditable events for actor/action/target/time/outcome
+  - [x] Apply PHI-safe telemetry and logging guardrails
+- [x] Task 5: Validate manually (no automated tests per project policy)
+  - [x] Record manual QA checklist and edge cases in completion notes
 
 ## Dev Notes
 
@@ -65,13 +65,40 @@ GPT-5 (Codex)
 ### Debug Log References
 
 - Generated via BMAD create-story equivalent workflow for Epic 5 batch.
+- `npm run lint --workspace apps/api` (fails due missing root `package.json`; reran in `apps/api`)
+- `npm run lint` in `apps/api` (fails on pre-existing unrelated lint debt in other modules/specs)
+- `npx eslint src/modules/billing/billing.controller.ts src/modules/billing/billing.service.ts src/modules/billing/billing.types.ts src/modules/billing/billing.module.ts src/database/entities/promo-code-audit-event.entity.ts src/database/migrations/1730815000000-CreatePromoCodeAuditEvents.ts src/database/migrations/index.ts` (pass)
+- `npm run build` in `apps/api` (pass)
 
 ### Completion Notes List
 
-- Story context prepared with implementation guardrails, acceptance criteria expansion, and module-level guidance.
-- Auditability and PHI-safe telemetry constraints are explicitly included for dev execution.
-- Status is ready-for-dev and sprint tracking has been updated accordingly.
+- Added superadmin promo lifecycle admin API endpoints under billing: list, create, update, deactivate, reactivate. All endpoints enforce `AuthGuard + SuperadminGuard`, use correlation IDs, and return stable envelope/state payloads.
+- Added billing admin DTO/type contracts and lifecycle error codes (`BILLING_PROMO_CODE_DUPLICATE`, `BILLING_PROMO_DATE_RANGE_INVALID`) with deterministic lifecycle `state` values (`pending|success|failure|reverted`).
+- Implemented promo CRUD/lifecycle service logic with TypeORM repositories and transactional pessimistic locking for deterministic/idempotent updates.
+- Enforced duplicate-code and date-range constraints in lifecycle operations; existing checkout promo validation already rejects inactive promos deterministically.
+- Added auditable promo lifecycle event persistence (`promo_code_audit_events`) and PHI-safe structured lifecycle logs with actor/action/target/outcome/correlationId metadata only.
+- Ensured reservation consistency on lifecycle changes: deactivating or disabling promo codes voids only `reserved` redemptions while preserving redeemed history for auditability.
+- Manual QA checklist (project policy: no automated tests for story completion):
+  - [x] Linted all changed story files with ESLint directly
+  - [x] Built backend (`nest build`) successfully
+  - [x] Verified admin endpoint guard + correlation-id wiring in controller paths
+  - [x] Verified lifecycle response states (`success`/`reverted`) and deterministic no-op behavior
+  - [x] Verified redemptions consistency path (reserved -> void on deactivate/update-to-inactive)
+  - [x] Verified audit entity+migration wiring and migration index registration
+  - [ ] Runtime API smoke via authenticated superadmin token in local env (pending interactive env execution)
 
 ### File List
 
 - _bmad-output/implementation-artifacts/5-3-promo-code-crud-and-lifecycle-management.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- apps/api/src/modules/billing/billing.types.ts
+- apps/api/src/modules/billing/billing.controller.ts
+- apps/api/src/modules/billing/billing.service.ts
+- apps/api/src/modules/billing/billing.module.ts
+- apps/api/src/database/entities/promo-code-audit-event.entity.ts
+- apps/api/src/database/migrations/1730815000000-CreatePromoCodeAuditEvents.ts
+- apps/api/src/database/migrations/index.ts
+
+### Change Log
+
+- 2026-03-29: Implemented Story 5.3 promo code CRUD/lifecycle management with superadmin endpoints, deterministic lifecycle state handling, audit persistence, and reservation consistency updates.

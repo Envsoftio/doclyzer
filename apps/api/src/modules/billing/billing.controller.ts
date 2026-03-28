@@ -4,7 +4,9 @@ import {
   Controller,
   Get,
   Logger,
+  Param,
   Post,
+  Put,
   Query,
   Req,
   UseGuards,
@@ -14,9 +16,12 @@ import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
 import type { RequestUser } from '../auth/auth.types';
+import { SuperadminGuard } from '../auth/superadmin.guard';
 import { BillingService } from './billing.service';
 import { RazorpayService } from './razorpay.service';
 import {
+  AdminCreatePromoCodeDto,
+  AdminUpdatePromoCodeDto,
   CreateOrderDto,
   CreateSubscriptionDto,
   ListOrdersQueryDto,
@@ -84,6 +89,81 @@ export class BillingController {
       dto.productType,
       dto.productId,
     );
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Get('admin/promos')
+  @UseGuards(AuthGuard, SuperadminGuard)
+  async listPromoCodes(@Req() req: Request): Promise<object> {
+    const data = await this.billingService.listPromoCodes();
+    return successResponse(
+      {
+        state: 'success',
+        promos: data,
+      },
+      getCorrelationId(req),
+    );
+  }
+
+  @Post('admin/promos')
+  @UseGuards(AuthGuard, SuperadminGuard)
+  async createPromoCode(
+    @Req() req: Request,
+    @Body() dto: AdminCreatePromoCodeDto,
+  ): Promise<object> {
+    const { id: actorUserId } = req.user as RequestUser;
+    const data = await this.billingService.createPromoCode({
+      actorUserId,
+      dto,
+      correlationId: getCorrelationId(req),
+    });
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Post('admin/promos/:promoCodeId/deactivate')
+  @UseGuards(AuthGuard, SuperadminGuard)
+  async deactivatePromoCode(
+    @Req() req: Request,
+    @Param('promoCodeId') promoCodeId: string,
+  ): Promise<object> {
+    const { id: actorUserId } = req.user as RequestUser;
+    const data = await this.billingService.deactivatePromoCode({
+      actorUserId,
+      promoCodeId,
+      correlationId: getCorrelationId(req),
+    });
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Post('admin/promos/:promoCodeId/reactivate')
+  @UseGuards(AuthGuard, SuperadminGuard)
+  async reactivatePromoCode(
+    @Req() req: Request,
+    @Param('promoCodeId') promoCodeId: string,
+  ): Promise<object> {
+    const { id: actorUserId } = req.user as RequestUser;
+    const data = await this.billingService.reactivatePromoCode({
+      actorUserId,
+      promoCodeId,
+      correlationId: getCorrelationId(req),
+    });
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Put('admin/promos/:promoCodeId')
+  @UseGuards(AuthGuard, SuperadminGuard)
+  async updatePromoCode(
+    @Req() req: Request,
+    @Param('promoCodeId') promoCodeId: string,
+    @Body() dto: AdminUpdatePromoCodeDto,
+  ): Promise<object> {
+    const { id: actorUserId } = req.user as RequestUser;
+    const data = await this.billingService.updatePromoCode({
+      actorUserId,
+      promoCodeId,
+      dto,
+      correlationId: getCorrelationId(req),
+    });
     return successResponse(data, getCorrelationId(req));
   }
 

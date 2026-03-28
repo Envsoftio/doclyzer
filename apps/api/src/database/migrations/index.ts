@@ -20,6 +20,7 @@ import { MigrateToBetterAuth1730814600000 } from './1730814600000-MigrateToBette
 import { RemovePasswordResetTokens1730814700000 } from './1730814700000-RemovePasswordResetTokens';
 import { CreateSuperadminMfaAndAuditTables1730814800000 } from './1730814800000-CreateSuperadminMfaAndAuditTables';
 import { CreatePlanConfigAuditAndVersioning1730814900000 } from './1730814900000-CreatePlanConfigAuditAndVersioning';
+import { CreatePromoCodeAuditEvents1730815000000 } from './1730815000000-CreatePromoCodeAuditEvents';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -44,4 +45,5 @@ export const migrations = [
   RemovePasswordResetTokens1730814700000,
   CreateSuperadminMfaAndAuditTables1730814800000,
   CreatePlanConfigAuditAndVersioning1730814900000,
+  CreatePromoCodeAuditEvents1730815000000,
 ];

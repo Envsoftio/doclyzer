@@ -1,12 +1,16 @@
 import {
+  IsBoolean,
+  IsDateString,
   IsIn,
+  IsInt,
   IsNotEmpty,
   IsOptional,
-  IsInt,
-  Max,
+  IsPositive,
+  IsUUID,
+  MaxLength,
   Min,
   IsString,
-  IsUUID,
+  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import type { OrderEntity } from '../../database/entities/order.entity';
@@ -31,6 +35,9 @@ export const BILLING_PROMO_EXPIRED = 'BILLING_PROMO_EXPIRED';
 export const BILLING_PROMO_NOT_APPLICABLE = 'BILLING_PROMO_NOT_APPLICABLE';
 export const BILLING_PROMO_CAP_REACHED = 'BILLING_PROMO_CAP_REACHED';
 export const BILLING_PROMO_USER_CAP_REACHED = 'BILLING_PROMO_USER_CAP_REACHED';
+export const BILLING_PROMO_CODE_DUPLICATE = 'BILLING_PROMO_CODE_DUPLICATE';
+export const BILLING_PROMO_DATE_RANGE_INVALID =
+  'BILLING_PROMO_DATE_RANGE_INVALID';
 
 export type PromoProductType = 'credit_pack' | 'subscription';
 
@@ -155,6 +162,116 @@ export interface PromoValidationResponseDto {
   finalAmount: number;
   currency: string;
   promoCodeId: string;
+}
+
+export type PromoLifecycleState =
+  | 'pending'
+  | 'success'
+  | 'failure'
+  | 'reverted';
+
+export class AdminCreatePromoCodeDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(64)
+  code!: string;
+
+  @IsIn(['percentage', 'fixed'])
+  discountType!: 'percentage' | 'fixed';
+
+  @Type(() => Number)
+  @IsPositive()
+  discountValue!: number;
+
+  @IsIn(['credit_pack', 'subscription', 'both'])
+  appliesTo!: 'credit_pack' | 'subscription' | 'both';
+
+  @IsDateString()
+  @IsOptional()
+  validFrom?: string;
+
+  @IsDateString()
+  @IsOptional()
+  validUntil?: string;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  usageCapTotal?: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  usageCapPerUser?: number;
+
+  @Type(() => Boolean)
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+}
+
+export class AdminUpdatePromoCodeDto {
+  @IsIn(['percentage', 'fixed'])
+  @IsOptional()
+  discountType?: 'percentage' | 'fixed';
+
+  @Type(() => Number)
+  @IsPositive()
+  @IsOptional()
+  discountValue?: number;
+
+  @IsIn(['credit_pack', 'subscription', 'both'])
+  @IsOptional()
+  appliesTo?: 'credit_pack' | 'subscription' | 'both';
+
+  @IsDateString()
+  @IsOptional()
+  validFrom?: string;
+
+  @IsDateString()
+  @IsOptional()
+  validUntil?: string;
+
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  usageCapTotal?: number | null;
+
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  usageCapPerUser?: number | null;
+
+  @Type(() => Boolean)
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+}
+
+export interface PromoCodeAdminDto {
+  id: string;
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  appliesTo: 'credit_pack' | 'subscription' | 'both';
+  validFrom: string | null;
+  validUntil: string | null;
+  usageCapTotal: number | null;
+  usageCapPerUser: number | null;
+  isActive: boolean;
+  redemptions: {
+    reserved: number;
+    redeemed: number;
+    void: number;
+  };
+  updatedAt: string;
+}
+
+export interface PromoLifecycleResponseDto {
+  state: PromoLifecycleState;
+  promo: PromoCodeAdminDto;
 }
 
 export interface OrderStatusDto {

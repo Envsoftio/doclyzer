@@ -9,6 +9,7 @@ import { DataSource, EntityManager, Repository } from 'typeorm';
 import { CreditPackEntity } from '../../database/entities/credit-pack.entity';
 import { OrderEntity } from '../../database/entities/order.entity';
 import { PromoCodeEntity } from '../../database/entities/promo-code.entity';
+import { PromoCodeAuditEventEntity } from '../../database/entities/promo-code-audit-event.entity';
 import { PromoRedemptionEntity } from '../../database/entities/promo-redemption.entity';
 import { SubscriptionEntity } from '../../database/entities/subscription.entity';
 import { UserEntitlementEntity } from '../../database/entities/user-entitlement.entity';
@@ -23,6 +24,8 @@ import {
   BILLING_PLAN_INACTIVE,
   BILLING_PLAN_NOT_FOUND,
   BILLING_PROMO_CAP_REACHED,
+  BILLING_PROMO_CODE_DUPLICATE,
+  BILLING_PROMO_DATE_RANGE_INVALID,
   BILLING_PROMO_EXPIRED,
   BILLING_PROMO_INACTIVE,
   BILLING_PROMO_NOT_APPLICABLE,
@@ -39,8 +42,14 @@ import type {
   PlanResponseDto,
   PromoProductType,
   PromoValidationResponseDto,
+  PromoCodeAdminDto,
+  PromoLifecycleResponseDto,
   VerifyPaymentResponseDto,
   VerifySubscriptionResponseDto,
+} from './billing.types';
+import type {
+  AdminCreatePromoCodeDto,
+  AdminUpdatePromoCodeDto,
 } from './billing.types';
 import { toOrderStatusDto } from './billing.types';
 
@@ -55,6 +64,8 @@ export class BillingService {
     private readonly orderRepo: Repository<OrderEntity>,
     @InjectRepository(PromoRedemptionEntity)
     private readonly promoRedemptionRepo: Repository<PromoRedemptionEntity>,
+    @InjectRepository(PromoCodeEntity)
+    private readonly promoCodeRepo: Repository<PromoCodeEntity>,
     @InjectRepository(SubscriptionEntity)
     private readonly subscriptionRepo: Repository<SubscriptionEntity>,
     private readonly dataSource: DataSource,
@@ -611,6 +622,207 @@ export class BillingService {
     };
   }
 
+  async listPromoCodes(): Promise<PromoCodeAdminDto[]> {
+    const promos = await this.promoCodeRepo.find({
+      order: { updatedAt: 'DESC' },
+    });
+
+    const countsByPromoId = await this.loadRedemptionCountsByPromoId();
+    return promos.map((promo) =>
+      this.toPromoCodeAdminDto(promo, countsByPromoId[promo.id]),
+    );
+  }
+
+  async createPromoCode(input: {
+    actorUserId: string;
+    dto: AdminCreatePromoCodeDto;
+    correlationId: string;
+  }): Promise<PromoLifecycleResponseDto> {
+    this.assertValidDateRange(input.dto.validFrom, input.dto.validUntil);
+
+    const normalizedCode = this.normalizePromoCode(input.dto.code);
+    await this.assertPromoCodeUnique(normalizedCode);
+
+    const promo = await this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(PromoCodeEntity);
+      const created = repo.create({
+        code: normalizedCode,
+        discountType: input.dto.discountType,
+        discountValue: this.roundCurrency(input.dto.discountValue).toFixed(2),
+        appliesTo: input.dto.appliesTo,
+        validFrom: input.dto.validFrom ? new Date(input.dto.validFrom) : null,
+        validUntil: input.dto.validUntil
+          ? new Date(input.dto.validUntil)
+          : null,
+        usageCapTotal: input.dto.usageCapTotal ?? null,
+        usageCapPerUser: input.dto.usageCapPerUser ?? null,
+        isActive: input.dto.isActive ?? true,
+        metadata: null,
+      });
+
+      const saved = await repo.save(created);
+      await this.recordPromoCodeAudit({
+        manager,
+        actorUserId: input.actorUserId,
+        promoCodeId: saved.id,
+        action: 'PROMO_CREATE',
+        target: `promo:${saved.id}`,
+        outcome: 'success',
+        correlationId: input.correlationId,
+        metadata: {
+          code: saved.code,
+          appliesTo: saved.appliesTo,
+          isActive: saved.isActive,
+        },
+      });
+      return saved;
+    });
+
+    return {
+      state: 'success',
+      promo: this.toPromoCodeAdminDto(promo),
+    };
+  }
+
+  async updatePromoCode(input: {
+    actorUserId: string;
+    promoCodeId: string;
+    dto: AdminUpdatePromoCodeDto;
+    correlationId: string;
+  }): Promise<PromoLifecycleResponseDto> {
+    this.assertValidDateRange(input.dto.validFrom, input.dto.validUntil);
+
+    return this.dataSource.transaction(async (manager) => {
+      const promo = await this.getPromoForLifecycleChange(
+        input.promoCodeId,
+        manager,
+      );
+
+      const nextCode = promo.code;
+      if (nextCode) {
+        await this.assertPromoCodeUnique(nextCode, promo.id, manager);
+      }
+
+      const nextDiscountType = input.dto.discountType ?? promo.discountType;
+      const nextDiscountValue =
+        input.dto.discountValue !== undefined
+          ? this.roundCurrency(input.dto.discountValue).toFixed(2)
+          : promo.discountValue;
+      const nextAppliesTo = input.dto.appliesTo ?? promo.appliesTo;
+      const nextValidFrom =
+        input.dto.validFrom !== undefined
+          ? input.dto.validFrom
+            ? new Date(input.dto.validFrom)
+            : null
+          : promo.validFrom;
+      const nextValidUntil =
+        input.dto.validUntil !== undefined
+          ? input.dto.validUntil
+            ? new Date(input.dto.validUntil)
+            : null
+          : promo.validUntil;
+      const nextUsageCapTotal =
+        input.dto.usageCapTotal !== undefined
+          ? input.dto.usageCapTotal
+          : promo.usageCapTotal;
+      const nextUsageCapPerUser =
+        input.dto.usageCapPerUser !== undefined
+          ? input.dto.usageCapPerUser
+          : promo.usageCapPerUser;
+      const nextIsActive =
+        input.dto.isActive !== undefined ? input.dto.isActive : promo.isActive;
+
+      const changed =
+        nextDiscountType !== promo.discountType ||
+        nextDiscountValue !== promo.discountValue ||
+        nextAppliesTo !== promo.appliesTo ||
+        (nextValidFrom?.getTime() ?? null) !==
+          (promo.validFrom?.getTime() ?? null) ||
+        (nextValidUntil?.getTime() ?? null) !==
+          (promo.validUntil?.getTime() ?? null) ||
+        nextUsageCapTotal !== promo.usageCapTotal ||
+        nextUsageCapPerUser !== promo.usageCapPerUser ||
+        nextIsActive !== promo.isActive;
+
+      if (!changed) {
+        await this.recordPromoCodeAudit({
+          manager,
+          actorUserId: input.actorUserId,
+          promoCodeId: promo.id,
+          action: 'PROMO_UPDATE',
+          target: `promo:${promo.id}`,
+          outcome: 'reverted',
+          correlationId: input.correlationId,
+          metadata: {
+            noOp: true,
+            deterministic: true,
+          },
+        });
+        return {
+          state: 'reverted',
+          promo: this.toPromoCodeAdminDto(promo),
+        };
+      }
+
+      promo.discountType = nextDiscountType;
+      promo.discountValue = nextDiscountValue;
+      promo.appliesTo = nextAppliesTo;
+      promo.validFrom = nextValidFrom;
+      promo.validUntil = nextValidUntil;
+      promo.usageCapTotal = nextUsageCapTotal;
+      promo.usageCapPerUser = nextUsageCapPerUser;
+      promo.isActive = nextIsActive;
+      const saved = await manager.getRepository(PromoCodeEntity).save(promo);
+
+      if (!saved.isActive) {
+        await this.voidReservedRedemptions(saved.id, manager);
+      }
+
+      await this.recordPromoCodeAudit({
+        manager,
+        actorUserId: input.actorUserId,
+        promoCodeId: saved.id,
+        action: 'PROMO_UPDATE',
+        target: `promo:${saved.id}`,
+        outcome: 'success',
+        correlationId: input.correlationId,
+        metadata: {
+          appliesTo: saved.appliesTo,
+          isActive: saved.isActive,
+        },
+      });
+
+      return {
+        state: 'success',
+        promo: this.toPromoCodeAdminDto(saved),
+      };
+    });
+  }
+
+  async deactivatePromoCode(input: {
+    actorUserId: string;
+    promoCodeId: string;
+    correlationId: string;
+  }): Promise<PromoLifecycleResponseDto> {
+    return this.changePromoActivation({
+      ...input,
+      action: 'PROMO_DEACTIVATE',
+      nextActiveState: false,
+    });
+  }
+
+  async reactivatePromoCode(input: {
+    actorUserId: string;
+    promoCodeId: string;
+    correlationId: string;
+  }): Promise<PromoLifecycleResponseDto> {
+    return this.changePromoActivation({
+      ...input,
+      action: 'PROMO_REACTIVATE',
+      nextActiveState: true,
+    });
+  }
+
   private async validatePromoForCreditPack(
     userId: string,
     promoCode: string,
@@ -629,6 +841,67 @@ export class BillingService {
       creditPackId,
       manager,
     );
+  }
+
+  private async changePromoActivation(input: {
+    actorUserId: string;
+    promoCodeId: string;
+    correlationId: string;
+    action: 'PROMO_DEACTIVATE' | 'PROMO_REACTIVATE';
+    nextActiveState: boolean;
+  }): Promise<PromoLifecycleResponseDto> {
+    return this.dataSource.transaction(async (manager) => {
+      const promo = await this.getPromoForLifecycleChange(
+        input.promoCodeId,
+        manager,
+      );
+      if (promo.isActive === input.nextActiveState) {
+        await this.recordPromoCodeAudit({
+          manager,
+          actorUserId: input.actorUserId,
+          promoCodeId: promo.id,
+          action: input.action,
+          target: `promo:${promo.id}`,
+          outcome: 'reverted',
+          correlationId: input.correlationId,
+          metadata: {
+            noOp: true,
+            deterministic: true,
+          },
+        });
+
+        return {
+          state: 'reverted',
+          promo: this.toPromoCodeAdminDto(promo),
+        };
+      }
+
+      promo.isActive = input.nextActiveState;
+      const saved = await manager.getRepository(PromoCodeEntity).save(promo);
+
+      const voidedReservations = input.nextActiveState
+        ? 0
+        : await this.voidReservedRedemptions(saved.id, manager);
+
+      await this.recordPromoCodeAudit({
+        manager,
+        actorUserId: input.actorUserId,
+        promoCodeId: saved.id,
+        action: input.action,
+        target: `promo:${saved.id}`,
+        outcome: 'success',
+        correlationId: input.correlationId,
+        metadata: {
+          isActive: saved.isActive,
+          voidedReservations,
+        },
+      });
+
+      return {
+        state: 'success',
+        promo: this.toPromoCodeAdminDto(saved),
+      };
+    });
   }
 
   private async validatePromo(
@@ -790,6 +1063,43 @@ export class BillingService {
     return code.trim().toUpperCase();
   }
 
+  private async assertPromoCodeUnique(
+    normalizedCode: string,
+    excludingPromoCodeId?: string,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = manager
+      ? manager.getRepository(PromoCodeEntity)
+      : this.promoCodeRepo;
+    const qb = repo
+      .createQueryBuilder('promo')
+      .where('UPPER(promo.code) = :code', { code: normalizedCode });
+    if (excludingPromoCodeId) {
+      qb.andWhere('promo.id != :promoCodeId', {
+        promoCodeId: excludingPromoCodeId,
+      });
+    }
+    const duplicate = await qb.getOne();
+    if (duplicate) {
+      throw new BadRequestException({
+        code: BILLING_PROMO_CODE_DUPLICATE,
+        message: 'Promo code already exists',
+      });
+    }
+  }
+
+  private assertValidDateRange(validFrom?: string, validUntil?: string): void {
+    if (!validFrom || !validUntil) {
+      return;
+    }
+    if (new Date(validUntil).getTime() < new Date(validFrom).getTime()) {
+      throw new BadRequestException({
+        code: BILLING_PROMO_DATE_RANGE_INVALID,
+        message: 'validUntil must be greater than or equal to validFrom',
+      });
+    }
+  }
+
   private isReconciled(status: string, credited: boolean): boolean {
     return status === 'reconciled' || credited;
   }
@@ -905,5 +1215,146 @@ export class BillingService {
       .where('order_id = :orderId', { orderId })
       .andWhere("status = 'reserved'")
       .execute();
+  }
+
+  private async voidReservedRedemptions(
+    promoCodeId: string,
+    manager: EntityManager,
+  ): Promise<number> {
+    const result = await manager
+      .getRepository(PromoRedemptionEntity)
+      .createQueryBuilder()
+      .update(PromoRedemptionEntity)
+      .set({ status: 'void' })
+      .where('promo_code_id = :promoCodeId', { promoCodeId })
+      .andWhere("status = 'reserved'")
+      .execute();
+    return result.affected ?? 0;
+  }
+
+  private async getPromoForLifecycleChange(
+    promoCodeId: string,
+    manager: EntityManager,
+  ): Promise<PromoCodeEntity> {
+    const promo = await manager
+      .getRepository(PromoCodeEntity)
+      .createQueryBuilder('promo')
+      .setLock('pessimistic_write')
+      .where('promo.id = :promoCodeId', { promoCodeId })
+      .getOne();
+
+    if (!promo) {
+      throw new NotFoundException({
+        code: BILLING_PROMO_NOT_FOUND,
+        message: 'Promo code not found',
+      });
+    }
+    return promo;
+  }
+
+  private async loadRedemptionCountsByPromoId(): Promise<
+    Record<
+      string,
+      {
+        reserved: number;
+        redeemed: number;
+        void: number;
+      }
+    >
+  > {
+    const rows = await this.promoRedemptionRepo
+      .createQueryBuilder('redemption')
+      .select('redemption.promoCodeId', 'promoCodeId')
+      .addSelect('redemption.status', 'status')
+      .addSelect('COUNT(redemption.id)', 'count')
+      .groupBy('redemption.promoCodeId')
+      .addGroupBy('redemption.status')
+      .getRawMany<{ promoCodeId: string; status: string; count: string }>();
+
+    const result: Record<
+      string,
+      {
+        reserved: number;
+        redeemed: number;
+        void: number;
+      }
+    > = {};
+
+    for (const row of rows) {
+      const bucket = (result[row.promoCodeId] ??= {
+        reserved: 0,
+        redeemed: 0,
+        void: 0,
+      });
+      const count = parseInt(row.count, 10);
+      if (row.status === 'reserved') {
+        bucket.reserved = count;
+      } else if (row.status === 'redeemed') {
+        bucket.redeemed = count;
+      } else if (row.status === 'void') {
+        bucket.void = count;
+      }
+    }
+
+    return result;
+  }
+
+  private toPromoCodeAdminDto(
+    promo: PromoCodeEntity,
+    redemptions?: { reserved: number; redeemed: number; void: number },
+  ): PromoCodeAdminDto {
+    return {
+      id: promo.id,
+      code: promo.code,
+      discountType: promo.discountType,
+      discountValue: parseFloat(promo.discountValue),
+      appliesTo: promo.appliesTo,
+      validFrom: promo.validFrom ? promo.validFrom.toISOString() : null,
+      validUntil: promo.validUntil ? promo.validUntil.toISOString() : null,
+      usageCapTotal: promo.usageCapTotal,
+      usageCapPerUser: promo.usageCapPerUser,
+      isActive: promo.isActive,
+      redemptions: redemptions ?? {
+        reserved: 0,
+        redeemed: 0,
+        void: 0,
+      },
+      updatedAt: promo.updatedAt.toISOString(),
+    };
+  }
+
+  private async recordPromoCodeAudit(input: {
+    manager: EntityManager;
+    actorUserId: string;
+    promoCodeId: string;
+    action: string;
+    target: string;
+    outcome: 'success' | 'failure' | 'denied' | 'reverted';
+    correlationId: string;
+    metadata?: Record<string, string | number | boolean | null>;
+  }): Promise<void> {
+    const repo = input.manager.getRepository(PromoCodeAuditEventEntity);
+    await repo.save(
+      repo.create({
+        actorUserId: input.actorUserId,
+        promoCodeId: input.promoCodeId,
+        action: input.action,
+        target: input.target,
+        outcome: input.outcome,
+        correlationId: input.correlationId,
+        metadata: input.metadata ?? null,
+      }),
+    );
+
+    this.logger.log(
+      JSON.stringify({
+        action: input.action,
+        target: input.target,
+        outcome: input.outcome,
+        correlationId: input.correlationId,
+        actorUserId: input.actorUserId,
+        promoCodeId: input.promoCodeId,
+      }),
+    );
   }
 }

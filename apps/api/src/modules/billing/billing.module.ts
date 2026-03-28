@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CreditPackEntity } from '../../database/entities/credit-pack.entity';
 import { OrderEntity } from '../../database/entities/order.entity';
 import { PromoCodeEntity } from '../../database/entities/promo-code.entity';
+import { PromoCodeAuditEventEntity } from '../../database/entities/promo-code-audit-event.entity';
 import { PromoRedemptionEntity } from '../../database/entities/promo-redemption.entity';
 import { SubscriptionEntity } from '../../database/entities/subscription.entity';
 import { AuthModule } from '../auth/auth.module';
@@ -17,6 +18,7 @@ import { RazorpayService } from './razorpay.service';
       CreditPackEntity,
       OrderEntity,
       PromoCodeEntity,
+      PromoCodeAuditEventEntity,
       PromoRedemptionEntity,
       SubscriptionEntity,
     ]),
