@@ -14,6 +14,19 @@ async function bootstrap() {
   });
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
+  const corsOrigins = (
+    process.env.CORS_ALLOWED_ORIGINS ??
+    'http://localhost:3001,http://localhost:3000'
+  )
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+  app.enableCors({
+    origin: corsOrigins,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+  });
+
   app.use(correlationIdMiddleware);
   app.useGlobalFilters(new ApiExceptionFilter());
   app.useGlobalPipes(

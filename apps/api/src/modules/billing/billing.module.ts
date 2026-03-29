@@ -6,6 +6,7 @@ import { PromoCodeEntity } from '../../database/entities/promo-code.entity';
 import { PromoCodeAuditEventEntity } from '../../database/entities/promo-code-audit-event.entity';
 import { PromoRedemptionEntity } from '../../database/entities/promo-redemption.entity';
 import { SubscriptionEntity } from '../../database/entities/subscription.entity';
+import { SuperadminAuthAuditEventEntity } from '../../database/entities/superadmin-auth-audit-event.entity';
 import { AuthModule } from '../auth/auth.module';
 import { EntitlementsModule } from '../entitlements/entitlements.module';
 import { BillingController } from './billing.controller';
@@ -21,6 +22,7 @@ import { RazorpayService } from './razorpay.service';
       PromoCodeAuditEventEntity,
       PromoRedemptionEntity,
       SubscriptionEntity,
+      SuperadminAuthAuditEventEntity,
     ]),
     AuthModule,
     EntitlementsModule,

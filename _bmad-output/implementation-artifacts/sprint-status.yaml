@@ -38,7 +38,7 @@ project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
-last_updated: 2026-03-29 12:02  # 5-3 moved to review
+last_updated: 2026-03-30
 
 development_status:
   epic-0: in-progress
@@ -107,19 +107,20 @@ development_status:
   5-1-superadmin-authentication-hardening-mfa-role-guard-baseline: review
   5-2-plan-definition-and-limit-configuration-management: review
   5-3-promo-code-crud-and-lifecycle-management: review
-  5-4-promo-redemption-and-revenue-impact-analytics: ready-for-dev
-  5-5-core-product-analytics-dashboard-signups-usage-monetization-behavior: ready-for-dev
-  5-6-phi-safe-analytics-taxonomy-and-governance-controls: ready-for-dev
-  5-7-auditable-superadmin-action-logging: ready-for-dev
-  5-8-access-share-consent-policy-records-query-console: ready-for-dev
-  5-9-suspicious-activity-detection-and-review-queue: ready-for-dev
-  5-10-share-link-account-suspension-and-restore-controls: ready-for-dev
+  5-4-promo-redemption-and-revenue-impact-analytics: done
+  5-5-core-product-analytics-dashboard-signups-usage-monetization-behavior: done
+  5-6-phi-safe-analytics-taxonomy-and-governance-controls: in-progress
+  5-7-auditable-superadmin-action-logging: done
+  5-8-access-share-consent-policy-records-query-console: review
+  5-9-suspicious-activity-detection-and-review-queue: in-progress
+  5-10-share-link-account-suspension-and-restore-controls: in-progress
   5-11-temporary-protective-restriction-and-restricted-review-mode: ready-for-dev
   5-12-time-bound-override-actions-with-expiry: ready-for-dev
   5-13-restricted-account-resolution-documentation-workflow: ready-for-dev
   5-14-emergency-containment-actions-with-mandatory-audit-notes: ready-for-dev
   5-15-email-queue-delivery-analytics-and-sending-history-admin-panel: ready-for-dev
   5-16-admin-level-email-sending-with-audit-and-recipient-controls: ready-for-dev
+  5-17-complete-superadmin-system-dashboard: backlog
   epic-5-retrospective: optional
 
   epic-6: backlog

@@ -21,6 +21,9 @@ import { UserEntitlementEntity } from './entities/user-entitlement.entity';
 import { RestrictionEntity } from './entities/restriction.entity';
 import { SessionEntity } from './entities/session.entity';
 import { UserEntity } from './entities/user.entity';
+import { AnalyticsTaxonomyFieldEntity } from './entities/analytics-taxonomy-field.entity';
+import { AnalyticsGovernanceReviewEntity } from './entities/analytics-governance-review.entity';
+import { SuperadminActionAuditEventEntity } from './entities/superadmin-action-audit-event.entity';
 import { migrations } from './migrations';
 
 /**
@@ -48,6 +51,9 @@ export const AppDataSource = new DataSource({
     PromoCodeEntity,
     PromoRedemptionEntity,
     SubscriptionEntity,
+    AnalyticsTaxonomyFieldEntity,
+    AnalyticsGovernanceReviewEntity,
+    SuperadminActionAuditEventEntity,
   ],
   migrations,
   synchronize: false,

@@ -48,6 +48,9 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 1024, name: 'avatar_url', nullable: true })
   avatarUrl!: string | null;
 
+  @Column({ type: 'varchar', length: 32, default: 'user' })
+  role!: string;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

@@ -1165,6 +1165,26 @@ So that I can communicate with users in a controlled, auditable way.
 **And** each send is audited: actor, action, recipient scope, timestamp, outcome; no PHI in audit payload beyond scope description
 **And** optional approval or rate limits can be applied for safety
 
+### Story 5.17: Complete Superadmin System Dashboard
+
+As a superadmin,
+I want a fully browsable dashboard that surfaces every operational and product health slice,
+So that I can monitor users/activity, payments, files, reports, and governance signals in one place.
+
+**Acceptance Criteria:**
+
+**Given** I am authenticated as a superadmin with the required MFA/admin action token
+**When** I open the system dashboard
+**Then** I can browse user/organization counts, activity trends (logins, uploads, share links), payment/revenue roll-ups (credit packs, subscriptions, refunds), file/report inventory (queued, processed, failed), and governance signals (alerts, audit entries) via filters and drill-downs.
+
+**Given** data filters are provided (date range, geography, product slice)
+**When** I apply them
+**Then** every widget refreshes to show the filtered metrics, exports remain PHI-safe, and state-per-request is auditable.
+
+**Given** an operational incident (e.g., upload failures spike)
+**When** I inspect the dashboard’s incident/opportunity panel
+**Then** I see correlated alerts (queue status, suspicious activity queue, audit notes) plus recommended next steps (review queue, protective restriction, account workbench).
+
 ## Epic 6: Notifications, Incident Communication & Support
 
 Users can receive notifications, control preferences, get clear incident messaging, and open support requests from failure contexts.

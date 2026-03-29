@@ -337,11 +337,108 @@ export class SuperadminAuthService {
     };
   }
 
+  async validateAdminActionToken(input: {
+    userId: string;
+    sessionId: string;
+    adminActionToken: string;
+    correlationId: string;
+    riskFingerprint: string;
+  }): Promise<void> {
+    const challenge = await this.challengeRepo.findOne({
+      where: {
+        userId: input.userId,
+        sessionId: input.sessionId,
+        adminActionToken: input.adminActionToken,
+      },
+    });
+    if (!challenge) {
+      await this.recordAudit(input.userId, {
+        action: 'ADMIN_ACTION_TOKEN_VALIDATE',
+        outcome: 'denied',
+        target: 'superadmin_sensitive_operation',
+        correlationId: input.correlationId,
+        errorCode: AUTH_MFA_CHALLENGE_REQUIRED,
+      });
+      throw new UnauthorizedException({
+        code: AUTH_MFA_CHALLENGE_REQUIRED,
+        message: 'Admin action token is missing or invalid',
+      });
+    }
+
+    const now = new Date();
+
+    if (challenge.status !== 'success' || !challenge.trustExpiresAt) {
+      challenge.status = 'reverted';
+      challenge.adminActionToken = null;
+      challenge.trustExpiresAt = null;
+      challenge.lastFailureCode = AUTH_MFA_CHALLENGE_REQUIRED;
+      await this.challengeRepo.save(challenge);
+      await this.recordAudit(input.userId, {
+        action: 'ADMIN_ACTION_TOKEN_VALIDATE',
+        outcome: 'reverted',
+        target: 'superadmin_sensitive_operation',
+        correlationId: input.correlationId,
+        challengeId: challenge.id,
+        errorCode: AUTH_MFA_CHALLENGE_REQUIRED,
+      });
+      throw new UnauthorizedException({
+        code: AUTH_MFA_CHALLENGE_REQUIRED,
+        message: 'Admin action token is invalid',
+      });
+    }
+
+    if (challenge.trustExpiresAt <= now) {
+      challenge.status = 'reverted';
+      challenge.adminActionToken = null;
+      challenge.trustExpiresAt = null;
+      challenge.lastFailureCode = AUTH_MFA_RECHALLENGE_REQUIRED;
+      await this.challengeRepo.save(challenge);
+      await this.recordAudit(input.userId, {
+        action: 'ADMIN_ACTION_TOKEN_VALIDATE',
+        outcome: 'reverted',
+        target: 'superadmin_sensitive_operation',
+        correlationId: input.correlationId,
+        challengeId: challenge.id,
+        errorCode: AUTH_MFA_RECHALLENGE_REQUIRED,
+      });
+      throw new UnauthorizedException({
+        code: AUTH_MFA_RECHALLENGE_REQUIRED,
+        message: 'Admin action token expired; re-challenge is required',
+      });
+    }
+
+    if (challenge.riskFingerprint !== input.riskFingerprint) {
+      challenge.status = 'reverted';
+      challenge.adminActionToken = null;
+      challenge.trustExpiresAt = null;
+      challenge.lastFailureCode = AUTH_MFA_RECHALLENGE_REQUIRED;
+      await this.challengeRepo.save(challenge);
+      await this.recordAudit(input.userId, {
+        action: 'ADMIN_ACTION_TOKEN_VALIDATE',
+        outcome: 'reverted',
+        target: 'superadmin_sensitive_operation',
+        correlationId: input.correlationId,
+        challengeId: challenge.id,
+        errorCode: AUTH_MFA_RECHALLENGE_REQUIRED,
+      });
+      throw new UnauthorizedException({
+        code: AUTH_MFA_RECHALLENGE_REQUIRED,
+        message: 'Risk posture changed; re-challenge is required',
+      });
+    }
+
+    await this.recordAudit(input.userId, {
+      action: 'ADMIN_ACTION_TOKEN_VALIDATE',
+      outcome: 'success',
+      target: 'superadmin_sensitive_operation',
+      correlationId: input.correlationId,
+      challengeId: challenge.id,
+    });
+  }
+
   async assertSuperadmin(userId: string, correlationId: string): Promise<void> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
-    const superadminEmails = this.getSuperadminEmails();
-    const userEmail = user?.email?.trim().toLowerCase();
-    if (!userEmail || !superadminEmails.has(userEmail)) {
+    if (!user || user.role !== 'superadmin') {
       await this.recordAudit(userId, {
         action: 'SUPERADMIN_ACCESS_CHECK',
         outcome: 'denied',
@@ -398,16 +495,6 @@ export class SuperadminAuthService {
       ),
       lockoutUntil,
     };
-  }
-
-  private getSuperadminEmails(): Set<string> {
-    const raw = this.configService.get<string>('SUPERADMIN_EMAILS') ?? '';
-    return new Set(
-      raw
-        .split(',')
-        .map((entry) => entry.trim().toLowerCase())
-        .filter((entry) => entry.length > 0),
-    );
   }
 
   private addSeconds(base: Date, seconds: number): Date {

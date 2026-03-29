@@ -38,6 +38,8 @@ export const BILLING_PROMO_USER_CAP_REACHED = 'BILLING_PROMO_USER_CAP_REACHED';
 export const BILLING_PROMO_CODE_DUPLICATE = 'BILLING_PROMO_CODE_DUPLICATE';
 export const BILLING_PROMO_DATE_RANGE_INVALID =
   'BILLING_PROMO_DATE_RANGE_INVALID';
+export const BILLING_ANALYTICS_DATE_RANGE_INVALID =
+  'BILLING_ANALYTICS_DATE_RANGE_INVALID';
 
 export type PromoProductType = 'credit_pack' | 'subscription';
 
@@ -272,6 +274,105 @@ export interface PromoCodeAdminDto {
 export interface PromoLifecycleResponseDto {
   state: PromoLifecycleState;
   promo: PromoCodeAdminDto;
+}
+
+export class AdminPromoAnalyticsQueryDto {
+  @IsUUID()
+  @IsOptional()
+  promoCodeId?: string;
+
+  @IsDateString()
+  @IsOptional()
+  dateFrom?: string;
+
+  @IsDateString()
+  @IsOptional()
+  dateTo?: string;
+
+  @IsIn(['credit_pack', 'subscription', 'all'])
+  @IsOptional()
+  productType?: PromoProductType | 'all';
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  pageSize?: number;
+}
+
+export class AdminPromoAnalyticsExportDto {
+  @IsUUID()
+  @IsOptional()
+  promoCodeId?: string;
+
+  @IsDateString()
+  @IsOptional()
+  dateFrom?: string;
+
+  @IsDateString()
+  @IsOptional()
+  dateTo?: string;
+
+  @IsIn(['credit_pack', 'subscription', 'all'])
+  @IsOptional()
+  productType?: PromoProductType | 'all';
+
+  @IsIn(['csv', 'json'])
+  @IsOptional()
+  format?: 'csv' | 'json';
+}
+
+export interface PromoAnalyticsRowDto {
+  promoCodeId: string;
+  promoCode: string;
+  reconciledCheckoutCount: number;
+  failedCheckoutCount: number;
+  attributedDiscountTotal: number;
+  finalizedRevenueTotal: number;
+}
+
+export interface PromoAnalyticsSummaryDto {
+  totalReconciledCheckouts: number;
+  totalFailedCheckouts: number;
+  totalAttributedDiscount: number;
+  totalFinalizedRevenue: number;
+}
+
+export interface PromoAnalyticsResponseDto {
+  state: 'success';
+  filters: {
+    promoCodeId: string | null;
+    dateFrom: string;
+    dateTo: string;
+    productType: PromoProductType | 'all';
+    policy: 'finalized_only';
+  };
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+  summary: PromoAnalyticsSummaryDto;
+  rows: PromoAnalyticsRowDto[];
+}
+
+export interface PromoAnalyticsExportResponseDto {
+  state: 'success';
+  export: {
+    format: 'csv' | 'json';
+    generatedAt: string;
+    filename: string;
+    rowCount: number;
+    payload: string | PromoAnalyticsRowDto[];
+  };
 }
 
 export interface OrderStatusDto {

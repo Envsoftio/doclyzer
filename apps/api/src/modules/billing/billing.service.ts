@@ -12,11 +12,13 @@ import { PromoCodeEntity } from '../../database/entities/promo-code.entity';
 import { PromoCodeAuditEventEntity } from '../../database/entities/promo-code-audit-event.entity';
 import { PromoRedemptionEntity } from '../../database/entities/promo-redemption.entity';
 import { SubscriptionEntity } from '../../database/entities/subscription.entity';
+import { SuperadminAuthAuditEventEntity } from '../../database/entities/superadmin-auth-audit-event.entity';
 import { UserEntitlementEntity } from '../../database/entities/user-entitlement.entity';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { RazorpayService } from './razorpay.service';
 import {
   BILLING_ALREADY_SUBSCRIBED,
+  BILLING_ANALYTICS_DATE_RANGE_INVALID,
   BILLING_INVALID_SIGNATURE,
   BILLING_ORDER_NOT_FOUND,
   BILLING_PACK_INACTIVE,
@@ -43,12 +45,18 @@ import type {
   PromoProductType,
   PromoValidationResponseDto,
   PromoCodeAdminDto,
+  PromoAnalyticsExportResponseDto,
+  PromoAnalyticsResponseDto,
+  PromoAnalyticsRowDto,
+  PromoAnalyticsSummaryDto,
   PromoLifecycleResponseDto,
   VerifyPaymentResponseDto,
   VerifySubscriptionResponseDto,
 } from './billing.types';
 import type {
   AdminCreatePromoCodeDto,
+  AdminPromoAnalyticsExportDto,
+  AdminPromoAnalyticsQueryDto,
   AdminUpdatePromoCodeDto,
 } from './billing.types';
 import { toOrderStatusDto } from './billing.types';
@@ -56,6 +64,7 @@ import { toOrderStatusDto } from './billing.types';
 @Injectable()
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
+  private readonly EXPORT_ROW_CAP = 1000;
 
   constructor(
     @InjectRepository(CreditPackEntity)
@@ -68,6 +77,8 @@ export class BillingService {
     private readonly promoCodeRepo: Repository<PromoCodeEntity>,
     @InjectRepository(SubscriptionEntity)
     private readonly subscriptionRepo: Repository<SubscriptionEntity>,
+    @InjectRepository(SuperadminAuthAuditEventEntity)
+    private readonly superadminAuditRepo: Repository<SuperadminAuthAuditEventEntity>,
     private readonly dataSource: DataSource,
     private readonly razorpayService: RazorpayService,
     private readonly entitlementsService: EntitlementsService,
@@ -823,6 +834,128 @@ export class BillingService {
     });
   }
 
+  async getPromoAnalytics(input: {
+    actorUserId: string;
+    query: AdminPromoAnalyticsQueryDto;
+    correlationId: string;
+  }): Promise<PromoAnalyticsResponseDto> {
+    const normalized = this.normalizeAnalyticsFilters({
+      promoCodeId: input.query.promoCodeId,
+      dateFrom: input.query.dateFrom,
+      dateTo: input.query.dateTo,
+      productType: input.query.productType,
+      page: input.query.page,
+      pageSize: input.query.pageSize,
+    });
+
+    const [rows, totalItems, summary] = await Promise.all([
+      this.queryPromoAnalyticsRows(normalized),
+      this.queryPromoAnalyticsCount(normalized),
+      this.queryPromoAnalyticsGlobalSummary(normalized),
+    ]);
+
+    const totalPages = Math.max(
+      1,
+      Math.ceil(totalItems / normalized.pagination.pageSize),
+    );
+
+    const response: PromoAnalyticsResponseDto = {
+      state: 'success',
+      filters: {
+        promoCodeId: normalized.promoCodeId,
+        dateFrom: normalized.window.from.toISOString(),
+        dateTo: normalized.window.to.toISOString(),
+        productType: normalized.productType,
+        policy: 'finalized_only',
+      },
+      pagination: {
+        page: normalized.pagination.page,
+        pageSize: normalized.pagination.pageSize,
+        totalItems,
+        totalPages,
+      },
+      summary,
+      rows,
+    };
+
+    try {
+      await this.recordSuperadminAudit({
+        actorUserId: input.actorUserId,
+        action: 'PROMO_ANALYTICS_VIEW',
+        target: 'promo_analytics',
+        outcome: 'success',
+        correlationId: input.correlationId,
+        metadata: {
+          promoCodeId: normalized.promoCodeId ?? 'all',
+          dateFrom: normalized.window.from.toISOString(),
+          dateTo: normalized.window.to.toISOString(),
+          productType: normalized.productType,
+          page: normalized.pagination.page,
+          pageSize: normalized.pagination.pageSize,
+          rowCount: rows.length,
+        },
+      });
+    } catch (err) {
+      this.logger.error('Failed to persist analytics view audit event', err);
+    }
+
+    return response;
+  }
+
+  async exportPromoAnalytics(input: {
+    actorUserId: string;
+    dto: AdminPromoAnalyticsExportDto;
+    correlationId: string;
+  }): Promise<PromoAnalyticsExportResponseDto> {
+    const normalized = this.normalizeAnalyticsFilters({
+      promoCodeId: input.dto.promoCodeId,
+      dateFrom: input.dto.dateFrom,
+      dateTo: input.dto.dateTo,
+      productType: input.dto.productType,
+      page: 1,
+      pageSize: this.EXPORT_ROW_CAP,
+    });
+    const format = input.dto.format ?? 'csv';
+    const rows = await this.queryPromoAnalyticsRows(normalized);
+
+    const generatedAt = new Date();
+    const fromDate = normalized.window.from.toISOString().slice(0, 10);
+    const toDate = normalized.window.to.toISOString().slice(0, 10);
+    const filename = `promo-analytics-${fromDate}-to-${toDate}.${format}`;
+    const payload = format === 'json' ? rows : this.toPromoAnalyticsCsv(rows);
+
+    try {
+      await this.recordSuperadminAudit({
+        actorUserId: input.actorUserId,
+        action: 'PROMO_ANALYTICS_EXPORT',
+        target: 'promo_analytics',
+        outcome: 'success',
+        correlationId: input.correlationId,
+        metadata: {
+          promoCodeId: normalized.promoCodeId ?? 'all',
+          dateFrom: normalized.window.from.toISOString(),
+          dateTo: normalized.window.to.toISOString(),
+          productType: normalized.productType,
+          format,
+          rowCount: rows.length,
+        },
+      });
+    } catch (err) {
+      this.logger.error('Failed to persist analytics export audit event', err);
+    }
+
+    return {
+      state: 'success',
+      export: {
+        format,
+        generatedAt: generatedAt.toISOString(),
+        filename,
+        rowCount: rows.length,
+        payload,
+      },
+    };
+  }
+
   private async validatePromoForCreditPack(
     userId: string,
     promoCode: string,
@@ -1299,6 +1432,223 @@ export class BillingService {
     return result;
   }
 
+  private normalizeAnalyticsFilters(input: {
+    promoCodeId?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    productType?: PromoProductType | 'all';
+    page?: number;
+    pageSize?: number;
+  }): {
+    promoCodeId: string | null;
+    productType: PromoProductType | 'all';
+    window: { from: Date; to: Date };
+    pagination: { page: number; pageSize: number };
+  } {
+    const now = new Date();
+    const defaultFrom = new Date(now);
+    defaultFrom.setDate(defaultFrom.getDate() - 30);
+
+    const from = input.dateFrom ? new Date(input.dateFrom) : defaultFrom;
+    const to = input.dateTo ? new Date(input.dateTo) : now;
+
+    if (
+      Number.isNaN(from.getTime()) ||
+      Number.isNaN(to.getTime()) ||
+      from > to
+    ) {
+      throw new BadRequestException({
+        code: BILLING_ANALYTICS_DATE_RANGE_INVALID,
+        message: 'dateFrom must be less than or equal to dateTo',
+      });
+    }
+
+    return {
+      promoCodeId: input.promoCodeId ?? null,
+      productType: input.productType ?? 'all',
+      window: { from, to },
+      pagination: {
+        page: input.page ?? 1,
+        pageSize: input.pageSize ?? 20,
+      },
+    };
+  }
+
+  private buildAnalyticsBaseQueryBuilder(input: {
+    promoCodeId: string | null;
+    productType: PromoProductType | 'all';
+    window: { from: Date; to: Date };
+  }) {
+    const qb = this.promoCodeRepo
+      .createQueryBuilder('promo')
+      .leftJoin(
+        PromoRedemptionEntity,
+        'redemption',
+        [
+          'redemption.promo_code_id = promo.id',
+          'redemption.updated_at >= :dateFrom',
+          'redemption.updated_at <= :dateTo',
+          input.productType === 'all'
+            ? '1=1'
+            : 'redemption.product_type = :productType',
+        ].join(' AND '),
+        {
+          dateFrom: input.window.from.toISOString(),
+          dateTo: input.window.to.toISOString(),
+          ...(input.productType === 'all'
+            ? {}
+            : { productType: input.productType }),
+        },
+      )
+      .leftJoin(
+        OrderEntity,
+        'checkout_order',
+        'checkout_order.id = redemption.order_id',
+      );
+
+    if (input.promoCodeId) {
+      qb.where('promo.id = :promoCodeId', { promoCodeId: input.promoCodeId });
+    }
+
+    return qb;
+  }
+
+  private async queryPromoAnalyticsCount(input: {
+    promoCodeId: string | null;
+    productType: PromoProductType | 'all';
+    window: { from: Date; to: Date };
+  }): Promise<number> {
+    const row = await this.buildAnalyticsBaseQueryBuilder(input)
+      .select('COUNT(DISTINCT promo.id)', 'cnt')
+      .getRawOne<{ cnt: string }>();
+    return parseInt(row?.cnt ?? '0', 10) || 0;
+  }
+
+  private async queryPromoAnalyticsGlobalSummary(input: {
+    promoCodeId: string | null;
+    productType: PromoProductType | 'all';
+    window: { from: Date; to: Date };
+  }): Promise<PromoAnalyticsSummaryDto> {
+    const row = await this.buildAnalyticsBaseQueryBuilder(input)
+      .select(
+        "COALESCE(SUM(CASE WHEN redemption.status = 'redeemed' AND checkout_order.status = 'reconciled' THEN 1 ELSE 0 END), 0)",
+        'totalReconciledCheckouts',
+      )
+      .addSelect(
+        "COALESCE(SUM(CASE WHEN redemption.status = 'void' AND checkout_order.status = 'failed' THEN 1 ELSE 0 END), 0)",
+        'totalFailedCheckouts',
+      )
+      .addSelect(
+        "COALESCE(SUM(CASE WHEN redemption.status = 'redeemed' AND checkout_order.status = 'reconciled' THEN redemption.discount_amount ELSE 0 END), 0)",
+        'totalAttributedDiscount',
+      )
+      .addSelect(
+        "COALESCE(SUM(CASE WHEN redemption.status = 'redeemed' AND checkout_order.status = 'reconciled' THEN checkout_order.final_amount ELSE 0 END), 0)",
+        'totalFinalizedRevenue',
+      )
+      .getRawOne<{
+        totalReconciledCheckouts: string;
+        totalFailedCheckouts: string;
+        totalAttributedDiscount: string;
+        totalFinalizedRevenue: string;
+      }>();
+
+    return {
+      totalReconciledCheckouts:
+        parseInt(row?.totalReconciledCheckouts ?? '0', 10) || 0,
+      totalFailedCheckouts: parseInt(row?.totalFailedCheckouts ?? '0', 10) || 0,
+      totalAttributedDiscount: this.roundCurrency(
+        parseFloat(row?.totalAttributedDiscount ?? '0') || 0,
+      ),
+      totalFinalizedRevenue: this.roundCurrency(
+        parseFloat(row?.totalFinalizedRevenue ?? '0') || 0,
+      ),
+    };
+  }
+
+  private async queryPromoAnalyticsRows(input: {
+    promoCodeId: string | null;
+    productType: PromoProductType | 'all';
+    window: { from: Date; to: Date };
+    pagination: { page: number; pageSize: number };
+  }): Promise<PromoAnalyticsRowDto[]> {
+    const offset = (input.pagination.page - 1) * input.pagination.pageSize;
+    const rows = await this.buildAnalyticsBaseQueryBuilder(input)
+      .select('promo.id', 'promoCodeId')
+      .addSelect('promo.code', 'promoCode')
+      .addSelect(
+        "COALESCE(SUM(CASE WHEN redemption.status = 'redeemed' AND checkout_order.status = 'reconciled' THEN 1 ELSE 0 END), 0)",
+        'reconciledCheckoutCount',
+      )
+      .addSelect(
+        "COALESCE(SUM(CASE WHEN redemption.status = 'void' AND checkout_order.status = 'failed' THEN 1 ELSE 0 END), 0)",
+        'failedCheckoutCount',
+      )
+      .addSelect(
+        "COALESCE(SUM(CASE WHEN redemption.status = 'redeemed' AND checkout_order.status = 'reconciled' THEN redemption.discount_amount ELSE 0 END), 0)",
+        'attributedDiscountTotal',
+      )
+      .addSelect(
+        "COALESCE(SUM(CASE WHEN redemption.status = 'redeemed' AND checkout_order.status = 'reconciled' THEN checkout_order.final_amount ELSE 0 END), 0)",
+        'finalizedRevenueTotal',
+      )
+      .groupBy('promo.id')
+      .addGroupBy('promo.code')
+      .orderBy('reconciledCheckoutCount', 'DESC')
+      .addOrderBy('promo.code', 'ASC')
+      .addOrderBy('promo.id', 'ASC')
+      .limit(input.pagination.pageSize)
+      .offset(offset)
+      .getRawMany<{
+        promoCodeId: string;
+        promoCode: string;
+        reconciledCheckoutCount: string;
+        failedCheckoutCount: string;
+        attributedDiscountTotal: string;
+        finalizedRevenueTotal: string;
+      }>();
+
+    return rows.map((row) => ({
+      promoCodeId: row.promoCodeId,
+      promoCode: row.promoCode,
+      reconciledCheckoutCount: parseInt(row.reconciledCheckoutCount, 10) || 0,
+      failedCheckoutCount: parseInt(row.failedCheckoutCount, 10) || 0,
+      attributedDiscountTotal: parseFloat(row.attributedDiscountTotal) || 0,
+      finalizedRevenueTotal: parseFloat(row.finalizedRevenueTotal) || 0,
+    }));
+  }
+
+  private toPromoAnalyticsCsv(rows: PromoAnalyticsRowDto[]): string {
+    const header = [
+      'promoCodeId',
+      'promoCode',
+      'reconciledCheckoutCount',
+      'failedCheckoutCount',
+      'attributedDiscountTotal',
+      'finalizedRevenueTotal',
+    ].join(',');
+
+    const lines = rows.map((row) =>
+      [
+        row.promoCodeId,
+        this.escapeCsvCell(row.promoCode),
+        row.reconciledCheckoutCount.toString(),
+        row.failedCheckoutCount.toString(),
+        row.attributedDiscountTotal.toFixed(2),
+        row.finalizedRevenueTotal.toFixed(2),
+      ].join(','),
+    );
+
+    return [header, ...lines].join('\n');
+  }
+
+  private escapeCsvCell(value: string): string {
+    if (!value.includes(',') && !value.includes('"') && !value.includes('\n')) {
+      return value;
+    }
+    return `"${value.replaceAll('"', '""')}"`;
+  }
+
   private toPromoCodeAdminDto(
     promo: PromoCodeEntity,
     redemptions?: { reserved: number; redeemed: number; void: number },
@@ -1321,6 +1671,38 @@ export class BillingService {
       },
       updatedAt: promo.updatedAt.toISOString(),
     };
+  }
+
+  private async recordSuperadminAudit(input: {
+    actorUserId: string;
+    action: string;
+    target: string;
+    outcome: 'success' | 'failure' | 'denied' | 'reverted';
+    correlationId: string;
+    metadata?: Record<string, string | number | boolean>;
+  }): Promise<void> {
+    await this.superadminAuditRepo.save(
+      this.superadminAuditRepo.create({
+        actorUserId: input.actorUserId,
+        action: input.action,
+        target: input.target,
+        outcome: input.outcome,
+        correlationId: input.correlationId,
+        challengeId: null,
+        errorCode: null,
+        metadata: input.metadata ?? null,
+      }),
+    );
+
+    this.logger.log(
+      JSON.stringify({
+        action: input.action,
+        target: input.target,
+        outcome: input.outcome,
+        correlationId: input.correlationId,
+        actorUserId: input.actorUserId,
+      }),
+    );
   }
 
   private async recordPromoCodeAudit(input: {

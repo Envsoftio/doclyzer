@@ -25,6 +25,7 @@ import { PromoRedemptionEntity } from './database/entities/promo-redemption.enti
 import { SubscriptionEntity } from './database/entities/subscription.entity';
 import { UserEntitlementEntity } from './database/entities/user-entitlement.entity';
 import { SessionEntity } from './database/entities/session.entity';
+import { SuperadminActionAuditEventEntity } from './database/entities/superadmin-action-audit-event.entity';
 import { SuperadminAuthAuditEventEntity } from './database/entities/superadmin-auth-audit-event.entity';
 import { SuperadminMfaChallengeEntity } from './database/entities/superadmin-mfa-challenge.entity';
 import { UserEntity } from './database/entities/user.entity';
@@ -37,6 +38,8 @@ import { EntitlementsModule } from './modules/entitlements/entitlements.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { SharingModule } from './modules/sharing/sharing.module';
+import { AnalyticsAdminModule } from './modules/analytics-admin/analytics-admin.module';
+import { AuditIncidentModule } from './modules/audit-incident/audit-incident.module';
 import { randomUUID } from 'node:crypto';
 
 const typeOrmEntities = [
@@ -59,6 +62,7 @@ const typeOrmEntities = [
   PromoCodeEntity,
   PromoRedemptionEntity,
   SubscriptionEntity,
+  SuperadminActionAuditEventEntity,
   SuperadminMfaChallengeEntity,
   SuperadminAuthAuditEventEntity,
 ];
@@ -159,6 +163,8 @@ const typeOrmEntities = [
     ProfilesModule,
     ReportsModule,
     SharingModule,
+    AnalyticsAdminModule,
+    AuditIncidentModule,
   ],
 })
 export class AppModule {}

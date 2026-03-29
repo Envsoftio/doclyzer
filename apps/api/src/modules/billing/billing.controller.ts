@@ -20,6 +20,8 @@ import { SuperadminGuard } from '../auth/superadmin.guard';
 import { BillingService } from './billing.service';
 import { RazorpayService } from './razorpay.service';
 import {
+  AdminPromoAnalyticsExportDto,
+  AdminPromoAnalyticsQueryDto,
   AdminCreatePromoCodeDto,
   AdminUpdatePromoCodeDto,
   CreateOrderDto,
@@ -161,6 +163,36 @@ export class BillingController {
     const data = await this.billingService.updatePromoCode({
       actorUserId,
       promoCodeId,
+      dto,
+      correlationId: getCorrelationId(req),
+    });
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Get('admin/promo-analytics')
+  @UseGuards(AuthGuard, SuperadminGuard)
+  async getPromoAnalytics(
+    @Req() req: Request,
+    @Query() query: AdminPromoAnalyticsQueryDto,
+  ): Promise<object> {
+    const { id: actorUserId } = req.user as RequestUser;
+    const data = await this.billingService.getPromoAnalytics({
+      actorUserId,
+      query,
+      correlationId: getCorrelationId(req),
+    });
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Post('admin/promo-analytics/export')
+  @UseGuards(AuthGuard, SuperadminGuard)
+  async exportPromoAnalytics(
+    @Req() req: Request,
+    @Body() dto: AdminPromoAnalyticsExportDto,
+  ): Promise<object> {
+    const { id: actorUserId } = req.user as RequestUser;
+    const data = await this.billingService.exportPromoAnalytics({
+      actorUserId,
       dto,
       correlationId: getCorrelationId(req),
     });

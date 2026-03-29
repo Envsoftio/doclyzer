@@ -21,6 +21,11 @@ import { RemovePasswordResetTokens1730814700000 } from './1730814700000-RemovePa
 import { CreateSuperadminMfaAndAuditTables1730814800000 } from './1730814800000-CreateSuperadminMfaAndAuditTables';
 import { CreatePlanConfigAuditAndVersioning1730814900000 } from './1730814900000-CreatePlanConfigAuditAndVersioning';
 import { CreatePromoCodeAuditEvents1730815000000 } from './1730815000000-CreatePromoCodeAuditEvents';
+import { CreateAnalyticsGovernanceTables1730815100000 } from './1730815100000-CreateAnalyticsGovernanceTables';
+import { CreateSuperadminActionAuditTables1730815200000 } from './1730815200000-CreateSuperadminActionAuditTables';
+import { FixAuditEventImmutabilityAndTamperChain1730815300000 } from './1730815300000-FixAuditEventImmutabilityAndTamperChain';
+import { AddUserRoleColumn1730815400000 } from './1730815400000-AddUserRoleColumn';
+import { CreateSuspiciousActivityQueue1730815500000 } from './1730815500000-CreateSuspiciousActivityQueue';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -46,4 +51,9 @@ export const migrations = [
   CreateSuperadminMfaAndAuditTables1730814800000,
   CreatePlanConfigAuditAndVersioning1730814900000,
   CreatePromoCodeAuditEvents1730815000000,
+  CreateAnalyticsGovernanceTables1730815100000,
+  CreateSuperadminActionAuditTables1730815200000,
+  FixAuditEventImmutabilityAndTamperChain1730815300000,
+  AddUserRoleColumn1730815400000,
+  CreateSuspiciousActivityQueue1730815500000,
 ];

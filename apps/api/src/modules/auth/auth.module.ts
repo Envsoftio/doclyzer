@@ -14,6 +14,7 @@ import { PasswordRecoveryService } from './password-recovery.service';
 import { SuperadminAuthController } from './superadmin-auth.controller';
 import { SuperadminAuthService } from './superadmin-auth.service';
 import { SuperadminGuard } from './superadmin.guard';
+import { AdminActionTokenGuard } from './admin-action-token.guard';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { SuperadminGuard } from './superadmin.guard';
     SuperadminGuard,
     SuperadminAuthService,
     PasswordRecoveryService,
+    AdminActionTokenGuard,
     {
       provide: NotificationService,
       useClass: InMemoryNotificationService,
@@ -44,6 +46,7 @@ import { SuperadminGuard } from './superadmin.guard';
     SuperadminGuard,
     SuperadminAuthService,
     PasswordRecoveryService,
+    AdminActionTokenGuard,
     NotificationService,
     TypeOrmModule,
   ],
