@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from '../../database/entities/user.entity';
 import { SessionEntity } from '../../database/entities/session.entity';
@@ -16,9 +16,11 @@ import { SuperadminAuthController } from './superadmin-auth.controller';
 import { SuperadminAuthService } from './superadmin-auth.service';
 import { SuperadminGuard } from './superadmin.guard';
 import { AdminActionTokenGuard } from './admin-action-token.guard';
+import { ProfilesModule } from '../profiles/profiles.module';
 
 @Module({
   imports: [
+    forwardRef(() => ProfilesModule),
     TypeOrmModule.forFeature([
       UserEntity,
       SessionEntity,

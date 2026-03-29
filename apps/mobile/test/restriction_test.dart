@@ -18,6 +18,9 @@ Widget _wrap(RestrictionRepository repo) {
       onGoToSessions: () {},
       onGoToCommunicationPreferences: () {},
       onGoToDataRights: () {},
+      onGoToUploadReport: () async {},
+      onGoToTimeline: () async {},
+      onGoToBilling: () {},
       restrictionRepository: repo,
     ),
   );
@@ -76,5 +79,47 @@ void main() {
       find.byKey(const Key('restriction-next-steps')),
     );
     expect(nextStepsWidget.data, 'Wait for admin review before proceeding.');
+  });
+
+  testWidgets(
+      'upload action shows fallback snackbar when credits restriction lacks instructions',
+      (WidgetTester tester) async {
+    final repo = FakeRestrictionRepository(
+      initialStatus: const RestrictionStatus(
+        isRestricted: true,
+        restrictedActions: ['upload_report'],
+      ),
+    );
+    var uploadCalled = false;
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0A7C8C)),
+        useMaterial3: true,
+      ),
+      home: HomeScreen(
+        onLogout: () async {},
+        onGoToAccount: () {},
+        onGoToProfiles: () {},
+        onGoToSessions: () {},
+        onGoToCommunicationPreferences: () {},
+        onGoToDataRights: () {},
+        onGoToUploadReport: () async {
+          uploadCalled = true;
+        },
+        onGoToTimeline: () async {},
+        onGoToBilling: () {},
+        restrictionRepository: repo,
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('go-to-upload-report')));
+    await tester.pump(); // allow snackbar animation
+
+    expect(uploadCalled, isFalse);
+    expect(
+        find.text(
+            'You have used all available upload credits. Visit Plan & Credits to add more.'),
+        findsOneWidget);
   });
 }

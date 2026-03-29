@@ -103,7 +103,8 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
   late final AccountRepository _accountRepository;
   late final ProfilesRepository _profilesRepository;
   late final SessionsRepository _sessionsRepository;
-  late final CommunicationPreferencesRepository _communicationPreferencesRepository;
+  late final CommunicationPreferencesRepository
+  _communicationPreferencesRepository;
   late final DataRightsRepository _dataRightsRepository;
   late final RestrictionRepository _restrictionRepository;
   late final ReportsRepository _reportsRepository;
@@ -148,8 +149,10 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
       _dataRightsRepository = ApiDataRightsRepository(_apiClient!);
       _restrictionRepository = ApiRestrictionRepository(_apiClient!);
       _reportsRepository = ApiReportsRepository(_apiClient!);
-      _sharingRepository = widget.sharingRepository ?? ApiSharingRepository(_apiClient!);
-      _billingRepository = widget.billingRepository ?? ApiBillingRepository(_apiClient!);
+      _sharingRepository =
+          widget.sharingRepository ?? ApiSharingRepository(_apiClient!);
+      _billingRepository =
+          widget.billingRepository ?? ApiBillingRepository(_apiClient!);
       _initAuth();
     }
   }
@@ -169,10 +172,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
   AuthRepository get _auth => _authRepository ?? widget.authRepository!;
 
   Future<void> _register(String email, String password) async {
-    final result = await _auth.register(
-      email: email,
-      password: password,
-    );
+    final result = await _auth.register(email: email, password: password);
 
     if (result.requiresVerification && mounted) {
       setState(() {
@@ -209,13 +209,19 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
   }
 
   Future<void> _confirmPasswordReset(String token, String newPassword) async {
-    await _auth.confirmPasswordReset(
-      token: token,
-      newPassword: newPassword,
-    );
+    await _auth.confirmPasswordReset(token: token, newPassword: newPassword);
     if (mounted) {
       setState(() => _authView = _AuthView.login);
     }
+  }
+
+  void _showMissingProfileSnackBar({required bool forUpload}) {
+    final message = forUpload
+        ? 'Create a default profile before uploading a report.'
+        : 'Create a default profile before viewing your timeline.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -223,9 +229,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
     if (!_initialized) {
       return MaterialApp(
         theme: AppTheme.light,
-        home: const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
+        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
 
@@ -234,227 +238,236 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
       theme: AppTheme.light,
       home: switch (_authView) {
         _AuthView.login => LoginScreen(
-            onLogin: _login,
-            onGoToSignup: () {
-              setState(() => _authView = _AuthView.signup);
-            },
-            onGoToForgotPassword: () {
-              setState(() => _authView = _AuthView.forgotPassword);
-            },
-            initialEmail: _prefillEmail,
-          ),
+          onLogin: _login,
+          onGoToSignup: () {
+            setState(() => _authView = _AuthView.signup);
+          },
+          onGoToForgotPassword: () {
+            setState(() => _authView = _AuthView.forgotPassword);
+          },
+          initialEmail: _prefillEmail,
+        ),
         _AuthView.signup => SignupScreen(
-            onSignup: _register,
-            onGoToLogin: () {
-              setState(() => _authView = _AuthView.login);
-            },
-          ),
+          onSignup: _register,
+          onGoToLogin: () {
+            setState(() => _authView = _AuthView.login);
+          },
+        ),
         _AuthView.verification => VerificationScreen(
-            onContinueToLogin: () {
-              setState(() => _authView = _AuthView.login);
-            },
-          ),
+          onContinueToLogin: () {
+            setState(() => _authView = _AuthView.login);
+          },
+        ),
         _AuthView.home => HomeScreen(
-            onLogout: _logout,
-            onGoToAccount: () {
-              setState(() => _authView = _AuthView.accountProfile);
-            },
-            onGoToProfiles: () {
-              setState(() => _authView = _AuthView.profileList);
-            },
-            onGoToSessions: () {
-              setState(() => _authView = _AuthView.sessionList);
-            },
-            onGoToCommunicationPreferences: () {
-              setState(() => _authView = _AuthView.communicationPreferences);
-            },
-            onGoToDataRights: () {
-              setState(() => _authView = _AuthView.dataRights);
-            },
-            onGoToUploadReport: () async {
-              final profiles = await _profilesRepository.getProfiles();
-              Profile? active;
-              for (final p in profiles) {
-                if (p.isActive) {
-                  active = p;
-                  break;
-                }
+          onLogout: _logout,
+          onGoToAccount: () {
+            setState(() => _authView = _AuthView.accountProfile);
+          },
+          onGoToProfiles: () {
+            setState(() => _authView = _AuthView.profileList);
+          },
+          onGoToSessions: () {
+            setState(() => _authView = _AuthView.sessionList);
+          },
+          onGoToCommunicationPreferences: () {
+            setState(() => _authView = _AuthView.communicationPreferences);
+          },
+          onGoToDataRights: () {
+            setState(() => _authView = _AuthView.dataRights);
+          },
+          onGoToUploadReport: () async {
+            final profiles = await _profilesRepository.getProfiles();
+            Profile? active;
+            for (final p in profiles) {
+              if (p.isActive) {
+                active = p;
+                break;
               }
-              if (active == null || !mounted) return;
-              setState(() {
-                _authView = _AuthView.uploadReport;
-                _activeProfileNameForUpload = active!.name;
-              });
-            },
-            onGoToBilling: () {
-              setState(() => _authView = _AuthView.billing);
-            },
-            onGoToTimeline: () async {
-              final profiles = await _profilesRepository.getProfiles();
-              Profile? active;
-              for (final p in profiles) {
-                if (p.isActive) {
-                  active = p;
-                  break;
-                }
+            }
+            if (active == null) {
+              if (mounted) _showMissingProfileSnackBar(forUpload: true);
+              return;
+            }
+            if (!mounted) return;
+            final activeProfile = active;
+            setState(() {
+              _authView = _AuthView.uploadReport;
+              _activeProfileNameForUpload = activeProfile.name;
+            });
+          },
+          onGoToBilling: () {
+            setState(() => _authView = _AuthView.billing);
+          },
+          onGoToTimeline: () async {
+            final profiles = await _profilesRepository.getProfiles();
+            Profile? active;
+            for (final p in profiles) {
+              if (p.isActive) {
+                active = p;
+                break;
               }
-              if (active == null || !mounted) return;
-              setState(() {
-                _authView = _AuthView.timeline;
-                _timelineProfileId = active!.id;
-                _timelineProfileName = active.name;
-              });
-            },
-            restrictionRepository: _restrictionRepository,
-          ),
+            }
+            if (active == null) {
+              if (mounted) _showMissingProfileSnackBar(forUpload: false);
+              return;
+            }
+            if (!mounted) return;
+            final activeProfile = active;
+            setState(() {
+              _authView = _AuthView.timeline;
+              _timelineProfileId = activeProfile.id;
+              _timelineProfileName = activeProfile.name;
+            });
+          },
+          restrictionRepository: _restrictionRepository,
+        ),
         _AuthView.accountProfile => AccountProfileScreen(
-            accountRepository: _accountRepository,
-            restrictionRepository: _restrictionRepository,
-            onBack: () {
-              setState(() => _authView = _AuthView.home);
-            },
-          ),
+          accountRepository: _accountRepository,
+          restrictionRepository: _restrictionRepository,
+          onBack: () {
+            setState(() => _authView = _AuthView.home);
+          },
+        ),
         _AuthView.forgotPassword => ForgotPasswordScreen(
-            onSubmit: _requestPasswordReset,
-            onGoToLogin: () {
-              setState(() => _authView = _AuthView.login);
-            },
-            onResetSent: () {
-              setState(() => _authView = _AuthView.resetPassword);
-            },
-          ),
+          onSubmit: _requestPasswordReset,
+          onGoToLogin: () {
+            setState(() => _authView = _AuthView.login);
+          },
+          onResetSent: () {
+            setState(() => _authView = _AuthView.resetPassword);
+          },
+        ),
         _AuthView.resetPassword => ResetPasswordScreen(
-            onReset: _confirmPasswordReset,
-            onGoToLogin: () {
-              setState(() => _authView = _AuthView.login);
-            },
-          ),
+          onReset: _confirmPasswordReset,
+          onGoToLogin: () {
+            setState(() => _authView = _AuthView.login);
+          },
+        ),
         _AuthView.sessionList => SessionListScreen(
-            sessionsRepository: _sessionsRepository,
-            onLogout: _logout,
-            onBack: () {
-              setState(() => _authView = _AuthView.home);
-            },
-          ),
+          sessionsRepository: _sessionsRepository,
+          onLogout: _logout,
+          onBack: () {
+            setState(() => _authView = _AuthView.home);
+          },
+        ),
         _AuthView.profileList => ProfileListScreen(
-            profilesRepository: _profilesRepository,
-            onCreateProfile: () {
-              setState(() {
-                _editingProfile = null;
-                _authView = _AuthView.createProfile;
-              });
-            },
-            onEditProfile: (profile) {
-              setState(() {
-                _editingProfile = profile;
-                _authView = _AuthView.editProfile;
-              });
-            },
-            onBack: () {
-              setState(() => _authView = _AuthView.home);
-            },
-          ),
+          profilesRepository: _profilesRepository,
+          onCreateProfile: () {
+            setState(() {
+              _editingProfile = null;
+              _authView = _AuthView.createProfile;
+            });
+          },
+          onEditProfile: (profile) {
+            setState(() {
+              _editingProfile = profile;
+              _authView = _AuthView.editProfile;
+            });
+          },
+          onBack: () {
+            setState(() => _authView = _AuthView.home);
+          },
+        ),
         _AuthView.createProfile => CreateEditProfileScreen(
-            profilesRepository: _profilesRepository,
-            onComplete: () {
-              setState(() => _authView = _AuthView.profileList);
-            },
-            onBack: () {
-              setState(() => _authView = _AuthView.profileList);
-            },
-          ),
+          profilesRepository: _profilesRepository,
+          onComplete: () {
+            setState(() => _authView = _AuthView.profileList);
+          },
+          onBack: () {
+            setState(() => _authView = _AuthView.profileList);
+          },
+        ),
         _AuthView.editProfile => CreateEditProfileScreen(
-            profilesRepository: _profilesRepository,
-            existingProfile: _editingProfile,
-            onComplete: () {
-              setState(() {
-                _editingProfile = null;
-                _authView = _AuthView.profileList;
-              });
-            },
-            onBack: () {
-              setState(() {
-                _editingProfile = null;
-                _authView = _AuthView.profileList;
-              });
-            },
-          ),
+          profilesRepository: _profilesRepository,
+          existingProfile: _editingProfile,
+          onComplete: () {
+            setState(() {
+              _editingProfile = null;
+              _authView = _AuthView.profileList;
+            });
+          },
+          onBack: () {
+            setState(() {
+              _editingProfile = null;
+              _authView = _AuthView.profileList;
+            });
+          },
+        ),
         _AuthView.communicationPreferences => CommunicationPreferencesScreen(
-            communicationPreferencesRepository:
-                _communicationPreferencesRepository,
-            onBack: () {
-              setState(() => _authView = _AuthView.home);
-            },
-          ),
+          communicationPreferencesRepository:
+              _communicationPreferencesRepository,
+          onBack: () {
+            setState(() => _authView = _AuthView.home);
+          },
+        ),
         _AuthView.dataRights => DataRightsScreen(
-            dataRightsRepository: _dataRightsRepository,
-            onBack: () {
-              setState(() => _authView = _AuthView.home);
-            },
-            onAccountClosed: () async {
-              await _logout();
-            },
-          ),
+          dataRightsRepository: _dataRightsRepository,
+          onBack: () {
+            setState(() => _authView = _AuthView.home);
+          },
+          onAccountClosed: () async {
+            await _logout();
+          },
+        ),
         _AuthView.uploadReport => UploadReportScreen(
-            reportsRepository: _reportsRepository,
-            activeProfileName: _activeProfileNameForUpload,
-            onBack: () {
-              setState(() => _authView = _AuthView.home);
-            },
-            onComplete: () {
-              setState(() => _authView = _AuthView.home);
-            },
-            onUpgrade: () {
-              setState(() => _authView = _AuthView.billing);
-            },
-          ),
-        _AuthView.timeline => _timelineProfileId != null
-            ? TimelineScreen(
-                reportsRepository: _reportsRepository,
-                profilesRepository: _profilesRepository,
-                profileId: _timelineProfileId!,
-                profileName: _timelineProfileName!,
-                sharingRepository: _sharingRepository,
-                onBack: () {
-                  setState(() => _authView = _AuthView.home);
-                },
-                onUpgrade: () {
-                  setState(() => _authView = _AuthView.billing);
-                },
-              )
-            : const Scaffold(
-                body: Center(child: Text('No active profile')),
-              ),
+          reportsRepository: _reportsRepository,
+          activeProfileName: _activeProfileNameForUpload,
+          onBack: () {
+            setState(() => _authView = _AuthView.home);
+          },
+          onComplete: () {
+            setState(() => _authView = _AuthView.home);
+          },
+          onUpgrade: () {
+            setState(() => _authView = _AuthView.billing);
+          },
+        ),
+        _AuthView.timeline =>
+          _timelineProfileId != null
+              ? TimelineScreen(
+                  reportsRepository: _reportsRepository,
+                  profilesRepository: _profilesRepository,
+                  profileId: _timelineProfileId!,
+                  profileName: _timelineProfileName!,
+                  sharingRepository: _sharingRepository,
+                  onBack: () {
+                    setState(() => _authView = _AuthView.home);
+                  },
+                  onUpgrade: () {
+                    setState(() => _authView = _AuthView.billing);
+                  },
+                )
+              : const Scaffold(body: Center(child: Text('No active profile'))),
         _AuthView.billing => EntitlementSummaryScreen(
-            billingRepository: _billingRepository,
-            onBack: () {
-              setState(() => _authView = _AuthView.home);
-            },
-            onBuyCredits: () {
-              setState(() => _authView = _AuthView.creditPackList);
-            },
-            onUpgrade: () {
-              setState(() => _authView = _AuthView.planSelection);
-            },
-          ),
+          billingRepository: _billingRepository,
+          onBack: () {
+            setState(() => _authView = _AuthView.home);
+          },
+          onBuyCredits: () {
+            setState(() => _authView = _AuthView.creditPackList);
+          },
+          onUpgrade: () {
+            setState(() => _authView = _AuthView.planSelection);
+          },
+        ),
         _AuthView.creditPackList => CreditPackListScreen(
-            billingRepository: _billingRepository,
-            onBack: () {
-              setState(() => _authView = _AuthView.billing);
-            },
-            onPurchaseComplete: () {
-              setState(() => _authView = _AuthView.billing);
-            },
-          ),
+          billingRepository: _billingRepository,
+          onBack: () {
+            setState(() => _authView = _AuthView.billing);
+          },
+          onPurchaseComplete: () {
+            setState(() => _authView = _AuthView.billing);
+          },
+        ),
         _AuthView.planSelection => PlanSelectionScreen(
-            billingRepository: _billingRepository,
-            onBack: () {
-              setState(() => _authView = _AuthView.billing);
-            },
-            onSubscribeComplete: () {
-              setState(() => _authView = _AuthView.billing);
-            },
-          ),
+          billingRepository: _billingRepository,
+          onBack: () {
+            setState(() => _authView = _AuthView.billing);
+          },
+          onSubscribeComplete: () {
+            setState(() => _authView = _AuthView.billing);
+          },
+        ),
       },
     );
   }

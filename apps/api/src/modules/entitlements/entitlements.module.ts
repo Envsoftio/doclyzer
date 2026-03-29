@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PlanEntity } from '../../database/entities/plan.entity';
 import { PlanConfigAuditEventEntity } from '../../database/entities/plan-config-audit-event.entity';
@@ -19,7 +19,7 @@ import { UsageLimitsService } from './usage-limits.service';
       ReportEntity,
       ShareLinkEntity,
     ]),
-    AuthModule,
+    forwardRef(() => AuthModule),
   ],
   controllers: [EntitlementsController],
   providers: [EntitlementsService, UsageLimitsService],

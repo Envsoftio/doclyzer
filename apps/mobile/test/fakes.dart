@@ -26,6 +26,11 @@ class FakeAccountRepository implements AccountRepository {
     _displayName = displayName?.trim().isEmpty == true ? null : displayName;
     return getProfile();
   }
+
+  @override
+  Future<AccountProfile> uploadAvatar(String filePath) async {
+    return getProfile();
+  }
 }
 
 class FakeRestrictionRepository implements RestrictionRepository {

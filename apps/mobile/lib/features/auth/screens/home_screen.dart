@@ -35,6 +35,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  static const String _defaultBlockedMessage =
+      'This action is temporarily unavailable while your account is under review.';
+  static const String _uploadBlockedFallbackMessage =
+      'You have used all available upload credits. Visit Plan & Credits to add more.';
+
   RestrictionStatus? _restrictionStatus;
 
   bool _isActionBlocked(String action) {
@@ -49,15 +54,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return configuredActions.contains(action);
   }
 
-  void _showBlockedMessage() {
+  void _showBlockedMessage({String? fallbackMessage}) {
     final status = _restrictionStatus;
     final nextSteps = status?.nextSteps?.trim();
     final rationale = status?.rationale?.trim();
+    final defaultMessage = fallbackMessage ?? _defaultBlockedMessage;
     final message = (nextSteps != null && nextSteps.isNotEmpty)
         ? nextSteps
-        : ((rationale != null && rationale.isNotEmpty)
-              ? rationale
-              : 'This action is temporarily unavailable while your account is under review.');
+        : ((rationale != null && rationale.isNotEmpty) ? rationale : defaultMessage);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
@@ -157,7 +161,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     subtitle: 'Add a new health report',
                     onTap: () async {
                       if (_isActionBlocked('upload_report')) {
-                        _showBlockedMessage();
+                        _showBlockedMessage(
+                          fallbackMessage: _uploadBlockedFallbackMessage,
+                        );
                         return;
                       }
                       await widget.onGoToUploadReport();

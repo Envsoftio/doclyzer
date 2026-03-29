@@ -22,6 +22,7 @@ import {
 } from './auth.types';
 import { SessionNotFoundException } from './exceptions/session-not-found.exception';
 import { BetterAuthService } from './better-auth.service';
+import { ProfilesService } from '../profiles/profiles.service';
 
 interface RateLimitState {
   count: number;
@@ -57,6 +58,7 @@ export class AuthService {
     @InjectRepository(SessionEntity)
     private readonly sessionRepo: Repository<SessionEntity>,
     private readonly betterAuthService: BetterAuthService,
+    private readonly profilesService: ProfilesService,
   ) {
     this.accessTtlSec = this.betterAuthService.getSessionExpiresInSeconds();
   }
@@ -89,6 +91,7 @@ export class AuthService {
         );
       }
 
+      await this.createDefaultProfile(userId, displayName);
       this.logger.log(`Auth registration success userId=${userId}`);
       return {
         userId,
@@ -101,6 +104,29 @@ export class AuthService {
         code: 'AUTH_REGISTRATION_FAILED',
         message: 'Unable to register at this time',
       });
+    }
+  }
+
+  private async createDefaultProfile(
+    userId: string,
+    displayName: string,
+  ): Promise<void> {
+    try {
+      await this.profilesService.createProfile(userId, {
+        name: displayName,
+      });
+    } catch (error: unknown) {
+      this.logger.error(
+        `Failed to create default profile for userId=${userId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new HttpException(
+        {
+          code: 'PROFILE_CREATION_FAILED',
+          message: 'Unable to create a default profile for your account.',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
