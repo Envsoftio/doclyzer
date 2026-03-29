@@ -24,11 +24,11 @@ import type {
   ClosureRequest,
   RestrictionStatus,
 } from './account.types';
+import { COMM_PREF_CATEGORY, ClosureConfirmationRequiredException } from './account.types';
 import {
   ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS,
-  COMM_PREF_CATEGORY,
-  ClosureConfirmationRequiredException,
-} from './account.types';
+  RESTRICTED_REVIEW_ACTIONS,
+} from '../../common/restriction/restriction.constants';
 
 @Injectable()
 export class AccountService {
@@ -55,12 +55,25 @@ export class AccountService {
 
   async getRestrictionStatus(userId: string): Promise<RestrictionStatus> {
     const entry = await this.restrictionRepo.findOne({ where: { userId } });
-    if (!entry || !entry.isRestricted) return { isRestricted: false };
+    if (!entry) return { isRestricted: false };
+    if (this.isRestrictionExpired(entry)) {
+      await this.clearExpiredRestriction(entry);
+      return { isRestricted: false };
+    }
+    if (!entry.isRestricted && !entry.restrictedReviewMode) {
+      return { isRestricted: false };
+    }
+    const mode = entry.isRestricted ? 'suspended' : 'review';
     return {
       isRestricted: true,
+      mode,
+      restrictedUntil: entry.restrictedUntil?.toISOString(),
       rationale: entry.rationale ?? undefined,
       nextSteps: entry.nextSteps ?? undefined,
-      restrictedActions: [...ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS],
+      restrictedActions:
+        mode === 'suspended'
+          ? [...ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS]
+          : [...RESTRICTED_REVIEW_ACTIONS],
     };
   }
 
@@ -309,5 +322,22 @@ export class AccountService {
       createdAt: e.createdAt.toISOString(),
       message: e.message ?? '',
     };
+  }
+
+  private isRestrictionExpired(entry: RestrictionEntity): boolean {
+    if (!entry.restrictedUntil) return false;
+    return entry.restrictedUntil.getTime() <= Date.now();
+  }
+
+  private async clearExpiredRestriction(
+    entry: RestrictionEntity,
+  ): Promise<void> {
+    if (!entry.isRestricted && !entry.restrictedReviewMode) return;
+    entry.isRestricted = false;
+    entry.restrictedReviewMode = false;
+    entry.restrictedUntil = null;
+    entry.rationale = null;
+    entry.nextSteps = null;
+    await this.restrictionRepo.save(entry);
   }
 }

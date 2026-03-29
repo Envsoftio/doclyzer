@@ -18,6 +18,8 @@ export interface RiskContainmentResult {
   suspended: boolean;
   changed: boolean;
   actedAt: string;
+  restrictionMode?: 'suspended' | 'review' | 'none';
+  restrictedUntil?: string | null;
 }
 
 export class RiskContainmentTargetNotFoundException extends NotFoundException {

@@ -8,6 +8,7 @@ import { AdminActionTokenGuard } from '../auth/admin-action-token.guard';
 import { SuperadminGuard } from '../auth/superadmin.guard';
 import {
   SetAccountSuspensionDto,
+  SetAccountRestrictionDto,
   SetShareLinkSuspensionDto,
 } from './risk-containment.dto';
 import { RiskContainmentService } from './risk-containment.service';
@@ -45,6 +46,23 @@ export class RiskContainmentController {
     const correlationId = getCorrelationId(req);
     const { id: actorUserId } = req.user as RequestUser;
     const data = await this.riskContainmentService.setAccountSuspension({
+      actorUserId,
+      correlationId,
+      targetUserId: userId,
+      dto,
+    });
+    return successResponse(data, correlationId);
+  }
+
+  @Patch('accounts/:userId/restriction')
+  async setAccountRestriction(
+    @Req() req: Request,
+    @Param('userId') userId: string,
+    @Body() dto: SetAccountRestrictionDto,
+  ): Promise<object> {
+    const correlationId = getCorrelationId(req);
+    const { id: actorUserId } = req.user as RequestUser;
+    const data = await this.riskContainmentService.setAccountRestriction({
       actorUserId,
       correlationId,
       targetUserId: userId,

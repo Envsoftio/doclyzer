@@ -26,6 +26,7 @@ import { CreateSuperadminActionAuditTables1730815200000 } from './1730815200000-
 import { FixAuditEventImmutabilityAndTamperChain1730815300000 } from './1730815300000-FixAuditEventImmutabilityAndTamperChain';
 import { AddUserRoleColumn1730815400000 } from './1730815400000-AddUserRoleColumn';
 import { CreateSuspiciousActivityQueue1730815500000 } from './1730815500000-CreateSuspiciousActivityQueue';
+import { AddRestrictionReviewMode1730815600000 } from './1730815600000-AddRestrictionReviewMode';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -56,4 +57,5 @@ export const migrations = [
   FixAuditEventImmutabilityAndTamperChain1730815300000,
   AddUserRoleColumn1730815400000,
   CreateSuspiciousActivityQueue1730815500000,
+  AddRestrictionReviewMode1730815600000,
 ];

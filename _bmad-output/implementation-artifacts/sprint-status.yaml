@@ -114,7 +114,7 @@ development_status:
   5-8-access-share-consent-policy-records-query-console: review
   5-9-suspicious-activity-detection-and-review-queue: review
   5-10-share-link-account-suspension-and-restore-controls: review
-  5-11-temporary-protective-restriction-and-restricted-review-mode: ready-for-dev
+  5-11-temporary-protective-restriction-and-restricted-review-mode: review
   5-12-time-bound-override-actions-with-expiry: ready-for-dev
   5-13-restricted-account-resolution-documentation-workflow: ready-for-dev
   5-14-emergency-containment-actions-with-mandatory-audit-notes: ready-for-dev

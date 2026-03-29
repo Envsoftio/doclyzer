@@ -50,6 +50,8 @@ export class ClosureConfirmationRequiredException extends BadRequestException {
 
 export interface RestrictionStatus {
   isRestricted: boolean;
+  mode?: 'suspended' | 'review';
+  restrictedUntil?: string;
   rationale?: string;
   nextSteps?: string;
   restrictedActions?: string[];

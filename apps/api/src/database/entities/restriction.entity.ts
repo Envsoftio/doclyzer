@@ -23,6 +23,16 @@ export class RestrictionEntity {
   @Column({ type: 'boolean', name: 'is_restricted' })
   isRestricted!: boolean;
 
+  @Column({
+    type: 'boolean',
+    name: 'restricted_review_mode',
+    default: false,
+  })
+  restrictedReviewMode!: boolean;
+
+  @Column({ type: 'timestamptz', name: 'restricted_until', nullable: true })
+  restrictedUntil!: Date | null;
+
   @Column({ type: 'text', nullable: true })
   rationale!: string | null;
 
