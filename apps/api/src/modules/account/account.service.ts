@@ -25,6 +25,7 @@ import type {
   RestrictionStatus,
 } from './account.types';
 import {
+  ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS,
   COMM_PREF_CATEGORY,
   ClosureConfirmationRequiredException,
 } from './account.types';
@@ -59,6 +60,7 @@ export class AccountService {
       isRestricted: true,
       rationale: entry.rationale ?? undefined,
       nextSteps: entry.nextSteps ?? undefined,
+      restrictedActions: [...ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS],
     };
   }
 

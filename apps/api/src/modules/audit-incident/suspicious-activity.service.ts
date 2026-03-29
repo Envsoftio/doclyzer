@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { DataSource, Repository } from 'typeorm';
 import { SuspiciousActivityQueueItemEntity } from '../../database/entities/suspicious-activity-queue-item.entity';
 import { AuditIncidentService } from './audit-incident.service';
+import type { AuditMetadata } from './audit-incident.types';
 import type {
   SuspiciousActivityContainmentSuggestion,
   SuspiciousActivityIngestResult,
@@ -30,12 +31,14 @@ const DEFAULT_QUEUE_LIMIT = 50;
 const MAX_QUEUE_LIMIT = 100;
 const AUTO_CONTAINMENT_THRESHOLD = 85;
 
-const STATUS_TRANSITIONS: Record<SuspiciousActivityStatus, SuspiciousActivityStatus[]> =
-  {
-    open: ['in_review', 'resolved'],
-    in_review: ['open', 'resolved'],
-    resolved: [],
-  };
+const STATUS_TRANSITIONS: Record<
+  SuspiciousActivityStatus,
+  SuspiciousActivityStatus[]
+> = {
+  open: ['in_review', 'resolved'],
+  in_review: ['open', 'resolved'],
+  resolved: [],
+};
 
 const SEVERITY_RANK: Record<SuspiciousActivitySeverity, number> = {
   low: 1,
@@ -248,7 +251,7 @@ export class SuspiciousActivityService {
 
     const now = new Date();
     const previousStatus = entity.status;
-    entity.status = input.dto.status as SuspiciousActivityStatus;
+    entity.status = input.dto.status;
     if (entity.status === 'in_review') {
       entity.reviewedAt = now;
       entity.resolvedAt = null;
@@ -299,7 +302,10 @@ export class SuspiciousActivityService {
       entity.confidenceScore,
       incoming.confidenceScore,
     );
-    entity.severity = this.pickHigherSeverity(entity.severity, incoming.severity);
+    entity.severity = this.pickHigherSeverity(
+      entity.severity,
+      incoming.severity,
+    );
     if (!entity.detectionSummary && incoming.detectionSummary) {
       entity.detectionSummary = incoming.detectionSummary;
     }
@@ -345,7 +351,10 @@ export class SuspiciousActivityService {
     dto: SuspiciousActivityIngestDto,
   ): SuspiciousActivityContainmentSuggestion | null {
     if (dto.suggestedContainment) {
-      return this.normalizeSuggestion(dto.suggestedContainment, dto.confidenceScore);
+      return this.normalizeSuggestion(
+        dto.suggestedContainment,
+        dto.confidenceScore,
+      );
     }
     if (dto.confidenceScore < AUTO_CONTAINMENT_THRESHOLD) {
       return null;
@@ -353,7 +362,8 @@ export class SuspiciousActivityService {
     const action = this.autoSuggestAction(dto.targetType);
     return {
       action,
-      reason: 'Confidence threshold exceeded for optional containment suggestion.',
+      reason:
+        'Confidence threshold exceeded for optional containment suggestion.',
       confidenceScore: dto.confidenceScore,
       autoApplied: false,
     };
@@ -371,7 +381,9 @@ export class SuspiciousActivityService {
     };
   }
 
-  private autoSuggestAction(targetType: string): SuspiciousActivityContainmentSuggestion['action'] {
+  private autoSuggestAction(
+    targetType: string,
+  ): SuspiciousActivityContainmentSuggestion['action'] {
     const normalized = targetType.trim().toLowerCase();
     if (normalized === 'account' || normalized === 'user') {
       return 'suspend_account';
@@ -398,7 +410,9 @@ export class SuspiciousActivityService {
   }
 
   private isStatus(value: string): value is SuspiciousActivityStatus {
-    return SUSPICIOUS_ACTIVITY_STATUSES.includes(value as SuspiciousActivityStatus);
+    return SUSPICIOUS_ACTIVITY_STATUSES.includes(
+      value as SuspiciousActivityStatus,
+    );
   }
 
   private isSeverity(value: string): value is SuspiciousActivitySeverity {
@@ -443,6 +457,10 @@ export class SuspiciousActivityService {
     outcome: 'success' | 'failure' | 'denied' | 'reverted';
     metadata: Record<string, string | number | boolean | null> | null;
   }): Promise<void> {
+    const metadata = input.metadata
+      ? this.toAuditMetadata(input.metadata)
+      : undefined;
+
     await this.auditIncidentService.recordAuditAction({
       actorUserId: input.actorUserId,
       correlationId: input.correlationId,
@@ -450,8 +468,21 @@ export class SuspiciousActivityService {
         action: input.action,
         target: input.target,
         outcome: input.outcome,
-        metadata: input.metadata ?? undefined,
+        metadata,
       },
     });
+  }
+
+  private toAuditMetadata(
+    metadata: Record<string, string | number | boolean | null>,
+  ): AuditMetadata | undefined {
+    const filtered = Object.fromEntries(
+      Object.entries(metadata).filter(([, value]) => value !== null),
+    ) as AuditMetadata;
+
+    if (Object.keys(filtered).length === 0) {
+      return undefined;
+    }
+    return filtered;
   }
 }

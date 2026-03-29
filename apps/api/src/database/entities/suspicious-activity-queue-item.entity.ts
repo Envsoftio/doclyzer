@@ -32,7 +32,12 @@ export class SuspiciousActivityQueueItemEntity {
   @Column({ type: 'integer', name: 'confidence_score' })
   confidenceScore!: number;
 
-  @Column({ type: 'varchar', length: 256, name: 'detection_summary', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 256,
+    name: 'detection_summary',
+    nullable: true,
+  })
   detectionSummary!: string | null;
 
   @Column({ type: 'integer', name: 'detection_count', default: 1 })
@@ -67,7 +72,12 @@ export class SuspiciousActivityQueueItemEntity {
   @Column({ type: 'timestamptz', name: 'resolved_at', nullable: true })
   resolvedAt!: Date | null;
 
-  @Column({ type: 'varchar', length: 256, name: 'resolution_notes', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 256,
+    name: 'resolution_notes',
+    nullable: true,
+  })
   resolutionNotes!: string | null;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })

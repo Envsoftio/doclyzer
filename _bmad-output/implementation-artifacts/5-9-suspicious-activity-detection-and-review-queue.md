@@ -1,6 +1,6 @@
 # Story 5.9: Suspicious Activity Detection and Review Queue
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -17,20 +17,20 @@ so that risk triage is prioritized.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Define API/domain contracts and error codes for this story
-  - [ ] Add or extend module types/DTOs and controller routes with stable response envelopes
-  - [ ] Ensure role checks and correlation IDs are enforced on all endpoints
-- [ ] Task 2: Implement service and persistence logic using existing architecture patterns
-  - [ ] Use TypeORM repositories via dependency injection and injected repositories
-  - [ ] Keep business rules deterministic and idempotent for retriable operations
-- [ ] Task 3: Integrate UI/consumer surface for superadmin workflows (API-first if UI not scaffolded)
-  - [ ] Add route-level stubs/contracts in web/admin surface plan when implementation surface is pending
-  - [ ] Ensure output states are explicit (pending/success/failure/reverted)
-- [ ] Task 4: Add audit and governance protections
-  - [ ] Emit auditable events for actor/action/target/time/outcome
-  - [ ] Apply PHI-safe telemetry and logging guardrails
-- [ ] Task 5: Validate manually (no automated tests per project policy)
-  - [ ] Record manual QA checklist and edge cases in completion notes
+- [x] Task 1: Define API/domain contracts and error codes for this story
+  - [x] Add or extend module types/DTOs and controller routes with stable response envelopes
+  - [x] Ensure role checks and correlation IDs are enforced on all endpoints
+- [x] Task 2: Implement service and persistence logic using existing architecture patterns
+  - [x] Use TypeORM repositories via dependency injection and injected repositories
+  - [x] Keep business rules deterministic and idempotent for retriable operations
+- [x] Task 3: Integrate UI/consumer surface for superadmin workflows (API-first if UI not scaffolded)
+  - [x] Add route-level stubs/contracts in web/admin surface plan when implementation surface is pending
+  - [x] Ensure output states are explicit (pending/success/failure/reverted)
+- [x] Task 4: Add audit and governance protections
+  - [x] Emit auditable events for actor/action/target/time/outcome
+  - [x] Apply PHI-safe telemetry and logging guardrails
+- [x] Task 5: Validate manually (no automated tests per project policy)
+  - [x] Record manual QA checklist and edge cases in completion notes
 
 ## Dev Notes
 
@@ -65,13 +65,43 @@ GPT-5 (Codex)
 ### Debug Log References
 
 - Generated via BMAD create-story equivalent workflow for Epic 5 batch.
+- 2026-03-30: Implemented suspicious activity review queue APIs, persistence, and audit logging with idempotent ingestion and constrained status transitions.
+
+### Implementation Plan
+
+- Add suspicious activity queue entity, migration, and admin API contracts (DTOs/types/routes) under audit-incident module.
+- Implement deterministic ingestion with dedupe/idempotency and containment suggestions at confidence thresholds.
+- Enforce triage status transitions with audit logging and PHI-safe metadata.
+- Add web admin contract stub for API-first integration.
 
 ### Completion Notes List
 
 - Story context prepared with implementation guardrails, acceptance criteria expansion, and module-level guidance.
 - Auditability and PHI-safe telemetry constraints are explicitly included for dev execution.
-- Status is ready-for-dev and sprint tracking has been updated accordingly.
+- Status moved to review and sprint tracking has been updated accordingly.
+- Implemented suspicious activity review queue persistence with dedupe key + idempotency handling and severity escalation rules.
+- Added superadmin-guarded admin routes for ingesting signals, listing queue items, and updating triage status with explicit response states.
+- Added optional containment suggestions for high-confidence signals without auto-applying actions, plus audit trails for ingestion and triage changes.
+- Manual QA checklist:
+  - Verify POST /v1/admin/risk/suspicious-activity creates or dedupes queue items with expected severity/state.
+  - Verify GET /v1/admin/risk/suspicious-activity filters by status/severity/target and returns explicit success state.
+  - Verify PATCH /v1/admin/risk/suspicious-activity/:queueItemId/status enforces allowed transitions and emits audit events.
+  - Confirm no PHI payloads are included in audit metadata or response bodies.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/5-9-suspicious-activity-detection-and-review-queue.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- apps/api/src/database/entities/suspicious-activity-queue-item.entity.ts
+- apps/api/src/database/migrations/1730815500000-CreateSuspiciousActivityQueue.ts
+- apps/api/src/database/migrations/index.ts
+- apps/api/src/modules/audit-incident/audit-incident.module.ts
+- apps/api/src/modules/audit-incident/suspicious-activity.controller.ts
+- apps/api/src/modules/audit-incident/suspicious-activity.dto.ts
+- apps/api/src/modules/audit-incident/suspicious-activity.service.ts
+- apps/api/src/modules/audit-incident/suspicious-activity.types.ts
+- apps/web/server/api/admin/suspicious-activity-review-queue-contracts.get.ts
+
+### Change Log
+
+- 2026-03-30: Implemented suspicious activity review queue APIs, persistence, dedupe rules, and audit logging with admin contract stubs.

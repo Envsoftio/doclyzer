@@ -16,7 +16,11 @@ import {
   SUSPICIOUS_ACTIVITY_SEVERITIES,
   SUSPICIOUS_ACTIVITY_STATUSES,
 } from './suspicious-activity.types';
-import type { SuspiciousActivityContainmentAction } from './suspicious-activity.types';
+import type {
+  SuspiciousActivityContainmentAction,
+  SuspiciousActivitySeverity,
+  SuspiciousActivityStatus,
+} from './suspicious-activity.types';
 
 export class SuspiciousActivityContainmentSuggestionDto {
   @IsIn(SUSPICIOUS_ACTIVITY_CONTAINMENT_ACTIONS)
@@ -49,7 +53,7 @@ export class SuspiciousActivityIngestDto {
   ruleCode!: string;
 
   @IsIn(SUSPICIOUS_ACTIVITY_SEVERITIES)
-  severity!: string;
+  severity!: SuspiciousActivitySeverity;
 
   @Type(() => Number)
   @IsInt()
@@ -83,7 +87,7 @@ export class SuspiciousActivityIngestDto {
 
 export class SuspiciousActivityStatusUpdateDto {
   @IsIn(SUSPICIOUS_ACTIVITY_STATUSES)
-  status!: string;
+  status!: SuspiciousActivityStatus;
 
   @IsOptional()
   @IsString()
@@ -94,11 +98,11 @@ export class SuspiciousActivityStatusUpdateDto {
 export class SuspiciousActivityQueueQueryDto {
   @IsOptional()
   @IsIn(SUSPICIOUS_ACTIVITY_STATUSES)
-  status?: string;
+  status?: SuspiciousActivityStatus;
 
   @IsOptional()
   @IsIn(SUSPICIOUS_ACTIVITY_SEVERITIES)
-  severity?: string;
+  severity?: SuspiciousActivitySeverity;
 
   @IsOptional()
   @IsString()

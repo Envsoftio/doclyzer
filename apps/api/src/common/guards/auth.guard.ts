@@ -1,10 +1,18 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import type { Request } from 'express';
+import { Repository } from 'typeorm';
+import { RestrictionEntity } from '../../database/entities/restriction.entity';
+import {
+  ACCOUNT_SUSPENDED,
+  ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS,
+} from '../restriction/restriction.constants';
 import { BetterAuthService } from '../../modules/auth/better-auth.service';
 
 interface BetterAuthErrorBody {
@@ -17,7 +25,11 @@ interface BetterAuthError extends Error {
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly betterAuthService: BetterAuthService) {}
+  constructor(
+    private readonly betterAuthService: BetterAuthService,
+    @InjectRepository(RestrictionEntity)
+    private readonly restrictionRepo: Repository<RestrictionEntity>,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request>();
@@ -45,6 +57,12 @@ export class AuthGuard implements CanActivate {
       (req as Request & { user: { id: string } }).user = { id: result.user.id };
       (req as Request & { currentSessionId?: string }).currentSessionId =
         result.session.id;
+      await this.enforceAccountSuspension(
+        req,
+        result.user.id,
+        handlerName,
+        revokedCodeAllowed,
+      );
       return true;
     } catch (err: unknown) {
       const code = this.getBetterAuthErrorCode(err);
@@ -69,5 +87,32 @@ export class AuthGuard implements CanActivate {
     const err = error as BetterAuthError;
     if (!err.body || typeof err.body !== 'object') return null;
     return err.body.code ?? null;
+  }
+
+  private async enforceAccountSuspension(
+    req: Request,
+    userId: string,
+    handlerName: string | undefined,
+    revokedCodeAllowed: boolean,
+  ): Promise<void> {
+    if (revokedCodeAllowed || handlerName === 'getRestrictionStatus') {
+      return;
+    }
+    const restriction = await this.restrictionRepo.findOne({
+      where: { userId, isRestricted: true },
+    });
+    if (!restriction) {
+      return;
+    }
+
+    throw new ForbiddenException({
+      code: ACCOUNT_SUSPENDED,
+      message: 'Account is suspended pending superadmin review',
+      rationale: restriction.rationale ?? null,
+      nextSteps: restriction.nextSteps ?? null,
+      restrictedActions: ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS,
+      correlationId: (req as Request & { correlationId?: string })
+        .correlationId,
+    });
   }
 }

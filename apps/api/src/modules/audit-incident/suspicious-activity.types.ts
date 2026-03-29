@@ -1,10 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
-export type SuspiciousActivitySeverity =
-  | 'low'
-  | 'medium'
-  | 'high'
-  | 'critical';
+export type SuspiciousActivitySeverity = 'low' | 'medium' | 'high' | 'critical';
 
 export type SuspiciousActivityStatus = 'open' | 'in_review' | 'resolved';
 
@@ -45,6 +41,7 @@ export const SUSPICIOUS_ACTIVITY_INVALID_TRANSITION =
   'SUSPICIOUS_ACTIVITY_INVALID_STATUS_TRANSITION';
 
 export interface SuspiciousActivityContainmentSuggestion {
+  [key: string]: string | number | boolean;
   action: SuspiciousActivityContainmentAction;
   reason: string;
   confidenceScore: number;

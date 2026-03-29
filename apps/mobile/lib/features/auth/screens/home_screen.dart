@@ -37,6 +37,32 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   RestrictionStatus? _restrictionStatus;
 
+  bool _isActionBlocked(String action) {
+    final status = _restrictionStatus;
+    if (status == null || !status.isRestricted) {
+      return false;
+    }
+    final configuredActions = status.restrictedActions;
+    if (configuredActions == null || configuredActions.isEmpty) {
+      return true;
+    }
+    return configuredActions.contains(action);
+  }
+
+  void _showBlockedMessage() {
+    final status = _restrictionStatus;
+    final nextSteps = status?.nextSteps?.trim();
+    final rationale = status?.rationale?.trim();
+    final message = (nextSteps != null && nextSteps.isNotEmpty)
+        ? nextSteps
+        : ((rationale != null && rationale.isNotEmpty)
+              ? rationale
+              : 'This action is temporarily unavailable while your account is under review.');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -129,21 +155,39 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.upload_file_rounded,
                     title: 'Upload Report',
                     subtitle: 'Add a new health report',
-                    onTap: () => widget.onGoToUploadReport(),
+                    onTap: () async {
+                      if (_isActionBlocked('upload_report')) {
+                        _showBlockedMessage();
+                        return;
+                      }
+                      await widget.onGoToUploadReport();
+                    },
                   ),
                   _HomeNavCard(
                     key: const Key('go-to-timeline'),
                     icon: Icons.timeline_rounded,
                     title: 'Timeline',
                     subtitle: 'View reports by date',
-                    onTap: () => widget.onGoToTimeline(),
+                    onTap: () async {
+                      if (_isActionBlocked('view_timeline')) {
+                        _showBlockedMessage();
+                        return;
+                      }
+                      await widget.onGoToTimeline();
+                    },
                   ),
                   _HomeNavCard(
                     key: const Key('go-to-profiles'),
                     icon: Icons.person_rounded,
                     title: 'Profiles',
                     subtitle: 'Switch or add profiles',
-                    onTap: widget.onGoToProfiles,
+                    onTap: () {
+                      if (_isActionBlocked('manage_profiles')) {
+                        _showBlockedMessage();
+                        return;
+                      }
+                      widget.onGoToProfiles();
+                    },
                   ),
                 ]),
               ),

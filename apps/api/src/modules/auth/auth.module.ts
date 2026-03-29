@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from '../../database/entities/user.entity';
 import { SessionEntity } from '../../database/entities/session.entity';
+import { RestrictionEntity } from '../../database/entities/restriction.entity';
 import { SuperadminAuthAuditEventEntity } from '../../database/entities/superadmin-auth-audit-event.entity';
 import { SuperadminMfaChallengeEntity } from '../../database/entities/superadmin-mfa-challenge.entity';
 import { AuthGuard } from '../../common/guards/auth.guard';
@@ -21,6 +22,7 @@ import { AdminActionTokenGuard } from './admin-action-token.guard';
     TypeOrmModule.forFeature([
       UserEntity,
       SessionEntity,
+      RestrictionEntity,
       SuperadminMfaChallengeEntity,
       SuperadminAuthAuditEventEntity,
     ]),

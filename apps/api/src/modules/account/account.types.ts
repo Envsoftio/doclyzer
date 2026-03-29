@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+export { ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS } from '../../common/restriction/restriction.constants';
 
 export interface AccountProfile {
   id: string;

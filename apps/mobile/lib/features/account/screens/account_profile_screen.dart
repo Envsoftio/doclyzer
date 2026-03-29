@@ -32,6 +32,31 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   bool _saving = false;
   bool _uploadingAvatar = false;
 
+  bool _isActionBlocked(String action) {
+    final status = _restrictionStatus;
+    if (status == null || !status.isRestricted) {
+      return false;
+    }
+    final configuredActions = status.restrictedActions;
+    if (configuredActions == null || configuredActions.isEmpty) {
+      return true;
+    }
+    return configuredActions.contains(action);
+  }
+
+  void _showBlockedMessage() {
+    final nextSteps = _restrictionStatus?.nextSteps?.trim();
+    final rationale = _restrictionStatus?.rationale?.trim();
+    final message = (nextSteps != null && nextSteps.isNotEmpty)
+        ? nextSteps
+        : ((rationale != null && rationale.isNotEmpty)
+              ? rationale
+              : 'Profile updates are temporarily unavailable while your account is under review.');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +102,10 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   }
 
   Future<void> _save() async {
+    if (_isActionBlocked('update_account_profile')) {
+      _showBlockedMessage();
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -115,6 +144,10 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   }
 
   Future<void> _pickAndUploadAvatar() async {
+    if (_isActionBlocked('update_account_profile')) {
+      _showBlockedMessage();
+      return;
+    }
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: ImageSource.gallery,
