@@ -55,6 +55,14 @@ export interface RestrictionStatus {
   rationale?: string;
   nextSteps?: string;
   restrictedActions?: string[];
+  // Active overrides that lift specific restricted actions until their expiry.
+  // Precedence rule: override wins over restriction for the listed actions.
+  activeOverrides?: Array<{
+    id: string;
+    overriddenActions: string[];
+    expiresAt: string;
+    reason: string | null;
+  }>;
 }
 
 export const COMM_PREF_CATEGORY = {

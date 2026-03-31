@@ -10,6 +10,7 @@ import { ProfileEntity } from '../../database/entities/profile.entity';
 import { ConsentRecordEntity } from '../../database/entities/consent-record.entity';
 import { UserEntity } from '../../database/entities/user.entity';
 import { AuthService } from '../auth/auth.service';
+import { AccountOverrideService } from '../audit-incident/account-override.service';
 import type { FileStorageService } from '../../common/storage/file-storage.interface';
 import { FILE_STORAGE } from '../../common/storage/storage.module';
 import type {
@@ -50,30 +51,86 @@ export class AccountService {
     @InjectRepository(ConsentRecordEntity)
     private readonly consentRepo: Repository<ConsentRecordEntity>,
     private readonly authService: AuthService,
+    private readonly accountOverrideService: AccountOverrideService,
     @Inject(FILE_STORAGE) private readonly fileStorage: FileStorageService,
   ) {}
 
   async getRestrictionStatus(userId: string): Promise<RestrictionStatus> {
     const entry = await this.restrictionRepo.findOne({ where: { userId } });
-    if (!entry) return { isRestricted: false };
+
+    // Evaluate active overrides regardless of restriction state (auto-reverts expired ones)
+    const { overriddenActions, overrides: activeOverrides } =
+      await this.accountOverrideService.evaluateActiveOverrides(userId);
+
+    if (!entry) {
+      if (activeOverrides.length === 0) return { isRestricted: false };
+      // No restriction but active overrides exist — surface them for visibility
+      return {
+        isRestricted: false,
+        activeOverrides: activeOverrides.map((o) => ({
+          id: o.id,
+          overriddenActions: o.overriddenActions,
+          expiresAt: o.expiresAt,
+          reason: o.reason,
+        })),
+      };
+    }
+
     if (this.isRestrictionExpired(entry)) {
       await this.clearExpiredRestriction(entry);
-      return { isRestricted: false };
+      if (activeOverrides.length === 0) return { isRestricted: false };
+      return {
+        isRestricted: false,
+        activeOverrides: activeOverrides.map((o) => ({
+          id: o.id,
+          overriddenActions: o.overriddenActions,
+          expiresAt: o.expiresAt,
+          reason: o.reason,
+        })),
+      };
     }
+
     if (!entry.isRestricted && !entry.restrictedReviewMode) {
-      return { isRestricted: false };
+      if (activeOverrides.length === 0) return { isRestricted: false };
+      return {
+        isRestricted: false,
+        activeOverrides: activeOverrides.map((o) => ({
+          id: o.id,
+          overriddenActions: o.overriddenActions,
+          expiresAt: o.expiresAt,
+          reason: o.reason,
+        })),
+      };
     }
+
     const mode = entry.isRestricted ? 'suspended' : 'review';
+    const allRestrictedActions =
+      mode === 'suspended'
+        ? [...ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS]
+        : [...RESTRICTED_REVIEW_ACTIONS];
+
+    // Precedence rule: active override lifts specific restricted actions.
+    // Overridden actions are removed from the effective restricted list.
+    const overriddenSet = new Set(overriddenActions);
+    const effectiveRestrictedActions = allRestrictedActions.filter(
+      (a) => !overriddenSet.has(a),
+    );
+
     return {
       isRestricted: true,
       mode,
       restrictedUntil: entry.restrictedUntil?.toISOString(),
       rationale: entry.rationale ?? undefined,
       nextSteps: entry.nextSteps ?? undefined,
-      restrictedActions:
-        mode === 'suspended'
-          ? [...ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS]
-          : [...RESTRICTED_REVIEW_ACTIONS],
+      restrictedActions: effectiveRestrictedActions,
+      ...(activeOverrides.length > 0 && {
+        activeOverrides: activeOverrides.map((o) => ({
+          id: o.id,
+          overriddenActions: o.overriddenActions,
+          expiresAt: o.expiresAt,
+          reason: o.reason,
+        })),
+      }),
     };
   }
 
