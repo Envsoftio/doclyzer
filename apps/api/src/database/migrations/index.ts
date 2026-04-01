@@ -28,6 +28,7 @@ import { AddUserRoleColumn1730815400000 } from './1730815400000-AddUserRoleColum
 import { CreateSuspiciousActivityQueue1730815500000 } from './1730815500000-CreateSuspiciousActivityQueue';
 import { AddRestrictionReviewMode1730815600000 } from './1730815600000-AddRestrictionReviewMode';
 import { CreateAccountOverridesTable1730815700000 } from './1730815700000-CreateAccountOverridesTable';
+import { CreateCaseResolutionDocumentsTable1730815800000 } from './1730815800000-CreateCaseResolutionDocumentsTable';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -60,4 +61,5 @@ export const migrations = [
   CreateSuspiciousActivityQueue1730815500000,
   AddRestrictionReviewMode1730815600000,
   CreateAccountOverridesTable1730815700000,
+  CreateCaseResolutionDocumentsTable1730815800000,
 ];

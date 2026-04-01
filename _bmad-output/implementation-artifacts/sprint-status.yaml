@@ -38,7 +38,7 @@ project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
-last_updated: 2026-03-31
+last_updated: 2026-03-31T16:45:00Z
 
 development_status:
   epic-0: in-progress
@@ -116,11 +116,12 @@ development_status:
   5-10-share-link-account-suspension-and-restore-controls: review
   5-11-temporary-protective-restriction-and-restricted-review-mode: review
   5-12-time-bound-override-actions-with-expiry: review
-  5-13-restricted-account-resolution-documentation-workflow: ready-for-dev
-  5-14-emergency-containment-actions-with-mandatory-audit-notes: ready-for-dev
+  5-13-restricted-account-resolution-documentation-workflow: review
+  5-14-emergency-containment-actions-with-mandatory-audit-notes: review
   5-15-email-queue-delivery-analytics-and-sending-history-admin-panel: ready-for-dev
   5-16-admin-level-email-sending-with-audit-and-recipient-controls: ready-for-dev
   5-17-complete-superadmin-system-dashboard: backlog
+  5-18-user-activity-and-file-analytics: ready-for-dev
   epic-5-retrospective: optional
 
   epic-6: backlog
