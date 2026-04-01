@@ -10,6 +10,7 @@ import { StorageModule } from '../../common/storage/storage.module';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
+import { DoclingClient } from './docling.client';
 
 @Module({
   imports: [
@@ -24,6 +25,6 @@ import { ReportSummaryService } from './report-summary/report-summary.service';
     StorageModule,
   ],
   controllers: [ReportsController],
-  providers: [ReportsService, ReportSummaryService],
+  providers: [ReportsService, ReportSummaryService, DoclingClient],
 })
 export class ReportsModule {}

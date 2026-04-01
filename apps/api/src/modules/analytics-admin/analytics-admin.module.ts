@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AnalyticsAdminController } from './analytics-admin.controller';
 import { AnalyticsAdminService } from './analytics-admin.service';
 import { AnalyticsGovernanceService } from './analytics-governance.service';
+import { UserActivityService } from './user-activity.service';
 import { AuthModule } from '../auth/auth.module';
 import { UserEntity } from '../../database/entities/user.entity';
 import { SessionEntity } from '../../database/entities/session.entity';
@@ -36,6 +37,6 @@ import { UserSharePolicyEntity } from '../../database/entities/user-share-policy
     ]),
   ],
   controllers: [AnalyticsAdminController],
-  providers: [AnalyticsAdminService, AnalyticsGovernanceService],
+  providers: [AnalyticsAdminService, AnalyticsGovernanceService, UserActivityService],
 })
 export class AnalyticsAdminModule {}

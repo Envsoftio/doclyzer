@@ -8,4 +8,7 @@ export default defineNuxtConfig({
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL ?? 'https://doclyzer.com',
     },
   },
+  routeRules: {
+    '/admin/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+  },
 })

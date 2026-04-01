@@ -1,6 +1,6 @@
 # Story 5.18: User Activity and File Analytics
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -167,23 +167,49 @@ so that I can monitor platform usage, detect processing bottlenecks, and identif
 
 ### Agent Model Used
 
-claude-haiku-4-5-20251001
+claude-sonnet-4-6
 
 ### Debug Log References
 
-None yet; story context phase.
+None.
 
 ### Completion Notes List
 
-- Story context prepared with comprehensive acceptance criteria, API contracts, and database query patterns.
-- User activity analytics fills gap between aggregate metrics (Story 5-5) and per-user operational insight.
-- Designed for compliance: non-PHI user metadata + file processing status, no sensitive data in exports.
-- Ready for dev implementation with clear module structure and reference architecture.
+- Implemented `user-activity.service.ts` in `analytics-admin` module with four methods: `getUserActivityMetrics`, `getUserDirectory`, `getUserWorkbench`, `getFilePipelineStatus`.
+- Extended `analytics-admin.controller.ts` with four new endpoints under `GET /admin/analytics/`.
+- Added `UserDirectoryQueryDto` to `analytics-admin.dto.ts`.
+- Registered `UserActivityService` in `analytics-admin.module.ts`.
+- All endpoints use `AuthGuard + SuperadminGuard + AdminActionTokenGuard` and `successResponse()` with correlation ID.
+- PHI-safe: no parsed transcripts or lab values exposed; only metadata fields.
+- Also implemented as part of this session: Track B (Docling real PDF parsing pipeline) and full superadmin Nuxt UI.
 
 ### File List
 
-- _bmad-output/implementation-artifacts/5-18-user-activity-and-file-analytics.md
+- apps/api/src/modules/analytics-admin/user-activity.service.ts
+- apps/api/src/modules/analytics-admin/analytics-admin.controller.ts (extended)
+- apps/api/src/modules/analytics-admin/analytics-admin.dto.ts (extended)
+- apps/api/src/modules/analytics-admin/analytics-admin.module.ts (extended)
+- apps/api/src/modules/reports/docling.client.ts
+- apps/api/src/modules/reports/lab-value-extractor.ts
+- apps/api/src/modules/reports/reports.service.ts (extended)
+- apps/api/src/modules/reports/reports.module.ts (extended)
+- apps/api/src/config/reports.config.ts (extended)
+- apps/web/app/composables/useAdminAuth.ts
+- apps/web/app/composables/useAdminApi.ts
+- apps/web/app/layouts/admin.vue
+- apps/web/app/components/admin/AdminNav.vue
+- apps/web/app/pages/admin/index.vue (replaced)
+- apps/web/app/pages/admin/login/index.vue
+- apps/web/app/pages/admin/dashboard/index.vue
+- apps/web/app/pages/admin/users/index.vue
+- apps/web/app/pages/admin/users/[id].vue
+- apps/web/app/pages/admin/files/index.vue
+- apps/web/app/pages/admin/risk/index.vue
+- apps/web/nuxt.config.ts (extended)
+- docker-compose.yml (extended)
+- .env.example (extended)
 
 ## Change Log
 
 - 2026-03-31: Story 5.18 created for user activity and file analytics; addresses gap in per-user operational visibility needed for support and monitoring.
+- 2026-03-31: Implemented backend service, controller endpoints, and full superadmin Nuxt UI including login, dashboard, users, files, and risk pages. Transitioned to review.

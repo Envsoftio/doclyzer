@@ -14,6 +14,12 @@ export interface ReportsConfig {
   reportSummaryHttpUrl: string;
   /** Timeout in ms for summariser HTTP call. */
   reportSummaryTimeoutMs: number;
+  /** Enable/disable real Docling PDF parsing (replaces stub when true). */
+  doclingEnabled: boolean;
+  /** Base URL of the Docling serve HTTP service. */
+  doclingHttpUrl: string;
+  /** Timeout in ms for Docling HTTP call. */
+  doclingTimeoutMs: number;
 }
 
 export const reportsConfig = registerAs(
@@ -30,5 +36,8 @@ export const reportsConfig = registerAs(
       process.env.REPORT_SUMMARY_TIMEOUT_MS ?? '10000',
       10,
     ),
+    doclingEnabled: process.env.DOCLING_ENABLED === 'true',
+    doclingHttpUrl: process.env.DOCLING_HTTP_URL ?? '',
+    doclingTimeoutMs: parseInt(process.env.DOCLING_TIMEOUT_MS ?? '60000', 10),
   }),
 );

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Query,
   Req,
@@ -16,12 +17,13 @@ import { AdminActionTokenGuard } from '../auth/admin-action-token.guard';
 import { SuperadminGuard } from '../auth/superadmin.guard';
 import { AnalyticsAdminService } from './analytics-admin.service';
 import { AnalyticsGovernanceService } from './analytics-governance.service';
+import { UserActivityService } from './user-activity.service';
 import {
   AnalyticsGovernanceValidationDto,
   GovernanceRecordsExportDto,
   GovernanceRecordsQueryDto,
 } from './analytics-governance.dto';
-import { CoreProductAnalyticsQueryDto } from './analytics-admin.dto';
+import { CoreProductAnalyticsQueryDto, UserDirectoryQueryDto } from './analytics-admin.dto';
 
 @Controller('admin/analytics')
 @UseGuards(AuthGuard, SuperadminGuard, AdminActionTokenGuard)
@@ -29,6 +31,7 @@ export class AnalyticsAdminController {
   constructor(
     private readonly analyticsAdminService: AnalyticsAdminService,
     private readonly analyticsGovernanceService: AnalyticsGovernanceService,
+    private readonly userActivityService: UserActivityService,
   ) {}
 
   @Get('core-product')
@@ -88,6 +91,40 @@ export class AnalyticsAdminController {
       correlationId,
       dto,
     });
+    return successResponse(data, correlationId);
+  }
+
+  @Get('user-activity')
+  async getUserActivityMetrics(@Req() req: Request): Promise<object> {
+    const correlationId = getCorrelationId(req);
+    const data = await this.userActivityService.getUserActivityMetrics();
+    return successResponse(data, correlationId);
+  }
+
+  @Get('users')
+  async getUserDirectory(
+    @Query() query: UserDirectoryQueryDto,
+    @Req() req: Request,
+  ): Promise<object> {
+    const correlationId = getCorrelationId(req);
+    const data = await this.userActivityService.getUserDirectory(query);
+    return successResponse(data, correlationId);
+  }
+
+  @Get('users/:userId')
+  async getUserWorkbench(
+    @Param('userId') userId: string,
+    @Req() req: Request,
+  ): Promise<object> {
+    const correlationId = getCorrelationId(req);
+    const data = await this.userActivityService.getUserWorkbench(userId);
+    return successResponse(data, correlationId);
+  }
+
+  @Get('files/pipeline-status')
+  async getFilePipelineStatus(@Req() req: Request): Promise<object> {
+    const correlationId = getCorrelationId(req);
+    const data = await this.userActivityService.getFilePipelineStatus();
     return successResponse(data, correlationId);
   }
 }

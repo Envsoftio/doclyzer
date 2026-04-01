@@ -19,6 +19,8 @@ import { ReportProcessingAttemptEntity } from '../../database/entities/report-pr
 import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
+import { DoclingClient } from './docling.client';
+import { LabValueExtractor } from './lab-value-extractor';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
 import { ReportLimitExceededException } from './exceptions/report-limit-exceeded.exception';
@@ -103,7 +105,12 @@ export class ReportsService {
     private readonly configService: ConfigService,
     private readonly reportSummaryService: ReportSummaryService,
     private readonly usageLimitsService: UsageLimitsService,
-  ) {}
+    private readonly doclingClient: DoclingClient,
+  ) {
+    this.labExtractor = new LabValueExtractor();
+  }
+
+  private readonly labExtractor: LabValueExtractor;
 
   private throwIfAlreadyParsed(status: string): void {
     if (status === 'parsed') {
@@ -181,7 +188,20 @@ export class ReportsService {
 
     await this.fileStorage.upload(storageKey, file.buffer, file.mimetype);
 
-    const { status, transcript } = this.runParseStub(file.buffer);
+    const doclingEnabled =
+      this.configService.get<boolean>('reports.doclingEnabled') ?? false;
+    let status: ReportStatus;
+    let transcript: string | null;
+    if (doclingEnabled) {
+      const doclingResult = await this.doclingClient.parsePdf(file.buffer);
+      status = doclingResult ? 'parsed' : 'failed_transient';
+      transcript = doclingResult?.text ?? null;
+    } else {
+      ({ status, transcript } = this.runParseStub(file.buffer));
+    }
+
+    const labValues = transcript ? this.labExtractor.extract(transcript) : [];
+
     const summary =
       status === 'parsed'
         ? await this.reportSummaryService.generateSummary(file.buffer)
@@ -215,6 +235,21 @@ export class ReportsService {
       }
       throw err;
     }
+
+    if (labValues.length > 0) {
+      const labEntities = labValues.map((lv, i) =>
+        this.reportLabValueRepo.create({
+          reportId: entity.id,
+          parameterName: lv.parameterName,
+          value: lv.value,
+          unit: lv.unit ?? null,
+          sampleDate: lv.sampleDate ?? null,
+          sortOrder: i,
+        }),
+      );
+      await this.reportLabValueRepo.save(labEntities);
+    }
+
     await this.recordAttempt(entity.id, 'initial_upload', entity.status);
 
     if (forceUploadAnyway && existing) {
@@ -412,7 +447,24 @@ export class ReportsService {
     this.throwIfAlreadyParsed(entity.status);
 
     const buffer = await this.fileStorage.get(entity.originalFileStorageKey);
-    const { status, transcript } = this.runParseStub(buffer, true);
+
+    const doclingEnabled =
+      this.configService.get<boolean>('reports.doclingEnabled') ?? false;
+    let status: ReportStatus;
+    let transcript: string | null;
+    if (doclingEnabled) {
+      const doclingResult = await this.doclingClient.parsePdf(buffer);
+      status = doclingResult ? 'parsed' : 'failed_transient';
+      transcript = doclingResult?.text ?? null;
+    } else {
+      ({ status, transcript } = this.runParseStub(buffer, true));
+    }
+
+    const retryLabValues =
+      status === 'parsed' && transcript
+        ? this.labExtractor.extract(transcript)
+        : [];
+
     entity.status = status;
     entity.summary =
       status === 'parsed'
@@ -423,6 +475,21 @@ export class ReportsService {
       entity.parsedTranscript = transcript;
     }
     await this.reportRepo.save(entity);
+
+    if (retryLabValues.length > 0) {
+      const labEntities = retryLabValues.map((lv, i) =>
+        this.reportLabValueRepo.create({
+          reportId: entity.id,
+          parameterName: lv.parameterName,
+          value: lv.value,
+          unit: lv.unit ?? null,
+          sampleDate: lv.sampleDate ?? null,
+          sortOrder: i,
+        }),
+      );
+      await this.reportLabValueRepo.save(labEntities);
+    }
+
     await this.recordAttempt(entity.id, 'retry', entity.status);
     return this.toDto(entity, [], true);
   }

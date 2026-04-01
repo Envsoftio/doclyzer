@@ -38,6 +38,16 @@ services:
     networks:
       - doclyzer_net
 
+  docling:
+    image: ds4sd/docling-serve:latest
+    ports:
+      - "5001:5001"
+    environment:
+      - DOCLING_NUM_THREADS=2
+    restart: unless-stopped
+    networks:
+      - doclyzer_net
+
 volumes:
   doclyzer_postgres_data:
   doclyzer_redis_data:
