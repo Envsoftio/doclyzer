@@ -12,7 +12,7 @@ import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
 import type { RequestUser } from '../auth/auth.types';
-import { AdminActionTokenGuard } from '../auth/admin-action-token.guard';
+
 import { SuperadminGuard } from '../auth/superadmin.guard';
 import { AuditIncidentService } from './audit-incident.service';
 import {
@@ -21,7 +21,7 @@ import {
 } from './audit-incident.dto';
 
 @Controller('admin/audit')
-@UseGuards(AuthGuard, SuperadminGuard, AdminActionTokenGuard)
+@UseGuards(AuthGuard, SuperadminGuard)
 export class AuditIncidentController {
   constructor(private readonly auditService: AuditIncidentService) {}
 

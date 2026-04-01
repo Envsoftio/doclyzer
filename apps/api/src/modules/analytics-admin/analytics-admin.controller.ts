@@ -13,7 +13,6 @@ import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
 import type { RequestUser } from '../auth/auth.types';
-import { AdminActionTokenGuard } from '../auth/admin-action-token.guard';
 import { SuperadminGuard } from '../auth/superadmin.guard';
 import { AnalyticsAdminService } from './analytics-admin.service';
 import { AnalyticsGovernanceService } from './analytics-governance.service';
@@ -26,7 +25,7 @@ import {
 import { CoreProductAnalyticsQueryDto, UserDirectoryQueryDto } from './analytics-admin.dto';
 
 @Controller('admin/analytics')
-@UseGuards(AuthGuard, SuperadminGuard, AdminActionTokenGuard)
+@UseGuards(AuthGuard, SuperadminGuard)
 export class AnalyticsAdminController {
   constructor(
     private readonly analyticsAdminService: AnalyticsAdminService,

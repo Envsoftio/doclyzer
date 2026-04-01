@@ -17,7 +17,7 @@ Read this entire prompt before starting. Follow all guardrails exactly.
 - **No tests** — manual QA only (project policy)
 - **No external UI libraries** — use plain CSS with `system-ui` font (match existing page patterns)
 - **PHI-safe**: never log parsed transcript, lab values, or user health data
-- **Superadmin endpoints** always require `AuthGuard + SuperadminGuard + AdminActionTokenGuard`
+- **Superadmin endpoints** always require `AuthGuard + SuperadminGuard`
 - **No new DB migrations** unless explicitly stated
 - **Keep thin controllers** — business logic lives in services
 - **Use TypeORM repositories** via dependency injection — no raw SQL strings
@@ -57,10 +57,7 @@ apps/web/server/api/admin/               ← existing Nuxt server API contract s
 
 ### Existing auth flow for superadmin
 - `POST /v1/auth/login` → `{ accessToken, refreshToken }`
-- `POST /v1/auth/superadmin/elevation/challenge` → `{ challengeId }` (needs `Authorization: Bearer <accessToken>` + role=superadmin)
-- `POST /v1/auth/superadmin/elevation/verify` → `{ verified: true }`
-- `POST /v1/auth/superadmin/elevation/token` → `{ adminActionToken }`
-- All superadmin API calls need: `Authorization: Bearer <accessToken>` + `X-Admin-Action-Token: <adminActionToken>`
+- All superadmin API calls need: `Authorization: Bearer <accessToken>` (superadmin role is verified by SuperadminGuard)
 
 ### Existing report parse config (reports.config.ts)
 ```ts

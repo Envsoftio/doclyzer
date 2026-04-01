@@ -1,17 +1,23 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { getCorrelationId } from '../../common/correlation-id.middleware';
-import { SuperadminAuthService } from './superadmin-auth.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { UserEntity } from '../../database/entities/user.entity';
+import { AUTHZ_SUPERADMIN_REQUIRED } from './auth.types';
 import type { RequestUser } from './auth.types';
 
 @Injectable()
 export class SuperadminGuard implements CanActivate {
-  constructor(private readonly superadminAuthService: SuperadminAuthService) {}
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request>();
@@ -23,10 +29,14 @@ export class SuperadminGuard implements CanActivate {
       });
     }
 
-    await this.superadminAuthService.assertSuperadmin(
-      requestUser.id,
-      getCorrelationId(req),
-    );
+    const user = await this.userRepo.findOne({ where: { id: requestUser.id } });
+    if (!user || user.role !== 'superadmin') {
+      throw new ForbiddenException({
+        code: AUTHZ_SUPERADMIN_REQUIRED,
+        message: 'Superadmin role is required for this operation',
+      });
+    }
+
     return true;
   }
 }

@@ -14,7 +14,7 @@ import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
 import type { RequestUser } from '../auth/auth.types';
-import { AdminActionTokenGuard } from '../auth/admin-action-token.guard';
+
 import { SuperadminGuard } from '../auth/superadmin.guard';
 import {
   SuspiciousActivityIngestDto,
@@ -24,7 +24,7 @@ import {
 import { SuspiciousActivityService } from './suspicious-activity.service';
 
 @Controller('admin/risk')
-@UseGuards(AuthGuard, SuperadminGuard, AdminActionTokenGuard)
+@UseGuards(AuthGuard, SuperadminGuard)
 export class SuspiciousActivityController {
   constructor(
     private readonly suspiciousActivityService: SuspiciousActivityService,

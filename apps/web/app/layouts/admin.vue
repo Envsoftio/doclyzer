@@ -1,9 +1,9 @@
 <script setup lang="ts">
-const { isAuthenticated, hasAdminToken, logout } = useAdminAuth()
+const { isAuthenticated, logout } = useAdminAuth()
 const route = useRoute()
 
 onMounted(() => {
-  if (!isAuthenticated.value || !hasAdminToken.value) {
+  if (!isAuthenticated.value) {
     navigateTo('/admin/login')
   }
 })

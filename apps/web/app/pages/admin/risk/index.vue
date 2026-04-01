@@ -5,7 +5,6 @@ definePageMeta({ layout: 'admin' })
 useSeoMeta({ robots: 'noindex, nofollow', title: 'Risk — Doclyzer Admin' })
 
 const { adminFetch } = useAdminApi()
-const { hasAdminToken } = useAdminAuth()
 
 interface FlaggedAccount {
   userId: string
@@ -90,10 +89,6 @@ function fmtDate(iso?: string): string {
   <div class="risk-page">
     <h2 class="page-title">Risk & Suspicious Activity</h2>
 
-    <div v-if="!hasAdminToken" class="warn-box">
-      Admin action token required. <NuxtLink to="/admin/login" class="reauth-link">Re-authenticate</NuxtLink> if expired.
-    </div>
-
     <div v-if="error" class="error-box">{{ error }}</div>
 
     <div v-if="loading" class="skeleton-block" />
@@ -163,8 +158,6 @@ function fmtDate(iso?: string): string {
             {{ modalLoading ? 'Applying…' : modal.action === 'restrict' ? 'Restrict' : 'Suspend' }}
           </button>
         </div>
-
-        <p class="modal-note">Requires a valid admin action token — re-authenticate if it has expired.</p>
       </div>
     </div>
   </div>
@@ -174,8 +167,6 @@ function fmtDate(iso?: string): string {
 .risk-page { max-width: 1000px; }
 .page-title { font-size: 22px; font-weight: 700; margin: 0 0 24px; color: #0f172a; }
 
-.warn-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 12px 16px; font-size: 13px; color: #92400e; margin-bottom: 16px; }
-.reauth-link { color: #4f46e5; text-decoration: underline; }
 .error-box { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
 .success-box { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
 .empty-state { text-align: center; padding: 48px; color: #6b7280; font-size: 14px; }

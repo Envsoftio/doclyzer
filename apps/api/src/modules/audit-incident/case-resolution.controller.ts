@@ -13,13 +13,13 @@ import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
 import type { RequestUser } from '../auth/auth.types';
-import { AdminActionTokenGuard } from '../auth/admin-action-token.guard';
+
 import { SuperadminGuard } from '../auth/superadmin.guard';
 import { CaseResolutionService } from './case-resolution.service';
 import { ResolutionQueryDto, SubmitResolutionDto } from './case-resolution.dto';
 
 @Controller('admin/accounts/:userId/resolutions')
-@UseGuards(AuthGuard, SuperadminGuard, AdminActionTokenGuard)
+@UseGuards(AuthGuard, SuperadminGuard)
 export class CaseResolutionController {
   constructor(
     private readonly caseResolutionService: CaseResolutionService,

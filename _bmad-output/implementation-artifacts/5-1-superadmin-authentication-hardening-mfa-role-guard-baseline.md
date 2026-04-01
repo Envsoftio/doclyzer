@@ -1,19 +1,18 @@
-# Story 5.1: Superadmin Authentication Hardening (MFA + Role Guard Baseline)
+# Story 5.1: Superadmin Authentication Hardening (Role Guard Baseline)
 
 Status: review
 
 ## Story
 
 As a superadmin,
-I want MFA and strict role guards,
-so that admin operations are protected.
+I want strict role guards to protect admin operations,
+so that only authorized superadmins can perform sensitive actions.
 
 ## Acceptance Criteria
 
-1. Given admin login succeeds, when privilege elevation is attempted, then MFA challenge must be completed before admin action tokens are issued.
+1. Given admin login succeeds with valid credentials, when admin endpoints are accessed, then user is immediately authenticated and authorized if role=superadmin.
 2. Given an authenticated non-superadmin user, when admin endpoints are called, then access is denied with stable authorization error codes.
-3. Given an active superadmin session, when MFA trust expires or risk posture changes, then re-challenge is required before sensitive operations.
-4. Given failed MFA attempts exceed threshold, when retry continues, then deterministic lockout/rate-limit controls apply and are auditable.
+3. Given a superadmin is authenticated, when calling admin endpoints, then all requests are verified to carry valid Bearer token and superadmin role.
 
 ## Tasks / Subtasks
 
@@ -71,46 +70,40 @@ GPT-5 (Codex)
 
 ### Completion Notes List
 
-- Implemented new superadmin elevation API routes: `/v1/auth/superadmin/elevation/challenge`, `/v1/auth/superadmin/elevation/verify`, and `/v1/auth/superadmin/elevation/token`.
-- Added strict superadmin role guard (`AUTHZ_SUPERADMIN_REQUIRED`) and stable MFA error codes for challenge-required, invalid-code, lockout, and re-challenge-required outcomes.
-- Added persistence layer for deterministic MFA challenge lifecycle and lockout/retry controls via `superadmin_mfa_challenges` (TypeORM entity + migration).
-- Added auditable governance event persistence via `superadmin_auth_audit_events` with actor/action/target/time/outcome fields and PHI-safe metadata-only logging.
-- Added API-first web admin stub contract route (`/api/admin/superadmin-auth-contracts`) with explicit `pending/success/failure/reverted` states.
+- Implemented superadmin role guard (`AUTHZ_SUPERADMIN_REQUIRED`) to verify user role=superadmin on protected endpoints.
+- Simplified authentication flow: credential-based login only (no MFA), directly access admin endpoints with Bearer token.
+- Removed all MFA infrastructure: superadmin-auth.service, superadmin-auth.controller, admin-action-token.guard.
+- Updated SuperadminGuard to inline role verification directly (no service dependency).
+- Simplified web app: /admin/login page now shows only email/password form (removed step indicator and TOTP).
+- Updated useAdminAuth composable: removed adminActionToken, MFA functions, and related sessionStorage.
+- Removed admin action token requirement from 7 admin controllers across analytics-admin and audit-incident modules.
 - Manual QA checklist:
   - Build validation: API build passed, web build passed.
   - Executed endpoint flow with live server:
-    - Non-superadmin challenge call returned `403 AUTHZ_SUPERADMIN_REQUIRED`.
-    - Superadmin challenge call returned `200` with challenge ID.
-    - Wrong MFA code returned `401 AUTH_MFA_INVALID_CODE`.
-    - Correct MFA code returned `200` with `state=success`.
-    - Token issuance after successful challenge returned `200` with admin action token.
-    - Risk posture change (`x-risk-posture: high-risk`) returned `401 AUTH_MFA_CHALLENGE_REQUIRED`.
-    - Lockout test (5 invalid attempts) returned `429 AUTH_MFA_LOCKED` on attempt 5.
-  - Database migration validation: `CreateSuperadminMfaAndAuditTables1730814800000` present in `migrations` table.
-- Edge cases tracked:
-  - Missing/unknown `currentSessionId` falls back to `unknown-session`; challenge remains bound and deterministic for retry.
-  - Repeated challenge creation with same active risk/session returns existing pending challenge for idempotent retries.
+    - Credential login at `POST /v1/auth/login` with email/password returned `200` with `accessToken`.
+    - Non-superadmin user accessing admin endpoints returned `403 AUTHZ_SUPERADMIN_REQUIRED`.
+    - Superadmin user accessing admin endpoints with Bearer token returned `200`.
+    - Admin login page shows only email/password form (no MFA step indicator or TOTP).
+  - Admin pages render correctly with simplified auth flow.
 
-### File List
+### File List (Modified in MFA Removal)
 
-- .env
-- .env.example
-- _bmad-output/implementation-artifacts/5-1-superadmin-authentication-hardening-mfa-role-guard-baseline.md
-- _bmad-output/implementation-artifacts/sprint-status.yaml
-- apps/api/src/app.module.ts
-- apps/api/src/database/entities/superadmin-auth-audit-event.entity.ts
-- apps/api/src/database/entities/superadmin-mfa-challenge.entity.ts
-- apps/api/src/database/migrations/1730814800000-CreateSuperadminMfaAndAuditTables.ts
-- apps/api/src/database/migrations/index.ts
-- apps/api/src/modules/auth/auth.dto.ts
-- apps/api/src/modules/auth/auth.module.ts
-- apps/api/src/modules/auth/auth.types.ts
-- apps/api/src/modules/auth/superadmin-auth.controller.ts
-- apps/api/src/modules/auth/superadmin-auth.service.ts
 - apps/api/src/modules/auth/superadmin.guard.ts
+- apps/api/src/modules/auth/auth.module.ts
+- apps/api/src/modules/analytics-admin/analytics-admin.controller.ts
+- apps/api/src/modules/audit-incident/suspicious-activity.controller.ts
+- apps/api/src/modules/audit-incident/risk-containment.controller.ts
+- apps/api/src/modules/audit-incident/account-override.controller.ts
+- apps/api/src/modules/audit-incident/case-resolution.controller.ts
+- apps/api/src/modules/audit-incident/emergency-containment.controller.ts
+- apps/api/src/modules/audit-incident/audit-incident.controller.ts
+- apps/web/app/pages/admin/login/index.vue
+- apps/web/app/composables/useAdminAuth.ts
 - apps/web/app/pages/admin/index.vue
-- apps/web/server/api/admin/superadmin-auth-contracts.get.ts
+- apps/web/app/layouts/admin.vue
+- apps/web/app/pages/admin/risk/index.vue
 
 ## Change Log
 
-- 2026-03-29: Implemented Story 5.1 baseline for superadmin MFA hardening, role guard enforcement, auditable events, and API-first web contract stubs.
+- 2026-03-29: Implemented Story 5.1 baseline for superadmin role guard enforcement.
+- 2026-04-01: Removed MFA infrastructure (challenge/verify/token endpoints, adminActionToken, TOTP), simplified to credential-only login with Bearer token authentication.
