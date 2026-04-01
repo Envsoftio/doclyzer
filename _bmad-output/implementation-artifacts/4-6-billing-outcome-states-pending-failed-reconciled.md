@@ -1,6 +1,6 @@
 # Story 4.6: Billing Outcome States (Pending/Failed/Reconciled)
 
-Status: review
+Status: done
 
 ## Story
 

@@ -1,6 +1,6 @@
 # Story 4.5: Usage Limit Enforcement (Free/Paid Tiers)
 
-Status: review
+Status: done
 
 ## Story
 

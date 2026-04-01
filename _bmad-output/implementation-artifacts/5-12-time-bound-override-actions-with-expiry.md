@@ -1,6 +1,6 @@
 # Story 5.12: Time-Bound Override Actions with Expiry
 
-Status: review
+Status: done
 
 ## Story
 

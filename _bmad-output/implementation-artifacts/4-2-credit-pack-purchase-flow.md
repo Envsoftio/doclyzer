@@ -1,6 +1,6 @@
 # Story 4.2: Credit Pack Purchase Flow
 
-Status: review
+Status: done
 
 ## Story
 

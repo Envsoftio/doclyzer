@@ -1,6 +1,6 @@
 # Story 3.9: Landing SEO MVP (Metadata, Canonical, Sitemap/Robots, Structured Data)
 
-Status: review
+Status: done
 
 ## Story
 

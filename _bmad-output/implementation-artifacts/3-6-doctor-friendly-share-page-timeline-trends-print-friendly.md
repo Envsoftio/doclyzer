@@ -1,6 +1,6 @@
 # Story 3.6: Doctor-Friendly Share Page (Timeline + Trends, Print-Friendly)
 
-Status: review
+Status: done
 
 ## Story
 

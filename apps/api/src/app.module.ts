@@ -29,6 +29,8 @@ import { SuperadminActionAuditEventEntity } from './database/entities/superadmin
 import { SuperadminAuthAuditEventEntity } from './database/entities/superadmin-auth-audit-event.entity';
 import { SuperadminMfaChallengeEntity } from './database/entities/superadmin-mfa-challenge.entity';
 import { UserEntity } from './database/entities/user.entity';
+import { EmailDeliveryEventEntity } from './database/entities/email-delivery-event.entity';
+import { EmailQueueItemEntity } from './database/entities/email-queue-item.entity';
 import { migrations } from './database/migrations';
 import { AccountModule } from './modules/account/account.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -40,6 +42,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { SharingModule } from './modules/sharing/sharing.module';
 import { AnalyticsAdminModule } from './modules/analytics-admin/analytics-admin.module';
 import { AuditIncidentModule } from './modules/audit-incident/audit-incident.module';
+import { EmailAdminModule } from './modules/email-admin/email-admin.module';
 import { randomUUID } from 'node:crypto';
 
 const typeOrmEntities = [
@@ -65,6 +68,8 @@ const typeOrmEntities = [
   SuperadminActionAuditEventEntity,
   SuperadminMfaChallengeEntity,
   SuperadminAuthAuditEventEntity,
+  EmailQueueItemEntity,
+  EmailDeliveryEventEntity,
 ];
 
 @Module({
@@ -165,6 +170,7 @@ const typeOrmEntities = [
     SharingModule,
     AnalyticsAdminModule,
     AuditIncidentModule,
+    EmailAdminModule,
   ],
 })
 export class AppModule {}

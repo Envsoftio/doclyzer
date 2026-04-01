@@ -29,6 +29,7 @@ import { CreateSuspiciousActivityQueue1730815500000 } from './1730815500000-Crea
 import { AddRestrictionReviewMode1730815600000 } from './1730815600000-AddRestrictionReviewMode';
 import { CreateAccountOverridesTable1730815700000 } from './1730815700000-CreateAccountOverridesTable';
 import { CreateCaseResolutionDocumentsTable1730815800000 } from './1730815800000-CreateCaseResolutionDocumentsTable';
+import { CreateEmailAdminTables1730815900000 } from './1730815900000-CreateEmailAdminTables';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -62,4 +63,5 @@ export const migrations = [
   AddRestrictionReviewMode1730815600000,
   CreateAccountOverridesTable1730815700000,
   CreateCaseResolutionDocumentsTable1730815800000,
+  CreateEmailAdminTables1730815900000,
 ];

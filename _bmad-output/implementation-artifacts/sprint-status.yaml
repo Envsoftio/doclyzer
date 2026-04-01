@@ -38,7 +38,7 @@ project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
-last_updated: 2026-03-31T20:00:00Z
+last_updated: 2026-04-01T08:18:53Z
 
 development_status:
   epic-0: in-progress
@@ -81,47 +81,47 @@ development_status:
   epic-2-retrospective: optional
 
   epic-3: in-progress
-  3-1-create-share-link-for-active-profile-scope: review
-  3-2-share-link-expiry-and-revocation-controls: review
-  3-3-default-share-policy-settings-for-new-links: review
-  3-4-copy-distribute-share-link-ux: review
-  3-5-recipient-access-via-valid-link-no-account: review
-  3-6-doctor-friendly-share-page-timeline-trends-print-friendly: review
-  3-7-share-access-event-history-for-link-owner: review
-  3-8-enforce-profile-isolation-in-shared-output: review
-  3-9-landing-seo-mvp-metadata-canonical-sitemap-robots-structured-data: review
-  3-10-route-isolation-rules-indexable-landing-vs-non-indexable-share: review
+  3-1-create-share-link-for-active-profile-scope: done
+  3-2-share-link-expiry-and-revocation-controls: done
+  3-3-default-share-policy-settings-for-new-links: done
+  3-4-copy-distribute-share-link-ux: done
+  3-5-recipient-access-via-valid-link-no-account: done
+  3-6-doctor-friendly-share-page-timeline-trends-print-friendly: done
+  3-7-share-access-event-history-for-link-owner: done
+  3-8-enforce-profile-isolation-in-shared-output: done
+  3-9-landing-seo-mvp-metadata-canonical-sitemap-robots-structured-data: done
+  3-10-route-isolation-rules-indexable-landing-vs-non-indexable-share: done
   epic-3-retrospective: optional
 
   epic-4: in-progress
-  4-1-credit-balance-and-entitlement-summary-view: review
-  4-2-credit-pack-purchase-flow: review
-  4-3-subscription-purchase-flow: review
+  4-1-credit-balance-and-entitlement-summary-view: done
+  4-2-credit-pack-purchase-flow: done
+  4-3-subscription-purchase-flow: done
   4-4-promo-code-apply-validate-at-checkout: done  # subscription promos deferred until Razorpay Offers configured
-  4-5-usage-limit-enforcement-free-paid-tiers: review
-  4-6-billing-outcome-states-pending-failed-reconciled: review
+  4-5-usage-limit-enforcement-free-paid-tiers: done
+  4-6-billing-outcome-states-pending-failed-reconciled: done
   4-7-entitlement-change-reason-visibility: backlog
   epic-4-retrospective: optional
 
   epic-5: in-progress
-  5-1-superadmin-authentication-hardening-mfa-role-guard-baseline: review
-  5-2-plan-definition-and-limit-configuration-management: review
-  5-3-promo-code-crud-and-lifecycle-management: review
+  5-1-superadmin-authentication-hardening-mfa-role-guard-baseline: done
+  5-2-plan-definition-and-limit-configuration-management: done
+  5-3-promo-code-crud-and-lifecycle-management: done
   5-4-promo-redemption-and-revenue-impact-analytics: done
   5-5-core-product-analytics-dashboard-signups-usage-monetization-behavior: done
   5-6-phi-safe-analytics-taxonomy-and-governance-controls: in-progress
   5-7-auditable-superadmin-action-logging: done
-  5-8-access-share-consent-policy-records-query-console: review
-  5-9-suspicious-activity-detection-and-review-queue: review
-  5-10-share-link-account-suspension-and-restore-controls: review
-  5-11-temporary-protective-restriction-and-restricted-review-mode: review
-  5-12-time-bound-override-actions-with-expiry: review
-  5-13-restricted-account-resolution-documentation-workflow: review
-  5-14-emergency-containment-actions-with-mandatory-audit-notes: review
-  5-15-email-queue-delivery-analytics-and-sending-history-admin-panel: ready-for-dev
+  5-8-access-share-consent-policy-records-query-console: done
+  5-9-suspicious-activity-detection-and-review-queue: done
+  5-10-share-link-account-suspension-and-restore-controls: done
+  5-11-temporary-protective-restriction-and-restricted-review-mode: done
+  5-12-time-bound-override-actions-with-expiry: done
+  5-13-restricted-account-resolution-documentation-workflow: done
+  5-14-emergency-containment-actions-with-mandatory-audit-notes: done
+  5-15-email-queue-delivery-analytics-and-sending-history-admin-panel: review
   5-16-admin-level-email-sending-with-audit-and-recipient-controls: ready-for-dev
   5-17-complete-superadmin-system-dashboard: backlog
-  5-18-user-activity-and-file-analytics: review
+  5-18-user-activity-and-file-analytics: done
   epic-5-retrospective: optional
 
   epic-6: backlog
@@ -141,5 +141,5 @@ development_status:
   epic-7-retrospective: optional
 
   epic-8: in-progress
-  8-1-better-auth-migration: review
+  8-1-better-auth-migration: done
   epic-8-retrospective: optional

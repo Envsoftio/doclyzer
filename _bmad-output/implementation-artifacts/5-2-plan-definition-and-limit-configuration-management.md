@@ -1,6 +1,6 @@
 # Story 5.2: Plan Definition and Limit Configuration Management
 
-Status: review
+Status: done
 
 ## Story
 

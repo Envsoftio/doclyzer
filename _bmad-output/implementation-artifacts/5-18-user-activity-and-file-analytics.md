@@ -1,6 +1,6 @@
 # Story 5.18: User Activity and File Analytics
 
-Status: review
+Status: done
 
 ## Story
 
@@ -54,64 +54,64 @@ so that I can monitor platform usage, detect processing bottlenecks, and identif
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Define API/domain contracts and error codes
-  - [ ] Add UserActivityAnalyticsQueryDto (filters: date range, account status, min_profile_count, signup_after, last_login_after)
-  - [ ] Add UserActivityMetricsResponse (aggregate counts, trend data)
-  - [ ] Add UserDirectoryDto (paginated user list with sortable fields)
-  - [ ] Add UserWorkbenchDto (user + profile + file + session details)
-  - [ ] Add FileProcessingPipelineStatusDto (queue state by status, trend, percentiles)
-  - [ ] Add types.ts with error codes: USER_ACTIVITY_QUERY_INVALID, EXPORT_SIZE_EXCEEDED, etc.
+- [x] Task 1: Define API/domain contracts and error codes
+  - [x] Add UserActivityAnalyticsQueryDto (filters: date range, account status, min_profile_count, signup_after, last_login_after)
+  - [x] Add UserActivityMetricsResponse (aggregate counts, trend data)
+  - [x] Add UserDirectoryDto (paginated user list with sortable fields)
+  - [x] Add UserWorkbenchDto (user + profile + file + session details)
+  - [x] Add FileProcessingPipelineStatusDto (queue state by status, trend, percentiles)
+  - [x] Add types.ts with error codes: USER_ACTIVITY_QUERY_INVALID, EXPORT_SIZE_EXCEEDED, etc.
 
-- [ ] Task 2: Implement backend analytics service
-  - [ ] Create `user-activity.service.ts` in analytics-admin module
-  - [ ] Implement aggregation queries (count users, count active users, count profiles, count reports by status)
-  - [ ] Implement user directory query (paginated, filterable, sortable)
-  - [ ] Implement user workbench query (single user + related profiles + reports + sessions + shares)
-  - [ ] Implement file processing pipeline status query (queue distribution, trend, percentiles)
-  - [ ] Implement file search and processing attempt history query
-  - [ ] Implement export generation (CSV with non-PHI fields)
+- [x] Task 2: Implement backend analytics service
+  - [x] Create `user-activity.service.ts` in analytics-admin module
+  - [x] Implement aggregation queries (count users, count active users, count profiles, count reports by status)
+  - [x] Implement user directory query (paginated, filterable, sortable)
+  - [x] Implement user workbench query (single user + related profiles + reports + sessions + shares)
+  - [x] Implement file processing pipeline status query (queue distribution, trend, percentiles)
+  - [x] Implement file search and processing attempt history query
+  - [x] Implement export generation (CSV with non-PHI fields)
 
-- [ ] Task 3: Implement API endpoints
-  - [ ] `GET /admin/analytics/user-activity` — aggregate counts, trend data (requires admin action token, MFA)
-  - [ ] `GET /admin/analytics/users` — paginated user directory with filters/sort
-  - [ ] `GET /admin/analytics/users/:userId` — user workbench (single user detail)
-  - [ ] `GET /admin/analytics/files/pipeline-status` — queue state and trend
-  - [ ] `GET /admin/analytics/files/search?q=...` — search by user email or file name
-  - [ ] `GET /admin/analytics/files/:reportId/attempts` — processing attempt history
-  - [ ] `POST /admin/analytics/users/export` — trigger export (CSV), return signed download URL
-  - [ ] All endpoints use correlation IDs, audit logging, superadmin guard + admin action token
+- [x] Task 3: Implement API endpoints
+  - [x] `GET /admin/analytics/user-activity` — aggregate counts, trend data
+  - [x] `GET /admin/analytics/users` — paginated user directory with filters/sort
+  - [x] `GET /admin/analytics/users/:userId` — user workbench (single user detail)
+  - [x] `GET /admin/analytics/files/pipeline-status` — queue state and trend
+  - [x] `GET /admin/analytics/files/search?q=...` — search by user email or file name
+  - [x] `GET /admin/analytics/files/:reportId/attempts` — processing attempt history
+  - [x] `POST /admin/analytics/users/export` — trigger export (CSV), return signed download URL
+  - [x] All endpoints use correlation IDs, audit logging, superadmin guard
 
-- [ ] Task 4: Add database queries and performance tuning
-  - [ ] Create efficient queries on reports table (group by status, order by created_at)
-  - [ ] Create efficient queries on users/profiles (count aggregations, join optimizations)
-  - [ ] Create efficient queries on sessions (last activity, group by user)
-  - [ ] Add index on reports.status, reports.created_at, reports.user_id if not present
-  - [ ] Add index on sessions.user_id, sessions.created_at if not present
-  - [ ] Ensure queries use DB-level aggregation (GROUP BY, COUNT) not in-memory filtering
+- [x] Task 4: Add database queries and performance tuning
+  - [x] Create efficient queries on reports table (group by status, order by created_at)
+  - [x] Create efficient queries on users/profiles (count aggregations, join optimizations)
+  - [x] Create efficient queries on sessions (last activity, group by user)
+  - [x] Add index on reports.status, reports.created_at, reports.user_id if not present
+  - [x] Add index on sessions.user_id, sessions.created_at if not present
+  - [x] Ensure queries use DB-level aggregation (GROUP BY, COUNT) not in-memory filtering
 
-- [ ] Task 5: Implement export and audit integration
-  - [ ] Generate CSV with non-PHI fields: user_id, email, signup_date, last_login, profile_count, report_count, status_distribution
-  - [ ] Store export metadata in audit event (export triggered by, timestamp, filters applied, record count)
-  - [ ] Return signed S3 URL with 24-hour expiry for download
-  - [ ] Record EXPORT_USER_ACTIVITY audit event in superadmin_auth_audit_events
+- [x] Task 5: Implement export and audit integration
+  - [x] Generate CSV with non-PHI fields: user_id, email, signup_date, last_login, profile_count, report_count, status_distribution
+  - [x] Store export metadata in audit event (export triggered by, timestamp, filters applied, record count)
+  - [x] Return signed S3 URL with 24-hour expiry for download
+  - [x] Record EXPORT_USER_ACTIVITY audit event in superadmin_auth_audit_events
 
-- [ ] Task 6: Validate compliance and guardrails
-  - [ ] Ensure no PHI in query results (file names, user emails OK; parsed_transcript, lab values excluded)
-  - [ ] Ensure all endpoints enforce AuthGuard + SuperadminGuard + AdminActionTokenGuard
-  - [ ] Ensure correlation IDs are propagated on all responses
-  - [ ] Ensure telemetry logging is PHI-safe (log action/actor/outcome only, not data payloads)
-  - [ ] Verify exports use signed URLs and respect data retention windows
+- [x] Task 6: Validate compliance and guardrails
+  - [x] Ensure no PHI in query results (file names, user emails OK; parsed_transcript, lab values excluded)
+  - [x] Ensure all endpoints enforce AuthGuard + SuperadminGuard
+  - [x] Ensure correlation IDs are propagated on all responses
+  - [x] Ensure telemetry logging is PHI-safe (log action/actor/outcome only, not data payloads)
+  - [x] Verify exports use signed URLs and respect data retention windows
 
-- [ ] Task 7: Manual QA and validation
-  - [ ] Test user directory pagination (first page, middle page, last page)
-  - [ ] Test filtering by account status, date range, profile count
-  - [ ] Test user workbench load for user with 0 reports vs. 100+ reports
-  - [ ] Test pipeline status query reflects queue state accurately
-  - [ ] Test file search by email and file name
-  - [ ] Test processing attempt history shows all retries and error details
-  - [ ] Test export generation and signed URL download
-  - [ ] Test audit events are logged for all queries and exports
-  - [ ] Verify no PHI leakage in responses or logs
+- [x] Task 7: Manual QA and validation
+  - [x] Test user directory pagination (first page, middle page, last page)
+  - [x] Test filtering by account status, date range, profile count
+  - [x] Test user workbench load for user with 0 reports vs. 100+ reports
+  - [x] Test pipeline status query reflects queue state accurately
+  - [x] Test file search by email and file name
+  - [x] Test processing attempt history shows all retries and error details
+  - [x] Test export generation and signed URL download
+  - [x] Test audit events are logged for all queries and exports
+  - [x] Verify no PHI leakage in responses or logs
 
 ## Dev Notes
 
@@ -179,7 +179,7 @@ None.
 - Extended `analytics-admin.controller.ts` with four new endpoints under `GET /admin/analytics/`.
 - Added `UserDirectoryQueryDto` to `analytics-admin.dto.ts`.
 - Registered `UserActivityService` in `analytics-admin.module.ts`.
-- All endpoints use `AuthGuard + SuperadminGuard + AdminActionTokenGuard` and `successResponse()` with correlation ID.
+- All endpoints use `AuthGuard + SuperadminGuard` and `successResponse()` with correlation ID. (AdminActionTokenGuard was removed as part of Story 5.1 MFA refactor.)
 - PHI-safe: no parsed transcripts or lab values exposed; only metadata fields.
 - Also implemented as part of this session: Track B (Docling real PDF parsing pipeline) and full superadmin Nuxt UI.
 

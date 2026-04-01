@@ -1,6 +1,6 @@
 # Story 5.14: Emergency Containment Actions with Mandatory Audit Notes
 
-Status: review
+Status: done
 
 ## Story
 

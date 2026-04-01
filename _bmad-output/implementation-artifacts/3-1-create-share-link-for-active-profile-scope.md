@@ -1,6 +1,6 @@
 # Story 3.1: Create Share Link for Active Profile Scope
 
-Status: review
+Status: done
 
 ## Story
 

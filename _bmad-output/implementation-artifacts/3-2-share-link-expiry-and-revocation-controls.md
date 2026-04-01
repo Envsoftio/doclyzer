@@ -1,6 +1,6 @@
 # Story 3.2: Share-Link Expiry and Revocation Controls
 
-Status: review
+Status: done
 
 ## Story
 

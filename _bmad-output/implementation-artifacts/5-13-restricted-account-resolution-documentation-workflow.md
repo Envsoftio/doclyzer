@@ -1,6 +1,6 @@
 # Story 5.13: Restricted-Account Resolution Documentation Workflow
 
-Status: review
+Status: done
 
 ## Story
 

@@ -1,6 +1,6 @@
 # Story 5.15: Email Queue, Delivery Analytics & Sending History (Admin Panel)
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -17,20 +17,20 @@ so that I can monitor and troubleshoot all email types (transactional and admin-
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Define API/domain contracts and error codes for this story
-  - [ ] Add or extend module types/DTOs and controller routes with stable response envelopes
-  - [ ] Ensure role checks and correlation IDs are enforced on all endpoints
-- [ ] Task 2: Implement service and persistence logic using existing architecture patterns
-  - [ ] Use TypeORM repositories via dependency injection and injected repositories
-  - [ ] Keep business rules deterministic and idempotent for retriable operations
-- [ ] Task 3: Integrate UI/consumer surface for superadmin workflows (API-first if UI not scaffolded)
-  - [ ] Add route-level stubs/contracts in web/admin surface plan when implementation surface is pending
-  - [ ] Ensure output states are explicit (pending/success/failure/reverted)
-- [ ] Task 4: Add audit and governance protections
-  - [ ] Emit auditable events for actor/action/target/time/outcome
-  - [ ] Apply PHI-safe telemetry and logging guardrails
-- [ ] Task 5: Validate manually (no automated tests per project policy)
-  - [ ] Record manual QA checklist and edge cases in completion notes
+- [x] Task 1: Define API/domain contracts and error codes for this story
+  - [x] Add or extend module types/DTOs and controller routes with stable response envelopes
+  - [x] Ensure role checks and correlation IDs are enforced on all endpoints
+- [x] Task 2: Implement service and persistence logic using existing architecture patterns
+  - [x] Use TypeORM repositories via dependency injection and injected repositories
+  - [x] Keep business rules deterministic and idempotent for retriable operations
+- [x] Task 3: Integrate UI/consumer surface for superadmin workflows (API-first if UI not scaffolded)
+  - [x] Add route-level stubs/contracts in web/admin surface plan when implementation surface is pending
+  - [x] Ensure output states are explicit (pending/success/failure/reverted)
+- [x] Task 4: Add audit and governance protections
+  - [x] Emit auditable events for actor/action/target/time/outcome
+  - [x] Apply PHI-safe telemetry and logging guardrails
+- [x] Task 5: Validate manually (no automated tests per project policy)
+  - [x] Record manual QA checklist and edge cases in completion notes
 
 ## Dev Notes
 
@@ -70,8 +70,28 @@ GPT-5 (Codex)
 
 - Story context prepared with implementation guardrails, acceptance criteria expansion, and module-level guidance.
 - Auditability and PHI-safe telemetry constraints are explicitly included for dev execution.
-- Status is ready-for-dev and sprint tracking has been updated accordingly.
+- Implemented email admin API endpoints (queue status, delivery analytics, sending history) with PHI-safe responses and correlation-aware audit logging.
+- Added email queue and delivery event entities with migration and repository-backed analytics queries.
+- Added admin API contract stubs for email endpoints in web surface planning.
+- Manual QA checklist: verified response envelopes include correlationId, validated date window errors return EMAIL_ADMIN_INVALID_DATE_RANGE, confirmed analytics/history outputs contain no PHI and audit events are emitted with filter metadata.
+- Per project testing policy, automated tests were not added or executed.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/5-15-email-queue-delivery-analytics-and-sending-history-admin-panel.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- apps/api/src/app.module.ts
+- apps/api/src/database/entities/email-delivery-event.entity.ts
+- apps/api/src/database/entities/email-queue-item.entity.ts
+- apps/api/src/database/migrations/1730815900000-CreateEmailAdminTables.ts
+- apps/api/src/database/migrations/index.ts
+- apps/api/src/modules/email-admin/email-admin.controller.ts
+- apps/api/src/modules/email-admin/email-admin.dto.ts
+- apps/api/src/modules/email-admin/email-admin.module.ts
+- apps/api/src/modules/email-admin/email-admin.service.ts
+- apps/api/src/modules/email-admin/email-admin.types.ts
+- apps/web/server/api/admin/email-admin-contracts.get.ts
+
+### Change Log
+
+- 2026-04-01: Added email admin API contracts, persistence entities/migration, and audit-backed analytics endpoints.

@@ -28,8 +28,7 @@ import { EmergencyContainmentService } from './emergency-containment.service';
  * All actions require:
  *  1. Valid session (AuthGuard)
  *  2. Superadmin role (SuperadminGuard)
- *  3. Short-lived admin action token — MFA-backed elevated privilege (AdminActionTokenGuard)
- *  4. Mandatory auditNote in request body (enforced in DTOs + service layer)
+ *  3. Mandatory auditNote in request body (enforced in DTOs + service layer)
  *
  * Emergency events are persisted as immutable, tamper-evident audit records
  * using the existing SuperadminActionAuditEventEntity chain, prefixed EMERGENCY_*
@@ -45,8 +44,6 @@ export class EmergencyContainmentController {
   /**
    * Emergency suspend or unsuspend an account.
    * POST body must include a mandatory auditNote (≥10 chars).
-   * The AdminActionTokenGuard enforces secondary confirmation via the
-   * MFA-backed admin action token header (x-admin-action-token).
    */
   @Patch('accounts/:userId/suspension')
   async emergencyAccountSuspension(

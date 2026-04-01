@@ -1,6 +1,6 @@
 # Story 3.7: Share Access Event History for Link Owner
 
-Status: review
+Status: done
 
 ## Story
 

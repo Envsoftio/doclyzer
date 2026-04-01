@@ -1,6 +1,6 @@
 # Story 5.8: Access/Share/Consent/Policy Records Query Console
 
-Status: review
+Status: done
 
 ## Story
 

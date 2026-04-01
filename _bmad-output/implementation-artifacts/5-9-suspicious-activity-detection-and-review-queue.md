@@ -1,6 +1,6 @@
 # Story 5.9: Suspicious Activity Detection and Review Queue
 
-Status: review
+Status: done
 
 ## Story
 

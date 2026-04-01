@@ -1,6 +1,6 @@
 # Story 3.8: Enforce Profile Isolation in Shared Output
 
-Status: review
+Status: done
 
 ## Story
 

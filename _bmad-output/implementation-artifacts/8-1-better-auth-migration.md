@@ -1,6 +1,6 @@
 # Story 8.1: better-auth migration
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 

@@ -1,6 +1,6 @@
 # Story 4.1: Credit Balance and Entitlement Summary View
 
-Status: review
+Status: done
 
 ## Story
 

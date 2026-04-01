@@ -1,6 +1,6 @@
 # Story 5.10: Share Link / Account Suspension and Restore Controls
 
-Status: review
+Status: done
 
 ## Story
 

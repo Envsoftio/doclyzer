@@ -1,6 +1,6 @@
 # Story 3.5: Recipient Access via Valid Link (No Account)
 
-Status: review
+Status: done
 
 ## Story
 

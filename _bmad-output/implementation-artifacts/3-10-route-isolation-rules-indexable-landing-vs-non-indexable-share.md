@@ -1,6 +1,6 @@
 # Story 3.10: Route Isolation Rules (Indexable Landing vs Non-Indexable Share)
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 

@@ -1,6 +1,6 @@
 # Story 3.4: Copy/Distribute Share Link UX
 
-Status: review
+Status: done
 
 ## Story
 

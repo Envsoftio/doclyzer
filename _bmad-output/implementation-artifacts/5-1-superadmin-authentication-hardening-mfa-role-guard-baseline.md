@@ -1,6 +1,6 @@
 # Story 5.1: Superadmin Authentication Hardening (Role Guard Baseline)
 
-Status: review
+Status: done
 
 ## Story
 

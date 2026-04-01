@@ -1,6 +1,6 @@
 # Story 3.3: Default Share Policy Settings for New Links
 
-Status: review
+Status: done
 
 ## Story
 
