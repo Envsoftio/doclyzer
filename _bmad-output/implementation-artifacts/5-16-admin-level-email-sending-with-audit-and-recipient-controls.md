@@ -1,6 +1,6 @@
 # Story 5.16: Admin-Level Email Sending with Audit & Recipient Controls
 
-Status: review
+Status: done
 
 ## Story
 
@@ -94,6 +94,7 @@ GPT-5 (Codex)
 - _bmad-output/implementation-artifacts/sprint-status.yaml
 - apps/api/src/database/entities/email-queue-item.entity.ts
 - apps/api/src/database/migrations/1730816000000-AddIdempotencyKeyToEmailQueue.ts
+- apps/api/src/database/migrations/1730816100000-AddGinIndexToDeliveryEventMetadata.ts
 - apps/api/src/database/migrations/index.ts
 - apps/api/src/modules/email-admin/email-admin.controller.ts
 - apps/api/src/modules/email-admin/email-admin.dto.ts
@@ -104,3 +105,5 @@ GPT-5 (Codex)
 ### Change Log
 
 - 2026-04-02: Added admin email send endpoint, queue/delivery tracking, idempotency support, and PHI-safe audit policy hooks.
+- 2026-04-02: Code review fixes applied — idempotency check reordered before approval/rate-limit, approval token validated against EMAIL_ADMIN_APPROVAL_SECRET config, delivery event outcome corrected from 'sent' to 'pending' at enqueue time, @Index added to entity for idempotency_key.
+- 2026-04-02: Second code review pass — removed subject/body from queue item metadata (PHI-safe: content must not persist in queue store; worker uses templateKey); fixed idempotent replay to derive requiresApproval from existing.recipientScope rather than retry request scope.

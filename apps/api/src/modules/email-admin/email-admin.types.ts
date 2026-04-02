@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   TooManyRequestsException,
 } from '@nestjs/common';
+import type { EmailDeliveryOutcome } from '../../database/entities/email-delivery-event.entity';
 
 export const EMAIL_ADMIN_INVALID_DATE_RANGE =
   'EMAIL_ADMIN_INVALID_DATE_RANGE';
@@ -10,6 +11,8 @@ export const EMAIL_ADMIN_INVALID_SEND_REQUEST =
   'EMAIL_ADMIN_INVALID_SEND_REQUEST';
 export const EMAIL_ADMIN_APPROVAL_REQUIRED =
   'EMAIL_ADMIN_APPROVAL_REQUIRED';
+export const EMAIL_ADMIN_INVALID_APPROVAL_TOKEN =
+  'EMAIL_ADMIN_INVALID_APPROVAL_TOKEN';
 export const EMAIL_ADMIN_RATE_LIMIT_EXCEEDED =
   'EMAIL_ADMIN_RATE_LIMIT_EXCEEDED';
 
@@ -35,6 +38,15 @@ export class EmailAdminApprovalRequiredException extends ForbiddenException {
   constructor(message: string) {
     super({
       code: EMAIL_ADMIN_APPROVAL_REQUIRED,
+      message,
+    });
+  }
+}
+
+export class EmailAdminInvalidApprovalTokenException extends ForbiddenException {
+  constructor(message: string) {
+    super({
+      code: EMAIL_ADMIN_INVALID_APPROVAL_TOKEN,
       message,
     });
   }
@@ -88,7 +100,7 @@ export interface EmailSendingHistoryItem {
   occurredAt: string;
   emailType: string;
   recipientScope: string;
-  outcome: 'sent' | 'failed' | 'bounced';
+  outcome: EmailDeliveryOutcome;
 }
 
 export interface EmailSendingHistoryResponse {

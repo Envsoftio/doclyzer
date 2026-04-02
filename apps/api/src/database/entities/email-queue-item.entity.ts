@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -22,6 +23,7 @@ export class EmailQueueItemEntity {
   @Column({ type: 'varchar', length: 32, name: 'status' })
   status!: EmailQueueStatus;
 
+  @Index('UQ_email_queue_idempotency', { unique: true })
   @Column({ type: 'varchar', length: 128, name: 'idempotency_key', nullable: true })
   idempotencyKey!: string | null;
 

@@ -1,6 +1,6 @@
 # Story 5.15: Email Queue, Delivery Analytics & Sending History (Admin Panel)
 
-Status: review
+Status: done
 
 ## Story
 
@@ -80,7 +80,7 @@ GPT-5 (Codex)
 
 - _bmad-output/implementation-artifacts/5-15-email-queue-delivery-analytics-and-sending-history-admin-panel.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
-- apps/api/src/app.module.ts
+- apps/api/src/app.module.ts  # EmailAdminModule import — committed in story 5-15 batch
 - apps/api/src/database/entities/email-delivery-event.entity.ts
 - apps/api/src/database/entities/email-queue-item.entity.ts
 - apps/api/src/database/migrations/1730815900000-CreateEmailAdminTables.ts
@@ -95,3 +95,4 @@ GPT-5 (Codex)
 ### Change Log
 
 - 2026-04-01: Added email admin API contracts, persistence entities/migration, and audit-backed analytics endpoints.
+- 2026-04-02: Code review fixes applied — queue status unknown-status handling, QB column names corrected, GIN index migration added for delivery event metadata lookup.

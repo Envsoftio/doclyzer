@@ -1,0 +1,27 @@
+{
+  "events": [
+    {
+      "eventName": "core_product_metric",
+      "fields": [
+        {
+          "name": "metric_name",
+          "classification": "non_phi",
+          "allowList": true,
+          "notes": "Metric identifier for internal dashboards."
+        },
+        {
+          "name": "metric_value",
+          "classification": "non_phi",
+          "allowList": true,
+          "notes": "Aggregated count or rate without user identifiers."
+        },
+        {
+          "name": "plan_tier",
+          "classification": "non_phi",
+          "allowList": true,
+          "notes": "High-level plan tier bucket (free/premium)."
+        }
+      ]
+    }
+  ]
+}

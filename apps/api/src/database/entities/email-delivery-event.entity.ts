@@ -5,7 +5,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-export type EmailDeliveryOutcome = 'sent' | 'failed' | 'bounced';
+export type EmailDeliveryOutcome = 'pending' | 'sent' | 'failed' | 'bounced';
 
 @Entity('email_delivery_events')
 export class EmailDeliveryEventEntity {

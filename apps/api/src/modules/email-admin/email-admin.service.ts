@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EmailDeliveryEventEntity } from '../../database/entities/email-delivery-event.entity';
@@ -6,6 +7,7 @@ import { EmailQueueItemEntity } from '../../database/entities/email-queue-item.e
 import { SuperadminAuthAuditEventEntity } from '../../database/entities/superadmin-auth-audit-event.entity';
 import {
   EmailAdminApprovalRequiredException,
+  EmailAdminInvalidApprovalTokenException,
   EmailAdminInvalidDateRangeException,
   EmailAdminInvalidSendRequestException,
   EmailAdminRateLimitExceededException,
@@ -45,6 +47,7 @@ export class EmailAdminService {
     private readonly deliveryRepo: Repository<EmailDeliveryEventEntity>,
     @InjectRepository(SuperadminAuthAuditEventEntity)
     private readonly auditRepo: Repository<SuperadminAuthAuditEventEntity>,
+    private readonly config: ConfigService,
   ) {}
 
   async getQueueStatus(input: {
@@ -63,18 +66,25 @@ export class EmailAdminService {
       processing: 0,
       completed: 0,
     };
+    let unknownCount = 0;
 
     for (const row of rows) {
       const count = Number.parseInt(row.count, 10) || 0;
       if (row.status === 'pending') counts.pending = count;
-      if (row.status === 'processing') counts.processing = count;
-      if (row.status === 'completed') counts.completed = count;
+      else if (row.status === 'processing') counts.processing = count;
+      else if (row.status === 'completed') counts.completed = count;
+      else {
+        unknownCount += count;
+        this.logger.warn(
+          `getQueueStatus: unexpected queue status "${row.status}" (${count} items)`,
+        );
+      }
     }
 
     const snapshot: EmailQueueStatusSnapshot = {
       snapshotAt: new Date().toISOString(),
       counts,
-      total: counts.pending + counts.processing + counts.completed,
+      total: counts.pending + counts.processing + counts.completed + unknownCount,
     };
 
     await this.recordAudit({
@@ -298,6 +308,31 @@ export class EmailAdminService {
 
     this.assertRecipientScope(dto);
 
+    // Idempotency check first — before approval validation and rate-limit to
+    // avoid burning a rate-limit slot or writing spurious audit events on retries.
+    if (dto.idempotencyKey) {
+      const existing = await this.queueRepo.findOne({
+        where: { idempotencyKey: dto.idempotencyKey },
+      });
+      if (existing) {
+        const deliveryEvent = await this.findDeliveryEvent(existing.id);
+        const existingRequiresApproval =
+          EMAIL_ADMIN_SEND_POLICY.approvalRequiredScopes.has(
+            existing.recipientScope,
+          );
+        return {
+          state: 'pending',
+          emailType: existing.emailType,
+          recipientScope: existing.recipientScope,
+          queueItemId: existing.id,
+          deliveryEventId: deliveryEvent?.id ?? null,
+          requiresApproval: existingRequiresApproval,
+          estimatedRecipientCount: dto.estimatedRecipientCount ?? null,
+          acceptedAt: acceptedAt.toISOString(),
+        };
+      }
+    }
+
     if (requiresApproval && !dto.approvalToken) {
       await this.recordAudit({
         actorUserId: input.actorUserId,
@@ -318,6 +353,10 @@ export class EmailAdminService {
       );
     }
 
+    if (requiresApproval && dto.approvalToken) {
+      this.validateApprovalToken(dto.approvalToken);
+    }
+
     await this.enforceRateLimit({
       actorUserId: input.actorUserId,
       correlationId: input.correlationId,
@@ -325,25 +364,6 @@ export class EmailAdminService {
       recipientScope: dto.recipientScope,
       estimatedRecipientCount: dto.estimatedRecipientCount ?? null,
     });
-
-    if (dto.idempotencyKey) {
-      const existing = await this.queueRepo.findOne({
-        where: { idempotencyKey: dto.idempotencyKey },
-      });
-      if (existing) {
-        const deliveryEvent = await this.findDeliveryEvent(existing.id);
-        return {
-          state: 'pending',
-          emailType: existing.emailType,
-          recipientScope: existing.recipientScope,
-          queueItemId: existing.id,
-          deliveryEventId: deliveryEvent?.id ?? null,
-          requiresApproval,
-          estimatedRecipientCount: dto.estimatedRecipientCount ?? null,
-          acceptedAt: acceptedAt.toISOString(),
-        };
-      }
-    }
 
     const queueItem = await this.queueRepo.save(
       this.queueRepo.create({
@@ -354,12 +374,11 @@ export class EmailAdminService {
         processedAt: null,
         idempotencyKey: dto.idempotencyKey ?? null,
         metadata: {
-          subject: dto.subject,
-          body: dto.body,
+          // subject and body are intentionally excluded — content may carry PII/PHI.
+          // The delivery worker retrieves content from a secure template store via templateKey.
           recipientUserId: dto.recipientUserId ?? null,
           recipientSegment: dto.recipientSegment ?? null,
           templateKey: dto.templateKey ?? null,
-          templateData: dto.templateData ?? null,
           estimatedRecipientCount: dto.estimatedRecipientCount ?? null,
           actorUserId: input.actorUserId,
         },
@@ -370,7 +389,9 @@ export class EmailAdminService {
       this.deliveryRepo.create({
         emailType: dto.emailType,
         recipientScope: dto.recipientScope,
-        outcome: 'sent',
+        // 'pending' reflects enqueue acceptance; a delivery worker updates this
+        // to 'sent', 'failed', or 'bounced' upon actual dispatch.
+        outcome: 'pending',
         provider: 'admin-panel',
         providerMessageId: null,
         occurredAt: acceptedAt,
@@ -465,6 +486,28 @@ export class EmailAdminService {
     }
   }
 
+  /**
+   * Validates the approval token by comparing it against the configured secret.
+   * The token must match EMAIL_ADMIN_APPROVAL_SECRET in config (set via env).
+   * This prevents arbitrary strings from bypassing broadcast approval gates.
+   */
+  private validateApprovalToken(token: string): void {
+    const secret = this.config.get<string>('EMAIL_ADMIN_APPROVAL_SECRET');
+    if (!secret) {
+      this.logger.error(
+        'EMAIL_ADMIN_APPROVAL_SECRET is not configured — approval token check cannot proceed',
+      );
+      throw new EmailAdminInvalidApprovalTokenException(
+        'Approval system is not configured',
+      );
+    }
+    if (token !== secret) {
+      throw new EmailAdminInvalidApprovalTokenException(
+        'Invalid approval token',
+      );
+    }
+  }
+
   private async enforceRateLimit(input: {
     actorUserId: string;
     correlationId: string;
@@ -479,14 +522,14 @@ export class EmailAdminService {
 
     const count = await this.auditRepo
       .createQueryBuilder('audit')
-      .where('audit.actor_user_id = :actorUserId', {
+      .where('audit.actorUserId = :actorUserId', {
         actorUserId: input.actorUserId,
       })
       .andWhere('audit.action = :action', {
         action: 'EMAIL_ADMIN_SEND_REQUEST',
       })
       .andWhere('audit.outcome = :outcome', { outcome: 'success' })
-      .andWhere('audit.created_at >= :windowStart', {
+      .andWhere('audit.createdAt >= :windowStart', {
         windowStart: windowStart.toISOString(),
       })
       .getCount();

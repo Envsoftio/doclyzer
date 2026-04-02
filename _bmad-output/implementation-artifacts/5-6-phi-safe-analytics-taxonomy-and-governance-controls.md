@@ -33,7 +33,8 @@ so that analytics never leak sensitive data.
   - [x] Record manual QA checklist and edge cases in completion notes
 
 ### Review Follow-ups (AI)
-- [ ] [AI-Review][HIGH] AC4 not implemented: CI/CD quality gate that blocks pipeline when PHI-safe governance check fails is missing. No `.github/workflows` or equivalent pipeline configuration was added. Requires a workflow job that calls `POST /admin/analytics/governance/validate` or a standalone script invokable from CI with actionable exit codes. [apps/api/src/modules/analytics-admin/analytics-governance.service.ts]
+- [x] [AI-Review][HIGH] AC4 not implemented: CI/CD quality gate that blocks pipeline when PHI-safe governance check fails is missing. No `.github/workflows` or equivalent pipeline configuration was added. Requires a workflow job that calls `POST /admin/analytics/governance/validate` or a standalone script invokable from CI with actionable exit codes. [apps/api/src/modules/analytics-admin/analytics-governance.service.ts]
+- [ ] [AI-Review][MEDIUM] CI gate happy-path only: proposed.json only contains non_phi approved fields so the gate never exercises the PHI rejection path. A dedicated test (separate from the live gate file) should verify that a phi-classified field causes exit=1. Cannot add PHI fields to proposed.json directly as that would break CI on every run. [.github/analytics-governance/proposed.json]
 
 ## Dev Notes
 
@@ -69,6 +70,12 @@ GPT-5 (Codex)
 
 - Generated via BMAD create-story equivalent workflow for Epic 5 batch.
 
+### Implementation Plan
+
+- Seed the PHI-safe allow-list before running a CI-only governance validation script.
+- Add a CI workflow job that runs the governance gate with actionable exit codes.
+- Provide baseline allow-list/proposed payload files so the gate is reproducible.
+
 ### Completion Notes List
 
 - Added governance DTOs/types, controller wiring, and `AnalyticsGovernanceService` logic so PHI-safe instrumentation proposals run through allow-list validation, surface violations with sanitized hints, persist reviews, and emit audit events without leaking sensitive data.
@@ -79,23 +86,32 @@ GPT-5 (Codex)
   - [x] Reviewed governance service logic to ensure PHI violations raise `AnalyticsGovernancePhiViolationException` with reason codes/hints while new fields that pass classification updates spin up review entries.
   - [x] Checked migration/index.data-source updates so taxonomy/review entities are registered for TypeORM and the schema includes allow-list metadata without logging PHI payload data.
   - [x] Automated tests skipped (per policy) to honor the manual QA requirement while still verifying flow via code inspection and reasoning.
+- Added a CI governance gate script that seeds the allow-list, validates proposed analytics payloads, and fails the pipeline on PHI violations or review-required payloads.
+- Added a GitHub Actions job to run the governance gate with a Postgres-backed schema and explicit exit codes.
+- ✅ Resolved review finding [HIGH]: AC4 governance quality gate now blocks CI on failed PHI-safe validation with actionable diagnostics.
 
 ### File List
 
 - _bmad-output/implementation-artifacts/5-6-phi-safe-analytics-taxonomy-and-governance-controls.md
+- .github/analytics-governance/allowlist.json
+- .github/analytics-governance/proposed.json
+- .github/workflows/ci.yml
 - apps/api/src/modules/analytics-admin/analytics-admin.controller.ts
 - apps/api/src/modules/analytics-admin/analytics-admin.module.ts
 - apps/api/src/modules/analytics-admin/analytics-governance.dto.ts
 - apps/api/src/modules/analytics-admin/analytics-governance.service.ts
 - apps/api/src/modules/analytics-admin/analytics-governance.types.ts
+- apps/api/scripts/analytics-governance-ci.ts
 - apps/api/src/database/entities/analytics-taxonomy-field.entity.ts
 - apps/api/src/database/entities/analytics-governance-review.entity.ts
 - apps/api/src/database/migrations/1730815100000-CreateAnalyticsGovernanceTables.ts
 - apps/api/src/database/migrations/index.ts
-- apps/api/src/database/data-source.ts
+- apps/api/package.json
 - apps/web/server/api/admin/phi-analytics-governance-contracts.get.ts
 
 ### Change Log
 
 - 2026-03-30: Implemented PHI-safe analytics taxonomy governance validation API, migration-backed taxonomy/review persistence, audit logging, and admin contract stub; story now in `review` after manual QA (automated tests skipped per policy).
 - 2026-03-30: Code review fixes — added missing `ANALYTICS_GOVERNANCE_REVIEW_REQUIRED` import in `analytics-governance.service.ts` (was a compile error); replaced `@IsEnum(AnalyticsFieldClassification)` with `@IsIn(['non_phi', 'pii', 'phi'])` in governance DTO (`AnalyticsFieldClassification` is a type alias, not an enum object, causing runtime validation failure); AC4 CI/CD gate logged as open action item.
+- 2026-04-02: Added PHI-safe governance CI gate (workflow + script + allow-list/proposed payload files) to block releases on validation failures; resolved AC4 review item.
+- 2026-04-02: Code review fixes — enabled CI workflow push/PR triggers (gate was unreachable on workflow_dispatch-only); switched phi-governance-gate job to dedicated `doclyzer_governance_test` DB to prevent ghost superadmin user contaminating main DB; improved CI diagnostic output to print PHI violation field names, codes, and remediation hints from exception response body; removed phantom `data-source.ts` entry from File List (no actual change to that file).

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EmailDeliveryEventEntity } from '../../database/entities/email-delivery-event.entity';
 import { EmailQueueItemEntity } from '../../database/entities/email-queue-item.entity';
@@ -8,6 +9,7 @@ import { EmailAdminService } from './email-admin.service';
 
 @Module({
   imports: [
+    ConfigModule,
     TypeOrmModule.forFeature([
       EmailQueueItemEntity,
       EmailDeliveryEventEntity,
