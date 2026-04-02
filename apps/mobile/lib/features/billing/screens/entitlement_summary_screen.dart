@@ -240,6 +240,13 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              _buildLastChangeLine(summary),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
       ),
@@ -493,5 +500,24 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
     final hour = local.hour.toString().padLeft(2, '0');
     final minute = local.minute.toString().padLeft(2, '0');
     return '$month/$day $hour:$minute';
+  }
+
+  String _buildLastChangeLine(EntitlementSummary summary) {
+    final label = summary.lastChangeLabel;
+    final changedAt = summary.lastChangeAt;
+    if (changedAt == null) {
+      return 'Last change: $label';
+    }
+    return 'Last change: $label · ${_formatLongDateTime(changedAt)}';
+  }
+
+  String _formatLongDateTime(DateTime time) {
+    final local = time.toLocal();
+    final year = local.year.toString().padLeft(4, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '$year-$month-$day $hour:$minute';
   }
 }

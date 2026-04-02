@@ -7,6 +7,14 @@ export type PlanTier = 'free' | 'paid';
 
 export type EntitlementStatus = 'active' | 'expired' | 'cancelled';
 
+export type EntitlementChangeReason =
+  | 'initial_provision'
+  | 'credit_pack_purchase'
+  | 'subscription_upgrade'
+  | 'plan_downgrade'
+  | 'admin_adjustment'
+  | 'system_reconciliation';
+
 export interface EntitlementSummaryDto {
   planName: string;
   tier: PlanTier;
@@ -20,6 +28,8 @@ export interface EntitlementSummaryDto {
   };
   activatedAt: string;
   expiresAt: string | null;
+  lastChangeReason: EntitlementChangeReason | null;
+  lastChangeAt: string | null;
 }
 
 export interface PlanConfigSummaryDto {

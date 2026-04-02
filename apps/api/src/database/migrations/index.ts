@@ -32,6 +32,7 @@ import { CreateCaseResolutionDocumentsTable1730815800000 } from './1730815800000
 import { CreateEmailAdminTables1730815900000 } from './1730815900000-CreateEmailAdminTables';
 import { AddIdempotencyKeyToEmailQueue1730816000000 } from './1730816000000-AddIdempotencyKeyToEmailQueue';
 import { AddGinIndexToDeliveryEventMetadata1730816100000 } from './1730816100000-AddGinIndexToDeliveryEventMetadata';
+import { AddEntitlementChangeReasonToUserEntitlements1730816200000 } from './1730816200000-AddEntitlementChangeReasonToUserEntitlements';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -68,4 +69,5 @@ export const migrations = [
   CreateEmailAdminTables1730815900000,
   AddIdempotencyKeyToEmailQueue1730816000000,
   AddGinIndexToDeliveryEventMetadata1730816100000,
+  AddEntitlementChangeReasonToUserEntitlements1730816200000,
 ];

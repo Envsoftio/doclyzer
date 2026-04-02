@@ -7,6 +7,7 @@ import { PlanConfigAuditEventEntity } from '../../database/entities/plan-config-
 import { UserEntitlementEntity } from '../../database/entities/user-entitlement.entity';
 import type { PlanLimits } from '../../database/entities/plan.entity';
 import type {
+  EntitlementChangeReason,
   EntitlementSummaryDto,
   PlanConfigRecalculationDto,
   PlanConfigSummaryDto,
@@ -47,6 +48,10 @@ export class EntitlementsService {
       expiresAt: entitlement.expiresAt
         ? entitlement.expiresAt.toISOString()
         : null,
+      lastChangeReason: entitlement.lastChangeReason ?? null,
+      lastChangeAt: entitlement.lastChangeAt
+        ? entitlement.lastChangeAt.toISOString()
+        : null,
     };
   }
 
@@ -77,14 +82,23 @@ export class EntitlementsService {
    * Atomically increments the user's credit balance.
    * Uses raw query to avoid read-then-write race conditions.
    */
-  async addCredits(userId: string, amount: number): Promise<void> {
+  async addCredits(
+    userId: string,
+    amount: number,
+    reason: EntitlementChangeReason = 'credit_pack_purchase',
+  ): Promise<void> {
     // Ensure entitlement exists (lazy provisioning)
     await this.findOrProvision(userId);
 
+    const now = new Date();
     await this.entitlementRepo
       .createQueryBuilder()
       .update(UserEntitlementEntity)
-      .set({ creditBalance: () => `credit_balance + ${amount}` })
+      .set({
+        creditBalance: () => `credit_balance + ${amount}`,
+        lastChangeReason: reason,
+        lastChangeAt: now,
+      })
       .where('user_id = :userId', { userId })
       .execute();
   }
@@ -259,12 +273,20 @@ export class EntitlementsService {
     userId: string,
     planId: string,
     expiresAt?: Date,
+    reason: EntitlementChangeReason = 'subscription_upgrade',
   ): Promise<void> {
     await this.findOrProvision(userId);
+    const now = new Date();
     await this.entitlementRepo
       .createQueryBuilder()
       .update(UserEntitlementEntity)
-      .set({ planId, expiresAt: expiresAt ?? null, status: 'active' })
+      .set({
+        planId,
+        expiresAt: expiresAt ?? null,
+        status: 'active',
+        lastChangeReason: reason,
+        lastChangeAt: now,
+      })
       .where('user_id = :userId', { userId })
       .execute();
   }
@@ -272,12 +294,23 @@ export class EntitlementsService {
   /**
    * Downgrades user to specified plan (free tier fallback on cancellation/halt).
    */
-  async downgradeToPlan(userId: string, planId: string): Promise<void> {
+  async downgradeToPlan(
+    userId: string,
+    planId: string,
+    reason: EntitlementChangeReason = 'plan_downgrade',
+  ): Promise<void> {
     await this.findOrProvision(userId);
+    const now = new Date();
     await this.entitlementRepo
       .createQueryBuilder()
       .update(UserEntitlementEntity)
-      .set({ planId, expiresAt: null, status: 'active' })
+      .set({
+        planId,
+        expiresAt: null,
+        status: 'active',
+        lastChangeReason: reason,
+        lastChangeAt: now,
+      })
       .where('user_id = :userId', { userId })
       .execute();
   }
@@ -308,6 +341,8 @@ export class EntitlementsService {
       planId: freePlan.id,
       creditBalance: '0',
       status: 'active',
+      lastChangeReason: 'initial_provision',
+      lastChangeAt: new Date(),
     });
     const saved = await this.entitlementRepo.save(entitlement);
 

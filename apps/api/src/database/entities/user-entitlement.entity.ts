@@ -41,6 +41,17 @@ export class UserEntitlementEntity {
   @Column({ type: 'timestamptz', name: 'expires_at', nullable: true })
   expiresAt!: Date | null;
 
+  @Column({
+    type: 'varchar',
+    name: 'last_change_reason',
+    length: 64,
+    nullable: true,
+  })
+  lastChangeReason!: string | null;
+
+  @Column({ type: 'timestamptz', name: 'last_change_at', nullable: true })
+  lastChangeAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

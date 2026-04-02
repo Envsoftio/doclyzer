@@ -288,6 +288,7 @@ export class BillingService {
     // Idempotent: if already reconciled or credited, skip
     if (order.status === 'reconciled') return;
 
+    const now = new Date();
     await this.dataSource.transaction(async (manager) => {
       if (!order.credited) {
         // Credit balance atomically
@@ -296,6 +297,8 @@ export class BillingService {
           .update(UserEntitlementEntity)
           .set({
             creditBalance: () => `credit_balance + ${order.creditPack.credits}`,
+            lastChangeReason: 'credit_pack_purchase',
+            lastChangeAt: now,
           })
           .where('user_id = :userId', { userId: order.userId })
           .execute();

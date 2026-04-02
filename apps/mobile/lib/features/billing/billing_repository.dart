@@ -21,6 +21,8 @@ class EntitlementSummary {
     required this.limits,
     required this.activatedAt,
     this.expiresAt,
+    this.lastChangeReason,
+    this.lastChangeAt,
   });
 
   final String planName;
@@ -30,10 +32,31 @@ class EntitlementSummary {
   final EntitlementLimits limits;
   final DateTime activatedAt;
   final DateTime? expiresAt;
+  final String? lastChangeReason;
+  final DateTime? lastChangeAt;
 
   bool get isFreeTier => tier == 'free';
   bool get hasCredits => creditBalance > 0;
   bool get showUpgradeCta => isFreeTier || !hasCredits;
+
+  String get lastChangeLabel {
+    switch (lastChangeReason) {
+      case 'initial_provision':
+        return 'Initial entitlement';
+      case 'credit_pack_purchase':
+        return 'Credit pack purchase';
+      case 'subscription_upgrade':
+        return 'Subscription upgrade';
+      case 'plan_downgrade':
+        return 'Plan downgrade';
+      case 'admin_adjustment':
+        return 'Admin adjustment';
+      case 'system_reconciliation':
+        return 'System reconciliation';
+      default:
+        return 'Not yet changed';
+    }
+  }
 }
 
 class CreditPack {

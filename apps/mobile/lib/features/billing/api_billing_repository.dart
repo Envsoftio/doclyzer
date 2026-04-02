@@ -182,6 +182,7 @@ class ApiBillingRepository implements BillingRepository {
     final limitsJson = json['limits'] as Map<String, dynamic>;
     final activatedAt = json['activatedAt'] as String?;
     final expiresAt = json['expiresAt'] as String?;
+    final lastChangeAt = json['lastChangeAt'] as String?;
 
     return EntitlementSummary(
       planName: json['planName'] as String,
@@ -198,6 +199,8 @@ class ApiBillingRepository implements BillingRepository {
           ? DateTime.parse(activatedAt)
           : DateTime.now(),
       expiresAt: expiresAt != null ? DateTime.parse(expiresAt) : null,
+      lastChangeReason: json['lastChangeReason'] as String?,
+      lastChangeAt: lastChangeAt != null ? DateTime.parse(lastChangeAt) : null,
     );
   }
 
