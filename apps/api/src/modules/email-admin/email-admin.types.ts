@@ -1,12 +1,49 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  TooManyRequestsException,
+} from '@nestjs/common';
 
 export const EMAIL_ADMIN_INVALID_DATE_RANGE =
   'EMAIL_ADMIN_INVALID_DATE_RANGE';
+export const EMAIL_ADMIN_INVALID_SEND_REQUEST =
+  'EMAIL_ADMIN_INVALID_SEND_REQUEST';
+export const EMAIL_ADMIN_APPROVAL_REQUIRED =
+  'EMAIL_ADMIN_APPROVAL_REQUIRED';
+export const EMAIL_ADMIN_RATE_LIMIT_EXCEEDED =
+  'EMAIL_ADMIN_RATE_LIMIT_EXCEEDED';
 
 export class EmailAdminInvalidDateRangeException extends BadRequestException {
   constructor(message: string) {
     super({
       code: EMAIL_ADMIN_INVALID_DATE_RANGE,
+      message,
+    });
+  }
+}
+
+export class EmailAdminInvalidSendRequestException extends BadRequestException {
+  constructor(message: string) {
+    super({
+      code: EMAIL_ADMIN_INVALID_SEND_REQUEST,
+      message,
+    });
+  }
+}
+
+export class EmailAdminApprovalRequiredException extends ForbiddenException {
+  constructor(message: string) {
+    super({
+      code: EMAIL_ADMIN_APPROVAL_REQUIRED,
+      message,
+    });
+  }
+}
+
+export class EmailAdminRateLimitExceededException extends TooManyRequestsException {
+  constructor(message: string) {
+    super({
+      code: EMAIL_ADMIN_RATE_LIMIT_EXCEEDED,
       message,
     });
   }
@@ -66,4 +103,17 @@ export interface EmailSendingHistoryResponse {
     totalPages: number;
   };
   items: EmailSendingHistoryItem[];
+}
+
+export type EmailAdminSendState = 'pending' | 'success' | 'failure' | 'reverted';
+
+export interface EmailAdminSendResponse {
+  state: EmailAdminSendState;
+  emailType: string;
+  recipientScope: string;
+  queueItemId: string;
+  deliveryEventId: string | null;
+  requiresApproval: boolean;
+  estimatedRecipientCount: number | null;
+  acceptedAt: string;
 }

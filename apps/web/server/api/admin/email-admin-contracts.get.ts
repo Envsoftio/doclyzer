@@ -1,6 +1,7 @@
 export default defineEventHandler(() => {
   return {
-    story: '5-15-email-queue-delivery-analytics-and-sending-history-admin-panel',
+    story:
+      '5-15-email-queue-delivery-analytics-and-sending-history-admin-panel + 5-16-admin-level-email-sending-with-audit-and-recipient-controls',
     status: 'stub',
     endpoints: [
       {
@@ -21,6 +22,13 @@ export default defineEventHandler(() => {
         method: 'GET',
         description:
           'Returns paginated sending history with timestamp/type/scope/outcome',
+        states: ['pending', 'success', 'failure', 'reverted'],
+      },
+      {
+        route: '/v1/admin/email/send',
+        method: 'POST',
+        description:
+          'Queues an admin-level email with subject/body/type and recipient scope',
         states: ['pending', 'success', 'failure', 'reverted'],
       },
     ],

@@ -5,13 +5,20 @@ import { EmailDeliveryEventEntity } from '../../database/entities/email-delivery
 import { EmailQueueItemEntity } from '../../database/entities/email-queue-item.entity';
 import { SuperadminAuthAuditEventEntity } from '../../database/entities/superadmin-auth-audit-event.entity';
 import {
+  EmailAdminApprovalRequiredException,
   EmailAdminInvalidDateRangeException,
+  EmailAdminInvalidSendRequestException,
+  EmailAdminRateLimitExceededException,
+  EMAIL_ADMIN_APPROVAL_REQUIRED,
+  EMAIL_ADMIN_RATE_LIMIT_EXCEEDED,
+  type EmailAdminSendResponse,
   type EmailDeliveryAnalyticsByType,
   type EmailDeliveryAnalyticsResponse,
   type EmailQueueStatusSnapshot,
   type EmailSendingHistoryResponse,
 } from './email-admin.types';
 import type {
+  EmailAdminSendRequestDto,
   EmailDeliveryAnalyticsQueryDto,
   EmailSendingHistoryQueryDto,
 } from './email-admin.dto';
@@ -20,6 +27,12 @@ interface DateRange {
   start: Date;
   end: Date;
 }
+
+const EMAIL_ADMIN_SEND_POLICY = {
+  approvalRequiredScopes: new Set(['all']),
+  rateLimitWindowMinutes: 60,
+  rateLimitMax: 20,
+} as const;
 
 @Injectable()
 export class EmailAdminService {
@@ -272,6 +285,132 @@ export class EmailAdminService {
     return response;
   }
 
+  async sendAdminEmail(input: {
+    actorUserId: string;
+    correlationId: string;
+    dto: EmailAdminSendRequestDto;
+  }): Promise<EmailAdminSendResponse> {
+    const { dto } = input;
+    const acceptedAt = new Date();
+    const requiresApproval = EMAIL_ADMIN_SEND_POLICY.approvalRequiredScopes.has(
+      dto.recipientScope,
+    );
+
+    this.assertRecipientScope(dto);
+
+    if (requiresApproval && !dto.approvalToken) {
+      await this.recordAudit({
+        actorUserId: input.actorUserId,
+        correlationId: input.correlationId,
+        action: 'EMAIL_ADMIN_SEND_REQUEST',
+        target: 'email_queue',
+        outcome: 'denied',
+        errorCode: EMAIL_ADMIN_APPROVAL_REQUIRED,
+        metadata: {
+          emailType: dto.emailType,
+          recipientScope: dto.recipientScope,
+          requiresApproval: true,
+          estimatedRecipientCount: dto.estimatedRecipientCount ?? null,
+        },
+      });
+      throw new EmailAdminApprovalRequiredException(
+        'Approval required for this recipient scope',
+      );
+    }
+
+    await this.enforceRateLimit({
+      actorUserId: input.actorUserId,
+      correlationId: input.correlationId,
+      emailType: dto.emailType,
+      recipientScope: dto.recipientScope,
+      estimatedRecipientCount: dto.estimatedRecipientCount ?? null,
+    });
+
+    if (dto.idempotencyKey) {
+      const existing = await this.queueRepo.findOne({
+        where: { idempotencyKey: dto.idempotencyKey },
+      });
+      if (existing) {
+        const deliveryEvent = await this.findDeliveryEvent(existing.id);
+        return {
+          state: 'pending',
+          emailType: existing.emailType,
+          recipientScope: existing.recipientScope,
+          queueItemId: existing.id,
+          deliveryEventId: deliveryEvent?.id ?? null,
+          requiresApproval,
+          estimatedRecipientCount: dto.estimatedRecipientCount ?? null,
+          acceptedAt: acceptedAt.toISOString(),
+        };
+      }
+    }
+
+    const queueItem = await this.queueRepo.save(
+      this.queueRepo.create({
+        emailType: dto.emailType,
+        recipientScope: dto.recipientScope,
+        status: 'pending',
+        scheduledAt: acceptedAt,
+        processedAt: null,
+        idempotencyKey: dto.idempotencyKey ?? null,
+        metadata: {
+          subject: dto.subject,
+          body: dto.body,
+          recipientUserId: dto.recipientUserId ?? null,
+          recipientSegment: dto.recipientSegment ?? null,
+          templateKey: dto.templateKey ?? null,
+          templateData: dto.templateData ?? null,
+          estimatedRecipientCount: dto.estimatedRecipientCount ?? null,
+          actorUserId: input.actorUserId,
+        },
+      }),
+    );
+
+    const deliveryEvent = await this.deliveryRepo.save(
+      this.deliveryRepo.create({
+        emailType: dto.emailType,
+        recipientScope: dto.recipientScope,
+        outcome: 'sent',
+        provider: 'admin-panel',
+        providerMessageId: null,
+        occurredAt: acceptedAt,
+        metadata: {
+          queueItemId: queueItem.id,
+          source: 'admin-email-send',
+        },
+      }),
+    );
+
+    await this.recordAudit({
+      actorUserId: input.actorUserId,
+      correlationId: input.correlationId,
+      action: 'EMAIL_ADMIN_SEND_REQUEST',
+      target: 'email_queue',
+      outcome: 'success',
+      errorCode: null,
+      metadata: {
+        emailType: dto.emailType,
+        recipientScope: dto.recipientScope,
+        queueItemId: queueItem.id,
+        deliveryEventId: deliveryEvent.id,
+        requiresApproval,
+        estimatedRecipientCount: dto.estimatedRecipientCount ?? null,
+        idempotencyKey: dto.idempotencyKey ? 'provided' : 'none',
+      },
+    });
+
+    return {
+      state: 'pending',
+      emailType: dto.emailType,
+      recipientScope: dto.recipientScope,
+      queueItemId: queueItem.id,
+      deliveryEventId: deliveryEvent.id,
+      requiresApproval,
+      estimatedRecipientCount: dto.estimatedRecipientCount ?? null,
+      acceptedAt: acceptedAt.toISOString(),
+    };
+  }
+
   private buildRequiredRange(startValue: string, endValue: string): DateRange {
     if (!startValue || !endValue) {
       throw new EmailAdminInvalidDateRangeException(
@@ -311,6 +450,80 @@ export class EmailAdminService {
       );
     }
     return { start, end };
+  }
+
+  private assertRecipientScope(dto: EmailAdminSendRequestDto): void {
+    if (dto.recipientScope === 'single' && !dto.recipientUserId) {
+      throw new EmailAdminInvalidSendRequestException(
+        'recipientUserId is required for single recipient scope',
+      );
+    }
+    if (dto.recipientScope === 'segment' && !dto.recipientSegment) {
+      throw new EmailAdminInvalidSendRequestException(
+        'recipientSegment is required for segment recipient scope',
+      );
+    }
+  }
+
+  private async enforceRateLimit(input: {
+    actorUserId: string;
+    correlationId: string;
+    emailType: string;
+    recipientScope: string;
+    estimatedRecipientCount: number | null;
+  }): Promise<void> {
+    const windowStart = new Date();
+    windowStart.setMinutes(
+      windowStart.getMinutes() - EMAIL_ADMIN_SEND_POLICY.rateLimitWindowMinutes,
+    );
+
+    const count = await this.auditRepo
+      .createQueryBuilder('audit')
+      .where('audit.actor_user_id = :actorUserId', {
+        actorUserId: input.actorUserId,
+      })
+      .andWhere('audit.action = :action', {
+        action: 'EMAIL_ADMIN_SEND_REQUEST',
+      })
+      .andWhere('audit.outcome = :outcome', { outcome: 'success' })
+      .andWhere('audit.created_at >= :windowStart', {
+        windowStart: windowStart.toISOString(),
+      })
+      .getCount();
+
+    if (count >= EMAIL_ADMIN_SEND_POLICY.rateLimitMax) {
+      await this.recordAudit({
+        actorUserId: input.actorUserId,
+        correlationId: input.correlationId,
+        action: 'EMAIL_ADMIN_SEND_REQUEST',
+        target: 'email_queue',
+        outcome: 'denied',
+        errorCode: EMAIL_ADMIN_RATE_LIMIT_EXCEEDED,
+        metadata: {
+          emailType: input.emailType,
+          recipientScope: input.recipientScope,
+          requiresApproval: EMAIL_ADMIN_SEND_POLICY.approvalRequiredScopes.has(
+            input.recipientScope,
+          ),
+          estimatedRecipientCount: input.estimatedRecipientCount,
+        },
+      });
+      throw new EmailAdminRateLimitExceededException(
+        'Admin email rate limit exceeded',
+      );
+    }
+  }
+
+  private async findDeliveryEvent(
+    queueItemId: string,
+  ): Promise<EmailDeliveryEventEntity | null> {
+    return this.deliveryRepo
+      .createQueryBuilder('delivery')
+      .where("delivery.metadata ->> 'queueItemId' = :queueItemId", {
+        queueItemId,
+      })
+      .orderBy('delivery.occurredAt', 'DESC')
+      .getOne();
   }
 
   private async recordAudit(input: {

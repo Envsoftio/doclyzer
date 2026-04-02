@@ -22,6 +22,9 @@ export class EmailQueueItemEntity {
   @Column({ type: 'varchar', length: 32, name: 'status' })
   status!: EmailQueueStatus;
 
+  @Column({ type: 'varchar', length: 128, name: 'idempotency_key', nullable: true })
+  idempotencyKey!: string | null;
+
   @Column({ type: 'timestamptz', name: 'scheduled_at' })
   scheduledAt!: Date;
 

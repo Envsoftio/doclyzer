@@ -1,4 +1,12 @@
-import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
@@ -8,6 +16,7 @@ import { SuperadminGuard } from '../auth/superadmin.guard';
 import { EmailAdminService } from './email-admin.service';
 import {
   EmailDeliveryAnalyticsQueryDto,
+  EmailAdminSendRequestDto,
   EmailSendingHistoryQueryDto,
 } from './email-admin.dto';
 
@@ -53,6 +62,21 @@ export class EmailAdminController {
       actorUserId,
       correlationId,
       query,
+    });
+    return successResponse(data, correlationId);
+  }
+
+  @Post('send')
+  async sendAdminEmail(
+    @Req() req: Request,
+    @Body() dto: EmailAdminSendRequestDto,
+  ): Promise<object> {
+    const correlationId = getCorrelationId(req);
+    const { id: actorUserId } = req.user as RequestUser;
+    const data = await this.emailAdminService.sendAdminEmail({
+      actorUserId,
+      correlationId,
+      dto,
     });
     return successResponse(data, correlationId);
   }
