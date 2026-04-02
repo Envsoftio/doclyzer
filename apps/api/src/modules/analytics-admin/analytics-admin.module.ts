@@ -17,16 +17,22 @@ import { ShareAccessEventEntity } from '../../database/entities/share-access-eve
 import { ShareLinkEntity } from '../../database/entities/share-link.entity';
 import { ConsentRecordEntity } from '../../database/entities/consent-record.entity';
 import { UserSharePolicyEntity } from '../../database/entities/user-share-policy.entity';
+import { SubscriptionEntity } from '../../database/entities/subscription.entity';
+import { AuditIncidentModule } from '../audit-incident/audit-incident.module';
+import { EntitlementsModule } from '../entitlements/entitlements.module';
 
 @Module({
   imports: [
     AuthModule,
+    AuditIncidentModule,
+    EntitlementsModule,
     TypeOrmModule.forFeature([
       UserEntity,
       SessionEntity,
       ProfileEntity,
       ReportEntity,
       OrderEntity,
+      SubscriptionEntity,
       SuperadminAuthAuditEventEntity,
       AnalyticsTaxonomyFieldEntity,
       AnalyticsGovernanceReviewEntity,

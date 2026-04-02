@@ -1,4 +1,4 @@
-import { IsInt, IsISO8601, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsISO8601, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CoreProductAnalyticsQueryDto {
@@ -42,4 +42,25 @@ export class UserDirectoryQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+}
+
+export class SystemDashboardQueryDto {
+  @IsISO8601()
+  startDate!: string;
+
+  @IsISO8601()
+  endDate!: string;
+
+  @IsOptional()
+  @IsString()
+  geography?: string;
+
+  @IsOptional()
+  @IsIn(['all', 'free', 'paid'])
+  productSlice?: 'all' | 'free' | 'paid';
+}
+
+export class SystemDashboardExportDto extends SystemDashboardQueryDto {
+  @IsIn(['json', 'csv'])
+  format!: 'json' | 'csv';
 }

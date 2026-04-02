@@ -38,7 +38,7 @@ project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
-last_updated: 2026-04-02T12:18:54Z
+last_updated: 2026-04-02T15:00:00Z
 
 development_status:
   epic-0: in-progress
@@ -120,13 +120,13 @@ development_status:
   5-14-emergency-containment-actions-with-mandatory-audit-notes: done
   5-15-email-queue-delivery-analytics-and-sending-history-admin-panel: done
   5-16-admin-level-email-sending-with-audit-and-recipient-controls: done
-  5-17-complete-superadmin-system-dashboard: backlog
+  5-17-complete-superadmin-system-dashboard: in-progress
   5-18-user-activity-and-file-analytics: done
   epic-5-retrospective: optional
 
-  epic-6: backlog
-  6-1-notification-event-delivery-for-account-report-billing-updates: backlog
-  6-2-notification-preference-controls-by-category: backlog
+  epic-6: in-progress
+  6-1-notification-event-delivery-for-account-report-billing-updates: ready-for-dev
+  6-2-notification-preference-controls-by-category: ready-for-dev
   6-3-consistent-in-app-success-failure-recovery-messaging-patterns: backlog
   6-4-major-service-incident-status-communication-to-users: backlog
   6-5-in-product-support-requests-linked-to-failed-critical-actions: backlog

@@ -135,6 +135,22 @@ export class EntitlementsService {
   }
 
   /**
+   * Returns user IDs for active entitlements on a given plan tier.
+   * Used by admin analytics to scope product-slice rollups.
+   */
+  async listUserIdsByTier(tier: PlanTier): Promise<string[]> {
+    const rows = await this.entitlementRepo
+      .createQueryBuilder('entitlement')
+      .innerJoin('entitlement.plan', 'plan')
+      .select('entitlement.user_id', 'userId')
+      .where('entitlement.status = :status', { status: 'active' })
+      .andWhere('plan.tier = :tier', { tier })
+      .getRawMany();
+
+    return rows.map((row) => row.userId as string);
+  }
+
+  /**
    * Lists plan configurations for superadmin management.
    */
   async listPlanConfigurations(): Promise<PlanConfigSummaryDto[]> {

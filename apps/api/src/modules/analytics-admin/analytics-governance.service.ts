@@ -199,6 +199,24 @@ export class AnalyticsGovernanceService {
     return validationResult;
   }
 
+  async getReviewStateSummary(): Promise<{
+    pendingCount: number;
+    lastReviewedAt: string | null;
+  }> {
+    const [pendingCount, latestRow] = await Promise.all([
+      this.reviewRepo.count({ where: { status: 'pending' } }),
+      this.reviewRepo
+        .createQueryBuilder('review')
+        .select('MAX(review.updated_at)', 'max')
+        .getRawOne(),
+    ]);
+
+    return {
+      pendingCount,
+      lastReviewedAt: latestRow?.max ? new Date(latestRow.max).toISOString() : null,
+    };
+  }
+
   async queryGovernanceRecords(input: {
     actorUserId: string;
     correlationId: string;

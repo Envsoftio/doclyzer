@@ -55,6 +55,16 @@ export class SuspiciousActivityController {
     return successResponse(data, correlationId);
   }
 
+  @Get('suspicious-activity-queue')
+  async listSuspiciousActivityQueueAlias(
+    @Req() req: Request,
+    @Query() query: SuspiciousActivityQueueQueryDto,
+  ): Promise<object> {
+    const correlationId = getCorrelationId(req);
+    const data = await this.suspiciousActivityService.listQueue(query);
+    return successResponse(data, correlationId);
+  }
+
   @Patch('suspicious-activity/:queueItemId/status')
   async updateSuspiciousActivityStatus(
     @Req() req: Request,

@@ -71,3 +71,96 @@ export interface CoreProductAnalyticsResponse {
   funnel: CoreProductAnalyticsSlice[];
   retention: CoreProductAnalyticsRetentionSlice[];
 }
+
+export type SystemDashboardProductSlice = 'all' | 'free' | 'paid';
+
+export interface SystemDashboardFilters {
+  startDate: string;
+  endDate: string;
+  geography: string | null;
+  productSlice: SystemDashboardProductSlice;
+}
+
+export interface SystemDashboardOverviewMetric extends CoreProductAnalyticsMetric {
+  label: string;
+}
+
+export interface SystemDashboardPaymentSummary {
+  creditPacks: {
+    revenue: number;
+    orderCount: number;
+    currency: string;
+  };
+  subscriptions: {
+    total: number;
+    active: number;
+    new: number;
+  };
+  refunds: {
+    count: number;
+    amount: number;
+    currency: string;
+  };
+}
+
+export interface SystemDashboardFileSummary {
+  statusCounts: Record<string, number>;
+  totalInFlight: number;
+  oldestInFlightCreatedAt: string | null;
+  failedCount: number;
+  parsedCount: number;
+}
+
+export interface SystemDashboardGovernanceSummary {
+  suspiciousActivity: {
+    openCount: number;
+    topItems: Array<{
+      id: string;
+      severity: string;
+      status: string;
+      detectionSummary: string | null;
+      targetType: string;
+      targetId: string;
+      lastDetectedAt: string;
+    }>;
+  };
+  auditActions: {
+    recent: Array<{
+      id: string;
+      action: string;
+      target: string;
+      outcome: string;
+      performedAt: string;
+    }>;
+  };
+  reviewState: {
+    pendingCount: number;
+    lastReviewedAt: string | null;
+  };
+}
+
+export interface SystemDashboardIncidentSummary {
+  pipelineFailures: number;
+  suspiciousQueue: number;
+  recentAuditActions: number;
+}
+
+export interface SystemDashboardResponse {
+  filters: SystemDashboardFilters;
+  dataState: CoreProductAnalyticsDataState;
+  overview: {
+    users: SystemDashboardOverviewMetric;
+    sessions: SystemDashboardOverviewMetric;
+    uploads: SystemDashboardOverviewMetric;
+    shareLinks: SystemDashboardOverviewMetric;
+    processingSuccess: SystemDashboardOverviewMetric;
+  };
+  activity: {
+    funnel: CoreProductAnalyticsSlice[];
+    retention: CoreProductAnalyticsRetentionSlice[];
+  };
+  payments: SystemDashboardPaymentSummary;
+  files: SystemDashboardFileSummary;
+  governance: SystemDashboardGovernanceSummary;
+  incidents: SystemDashboardIncidentSummary;
+}

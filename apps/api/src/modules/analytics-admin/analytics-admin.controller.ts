@@ -22,7 +22,13 @@ import {
   GovernanceRecordsExportDto,
   GovernanceRecordsQueryDto,
 } from './analytics-governance.dto';
-import { CoreProductAnalyticsQueryDto, UserDirectoryQueryDto } from './analytics-admin.dto';
+import {
+  CoreProductAnalyticsQueryDto,
+  SystemDashboardExportDto,
+  SystemDashboardQueryDto,
+  UserDirectoryQueryDto,
+} from './analytics-admin.dto';
+import { AnalyticsInvalidDateRangeException } from './analytics-admin.types';
 
 @Controller('admin/analytics')
 @UseGuards(AuthGuard, SuperadminGuard)
@@ -44,6 +50,53 @@ export class AnalyticsAdminController {
       actorUserId,
       correlationId,
       query,
+    });
+    return successResponse(data, correlationId);
+  }
+
+  // SuperadminGuard is role-based; MFA enforcement is handled by upstream auth policy.
+  @Get('system-dashboard')
+  async getSystemDashboard(
+    @Req() req: Request,
+    @Query() query: SystemDashboardQueryDto,
+  ): Promise<object> {
+    if (!query.startDate || !query.endDate) {
+      throw new AnalyticsInvalidDateRangeException(
+        'startDate and endDate are required',
+      );
+    }
+    const { id: actorUserId } = req.user as RequestUser;
+    const correlationId = getCorrelationId(req);
+    const data = await this.analyticsAdminService.getSystemDashboard({
+      actorUserId,
+      correlationId,
+      query,
+    });
+    return successResponse(data, correlationId);
+  }
+
+  @Post('system-dashboard/export')
+  async exportSystemDashboard(
+    @Req() req: Request,
+    @Body() dto: SystemDashboardExportDto,
+  ): Promise<object> {
+    if (!dto.startDate || !dto.endDate) {
+      throw new AnalyticsInvalidDateRangeException(
+        'startDate and endDate are required',
+      );
+    }
+    const { id: actorUserId } = req.user as RequestUser;
+    const correlationId = getCorrelationId(req);
+    const data = await this.analyticsAdminService.exportSystemDashboard({
+      actorUserId,
+      correlationId,
+      query: {
+        startDate: dto.startDate,
+        endDate: dto.endDate,
+        geography: dto.geography,
+        productSlice: dto.productSlice,
+      },
+      format: dto.format,
     });
     return successResponse(data, correlationId);
   }

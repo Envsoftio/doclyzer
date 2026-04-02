@@ -50,6 +50,11 @@ import { SuspiciousActivityService } from './suspicious-activity.service';
     SuspiciousActivityService,
     RiskContainmentService,
   ],
-  exports: [AccountOverrideService, AuditIncidentService, RiskContainmentService],
+  exports: [
+    AccountOverrideService,
+    AuditIncidentService,
+    RiskContainmentService,
+    SuspiciousActivityService,
+  ],
 })
 export class AuditIncidentModule {}
