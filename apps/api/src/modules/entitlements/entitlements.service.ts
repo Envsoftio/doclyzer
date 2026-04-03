@@ -362,9 +362,10 @@ export class EntitlementsService {
     });
     const saved = await this.entitlementRepo.save(entitlement);
 
-    // Reload with plan relation (eager load)
+    // Reload with explicit plan relation (belt-and-suspenders over eager: true).
     const reloaded = await this.entitlementRepo.findOneOrFail({
       where: { id: saved.id },
+      relations: ['plan'],
     });
     return reloaded;
   }

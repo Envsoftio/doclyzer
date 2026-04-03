@@ -16,6 +16,7 @@ const loading = ref(true)
 const exportLoading = ref(false)
 const error = ref('')
 
+// Geography filtering is not yet implemented in backend queries; only 'all' is available.
 const geographyOptions = ['all']
 const productOptions: Array<{ label: string; value: 'all' | 'free' | 'paid' }> = [
   { label: 'All plans', value: 'all' },

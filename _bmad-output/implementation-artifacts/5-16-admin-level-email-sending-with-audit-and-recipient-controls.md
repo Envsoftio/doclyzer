@@ -87,6 +87,7 @@ GPT-5 (Codex)
   - Trigger rate-limit threshold and confirm rate limit error.
   - Verify queue item persisted and delivery event shows in sending history/analytics views.
   - Validate audit event stored with actor/action/scope/outcome and no PHI payload.
+- Code review fix: approval token validation now uses timingSafeEqual (crypto) to prevent timing-based oracle attacks.
 
 ### File List
 
@@ -107,3 +108,4 @@ GPT-5 (Codex)
 - 2026-04-02: Added admin email send endpoint, queue/delivery tracking, idempotency support, and PHI-safe audit policy hooks.
 - 2026-04-02: Code review fixes applied — idempotency check reordered before approval/rate-limit, approval token validated against EMAIL_ADMIN_APPROVAL_SECRET config, delivery event outcome corrected from 'sent' to 'pending' at enqueue time, @Index added to entity for idempotency_key.
 - 2026-04-02: Second code review pass — removed subject/body from queue item metadata (PHI-safe: content must not persist in queue store; worker uses templateKey); fixed idempotent replay to derive requiresApproval from existing.recipientScope rather than retry request scope.
+- 2026-04-03: Code review fix — switched approval token comparison to timingSafeEqual to prevent timing-based oracle attacks.

@@ -10,6 +10,7 @@ import { ConsentRecordEntity } from '../../database/entities/consent-record.enti
 import { AuthModule } from '../auth/auth.module';
 import { AuditIncidentModule } from '../audit-incident/audit-incident.module';
 import { StorageModule } from '../../common/storage/storage.module';
+import { NotificationPipelineModule } from '../../common/notification-pipeline/notification-pipeline.module';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 
@@ -27,6 +28,7 @@ import { AccountService } from './account.service';
     AuthModule,
     AuditIncidentModule,
     StorageModule,
+    NotificationPipelineModule,
   ],
   controllers: [AccountController],
   providers: [AccountService],

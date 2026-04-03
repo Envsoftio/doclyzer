@@ -1,6 +1,6 @@
 # Story 6.2: Notification Preference Controls by Category
 
-Status: ready-for-dev
+Status: in-progress
 
 ## Story
 
@@ -19,15 +19,15 @@ so that future notification deliveries respect my choices while mandatory notice
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Verify and harden existing preference API (AC: #1, #2, #5, #6)
-  - [ ] Confirm `GET /account/communication-preferences` returns correct shape: `{ preferences: [{ category, enabled, mandatory }] }` — this is already implemented in `AccountService.getCommunicationPreferences()`. No changes needed if it matches AC#1.
-  - [ ] Confirm `PUT /account/communication-preferences` with `UpdateCommunicationPreferencesDto` only accepts `productEmails?: boolean`. Security/compliance are not in the DTO, so they cannot be changed — already correct.
-  - [ ] Confirm `UpdateCommunicationPreferencesDto` uses `@IsOptional() @IsBoolean()` on `productEmails` — already in place. No changes needed.
-  - [ ] Confirm `AccountService.updateCommunicationPreferences()` creates a preference row if none exists, sets `productEmailsEnabled`, and returns the full 3-category preference response.
-  - [ ] Confirm default behaviour: if no `AccountPreferenceEntity` row exists for user, `productEmailsEnabled` defaults to `true` (opt-in).
+- [x] Task 1: Verify and harden existing preference API (AC: #1, #2, #5, #6)
+  - [x] Confirm `GET /account/communication-preferences` returns correct shape: `{ preferences: [{ category, enabled, mandatory }] }` — this is already implemented in `AccountService.getCommunicationPreferences()`. No changes needed if it matches AC#1.
+  - [x] Confirm `PUT /account/communication-preferences` with `UpdateCommunicationPreferencesDto` only accepts `productEmails?: boolean`. Security/compliance are not in the DTO, so they cannot be changed — already correct.
+  - [x] Confirm `UpdateCommunicationPreferencesDto` uses `@IsOptional() @IsBoolean()` on `productEmails` — already in place. No changes needed.
+  - [x] Confirm `AccountService.updateCommunicationPreferences()` creates a preference row if none exists, sets `productEmailsEnabled`, and returns the full 3-category preference response.
+  - [x] Confirm default behaviour: if no `AccountPreferenceEntity` row exists for user, `productEmailsEnabled` defaults to `true` (opt-in).
 
-- [ ] Task 2: Create `NotificationPipelineService` and supporting types in `src/common/notification-pipeline/` (AC: #3, #4, #5)
-  - [ ] Create `apps/api/src/common/notification-pipeline/notification-event.types.ts`:
+- [x] Task 2: Create `NotificationPipelineService` and supporting types in `src/common/notification-pipeline/` (AC: #3, #4, #5)
+  - [x] Create `apps/api/src/common/notification-pipeline/notification-event.types.ts`:
     - Define `NotifiableEventType` enum:
       ```
       REPORT_UPLOAD_COMPLETE = 'REPORT_UPLOAD_COMPLETE'
@@ -56,7 +56,7 @@ so that future notification deliveries respect my choices while mandatory notice
       | ACCOUNT_PASSWORD_CHANGED | `account.password_changed` | security |
       | ACCOUNT_CLOSURE_CONFIRMED | `account.closure_confirmed` | compliance |
 
-  - [ ] Create `apps/api/src/common/notification-pipeline/notification-pipeline.service.ts`:
+  - [x] Create `apps/api/src/common/notification-pipeline/notification-pipeline.service.ts`:
     - Inject: `@InjectRepository(AccountPreferenceEntity)`, `@InjectRepository(EmailQueueItemEntity)`, `@InjectRepository(EmailDeliveryEventEntity)`
     - Implement `async dispatch(event: { eventType: NotifiableEventType; userId: string; profileId?: string; metadata?: Record<string, string | number | boolean | null>; correlationId: string }): Promise<void>`:
       1. Resolve `{ category, emailType }` from `EVENT_CATEGORY_MAP[event.eventType]`
@@ -68,30 +68,30 @@ so that future notification deliveries respect my choices while mandatory notice
       - If `category` in `MANDATORY_NOTIFICATION_CATEGORIES` → return `false`
       - Load pref row → return `pref?.productEmailsEnabled === false ? true : false`
 
-  - [ ] Create `apps/api/src/common/notification-pipeline/notification-pipeline.module.ts`:
+  - [x] Create `apps/api/src/common/notification-pipeline/notification-pipeline.module.ts`:
     - Import `TypeOrmModule.forFeature([AccountPreferenceEntity, EmailQueueItemEntity, EmailDeliveryEventEntity])`
     - Provider: `NotificationPipelineService`
     - Export: `NotificationPipelineService`
     - Do NOT set `global: true` — consuming modules import explicitly
 
-- [ ] Task 3: Register `NotificationPipelineModule` in `AppModule` (AC: #3, #4)
-  - [ ] In `apps/api/src/app.module.ts`: add `NotificationPipelineModule` to the `imports` array (alongside `EmailAdminModule`, `AuthModule`, etc.)
+- [x] Task 3: Register `NotificationPipelineModule` in `AppModule` (AC: #3, #4)
+  - [x] In `apps/api/src/app.module.ts`: add `NotificationPipelineModule` to the `imports` array (alongside `EmailAdminModule`, `AuthModule`, etc.)
 
-- [ ] Task 4: Wire notification dispatch into billing, reports, and account modules (AC: #3, #4)
-  - [ ] **Billing module** (`apps/api/src/modules/billing/billing.service.ts`):
+- [x] Task 4: Wire notification dispatch into billing, reports, and account modules (AC: #3, #4)
+  - [x] **Billing module** (`apps/api/src/modules/billing/billing.service.ts`):
     - Add `NotificationPipelineModule` to `BillingModule` imports
     - Inject `NotificationPipelineService` in `BillingService` constructor
     - After payment success is persisted: `void notificationPipeline.dispatch({ eventType: NotifiableEventType.BILLING_PAYMENT_SUCCESS, userId, correlationId })`
     - After payment failure: `void notificationPipeline.dispatch({ eventType: NotifiableEventType.BILLING_PAYMENT_FAILED, userId, correlationId })`
     - After subscription activated: `void notificationPipeline.dispatch({ eventType: NotifiableEventType.SUBSCRIPTION_ACTIVATED, userId, correlationId })`
     - After subscription cancelled: `void notificationPipeline.dispatch({ eventType: NotifiableEventType.SUBSCRIPTION_CANCELLED, userId, correlationId })`
-  - [ ] **Reports module** (`apps/api/src/modules/reports/` or `parsing/`):
+  - [x] **Reports module** (`apps/api/src/modules/reports/` or `parsing/`):
     - Locate where parse status transitions to `complete` or `failed` — likely in a parsing service/worker
     - Add `NotificationPipelineModule` to that module's imports
     - Inject `NotificationPipelineService`
     - After parse completes: `void notificationPipeline.dispatch({ eventType: NotifiableEventType.REPORT_UPLOAD_COMPLETE, userId, profileId, correlationId })`
     - After parse fails: `void notificationPipeline.dispatch({ eventType: NotifiableEventType.REPORT_PARSE_FAILED, userId, profileId, correlationId })`
-  - [ ] **Account module** (`apps/api/src/modules/account/account.service.ts`):
+  - [x] **Account module** (`apps/api/src/modules/account/account.service.ts`):
     - Add `NotificationPipelineModule` to `AccountModule` imports
     - Inject `NotificationPipelineService` in `AccountService`
     - In `createClosureRequest()` after `closureRepo.save(entity)`: `void notificationPipeline.dispatch({ eventType: NotifiableEventType.ACCOUNT_CLOSURE_CONFIRMED, userId, correlationId })`
@@ -190,10 +190,27 @@ apps/api/src/modules/account/account.service.ts      ← inject + call dispatch 
 
 ### Agent Model Used
 
-claude-sonnet-4-6
+gpt-5
 
 ### Debug Log References
 
+None.
 ### Completion Notes List
 
+- Verified communication preference API behavior aligns with mandatory categories and product opt-in defaults.
+- Removed cross-module coupling in notification taxonomy and aligned mandatory category guardrails.
+- Wired subscription activation/cancellation notifications and tightened queue metadata to UUID-only fields.
+- Manual validation steps remain pending (Task 5).
 ### File List
+
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- apps/api/src/common/notification-pipeline/notification-event.types.ts
+- apps/api/src/common/notification-pipeline/notification-pipeline.service.ts
+- apps/api/src/modules/account/account.service.ts
+- apps/api/src/modules/reports/reports.service.ts
+- apps/api/src/modules/billing/billing.service.ts
+- apps/api/src/modules/billing/billing.controller.ts
+
+### Change Log
+
+- 2026-04-02: Updated notification taxonomy to avoid cross-module imports, added subscription activation/cancellation dispatches, and removed extra metadata from notification queue events.

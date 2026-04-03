@@ -1,6 +1,6 @@
 # Story 6.1: Notification Event Delivery for Account/Report/Billing Updates
 
-Status: ready-for-dev
+Status: in-progress
 
 ## Story
 
@@ -18,30 +18,30 @@ so that I stay informed without having to poll the app manually.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Define notification event taxonomy and routing rules (AC: #1, #2, #3, #5)
-  - [ ] Create `src/common/notification-pipeline/notification-event.types.ts` — define `NotifiableEventType` enum (account: `ACCOUNT_EMAIL_CHANGED`, `ACCOUNT_PASSWORD_CHANGED`, `ACCOUNT_CLOSURE_CONFIRMED`; report: `REPORT_UPLOAD_COMPLETE`, `REPORT_PARSE_FAILED`; billing: `BILLING_PAYMENT_SUCCESS`, `BILLING_PAYMENT_FAILED`, `SUBSCRIPTION_ACTIVATED`, `SUBSCRIPTION_CANCELLED`; transactional: `AUTH_PASSWORD_RESET`, `AUTH_OTP_SENT`)
-  - [ ] Define `NotificationCategory` enum matching `COMM_PREF_CATEGORY` (`security`, `compliance`, `product`)
-  - [ ] Define routing map: `EVENT_CATEGORY_MAP` — maps each `NotifiableEventType` to its `NotificationCategory` and `emailType` string
-  - [ ] Define `MANDATORY_EVENT_CATEGORIES` = `new Set(['security', 'compliance'])` — mirrors `MANDATORY_CATEGORIES` in `account.types.ts`
-- [ ] Task 2: Create `NotificationPipelineService` (AC: #1, #2, #3, #4)
-  - [ ] Create `src/common/notification-pipeline/notification-pipeline.service.ts`
-  - [ ] Inject `Repository<AccountPreferenceEntity>` and `Repository<EmailQueueItemEntity>` and `Repository<EmailDeliveryEventEntity>`
-  - [ ] Implement `dispatch(event: { eventType: NotifiableEventType; userId: string; profileId?: string; metadata?: Record<string, string | number | boolean | null>; correlationId: string }): Promise<void>`
-    - [ ] Resolve category and emailType from `EVENT_CATEGORY_MAP`
-    - [ ] If category is NOT mandatory: load `AccountPreferenceEntity` for `userId`; if `productEmailsEnabled === false`, skip and return (no error)
-    - [ ] Enqueue: save `EmailQueueItemEntity` with `emailType`, `recipientScope: 'single'`, `status: 'pending'`, `scheduledAt: now`, `metadata: { userId, profileId, correlationId, ...metadata }` — no PII/PHI in content fields
-    - [ ] Record initial `EmailDeliveryEventEntity` with `outcome: 'pending'`, `recipientScope: 'single'`, `occurredAt: now`, `metadata: { queueItemId, source: 'notification-pipeline', eventType }`
-    - [ ] Log: `{ action: 'NOTIFICATION_DISPATCHED', eventType, emailType, outcome: 'queued', correlationId }` — no PHI
-  - [ ] Implement `suppressedByPreference(userId: string, category: NotificationCategory): Promise<boolean>`
-- [ ] Task 3: Create `NotificationPipelineModule` and register entities (AC: #1)
-  - [ ] Create `src/common/notification-pipeline/notification-pipeline.module.ts`
-  - [ ] Register `TypeOrmModule.forFeature([AccountPreferenceEntity, EmailQueueItemEntity, EmailDeliveryEventEntity])`
-  - [ ] Export `NotificationPipelineService`
-  - [ ] Import into `AppModule` (add alongside existing modules)
-- [ ] Task 4: Wire up event dispatch from billing and report modules (AC: #1)
-  - [ ] In `BillingService` (or wherever payment outcomes land): inject `NotificationPipelineService`; after payment-success/failure state is persisted, call `notificationPipeline.dispatch({ eventType: 'BILLING_PAYMENT_SUCCESS' / 'BILLING_PAYMENT_FAILED', userId, correlationId })`
-  - [ ] In reports module: after parse-complete / parse-failed state transition, call `notificationPipeline.dispatch({ eventType: 'REPORT_UPLOAD_COMPLETE' / 'REPORT_PARSE_FAILED', userId, profileId, correlationId })`
-  - [ ] In account module: after closure confirmation, call `notificationPipeline.dispatch({ eventType: 'ACCOUNT_CLOSURE_CONFIRMED', userId, correlationId })`
+- [x] Task 1: Define notification event taxonomy and routing rules (AC: #1, #2, #3, #5)
+  - [x] Create `src/common/notification-pipeline/notification-event.types.ts` — define `NotifiableEventType` enum (account: `ACCOUNT_EMAIL_CHANGED`, `ACCOUNT_PASSWORD_CHANGED`, `ACCOUNT_CLOSURE_CONFIRMED`; report: `REPORT_UPLOAD_COMPLETE`, `REPORT_PARSE_FAILED`; billing: `BILLING_PAYMENT_SUCCESS`, `BILLING_PAYMENT_FAILED`, `SUBSCRIPTION_ACTIVATED`, `SUBSCRIPTION_CANCELLED`; transactional: `AUTH_PASSWORD_RESET`, `AUTH_OTP_SENT`)
+  - [x] Define `NotificationCategory` enum matching `COMM_PREF_CATEGORY` (`security`, `compliance`, `product`)
+  - [x] Define routing map: `EVENT_CATEGORY_MAP` — maps each `NotifiableEventType` to its `NotificationCategory` and `emailType` string
+  - [x] Define `MANDATORY_EVENT_CATEGORIES` = `new Set(['security', 'compliance'])` — mirrors `MANDATORY_CATEGORIES` in `account.types.ts`
+- [x] Task 2: Create `NotificationPipelineService` (AC: #1, #2, #3, #4)
+  - [x] Create `src/common/notification-pipeline/notification-pipeline.service.ts`
+  - [x] Inject `Repository<AccountPreferenceEntity>` and `Repository<EmailQueueItemEntity>` and `Repository<EmailDeliveryEventEntity>`
+  - [x] Implement `dispatch(event: { eventType: NotifiableEventType; userId: string; profileId?: string; metadata?: Record<string, string | number | boolean | null>; correlationId: string }): Promise<void>`
+    - [x] Resolve category and emailType from `EVENT_CATEGORY_MAP`
+    - [x] If category is NOT mandatory: load `AccountPreferenceEntity` for `userId`; if `productEmailsEnabled === false`, skip and return (no error)
+    - [x] Enqueue: save `EmailQueueItemEntity` with `emailType`, `recipientScope: 'single'`, `status: 'pending'`, `scheduledAt: now`, `metadata: { userId, profileId, correlationId, ...metadata }` — no PII/PHI in content fields
+    - [x] Record initial `EmailDeliveryEventEntity` with `outcome: 'pending'`, `recipientScope: 'single'`, `occurredAt: now`, `metadata: { queueItemId, source: 'notification-pipeline', eventType }`
+    - [x] Log: `{ action: 'NOTIFICATION_DISPATCHED', eventType, emailType, outcome: 'queued', correlationId }` — no PHI
+  - [x] Implement `suppressedByPreference(userId: string, category: NotificationCategory): Promise<boolean>`
+- [x] Task 3: Create `NotificationPipelineModule` and register entities (AC: #1)
+  - [x] Create `src/common/notification-pipeline/notification-pipeline.module.ts`
+  - [x] Register `TypeOrmModule.forFeature([AccountPreferenceEntity, EmailQueueItemEntity, EmailDeliveryEventEntity])`
+  - [x] Export `NotificationPipelineService`
+  - [x] Import into `AppModule` (add alongside existing modules)
+- [x] Task 4: Wire up event dispatch from billing and report modules (AC: #1)
+  - [x] In `BillingService` (or wherever payment outcomes land): inject `NotificationPipelineService`; after payment-success/failure state is persisted, call `notificationPipeline.dispatch({ eventType: 'BILLING_PAYMENT_SUCCESS' / 'BILLING_PAYMENT_FAILED', userId, correlationId })`
+  - [x] In reports module: after parse-complete / parse-failed state transition, call `notificationPipeline.dispatch({ eventType: 'REPORT_UPLOAD_COMPLETE' / 'REPORT_PARSE_FAILED', userId, profileId, correlationId })`
+  - [x] In account module: after closure confirmation, call `notificationPipeline.dispatch({ eventType: 'ACCOUNT_CLOSURE_CONFIRMED', userId, correlationId })`
 - [ ] Task 5: Validate manually (no automated tests per project policy)
   - [ ] Trigger billing payment success → confirm `email_queue_items` row created with correct `emailType` and `status=pending`, and `email_delivery_events` row with `outcome=pending`
   - [ ] Trigger report parse failure → confirm queue entry created
@@ -146,10 +146,37 @@ apps/api/src/common/notification-pipeline/
 
 ### Agent Model Used
 
-claude-sonnet-4-6
+gpt-5
+
+### Implementation Plan
+
+- Add notification taxonomy + routing map in common notification pipeline
+- Implement pipeline service with preference gating, enqueue, and delivery event tracking
+- Register pipeline module and wire into billing, reports, and account domains
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Implemented notification event taxonomy, routing, and mandatory category guardrails.
+- Added notification pipeline service + module and wired dispatch calls in billing, reports, and account closures.
+- Skipped automated tests per project policy; manual validation pending (Task 5).
+
 ### File List
+
+- apps/api/src/common/notification-pipeline/notification-event.types.ts
+- apps/api/src/common/notification-pipeline/notification-pipeline.module.ts
+- apps/api/src/common/notification-pipeline/notification-pipeline.service.ts
+- apps/api/src/app.module.ts
+- apps/api/src/modules/account/account.module.ts
+- apps/api/src/modules/account/account.service.ts
+- apps/api/src/modules/billing/billing.controller.ts
+- apps/api/src/modules/billing/billing.module.ts
+- apps/api/src/modules/billing/billing.service.ts
+- apps/api/src/modules/reports/reports.controller.ts
+- apps/api/src/modules/reports/reports.module.ts
+- apps/api/src/modules/reports/reports.service.ts
+
+### Change Log
+
+- 2026-04-02: Added notification pipeline taxonomy, service, module, and dispatch wiring across billing, reports, and account closure flows.

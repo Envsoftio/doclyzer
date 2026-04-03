@@ -1,6 +1,6 @@
 # Story 4.7: Entitlement Change Reason Visibility
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -81,6 +81,10 @@ GPT-5 (Codex)
 - Implemented entitlement change reason + timestamp persistence on `user_entitlements` with migration and service updates across provisioning, credit reconciliation, and plan upgrades/downgrades.
 - Exposed `lastChangeReason` / `lastChangeAt` in entitlement summaries and surfaced a calm “Last change” row in Plan & Credits.
 - Tests skipped per project testing policy.
+- Code review fix: `findOrProvision` reload now passes explicit `relations: ['plan']` as belt-and-suspenders over `eager: true`, preventing a potential null crash on first-ever entitlement creation.
+
+### Review Follow-ups (AI)
+- [ ] [AI-Review][LOW] `_buildLastChangeLine` shows “Last change: Not yet changed” when both fields are null (legacy entitlement). Consider hiding the row entirely or using “No entitlement changes yet.” for better UX. [entitlement_summary_screen.dart:505-511]
 
 ### File List
 - apps/api/src/database/entities/user-entitlement.entity.ts
@@ -95,3 +99,4 @@ GPT-5 (Codex)
 
 ### Change Log
 - Updated entitlement change reason/timestamp persistence and surfaced last change in Plan & Credits. (Date: 2026-04-02)
+- 2026-04-03: Code review fix — explicit relations: ['plan'] on findOrProvision reload.

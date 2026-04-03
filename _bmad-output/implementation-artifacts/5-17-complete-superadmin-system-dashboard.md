@@ -53,6 +53,10 @@ so that I can monitor users, activity, payments, files, and governance signals i
   - [ ] Confirm incident panel correlates pipeline + risk + audit signals and links are functional.
   - [ ] Confirm no PHI appears in dashboard payloads, logs, or exports.
 
+### Review Follow-ups (AI)
+- [ ] [AI-Review][LOW] UI template accesses dashboard sub-objects (e.g. `dashboard.overview.users.current`) without optional chaining — a partial backend failure will produce a silent blank panel instead of the error box. Add optional chaining or a v-if guard per section. [dashboard/index.vue:147-170]
+- [ ] [AI-Review][LOW] `buildSubscriptionSummary` `total` and `active` counts are not date-range-scoped (unlike every other metric). Intentional if showing overall subscription health; add a comment if so. [analytics-admin.service.ts:976-991]
+
 ## Dev Notes
 
 ### Developer Context and Guardrails
@@ -149,3 +153,4 @@ GPT-5 (Codex)
 
 - 2026-04-02: Created story context for Epic 5.17 system dashboard with guardrails and task sequencing.
 - 2026-04-02: Implemented system dashboard aggregation, governance signals, export capability, and UI expansion; story remains in-progress pending manual QA.
+- 2026-04-03: Code review fixes applied — added @IsNotEmpty() to SystemDashboardQueryDto fields, removed redundant controller null-checks, added explanatory comments for refund stub (schema gap) and geography no-op filter.

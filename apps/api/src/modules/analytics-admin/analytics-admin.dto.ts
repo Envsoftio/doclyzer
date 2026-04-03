@@ -1,10 +1,12 @@
-import { IsIn, IsInt, IsISO8601, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsISO8601, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CoreProductAnalyticsQueryDto {
+  @IsNotEmpty()
   @IsISO8601()
   startDate!: string;
 
+  @IsNotEmpty()
   @IsISO8601()
   endDate!: string;
 
@@ -45,9 +47,11 @@ export class UserDirectoryQueryDto {
 }
 
 export class SystemDashboardQueryDto {
+  @IsNotEmpty()
   @IsISO8601()
   startDate!: string;
 
+  @IsNotEmpty()
   @IsISO8601()
   endDate!: string;
 

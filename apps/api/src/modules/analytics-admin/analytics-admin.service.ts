@@ -694,6 +694,8 @@ export class AnalyticsAdminService {
     const currentRange = this.buildRange(query.startDate, query.endDate);
     const baselineRange = this.buildBaselineRange(currentRange);
     const productSlice = query.productSlice ?? 'all';
+    // Geography is stored in filters for transparency but not applied to queries —
+    // user/session/report entities have no geography column yet.
     const geography = query.geography?.trim() || null;
     const userIds = await this.resolveProductSliceUserIds(productSlice);
 
@@ -839,6 +841,8 @@ export class AnalyticsAdminService {
           currency: 'INR',
         },
         subscriptions: subscriptionSummary,
+        // Refund tracking is not yet modeled in the orders schema (no 'refunded' status or
+        // separate refund entity). Returning zeros is correct until refunds are implemented.
         refunds: {
           count: 0,
           amount: 0,

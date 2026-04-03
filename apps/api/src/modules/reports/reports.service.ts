@@ -27,6 +27,8 @@ import { ReportLimitExceededException } from './exceptions/report-limit-exceeded
 import { ReportNotFoundException } from './exceptions/report-not-found.exception';
 import { ReportUploadException } from './exceptions/report-upload.exception';
 import { UsageLimitsService } from '../entitlements/usage-limits.service';
+import { NotificationPipelineService } from '../../common/notification-pipeline/notification-pipeline.service';
+import { NotifiableEventType } from '../../common/notification-pipeline/notification-event.types';
 import {
   ALLOWED_CONTENT_TYPES,
   MAX_REPORT_SIZE_BYTES,
@@ -106,6 +108,7 @@ export class ReportsService {
     private readonly reportSummaryService: ReportSummaryService,
     private readonly usageLimitsService: UsageLimitsService,
     private readonly doclingClient: DoclingClient,
+    private readonly notificationPipeline: NotificationPipelineService,
   ) {
     this.labExtractor = new LabValueExtractor();
   }
@@ -130,6 +133,7 @@ export class ReportsService {
       size: number;
     },
     options?: { duplicateAction?: 'upload_anyway' },
+    correlationId?: string,
   ): Promise<UploadReportResult> {
     const activeProfileId =
       await this.profilesService.getActiveProfileId(userId);
@@ -251,6 +255,13 @@ export class ReportsService {
     }
 
     await this.recordAttempt(entity.id, 'initial_upload', entity.status);
+
+    this.dispatchReportNotification({
+      status: entity.status,
+      userId,
+      profileId: activeProfileId,
+      correlationId,
+    });
 
     if (forceUploadAnyway && existing) {
       this.logger.log(
@@ -438,7 +449,11 @@ export class ReportsService {
     return { parameters };
   }
 
-  async retryParse(userId: string, reportId: string): Promise<ReportDto> {
+  async retryParse(
+    userId: string,
+    reportId: string,
+    correlationId?: string,
+  ): Promise<ReportDto> {
     if (!isUUID(reportId)) throw new ReportNotFoundException();
     const entity = await this.reportRepo.findOne({
       where: { id: reportId, userId },
@@ -491,7 +506,46 @@ export class ReportsService {
     }
 
     await this.recordAttempt(entity.id, 'retry', entity.status);
+
+    this.dispatchReportNotification({
+      status: entity.status,
+      userId,
+      profileId: entity.profileId,
+      correlationId,
+    });
+
     return this.toDto(entity, [], true);
+  }
+
+  private dispatchReportNotification(input: {
+    status: ReportStatus;
+    userId: string;
+    profileId: string;
+    correlationId?: string;
+  }): void {
+    const correlationId = input.correlationId ?? randomUUID();
+    const eventType =
+      input.status === 'parsed'
+        ? NotifiableEventType.REPORT_UPLOAD_COMPLETE
+        : NotifiableEventType.REPORT_PARSE_FAILED;
+
+    void this.notificationPipeline
+      .dispatch({
+        eventType,
+        userId: input.userId,
+        profileId: input.profileId,
+        correlationId,
+      })
+      .catch((err) => {
+        this.logger.warn(
+          JSON.stringify({
+            action: 'NOTIFICATION_DISPATCH_FAILED',
+            eventType,
+            correlationId,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+      });
   }
 
   private async recordAttempt(

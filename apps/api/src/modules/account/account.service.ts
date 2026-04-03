@@ -11,6 +11,8 @@ import { ConsentRecordEntity } from '../../database/entities/consent-record.enti
 import { UserEntity } from '../../database/entities/user.entity';
 import { AuthService } from '../auth/auth.service';
 import { AccountOverrideService } from '../audit-incident/account-override.service';
+import { NotificationPipelineService } from '../../common/notification-pipeline/notification-pipeline.service';
+import { NotifiableEventType } from '../../common/notification-pipeline/notification-event.types';
 import type { FileStorageService } from '../../common/storage/file-storage.interface';
 import { FILE_STORAGE } from '../../common/storage/storage.module';
 import type {
@@ -53,6 +55,7 @@ export class AccountService {
     private readonly authService: AuthService,
     private readonly accountOverrideService: AccountOverrideService,
     @Inject(FILE_STORAGE) private readonly fileStorage: FileStorageService,
+    private readonly notificationPipeline: NotificationPipelineService,
   ) {}
 
   async getRestrictionStatus(userId: string): Promise<RestrictionStatus> {
@@ -347,6 +350,23 @@ export class AccountService {
         correlationId,
       }),
     );
+
+    void this.notificationPipeline
+      .dispatch({
+        eventType: NotifiableEventType.ACCOUNT_CLOSURE_CONFIRMED,
+        userId,
+        correlationId,
+      })
+      .catch((err) => {
+        this.logger.warn(
+          JSON.stringify({
+            action: 'NOTIFICATION_DISPATCH_FAILED',
+            eventType: NotifiableEventType.ACCOUNT_CLOSURE_CONFIRMED,
+            correlationId,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+      });
     return this.toClosureDto(saved);
   }
 

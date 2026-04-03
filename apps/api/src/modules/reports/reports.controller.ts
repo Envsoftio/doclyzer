@@ -132,6 +132,7 @@ export class ReportsController {
         size: file.size ?? 0,
       },
       options,
+      getCorrelationId(req),
     );
     return successResponse(data, getCorrelationId(req));
   }
@@ -206,7 +207,11 @@ export class ReportsController {
     @Req() req: Request,
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = await this.reportsService.retryParse(userId, reportId);
+    const data = await this.reportsService.retryParse(
+      userId,
+      reportId,
+      getCorrelationId(req),
+    );
     return successResponse(data, getCorrelationId(req));
   }
 

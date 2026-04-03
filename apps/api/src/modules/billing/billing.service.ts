@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomUUID } from 'node:crypto';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { CreditPackEntity } from '../../database/entities/credit-pack.entity';
 import { OrderEntity } from '../../database/entities/order.entity';
@@ -14,6 +15,8 @@ import { PromoRedemptionEntity } from '../../database/entities/promo-redemption.
 import { SubscriptionEntity } from '../../database/entities/subscription.entity';
 import { SuperadminAuthAuditEventEntity } from '../../database/entities/superadmin-auth-audit-event.entity';
 import { UserEntitlementEntity } from '../../database/entities/user-entitlement.entity';
+import { NotificationPipelineService } from '../../common/notification-pipeline/notification-pipeline.service';
+import { NotifiableEventType } from '../../common/notification-pipeline/notification-event.types';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { RazorpayService } from './razorpay.service';
 import {
@@ -82,6 +85,7 @@ export class BillingService {
     private readonly dataSource: DataSource,
     private readonly razorpayService: RazorpayService,
     private readonly entitlementsService: EntitlementsService,
+    private readonly notificationPipeline: NotificationPipelineService,
   ) {}
 
   async listCreditPacks(): Promise<CreditPackResponseDto[]> {
@@ -273,6 +277,7 @@ export class BillingService {
   async handleWebhookPaymentCaptured(
     razorpayOrderId: string,
     razorpayPaymentId: string,
+    correlationId: string,
   ): Promise<void> {
     const order = await this.orderRepo.findOne({
       where: { razorpayOrderId },
@@ -316,11 +321,29 @@ export class BillingService {
     this.logger.log(
       `Webhook: order ${order.id} reconciled (razorpay_order_id=${razorpayOrderId})`,
     );
+
+    void this.notificationPipeline
+      .dispatch({
+        eventType: NotifiableEventType.BILLING_PAYMENT_SUCCESS,
+        userId: order.userId,
+        correlationId,
+      })
+      .catch((err) => {
+        this.logger.warn(
+          JSON.stringify({
+            action: 'NOTIFICATION_DISPATCH_FAILED',
+            eventType: NotifiableEventType.BILLING_PAYMENT_SUCCESS,
+            correlationId,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+      });
   }
 
   async handleWebhookPaymentFailed(
     razorpayOrderId: string,
     reason?: string,
+    correlationId?: string,
   ): Promise<void> {
     const order = await this.orderRepo.findOne({
       where: { razorpayOrderId },
@@ -342,6 +365,25 @@ export class BillingService {
     this.logger.log(
       `Webhook: order ${order.id} marked failed (razorpay_order_id=${razorpayOrderId})`,
     );
+
+    if (correlationId) {
+      void this.notificationPipeline
+        .dispatch({
+          eventType: NotifiableEventType.BILLING_PAYMENT_FAILED,
+          userId: order.userId,
+          correlationId,
+        })
+        .catch((err) => {
+          this.logger.warn(
+            JSON.stringify({
+              action: 'NOTIFICATION_DISPATCH_FAILED',
+              eventType: NotifiableEventType.BILLING_PAYMENT_FAILED,
+              correlationId,
+              error: err instanceof Error ? err.message : String(err),
+            }),
+          );
+        });
+    }
   }
 
   async listPlans(userId: string): Promise<PlanResponseDto[]> {
@@ -444,6 +486,7 @@ export class BillingService {
     razorpaySubscriptionId: string,
     razorpayPaymentId: string,
     razorpaySignature: string,
+    correlationId: string,
   ): Promise<VerifySubscriptionResponseDto> {
     const isValid = this.razorpayService.verifySubscriptionSignature(
       razorpaySubscriptionId,
@@ -500,6 +543,23 @@ export class BillingService {
       periodEnd,
     );
 
+    void this.notificationPipeline
+      .dispatch({
+        eventType: NotifiableEventType.SUBSCRIPTION_ACTIVATED,
+        userId,
+        correlationId,
+      })
+      .catch((err) => {
+        this.logger.warn(
+          JSON.stringify({
+            action: 'NOTIFICATION_DISPATCH_FAILED',
+            eventType: NotifiableEventType.SUBSCRIPTION_ACTIVATED,
+            correlationId,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+      });
+
     const summary =
       await this.entitlementsService.getEntitlementSummary(userId);
     return {
@@ -511,7 +571,9 @@ export class BillingService {
   async handleWebhookSubscriptionActivated(
     razorpaySubscriptionId: string,
     razorpayPaymentId: string,
+    correlationId?: string,
   ): Promise<void> {
+    const resolvedCorrelationId = correlationId ?? randomUUID();
     const subscription = await this.subscriptionRepo.findOne({
       where: { razorpaySubscriptionId },
     });
@@ -545,6 +607,23 @@ export class BillingService {
     this.logger.log(
       `Webhook: subscription ${subscription.id} activated (razorpay_subscription_id=${razorpaySubscriptionId})`,
     );
+
+    void this.notificationPipeline
+      .dispatch({
+        eventType: NotifiableEventType.SUBSCRIPTION_ACTIVATED,
+        userId: subscription.userId,
+        correlationId: resolvedCorrelationId,
+      })
+      .catch((err) => {
+        this.logger.warn(
+          JSON.stringify({
+            action: 'NOTIFICATION_DISPATCH_FAILED',
+            eventType: NotifiableEventType.SUBSCRIPTION_ACTIVATED,
+            correlationId: resolvedCorrelationId,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+      });
   }
 
   async handleWebhookSubscriptionHalted(
@@ -583,7 +662,9 @@ export class BillingService {
 
   async handleWebhookSubscriptionCancelled(
     razorpaySubscriptionId: string,
+    correlationId?: string,
   ): Promise<void> {
+    const resolvedCorrelationId = correlationId ?? randomUUID();
     const subscription = await this.subscriptionRepo.findOne({
       where: { razorpaySubscriptionId },
     });
@@ -613,6 +694,23 @@ export class BillingService {
     this.logger.log(
       `Webhook: subscription ${subscription.id} cancelled (razorpay_subscription_id=${razorpaySubscriptionId})`,
     );
+
+    void this.notificationPipeline
+      .dispatch({
+        eventType: NotifiableEventType.SUBSCRIPTION_CANCELLED,
+        userId: subscription.userId,
+        correlationId: resolvedCorrelationId,
+      })
+      .catch((err) => {
+        this.logger.warn(
+          JSON.stringify({
+            action: 'NOTIFICATION_DISPATCH_FAILED',
+            eventType: NotifiableEventType.SUBSCRIPTION_CANCELLED,
+            correlationId: resolvedCorrelationId,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+      });
   }
 
   async validatePromoCode(

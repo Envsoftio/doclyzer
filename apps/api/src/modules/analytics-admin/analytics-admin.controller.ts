@@ -28,7 +28,6 @@ import {
   SystemDashboardQueryDto,
   UserDirectoryQueryDto,
 } from './analytics-admin.dto';
-import { AnalyticsInvalidDateRangeException } from './analytics-admin.types';
 
 @Controller('admin/analytics')
 @UseGuards(AuthGuard, SuperadminGuard)
@@ -60,11 +59,6 @@ export class AnalyticsAdminController {
     @Req() req: Request,
     @Query() query: SystemDashboardQueryDto,
   ): Promise<object> {
-    if (!query.startDate || !query.endDate) {
-      throw new AnalyticsInvalidDateRangeException(
-        'startDate and endDate are required',
-      );
-    }
     const { id: actorUserId } = req.user as RequestUser;
     const correlationId = getCorrelationId(req);
     const data = await this.analyticsAdminService.getSystemDashboard({
@@ -80,11 +74,6 @@ export class AnalyticsAdminController {
     @Req() req: Request,
     @Body() dto: SystemDashboardExportDto,
   ): Promise<object> {
-    if (!dto.startDate || !dto.endDate) {
-      throw new AnalyticsInvalidDateRangeException(
-        'startDate and endDate are required',
-      );
-    }
     const { id: actorUserId } = req.user as RequestUser;
     const correlationId = getCorrelationId(req);
     const data = await this.analyticsAdminService.exportSystemDashboard({

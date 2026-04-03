@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { timingSafeEqual } from 'crypto';
 import { Repository } from 'typeorm';
 import { EmailDeliveryEventEntity } from '../../database/entities/email-delivery-event.entity';
 import { EmailQueueItemEntity } from '../../database/entities/email-queue-item.entity';
@@ -501,7 +502,13 @@ export class EmailAdminService {
         'Approval system is not configured',
       );
     }
-    if (token !== secret) {
+    // Use timing-safe comparison to prevent timing-based token oracle attacks.
+    const tokenBuf = Buffer.from(token);
+    const secretBuf = Buffer.from(secret);
+    const tokensMatch =
+      tokenBuf.length === secretBuf.length &&
+      timingSafeEqual(tokenBuf, secretBuf);
+    if (!tokensMatch) {
       throw new EmailAdminInvalidApprovalTokenException(
         'Invalid approval token',
       );

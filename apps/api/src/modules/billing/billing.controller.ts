@@ -250,6 +250,7 @@ export class BillingController {
       dto.razorpaySubscriptionId,
       dto.razorpayPaymentId,
       dto.razorpaySignature,
+      getCorrelationId(req),
     );
     return successResponse(data, getCorrelationId(req));
   }
@@ -296,6 +297,7 @@ export class BillingController {
       await this.billingService.handleWebhookPaymentCaptured(
         razorpayOrderId,
         razorpayPaymentId,
+        getCorrelationId(req),
       );
     } else if (event === 'payment.failed') {
       const razorpayOrderId = payload.payload.payment?.entity?.order_id ?? '';
@@ -305,6 +307,7 @@ export class BillingController {
       await this.billingService.handleWebhookPaymentFailed(
         razorpayOrderId,
         reason,
+        getCorrelationId(req),
       );
     } else if (event === 'subscription.activated') {
       const subId = payload.payload.subscription?.entity?.id ?? '';
@@ -312,13 +315,17 @@ export class BillingController {
       await this.billingService.handleWebhookSubscriptionActivated(
         subId,
         paymentId,
+        getCorrelationId(req),
       );
     } else if (event === 'subscription.halted') {
       const subId = payload.payload.subscription?.entity?.id ?? '';
       await this.billingService.handleWebhookSubscriptionHalted(subId);
     } else if (event === 'subscription.cancelled') {
       const subId = payload.payload.subscription?.entity?.id ?? '';
-      await this.billingService.handleWebhookSubscriptionCancelled(subId);
+      await this.billingService.handleWebhookSubscriptionCancelled(
+        subId,
+        getCorrelationId(req),
+      );
     }
 
     return { status: 'ok' };

@@ -32,6 +32,7 @@ import { UserEntity } from './database/entities/user.entity';
 import { EmailDeliveryEventEntity } from './database/entities/email-delivery-event.entity';
 import { EmailQueueItemEntity } from './database/entities/email-queue-item.entity';
 import { migrations } from './database/migrations';
+import { NotificationPipelineModule } from './common/notification-pipeline/notification-pipeline.module';
 import { AccountModule } from './modules/account/account.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BillingModule } from './modules/billing/billing.module';
@@ -171,6 +172,7 @@ const typeOrmEntities = [
     AnalyticsAdminModule,
     AuditIncidentModule,
     EmailAdminModule,
+    NotificationPipelineModule,
   ],
 })
 export class AppModule {}
