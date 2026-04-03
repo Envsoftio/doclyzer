@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import '../../../core/api_client.dart';
 import '../../../core/feedback/incident_banner.dart';
 import '../../../features/incidents/incident_repository.dart';
+import '../../../features/support/support_models.dart';
+import '../../../features/support/support_repository.dart';
+import '../../../features/support/support_request_sheet.dart';
 import '../reports_repository.dart';
 import 'pdf_viewer_screen.dart';
 
@@ -18,6 +21,7 @@ class UploadReportScreen extends StatefulWidget {
     required this.onComplete,
     this.incidentStatus,
     this.onUpgrade,
+    required this.supportRepository,
     this.initialReport,
     this.initialDuplicateExistingReport,
     this.initialDuplicatePendingPath,
@@ -29,6 +33,7 @@ class UploadReportScreen extends StatefulWidget {
   final VoidCallback onComplete;
   final VoidCallback? onUpgrade;
   final PublicIncidentStatus? incidentStatus;
+  final SupportRepository supportRepository;
   /// For testing: when set, shows result state immediately (bypasses file pick).
   final UploadedReport? initialReport;
   /// For testing duplicate UX: when set with [initialDuplicatePendingPath], shows duplicate dialog immediately.
@@ -49,6 +54,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   String? _limitUpgradeHint;
   int? _limitCurrent;
   int? _limitMax;
+  SupportRequestContext? _supportContext;
+  String? _supportErrorMessage;
 
   @override
   void initState() {
@@ -95,6 +102,16 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           _result = report;
           _pendingDuplicatePath = null;
           _existingReport = null;
+          if (_isParseFailureStatus(report.status)) {
+            _supportContext = buildSupportRequestContext(
+              actionType: SupportActionType.reportParse,
+              entityIds: {'reportId': report.reportId},
+            );
+            _supportErrorMessage = _parseFailureMessage(report.status);
+          } else {
+            _supportContext = null;
+            _supportErrorMessage = null;
+          }
         });
       }
     } on ApiException catch (e) {
@@ -121,6 +138,11 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           _limitCurrent = current is num ? current.toInt() : null;
           _limitMax = max is num ? max.toInt() : null;
           _errorMessage = null;
+          _supportContext = buildSupportRequestContext(
+            actionType: SupportActionType.reportUpload,
+            apiException: e,
+          );
+          _supportErrorMessage = e.message;
         });
         return;
       }
@@ -128,6 +150,11 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         setState(() {
           _state = _UploadState.error;
           _errorMessage = e.message;
+          _supportContext = buildSupportRequestContext(
+            actionType: SupportActionType.reportUpload,
+            apiException: e,
+          );
+          _supportErrorMessage = e.message;
         });
       }
     } catch (e) {
@@ -135,6 +162,11 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         setState(() {
           _state = _UploadState.error;
           _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _supportContext = buildSupportRequestContext(
+            actionType: SupportActionType.reportUpload,
+          );
+          _supportErrorMessage =
+              e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -275,15 +307,17 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
 
   bool _isParseFailure() {
     final r = _result;
-    return r != null &&
-        (r.status == 'unparsed' ||
-            r.status == 'content_not_recognized' ||
-            r.status == 'failed_terminal');
+    return r != null && _isParseFailureStatus(r.status);
   }
 
-  String _parseFailureMessage() {
-    final r = _result;
-    if (r?.status == 'content_not_recognized') {
+  bool _isParseFailureStatus(String status) {
+    return status == 'unparsed' ||
+        status == 'content_not_recognized' ||
+        status == 'failed_terminal';
+  }
+
+  String _parseFailureMessage(String? status) {
+    if (status == 'content_not_recognized') {
       return 'This doesn\'t look like a health report. Your file is saved.';
     }
     return 'We couldn\'t read this format. Your file is saved.';
@@ -310,6 +344,16 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           );
           _state = _UploadState.success;
           _errorMessage = null;
+          if (_isParseFailureStatus(report.status)) {
+            _supportContext = buildSupportRequestContext(
+              actionType: SupportActionType.reportParse,
+              entityIds: {'reportId': report.id},
+            );
+            _supportErrorMessage = _parseFailureMessage(report.status);
+          } else {
+            _supportContext = null;
+            _supportErrorMessage = null;
+          }
         });
       }
     } catch (e) {
@@ -317,6 +361,13 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         setState(() {
           _state = _UploadState.success; // keep parse-failure UI
           _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _supportContext = buildSupportRequestContext(
+            actionType: SupportActionType.reportParse,
+            apiException: e is ApiException ? e : null,
+            entityIds: _result != null ? {'reportId': _result!.reportId} : null,
+          );
+          _supportErrorMessage =
+              e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -359,7 +410,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          _parseFailureMessage(),
+          _parseFailureMessage(_result?.status),
           key: const Key('parse-failure-message'),
           style: Theme.of(context).textTheme.titleMedium,
           textAlign: TextAlign.center,
@@ -391,6 +442,22 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           onPressed: _onKeepFile,
           child: const Text('Keep file anyway'),
         ),
+        if (_supportContext != null) ...[
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () {
+              final supportContext = _supportContext;
+              if (supportContext == null) return;
+              showSupportRequestSheet(
+                context: context,
+                supportRepository: widget.supportRepository,
+                supportContext: supportContext,
+                errorMessage: _supportErrorMessage,
+              );
+            },
+            child: const Text('Need help?'),
+          ),
+        ],
       ],
     );
   }
@@ -513,6 +580,22 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           onPressed: widget.onBack,
           child: const Text('Back'),
         ),
+        if (_supportContext != null) ...[
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () {
+              final supportContext = _supportContext;
+              if (supportContext == null) return;
+              showSupportRequestSheet(
+                context: context,
+                supportRepository: widget.supportRepository,
+                supportContext: supportContext,
+                errorMessage: _supportErrorMessage,
+              );
+            },
+            child: const Text('Need help?'),
+          ),
+        ],
       ],
     );
   }
@@ -537,6 +620,22 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           },
           child: const Text('Try Again'),
         ),
+        if (_supportContext != null) ...[
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () {
+              final supportContext = _supportContext;
+              if (supportContext == null) return;
+              showSupportRequestSheet(
+                context: context,
+                supportRepository: widget.supportRepository,
+                supportContext: supportContext,
+                errorMessage: _supportErrorMessage,
+              );
+            },
+            child: const Text('Need help?'),
+          ),
+        ],
       ],
     );
   }

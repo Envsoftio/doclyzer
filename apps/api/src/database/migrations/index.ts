@@ -34,6 +34,7 @@ import { AddIdempotencyKeyToEmailQueue1730816000000 } from './1730816000000-AddI
 import { AddGinIndexToDeliveryEventMetadata1730816100000 } from './1730816100000-AddGinIndexToDeliveryEventMetadata';
 import { AddEntitlementChangeReasonToUserEntitlements1730816200000 } from './1730816200000-AddEntitlementChangeReasonToUserEntitlements';
 import { CreateServiceIncidentsTable1730816300000 } from './1730816300000-CreateServiceIncidentsTable';
+import { CreateSupportRequestsTable1730816400000 } from './1730816400000-CreateSupportRequestsTable';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -72,4 +73,5 @@ export const migrations = [
   AddGinIndexToDeliveryEventMetadata1730816100000,
   AddEntitlementChangeReasonToUserEntitlements1730816200000,
   CreateServiceIncidentsTable1730816300000,
+  CreateSupportRequestsTable1730816400000,
 ];

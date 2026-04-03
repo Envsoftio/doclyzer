@@ -8,6 +8,9 @@ import '../../../core/feedback/status_messenger.dart';
 import '../sharing_repository.dart';
 import 'share_policy_screen.dart';
 import 'share_access_history_screen.dart';
+import '../../support/support_models.dart';
+import '../../support/support_repository.dart';
+import '../../support/support_request_sheet.dart';
 
 enum _CreateState { idle, loading, created, error }
 
@@ -18,12 +21,14 @@ class CreateShareLinkScreen extends StatefulWidget {
     required this.profileName,
     required this.sharingRepository,
     required this.onUpgrade,
+    required this.supportRepository,
     this.incidentStatus,
   });
   final String profileId;
   final String profileName;
   final SharingRepository sharingRepository;
   final VoidCallback onUpgrade;
+  final SupportRepository supportRepository;
   final PublicIncidentStatus? incidentStatus;
 
   @override
@@ -40,6 +45,8 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
   _CreateState _createState = _CreateState.idle;
   ShareLink? _newLink;
   String? _createError;
+  SupportRequestContext? _supportContext;
+  String? _supportErrorMessage;
   DateTime? _selectedExpiry; // null = no expiry
   String? _limitMessage;
   String? _limitUpgradeHint;
@@ -119,6 +126,12 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
           final max = data?['limit'];
           _limitCurrent = current is num ? current.toInt() : null;
           _limitMax = max is num ? max.toInt() : null;
+          _supportContext = buildSupportRequestContext(
+            actionType: SupportActionType.shareLinkCreate,
+            apiException: e,
+            entityIds: {'profileId': widget.profileId},
+          );
+          _supportErrorMessage = e.message;
         });
         return;
       }
@@ -126,6 +139,13 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
         setState(() {
           _createState = _CreateState.error;
           _createError = e.toString().replaceFirst('Exception: ', '');
+          _supportContext = buildSupportRequestContext(
+            actionType: SupportActionType.shareLinkCreate,
+            apiException: e,
+            entityIds: {'profileId': widget.profileId},
+          );
+          _supportErrorMessage =
+              e.toString().replaceFirst('Exception: ', '');
         });
       }
     } catch (e) {
@@ -133,6 +153,12 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
         setState(() {
           _createState = _CreateState.error;
           _createError = e.toString().replaceFirst('Exception: ', '');
+          _supportContext = buildSupportRequestContext(
+            actionType: SupportActionType.shareLinkCreate,
+            entityIds: {'profileId': widget.profileId},
+          );
+          _supportErrorMessage =
+              e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -176,9 +202,18 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
       }
     } catch (e) {
       if (mounted) {
+        _supportContext = buildSupportRequestContext(
+          actionType: SupportActionType.shareLinkRevoke,
+          apiException: e is ApiException ? e : null,
+          entityIds: {'shareLinkId': linkId},
+        );
+        _supportErrorMessage =
+            e.toString().replaceFirst('Exception: ', '');
         StatusMessenger.showError(
           context,
           'Failed to revoke: ${e.toString().replaceFirst('Exception: ', '')}',
+          actionLabel: 'Need help?',
+          onAction: _openSupportSheet,
         );
       }
     }
@@ -198,6 +233,17 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
 
   String _formatDate(DateTime dt) =>
       '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+
+  void _openSupportSheet() {
+    final supportContext = _supportContext;
+    if (supportContext == null) return;
+    showSupportRequestSheet(
+      context: context,
+      supportRepository: widget.supportRepository,
+      supportContext: supportContext,
+      errorMessage: _supportErrorMessage,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -347,6 +393,22 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                     style: TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                   TextButton(onPressed: _createLink, child: const Text('Try Again')),
+                  if (_supportContext != null) ...[
+                    const SizedBox(height: 4),
+                    TextButton(
+                      onPressed: () {
+                        final supportContext = _supportContext;
+                        if (supportContext == null) return;
+                        showSupportRequestSheet(
+                          context: context,
+                          supportRepository: widget.supportRepository,
+                          supportContext: supportContext,
+                          errorMessage: _supportErrorMessage,
+                        );
+                      },
+                      child: const Text('Need help?'),
+                    ),
+                  ],
                 ],
               ],
               if (_createState == _CreateState.loading)

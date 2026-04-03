@@ -38,7 +38,7 @@ project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
-last_updated: 2026-04-03T12:00:00Z
+last_updated: 2026-04-03T12:11:29Z
 
 development_status:
   epic-0: in-progress
@@ -129,7 +129,7 @@ development_status:
   6-2-notification-preference-controls-by-category: done
   6-3-consistent-in-app-success-failure-recovery-messaging-patterns: done
   6-4-major-service-incident-status-communication-to-users: in-progress
-  6-5-in-product-support-requests-linked-to-failed-critical-actions: backlog
+  6-5-in-product-support-requests-linked-to-failed-critical-actions: in-progress
   6-6-email-pipeline-delivery-tracking-and-template-support: backlog
   epic-6-retrospective: optional
 

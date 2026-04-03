@@ -8,6 +8,9 @@ import '../../../core/feedback/incident_banner.dart';
 import '../../../core/feedback/status_messenger.dart';
 import '../../incidents/incident_repository.dart';
 import '../billing_repository.dart';
+import '../../support/support_models.dart';
+import '../../support/support_repository.dart';
+import '../../support/support_request_sheet.dart';
 
 class CreditPackListScreen extends StatefulWidget {
   const CreditPackListScreen({
@@ -15,12 +18,14 @@ class CreditPackListScreen extends StatefulWidget {
     required this.billingRepository,
     required this.onBack,
     required this.onPurchaseComplete,
+    required this.supportRepository,
     this.incidentStatus,
   });
 
   final BillingRepository billingRepository;
   final VoidCallback onBack;
   final VoidCallback onPurchaseComplete;
+  final SupportRepository supportRepository;
   final PublicIncidentStatus? incidentStatus;
 
   @override
@@ -35,6 +40,8 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
   String? _error;
   String? _purchasingPackId;
   String? _statusBannerMessage;
+  SupportRequestContext? _supportContext;
+  String? _supportErrorMessage;
   late final Razorpay _razorpay;
 
   @override
@@ -72,6 +79,10 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
         setState(() {
           _error = 'Failed to load credit packs. Please try again.';
           _loading = false;
+          _supportContext = buildSupportRequestContext(
+            actionType: SupportActionType.billingEntitlement,
+          );
+          _supportErrorMessage = _error;
         });
       }
     }
@@ -105,11 +116,15 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _purchasingPackId = null);
+        _supportContext = buildSupportRequestContext(
+          actionType: SupportActionType.billingCheckout,
+        );
+        _supportErrorMessage = 'Failed to create order. Please try again.';
         StatusMessenger.showError(
           context,
           'Failed to create order. Please try again.',
-          actionLabel: 'Try again',
-          onAction: () => _openCheckoutSheet(pack),
+          actionLabel: 'Need help?',
+          onAction: _openSupportSheet,
         );
       }
     }
@@ -442,7 +457,16 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
             'Payment failed. You can retry checkout when ready.';
       });
       unawaited(_refreshOrderStatuses());
-      StatusMessenger.showError(context, 'Payment failed. Try again.');
+      _supportContext = buildSupportRequestContext(
+        actionType: SupportActionType.billingCheckout,
+      );
+      _supportErrorMessage = 'Payment failed. Try again.';
+      StatusMessenger.showError(
+        context,
+        'Payment failed. Try again.',
+        actionLabel: 'Need help?',
+        onAction: _openSupportSheet,
+      );
     }
   }
 
@@ -507,9 +531,27 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
               onPressed: _loadPacks,
               child: const Text('Retry'),
             ),
+            if (_supportContext != null) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: _openSupportSheet,
+                child: const Text('Need help?'),
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  void _openSupportSheet() {
+    final supportContext = _supportContext;
+    if (supportContext == null) return;
+    showSupportRequestSheet(
+      context: context,
+      supportRepository: widget.supportRepository,
+      supportContext: supportContext,
+      errorMessage: _supportErrorMessage,
     );
   }
 

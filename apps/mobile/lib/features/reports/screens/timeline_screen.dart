@@ -5,6 +5,7 @@ import '../../incidents/incident_repository.dart';
 import '../../profiles/profiles_repository.dart';
 import '../../sharing/sharing_repository.dart';
 import '../../sharing/screens/create_share_link_screen.dart';
+import '../../support/support_repository.dart';
 import '../reports_repository.dart';
 import 'health_history_screen.dart';
 import 'report_detail_screen.dart';
@@ -21,6 +22,7 @@ class TimelineScreen extends StatefulWidget {
     required this.sharingRepository,
     required this.profileName,
     required this.onUpgrade,
+    required this.supportRepository,
     this.incidentStatus,
   });
 
@@ -31,6 +33,7 @@ class TimelineScreen extends StatefulWidget {
   final SharingRepository sharingRepository;
   final String profileName;
   final VoidCallback onUpgrade;
+  final SupportRepository supportRepository;
   final PublicIncidentStatus? incidentStatus;
 
   @override
@@ -139,6 +142,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   profileId: widget.profileId,
                   profileName: widget.profileName,
                   sharingRepository: widget.sharingRepository,
+                  supportRepository: widget.supportRepository,
                   onUpgrade: widget.onUpgrade,
                   incidentStatus: widget.incidentStatus,
                 ),

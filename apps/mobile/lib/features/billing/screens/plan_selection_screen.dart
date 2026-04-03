@@ -5,6 +5,9 @@ import '../../../core/feedback/incident_banner.dart';
 import '../../../core/feedback/status_messenger.dart';
 import '../../incidents/incident_repository.dart';
 import '../billing_repository.dart';
+import '../../support/support_models.dart';
+import '../../support/support_repository.dart';
+import '../../support/support_request_sheet.dart';
 
 class PlanSelectionScreen extends StatefulWidget {
   const PlanSelectionScreen({
@@ -12,12 +15,14 @@ class PlanSelectionScreen extends StatefulWidget {
     required this.billingRepository,
     required this.onBack,
     required this.onSubscribeComplete,
+    required this.supportRepository,
     this.incidentStatus,
   });
 
   final BillingRepository billingRepository;
   final VoidCallback onBack;
   final VoidCallback onSubscribeComplete;
+  final SupportRepository supportRepository;
   final PublicIncidentStatus? incidentStatus;
 
   @override
@@ -30,6 +35,8 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
   String? _error;
   String? _subscribingPlanId;
   String? _promoError;
+  SupportRequestContext? _supportContext;
+  String? _supportErrorMessage;
   final TextEditingController _promoController = TextEditingController();
   late final Razorpay _razorpay;
 
@@ -68,6 +75,10 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
         setState(() {
           _error = 'Failed to load plans. Please try again.';
           _loading = false;
+          _supportContext = buildSupportRequestContext(
+            actionType: SupportActionType.billingEntitlement,
+          );
+          _supportErrorMessage = _error;
         });
       }
     }
@@ -90,11 +101,16 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _subscribingPlanId = null);
+        _supportContext = buildSupportRequestContext(
+          actionType: SupportActionType.billingCheckout,
+        );
+        _supportErrorMessage =
+            'Failed to create subscription. Please try again.';
         StatusMessenger.showError(
           context,
           'Failed to create subscription. Please try again.',
-          actionLabel: 'Try again',
-          onAction: () => _subscribe(plan),
+          actionLabel: 'Need help?',
+          onAction: _openSupportSheet,
         );
       }
     }
@@ -128,7 +144,16 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
   void _handlePaymentError(PaymentFailureResponse response) {
     if (mounted) {
       setState(() => _subscribingPlanId = null);
-      StatusMessenger.showError(context, 'Subscription failed. Try again.');
+      _supportContext = buildSupportRequestContext(
+        actionType: SupportActionType.billingCheckout,
+      );
+      _supportErrorMessage = 'Subscription failed. Try again.';
+      StatusMessenger.showError(
+        context,
+        'Subscription failed. Try again.',
+        actionLabel: 'Need help?',
+        onAction: _openSupportSheet,
+      );
     }
   }
 
@@ -188,9 +213,27 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
               onPressed: _loadPlans,
               child: const Text('Retry'),
             ),
+            if (_supportContext != null) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: _openSupportSheet,
+                child: const Text('Need help?'),
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  void _openSupportSheet() {
+    final supportContext = _supportContext;
+    if (supportContext == null) return;
+    showSupportRequestSheet(
+      context: context,
+      supportRepository: widget.supportRepository,
+      supportContext: supportContext,
+      errorMessage: _supportErrorMessage,
     );
   }
 

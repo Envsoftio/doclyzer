@@ -44,6 +44,8 @@ import 'features/billing/screens/entitlement_summary_screen.dart';
 import 'features/billing/screens/plan_selection_screen.dart';
 import 'features/sharing/sharing_repository.dart';
 import 'features/sharing/api_sharing_repository.dart';
+import 'features/support/api_support_repository.dart';
+import 'features/support/support_repository.dart';
 
 void main() {
   runApp(const DoclyzerApp());
@@ -84,6 +86,7 @@ class DoclyzerApp extends StatefulWidget {
     this.sharingRepository,
     this.billingRepository,
     this.incidentRepository,
+    this.supportRepository,
   });
 
   final AuthRepository? authRepository;
@@ -97,6 +100,7 @@ class DoclyzerApp extends StatefulWidget {
   final SharingRepository? sharingRepository;
   final BillingRepository? billingRepository;
   final IncidentRepository? incidentRepository;
+  final SupportRepository? supportRepository;
 
   @override
   State<DoclyzerApp> createState() => _DoclyzerAppState();
@@ -117,6 +121,7 @@ class _DoclyzerAppState extends State<DoclyzerApp>
   late final SharingRepository _sharingRepository;
   late final BillingRepository _billingRepository;
   late final IncidentRepository _incidentRepository;
+  late final SupportRepository _supportRepository;
 
   _AuthView _authView = _AuthView.login;
   String? _prefillEmail;
@@ -151,6 +156,8 @@ class _DoclyzerAppState extends State<DoclyzerApp>
       _billingRepository = widget.billingRepository!;
       _incidentRepository =
           widget.incidentRepository ?? ApiIncidentRepository(_apiClient!);
+      _supportRepository =
+          widget.supportRepository ?? ApiSupportRepository(_apiClient!);
       setState(() => _initialized = true);
       _refreshIncidentStatus(force: true);
     } else {
@@ -174,6 +181,8 @@ class _DoclyzerAppState extends State<DoclyzerApp>
           widget.billingRepository ?? ApiBillingRepository(_apiClient!);
       _incidentRepository =
           widget.incidentRepository ?? ApiIncidentRepository(_apiClient!);
+      _supportRepository =
+          widget.supportRepository ?? ApiSupportRepository(_apiClient!);
       _initAuth();
       _refreshIncidentStatus(force: true);
     }
@@ -301,6 +310,7 @@ class _DoclyzerAppState extends State<DoclyzerApp>
             setState(() => _authView = _AuthView.forgotPassword);
           },
           initialEmail: _prefillEmail,
+          supportRepository: _supportRepository,
         ),
         _AuthView.signup => SignupScreen(
           onSignup: _register,
@@ -455,6 +465,7 @@ class _DoclyzerAppState extends State<DoclyzerApp>
           onBack: () {
             setState(() => _authView = _AuthView.home);
           },
+          supportRepository: _supportRepository,
         ),
         _AuthView.dataRights => DataRightsScreen(
           dataRightsRepository: _dataRightsRepository,
@@ -478,6 +489,7 @@ class _DoclyzerAppState extends State<DoclyzerApp>
           onUpgrade: () {
             setState(() => _authView = _AuthView.billing);
           },
+          supportRepository: _supportRepository,
         ),
         _AuthView.timeline =>
           _timelineProfileId != null
@@ -494,6 +506,7 @@ class _DoclyzerAppState extends State<DoclyzerApp>
                   onUpgrade: () {
                     setState(() => _authView = _AuthView.billing);
                   },
+                  supportRepository: _supportRepository,
                 )
               : const Scaffold(body: Center(child: Text('No active profile'))),
         _AuthView.billing => EntitlementSummaryScreen(
@@ -518,6 +531,7 @@ class _DoclyzerAppState extends State<DoclyzerApp>
           onPurchaseComplete: () {
             setState(() => _authView = _AuthView.billing);
           },
+          supportRepository: _supportRepository,
         ),
         _AuthView.planSelection => PlanSelectionScreen(
           billingRepository: _billingRepository,
@@ -528,6 +542,7 @@ class _DoclyzerAppState extends State<DoclyzerApp>
           onSubscribeComplete: () {
             setState(() => _authView = _AuthView.billing);
           },
+          supportRepository: _supportRepository,
         ),
       },
     );

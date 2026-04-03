@@ -8,6 +8,7 @@ import { ShareLinkEntity } from '../../database/entities/share-link.entity';
 import { SuperadminActionAuditEventEntity } from '../../database/entities/superadmin-action-audit-event.entity';
 import { SuspiciousActivityQueueItemEntity } from '../../database/entities/suspicious-activity-queue-item.entity';
 import { ServiceIncidentEntity } from '../../database/entities/service-incident.entity';
+import { SupportRequestEntity } from '../../database/entities/support-request.entity';
 import { UserEntity } from '../../database/entities/user.entity';
 import { AccountOverrideController } from './account-override.controller';
 import { AccountOverrideService } from './account-override.service';
@@ -26,6 +27,11 @@ import {
   ServiceIncidentPublicController,
 } from './service-incident.controller';
 import { ServiceIncidentService } from './service-incident.service';
+import {
+  SupportRequestAdminController,
+  SupportRequestController,
+} from './support-request.controller';
+import { SupportRequestService } from './support-request.service';
 
 @Module({
   imports: [
@@ -37,6 +43,7 @@ import { ServiceIncidentService } from './service-incident.service';
       ShareLinkEntity,
       RestrictionEntity,
       ServiceIncidentEntity,
+      SupportRequestEntity,
       UserEntity,
     ]),
     AuthModule,
@@ -50,6 +57,8 @@ import { ServiceIncidentService } from './service-incident.service';
     RiskContainmentController,
     ServiceIncidentPublicController,
     ServiceIncidentAdminController,
+    SupportRequestController,
+    SupportRequestAdminController,
   ],
   providers: [
     AccountOverrideService,
@@ -59,6 +68,7 @@ import { ServiceIncidentService } from './service-incident.service';
     SuspiciousActivityService,
     RiskContainmentService,
     ServiceIncidentService,
+    SupportRequestService,
   ],
   exports: [
     AccountOverrideService,

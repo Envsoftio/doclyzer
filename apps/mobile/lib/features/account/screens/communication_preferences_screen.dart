@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../communication_preferences_repository.dart';
+import '../../support/support_models.dart';
+import '../../support/support_repository.dart';
+import '../../support/support_request_sheet.dart';
 
 class CommunicationPreferencesScreen extends StatefulWidget {
   const CommunicationPreferencesScreen({
     super.key,
     required this.communicationPreferencesRepository,
     required this.onBack,
+    required this.supportRepository,
   });
 
   final CommunicationPreferencesRepository communicationPreferencesRepository;
   final VoidCallback onBack;
+  final SupportRepository supportRepository;
 
   @override
   State<CommunicationPreferencesScreen> createState() =>
@@ -21,6 +26,8 @@ class _CommunicationPreferencesScreenState
     extends State<CommunicationPreferencesScreen> {
   bool _loading = true;
   String? _error;
+  SupportRequestContext? _supportContext;
+  String? _supportErrorMessage;
   String? _successMessage;
   List<CommunicationPreferenceItem> _preferences = [];
   final Map<String, bool> _pendingChanges = {};
@@ -49,6 +56,10 @@ class _CommunicationPreferencesScreenState
       setState(() {
         _error = e.toString();
         _loading = false;
+        _supportContext = buildSupportRequestContext(
+          actionType: SupportActionType.notificationPreferences,
+        );
+        _supportErrorMessage = e.toString();
       });
     }
   }
@@ -78,6 +89,10 @@ class _CommunicationPreferencesScreenState
       setState(() {
         _error = e.toString();
         _loading = false;
+        _supportContext = buildSupportRequestContext(
+          actionType: SupportActionType.notificationPreferences,
+        );
+        _supportErrorMessage = e.toString();
       });
     }
   }
@@ -126,6 +141,23 @@ class _CommunicationPreferencesScreenState
                       child: Text(
                         _error!,
                         style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  if (_error != null && _supportContext != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: TextButton(
+                        onPressed: () {
+                          final supportContext = _supportContext;
+                          if (supportContext == null) return;
+                          showSupportRequestSheet(
+                            context: context,
+                            supportRepository: widget.supportRepository,
+                            supportContext: supportContext,
+                            errorMessage: _supportErrorMessage,
+                          );
+                        },
+                        child: const Text('Need help?'),
                       ),
                     ),
                   FilledButton(

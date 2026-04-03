@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../core/feedback/status_messenger.dart';
 import '../../../core/theme/app_theme.dart';
 import '../auth_repository.dart';
+import '../../support/support_models.dart';
+import '../../support/support_repository.dart';
+import '../../support/support_request_sheet.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({
@@ -11,12 +14,14 @@ class LoginScreen extends StatefulWidget {
     required this.onGoToSignup,
     required this.onGoToForgotPassword,
     this.initialEmail,
+    required this.supportRepository,
   });
 
   final Future<void> Function(String email, String password) onLogin;
   final VoidCallback onGoToSignup;
   final VoidCallback onGoToForgotPassword;
   final String? initialEmail;
+  final SupportRepository supportRepository;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -27,6 +32,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _passwordFocus = FocusNode();
   String? _error;
+  SupportRequestContext? _supportContext;
+  String? _supportErrorMessage;
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -71,6 +78,10 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _error = error.message;
         _isLoading = false;
+        _supportContext = buildSupportRequestContext(
+          actionType: SupportActionType.auth,
+        );
+        _supportErrorMessage = error.message;
       });
       _showStatus(error.message);
     } catch (_) {
@@ -80,6 +91,10 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _error = message;
         _isLoading = false;
+        _supportContext = buildSupportRequestContext(
+          actionType: SupportActionType.auth,
+        );
+        _supportErrorMessage = message;
       });
       _showStatus(message);
     }
@@ -177,6 +192,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: theme.colorScheme.error,
                       ),
                     ),
+                    if (_supportContext != null) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      TextButton(
+                        onPressed: () {
+                          final supportContext = _supportContext;
+                          if (supportContext == null) return;
+                          showSupportRequestSheet(
+                            context: context,
+                            supportRepository: widget.supportRepository,
+                            supportContext: supportContext,
+                            errorMessage: _supportErrorMessage,
+                          );
+                        },
+                        child: const Text('Need help?'),
+                      ),
+                    ],
                   ],
                   const SizedBox(height: AppSpacing.sm),
                   Align(
