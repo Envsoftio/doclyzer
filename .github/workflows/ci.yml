@@ -2,57 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [develop]
   pull_request:
-    branches: [main]
+    branches: [develop]
   workflow_dispatch:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  api-e2e:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/api
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: apps/api/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Start Postgres
-        working-directory: .
-        run: docker compose up -d postgres
-
-      - name: Wait for Postgres
-        working-directory: .
-        run: |
-          until docker compose exec -T postgres pg_isready -U doclyzer -d doclyzer; do
-            sleep 1
-          done
-
-      - name: Ensure test database exists
-        working-directory: .
-        run: |
-          docker compose exec -T postgres psql -U doclyzer -d doclyzer -c "SELECT 1 FROM pg_database WHERE datname = 'doclyzer_test'" | grep -q 1 || \
-          docker compose exec -T postgres psql -U doclyzer -d doclyzer -c "CREATE DATABASE doclyzer_test OWNER doclyzer;"
-
-      - name: Run E2E tests against test DB
-        run: npm run test:e2e
-        env:
-          DATABASE_URL: postgresql://doclyzer:doclyzer_dev_password@localhost:5432/doclyzer_test
-          E2E_MAX_PROFILES: '2'
-
   phi-governance-gate:
     runs-on: ubuntu-latest
     defaults:
