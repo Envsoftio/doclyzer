@@ -803,6 +803,10 @@ export class AnalyticsAdminService {
         freshnessTimestamp: freshnessTimestamp.toISOString(),
         partialState: partialState.partialState,
         partialReason: partialState.partialReason,
+        // Geography filtering is not yet applied to queries (no geography column on entities).
+        // This flag is surfaced so callers and audit exports can accurately reflect the
+        // limitation rather than presenting a geography-filtered view that isn't filtered.
+        geographyApplied: false,
       },
       overview: {
         users: {
@@ -886,7 +890,13 @@ export class AnalyticsAdminService {
     productSlice: SystemDashboardProductSlice,
   ): Promise<string[] | null> {
     if (productSlice === 'all') return null;
-    return this.entitlementsService.listUserIdsByTier(productSlice);
+    const userIds = await this.entitlementsService.listUserIdsByTier(productSlice);
+    // Performance note: userIds is passed as IN (:...userIds) to every downstream query.
+    // At large scale (thousands of paid users) this produces oversized SQL IN clauses.
+    // TODO(perf): replace with a correlated subquery JOIN on user_entitlements to avoid
+    // materialising the full user ID list in application memory.
+    if (userIds.length === 0) return [];
+    return userIds;
   }
 
   private async countShareLinksInRange(
@@ -985,13 +995,16 @@ export class AnalyticsAdminService {
       return { total: 0, active: 0, new: 0 };
     }
 
-    const [total, active, created] = await Promise.all([
-      this.countSubscriptions({}, userIds),
-      this.countSubscriptions({ statuses: SUBSCRIPTION_ACTIVE_STATUSES }, userIds),
+    // All three counts are scoped to the dashboard date range so that filters
+    // refresh all widgets consistently (AC #2). 'total' = all subscriptions created
+    // in range; 'active' = active subscriptions created in range; 'new' = same as
+    // total (subscriptions created in range are by definition "new").
+    const [total, active] = await Promise.all([
       this.countSubscriptions({ range }, userIds),
+      this.countSubscriptions({ range, statuses: SUBSCRIPTION_ACTIVE_STATUSES }, userIds),
     ]);
 
-    return { total, active, new: created };
+    return { total, active, new: total };
   }
 
   private async countSubscriptions(

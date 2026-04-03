@@ -100,3 +100,4 @@ GPT-5 (Codex)
 ### Change Log
 - Updated entitlement change reason/timestamp persistence and surfaced last change in Plan & Credits. (Date: 2026-04-02)
 - 2026-04-03: Code review fix — explicit relations: ['plan'] on findOrProvision reload.
+- 2026-04-03: Code review fix — added relations: ['plan'] to the existing-entitlement fast path in findOrProvision to prevent null-crash if TypeORM eager loading is ever disabled or a select override is added.

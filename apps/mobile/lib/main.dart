@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'core/api_client.dart';
-import 'core/theme/app_theme.dart';
 import 'core/api_config.dart';
+import 'core/feedback/status_messenger.dart';
+import 'core/theme/app_theme.dart';
 import 'core/token_storage.dart';
 import 'features/account/api_account_repository.dart';
 import 'features/account/api_communication_preferences_repository.dart';
@@ -219,9 +220,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
     final message = forUpload
         ? 'Create a default profile before uploading a report.'
         : 'Create a default profile before viewing your timeline.';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    StatusMessenger.showInfo(context, message);
   }
 
   @override

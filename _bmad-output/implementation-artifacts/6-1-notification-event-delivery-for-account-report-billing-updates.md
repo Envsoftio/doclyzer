@@ -180,3 +180,4 @@ gpt-5
 ### Change Log
 
 - 2026-04-02: Added notification pipeline taxonomy, service, module, and dispatch wiring across billing, reports, and account closure flows.
+- 2026-04-03: Code review fix — dispatchReportNotification now guards against in-flight statuses ('uploading', 'queued', 'parsing'): only 'parsed' and 'failed_transient'/'failed_terminal' trigger a notification. Previously any non-parsed status fired REPORT_PARSE_FAILED prematurely before parsing completed.

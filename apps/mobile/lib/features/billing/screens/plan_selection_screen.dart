@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
+import '../../../core/feedback/status_messenger.dart';
 import '../billing_repository.dart';
 
 class PlanSelectionScreen extends StatefulWidget {
@@ -85,15 +86,11 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _subscribingPlanId = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                const Text('Failed to create subscription. Please try again.'),
-            action: SnackBarAction(
-              label: 'Try again',
-              onPressed: () => _subscribe(plan),
-            ),
-          ),
+        StatusMessenger.showError(
+          context,
+          'Failed to create subscription. Please try again.',
+          actionLabel: 'Try again',
+          onAction: () => _subscribe(plan),
         );
       }
     }
@@ -107,22 +104,15 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
         response.signature ?? '',
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Plan upgraded!'),
-            duration: Duration(seconds: 3),
-          ),
-        );
+        StatusMessenger.showSuccess(context, 'Plan upgraded!');
         widget.onSubscribeComplete();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Payment received but verification failed. Plan will be upgraded shortly.'),
-            duration: Duration(seconds: 5),
-          ),
+        StatusMessenger.showWarning(
+          context,
+          'Payment received but verification failed. Plan will be upgraded shortly.',
+          duration: const Duration(seconds: 5),
         );
         widget.onSubscribeComplete();
       }
@@ -134,12 +124,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
   void _handlePaymentError(PaymentFailureResponse response) {
     if (mounted) {
       setState(() => _subscribingPlanId = null);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Subscription failed. Try again.'),
-          duration: Duration(seconds: 4),
-        ),
-      );
+      StatusMessenger.showError(context, 'Subscription failed. Try again.');
     }
   }
 

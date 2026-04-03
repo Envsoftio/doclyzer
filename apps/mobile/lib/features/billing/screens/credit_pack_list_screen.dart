@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../../../core/api_client.dart';
+import '../../../core/feedback/status_messenger.dart';
 import '../billing_repository.dart';
 
 class CreditPackListScreen extends StatefulWidget {
@@ -100,14 +101,11 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _purchasingPackId = null);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to create order. Please try again.'),
-            action: SnackBarAction(
-              label: 'Try again',
-              onPressed: () => _openCheckoutSheet(pack),
-            ),
-          ),
+        StatusMessenger.showError(
+          context,
+          'Failed to create order. Please try again.',
+          actionLabel: 'Try again',
+          onAction: () => _openCheckoutSheet(pack),
         );
       }
     }
@@ -405,38 +403,26 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
       await _refreshOrderStatuses();
       if (mounted) {
         if (verification.orderStatus == BillingOrderStatus.reconciled) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Credits added!'),
-              duration: Duration(seconds: 3),
-            ),
-          );
+          StatusMessenger.showSuccess(context, 'Credits added!');
           widget.onPurchaseComplete();
         } else {
           setState(() {
             _statusBannerMessage =
                 'Payment received. Awaiting Razorpay capture before credits are added.';
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Payment verified. Capture is pending, please refresh status shortly.',
-              ),
-              duration: Duration(seconds: 4),
-            ),
+          StatusMessenger.showWarning(
+            context,
+            'Payment verified. Capture is pending, please refresh status shortly.',
           );
         }
       }
     } catch (e) {
       await _refreshOrderStatuses();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Payment received but verification is still pending. Please refresh status.',
-            ),
-            duration: Duration(seconds: 5),
-          ),
+        StatusMessenger.showWarning(
+          context,
+          'Payment received but verification is still pending. Please refresh status.',
+          duration: const Duration(seconds: 5),
         );
       }
     } finally {
@@ -452,12 +438,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
             'Payment failed. You can retry checkout when ready.';
       });
       unawaited(_refreshOrderStatuses());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Payment failed. Try again.'),
-          duration: Duration(seconds: 4),
-        ),
-      );
+      StatusMessenger.showError(context, 'Payment failed. Try again.');
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/api_client.dart';
+import '../../../core/feedback/status_messenger.dart';
 import '../sharing_repository.dart';
 import 'share_policy_screen.dart';
 import 'share_access_history_screen.dart';
@@ -136,9 +137,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
   Future<void> _copyLink(String url) async {
     await Clipboard.setData(ClipboardData(text: url));
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Link copied to clipboard')),
-      );
+      StatusMessenger.showSuccess(context, 'Link copied to clipboard');
     }
   }
 
@@ -173,8 +172,9 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to revoke: ${e.toString().replaceFirst('Exception: ', '')}')),
+        StatusMessenger.showError(
+          context,
+          'Failed to revoke: ${e.toString().replaceFirst('Exception: ', '')}',
         );
       }
     }

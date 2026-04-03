@@ -89,7 +89,9 @@ function fmtDate(iso?: string): string {
   <div class="risk-page">
     <h2 class="page-title">Risk & Suspicious Activity</h2>
 
-    <div v-if="error" class="error-box">{{ error }}</div>
+    <div v-if="error" class="error-box" role="alert" aria-live="assertive">
+      {{ error }}
+    </div>
 
     <div v-if="loading" class="skeleton-block" />
 
@@ -139,7 +141,9 @@ function fmtDate(iso?: string): string {
         </h3>
         <p class="modal-user">{{ modal.email }}</p>
 
-        <div v-if="modalError" class="error-box">{{ modalError }}</div>
+        <div v-if="modalError" class="error-box" role="alert" aria-live="assertive">
+          {{ modalError }}
+        </div>
         <div v-if="modalSuccess" class="success-box">{{ modalSuccess }}</div>
 
         <label class="form-label">

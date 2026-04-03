@@ -495,12 +495,12 @@ export class EmailAdminService {
   private validateApprovalToken(token: string): void {
     const secret = this.config.get<string>('EMAIL_ADMIN_APPROVAL_SECRET');
     if (!secret) {
+      // Log the misconfiguration server-side but return the same error shape as a
+      // wrong-token rejection to prevent callers from detecting the missing-secret state.
       this.logger.error(
         'EMAIL_ADMIN_APPROVAL_SECRET is not configured — approval token check cannot proceed',
       );
-      throw new EmailAdminInvalidApprovalTokenException(
-        'Approval system is not configured',
-      );
+      throw new EmailAdminInvalidApprovalTokenException('Invalid approval token');
     }
     // Use timing-safe comparison to prevent timing-based token oracle attacks.
     const tokenBuf = Buffer.from(token);
@@ -509,9 +509,7 @@ export class EmailAdminService {
       tokenBuf.length === secretBuf.length &&
       timingSafeEqual(tokenBuf, secretBuf);
     if (!tokensMatch) {
-      throw new EmailAdminInvalidApprovalTokenException(
-        'Invalid approval token',
-      );
+      throw new EmailAdminInvalidApprovalTokenException('Invalid approval token');
     }
   }
 
@@ -576,6 +574,11 @@ export class EmailAdminService {
       .getOne();
   }
 
+  // TODO(domain): Email admin audit events are currently stored in SuperadminAuthAuditEventEntity
+  // which was designed for authentication events (challengeId, mfaType fields). Email send
+  // events are a separate domain. A dedicated EmailAdminAuditEventEntity should be introduced
+  // in a future story to decouple email audit history from auth audit history and enable
+  // independent querying, retention policies, and access controls.
   private async recordAudit(input: {
     actorUserId: string;
     correlationId: string;

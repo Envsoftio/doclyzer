@@ -28,6 +28,8 @@ export interface CoreProductAnalyticsDataState {
   freshnessTimestamp: string;
   partialState: boolean;
   partialReason: string | null;
+  /** Present on system dashboard responses; false = geography filter was accepted but not applied. */
+  geographyApplied?: boolean;
 }
 
 export interface CoreProductAnalyticsMetric {

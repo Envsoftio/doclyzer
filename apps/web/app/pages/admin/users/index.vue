@@ -78,7 +78,9 @@ function formatDate(iso: string | null): string {
       <span class="total-label">{{ total }} users</span>
     </div>
 
-    <div v-if="error" class="error-box">{{ error }}</div>
+    <div v-if="error" class="error-box" role="alert" aria-live="assertive">
+      {{ error }}
+    </div>
 
     <div v-if="loading" class="skeleton-table">
       <div v-for="i in 8" :key="i" class="skeleton-row" />

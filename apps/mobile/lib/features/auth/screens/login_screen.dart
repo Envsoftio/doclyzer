@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/feedback/status_messenger.dart';
 import '../../../core/theme/app_theme.dart';
 import '../auth_repository.dart';
 
@@ -58,7 +59,6 @@ class _LoginScreenState extends State<LoginScreen> {
         _error = 'Enter email and password';
         _isLoading = false;
       });
-      _showSnackBar('Enter email and password');
       return;
     }
 
@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _error = error.message;
         _isLoading = false;
       });
-      _showSnackBar(error.message);
+      _showStatus(error.message);
     } catch (_) {
       if (!mounted) return;
       const message =
@@ -81,18 +81,13 @@ class _LoginScreenState extends State<LoginScreen> {
         _error = message;
         _isLoading = false;
       });
-      _showSnackBar(message);
+      _showStatus(message);
     }
   }
 
-  void _showSnackBar(String message) {
+  void _showStatus(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    StatusMessenger.showError(context, message);
   }
 
   @override

@@ -204,13 +204,19 @@ None.
 ### File List
 
 - _bmad-output/implementation-artifacts/sprint-status.yaml
+- apps/api/src/app.module.ts
 - apps/api/src/common/notification-pipeline/notification-event.types.ts
+- apps/api/src/common/notification-pipeline/notification-pipeline.module.ts
 - apps/api/src/common/notification-pipeline/notification-pipeline.service.ts
+- apps/api/src/modules/account/account.module.ts
 - apps/api/src/modules/account/account.service.ts
-- apps/api/src/modules/reports/reports.service.ts
-- apps/api/src/modules/billing/billing.service.ts
 - apps/api/src/modules/billing/billing.controller.ts
+- apps/api/src/modules/billing/billing.module.ts
+- apps/api/src/modules/billing/billing.service.ts
+- apps/api/src/modules/reports/reports.module.ts
+- apps/api/src/modules/reports/reports.service.ts
 
 ### Change Log
 
 - 2026-04-02: Updated notification taxonomy to avoid cross-module imports, added subscription activation/cancellation dispatches, and removed extra metadata from notification queue events.
+- 2026-04-03: Code review fix — corrected File List to include all files modified during implementation (app.module.ts, notification-pipeline.module.ts, account.module.ts, billing.module.ts, reports.module.ts).

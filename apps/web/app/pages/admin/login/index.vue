@@ -29,7 +29,9 @@ async function handleLogin() {
     <div class="login-card">
       <h1 class="login-title">Doclyzer Admin</h1>
 
-      <div v-if="error" class="error-box">{{ error }}</div>
+      <div v-if="error" class="error-box" role="alert" aria-live="assertive">
+        {{ error }}
+      </div>
 
       <form class="form" @submit.prevent="handleLogin">
         <label class="form-label">

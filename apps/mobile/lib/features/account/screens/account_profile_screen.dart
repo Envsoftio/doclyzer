@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/api_client.dart';
 import '../../../core/api_config.dart';
+import '../../../core/feedback/status_messenger.dart';
 import '../account_repository.dart';
 import '../restriction_repository.dart';
 
@@ -52,9 +53,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
         : ((rationale != null && rationale.isNotEmpty)
               ? rationale
               : 'Profile updates are temporarily unavailable while your account is under review.');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    StatusMessenger.showWarning(context, message);
   }
 
   @override
@@ -119,12 +118,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           _profile = updated;
           _saving = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        StatusMessenger.showSuccess(context, 'Profile updated');
       }
     } on AccountException catch (e) {
       if (mounted) {
@@ -165,34 +159,17 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           _profile = updated;
           _uploadingAvatar = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Avatar updated'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        StatusMessenger.showSuccess(context, 'Avatar updated');
       }
     } on AccountException catch (e) {
       if (mounted) {
         setState(() => _uploadingAvatar = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        StatusMessenger.showError(context, e.message);
       }
     } on ApiException catch (e) {
       if (mounted) {
         setState(() => _uploadingAvatar = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        StatusMessenger.showError(context, e.message);
       }
     }
   }

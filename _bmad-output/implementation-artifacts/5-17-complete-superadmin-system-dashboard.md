@@ -154,3 +154,6 @@ GPT-5 (Codex)
 - 2026-04-02: Created story context for Epic 5.17 system dashboard with guardrails and task sequencing.
 - 2026-04-02: Implemented system dashboard aggregation, governance signals, export capability, and UI expansion; story remains in-progress pending manual QA.
 - 2026-04-03: Code review fixes applied — added @IsNotEmpty() to SystemDashboardQueryDto fields, removed redundant controller null-checks, added explanatory comments for refund stub (schema gap) and geography no-op filter.
+- 2026-04-03: Code review fix — buildSubscriptionSummary now scopes all three counts (total, active, new) to the dashboard date range so filtered views are consistent (AC #2). Previously total and active were all-time figures mixed with range-scoped metrics.
+- 2026-04-03: Code review fix — added geographyApplied: false to dataState in buildSystemDashboard response so audit exports accurately reflect that geography filtering is not yet implemented. Updated CoreProductAnalyticsDataState type with optional geographyApplied field.
+- 2026-04-03: Code review fix — added TODO comment in resolveProductSliceUserIds documenting large IN-clause scale risk when productSlice=paid/free with many users; earmarked for subquery JOIN refactor.

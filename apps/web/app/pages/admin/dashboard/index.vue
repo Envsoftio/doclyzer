@@ -130,7 +130,9 @@ onMounted(loadData)
       <button class="btn-primary" @click="loadData">Refresh</button>
     </div>
 
-    <div v-if="error" class="error-box">{{ error }}</div>
+    <div v-if="error" class="error-box" role="alert" aria-live="assertive">
+      {{ error }}
+    </div>
 
     <template v-if="loading">
       <div class="skeleton-row">

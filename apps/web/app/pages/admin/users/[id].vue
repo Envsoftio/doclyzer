@@ -58,7 +58,9 @@ const STATUS_COLORS: Record<string, string> = {
   <div class="workbench">
     <NuxtLink to="/admin/users" class="back-link">← Back to Users</NuxtLink>
 
-    <div v-if="error" class="error-box">{{ error }}</div>
+    <div v-if="error" class="error-box" role="alert" aria-live="assertive">
+      {{ error }}
+    </div>
 
     <div v-if="loading" class="skeleton-block" />
 

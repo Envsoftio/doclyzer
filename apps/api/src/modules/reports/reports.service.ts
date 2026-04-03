@@ -523,11 +523,17 @@ export class ReportsService {
     profileId: string;
     correlationId?: string;
   }): void {
+    // Only dispatch for terminal parse outcomes — 'parsed' (success) or failure statuses.
+    // In-flight statuses ('uploading', 'queued', 'parsing') have not completed parsing yet;
+    // firing REPORT_PARSE_FAILED for them would be premature and incorrect.
+    const isParsed = input.status === 'parsed';
+    const isFailed = input.status === 'failed_transient' || input.status === 'failed_terminal';
+    if (!isParsed && !isFailed) return;
+
     const correlationId = input.correlationId ?? randomUUID();
-    const eventType =
-      input.status === 'parsed'
-        ? NotifiableEventType.REPORT_UPLOAD_COMPLETE
-        : NotifiableEventType.REPORT_PARSE_FAILED;
+    const eventType = isParsed
+      ? NotifiableEventType.REPORT_UPLOAD_COMPLETE
+      : NotifiableEventType.REPORT_PARSE_FAILED;
 
     void this.notificationPipeline
       .dispatch({

@@ -64,7 +64,9 @@ function fmtDate(iso: string): string {
       <span class="refresh-hint">Auto-refreshes every 30s</span>
     </div>
 
-    <div v-if="error" class="error-box">{{ error }}</div>
+    <div v-if="error" class="error-box" role="alert" aria-live="assertive">
+      {{ error }}
+    </div>
 
     <div v-if="loading" class="skeleton-row">
       <div v-for="i in 6" :key="i" class="skeleton-card" />
@@ -72,7 +74,12 @@ function fmtDate(iso: string): string {
 
     <template v-else-if="data">
       <!-- In-flight banner -->
-      <div class="inflight-banner" :class="data.totalInFlight > 0 ? 'inflight-banner--active' : ''">
+      <div
+        class="inflight-banner"
+        :class="data.totalInFlight > 0 ? 'inflight-banner--active' : ''"
+        role="status"
+        aria-live="polite"
+      >
         <span class="inflight-count">{{ data.totalInFlight }}</span>
         <span>files currently in-flight (uploading / queued / parsing)</span>
         <span v-if="data.oldestInFlightCreatedAt" class="inflight-oldest">

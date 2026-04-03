@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/feedback/status_messenger.dart';
 import '../../../core/api_client.dart';
 import '../../../features/account/restriction_repository.dart';
 
@@ -62,9 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final message = (nextSteps != null && nextSteps.isNotEmpty)
         ? nextSteps
         : ((rationale != null && rationale.isNotEmpty) ? rationale : defaultMessage);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    StatusMessenger.showWarning(context, message);
   }
 
   @override

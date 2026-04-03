@@ -339,6 +339,7 @@ export class EntitlementsService {
   ): Promise<UserEntitlementEntity> {
     const existing = await this.entitlementRepo.findOne({
       where: { userId },
+      relations: ['plan'],
     });
     if (existing) return existing;
 

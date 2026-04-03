@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/feedback/status_messenger.dart';
 import '../billing_repository.dart';
 
 class EntitlementSummaryScreen extends StatefulWidget {
@@ -74,12 +75,9 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Failed to refresh billing status. Please try again.',
-            ),
-          ),
+        StatusMessenger.showError(
+          context,
+          'Failed to refresh billing status. Please try again.',
         );
       }
     } finally {
@@ -451,10 +449,9 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
                 return;
               }
               if (order.isReconciled) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Receipt download will be available soon.'),
-                  ),
+                StatusMessenger.showInfo(
+                  context,
+                  'Receipt download will be available soon.',
                 );
                 return;
               }
