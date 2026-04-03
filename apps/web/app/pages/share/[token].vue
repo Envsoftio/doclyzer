@@ -173,9 +173,12 @@ const trendDates = computed(() => {
           <h2 class="report-date">{{ formatDate(report.createdAt) }}</h2>
           <div class="report-filename">{{ report.originalFileName }}</div>
 
-          <blockquote v-if="report.summary" class="report-summary">
-            {{ report.summary }}
-          </blockquote>
+          <div v-if="report.summary" class="report-summary-block">
+            <blockquote class="report-summary">
+              {{ report.summary }}
+            </blockquote>
+            <AiDisclaimerNote class="report-summary-disclaimer" />
+          </div>
 
           <table v-if="report.labValues.length > 0" class="data-table lab-table">
             <thead>
@@ -297,14 +300,22 @@ const trendDates = computed(() => {
   margin-bottom: 12px;
 }
 
-.report-summary {
+.report-summary-block {
   margin: 0 0 16px;
+}
+
+.report-summary {
+  margin: 0 0 8px;
   padding: 10px 16px;
   border-left: 3px solid #888;
   background: #fafafa;
   font-size: 0.95rem;
   line-height: 1.6;
   font-style: italic;
+}
+
+.report-summary-disclaimer {
+  margin-top: 2px;
 }
 
 .lab-table {

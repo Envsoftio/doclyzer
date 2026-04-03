@@ -4,8 +4,9 @@ import { UserEntity } from '../../database/entities/user.entity';
 import { SessionEntity } from '../../database/entities/session.entity';
 import { RestrictionEntity } from '../../database/entities/restriction.entity';
 import { AuthGuard } from '../../common/guards/auth.guard';
-import { InMemoryNotificationService } from '../../common/notification/in-memory-notification.service';
 import { NotificationService } from '../../common/notification/notification.service';
+import { PipelineNotificationService } from '../../common/notification/pipeline-notification.service';
+import { NotificationPipelineModule } from '../../common/notification-pipeline/notification-pipeline.module';
 import { AuthController } from './auth.controller';
 import { BetterAuthService } from './better-auth.service';
 import { AuthService } from './auth.service';
@@ -16,6 +17,7 @@ import { ProfilesModule } from '../profiles/profiles.module';
 @Module({
   imports: [
     forwardRef(() => ProfilesModule),
+    NotificationPipelineModule,
     TypeOrmModule.forFeature([
       UserEntity,
       SessionEntity,
@@ -31,7 +33,7 @@ import { ProfilesModule } from '../profiles/profiles.module';
     PasswordRecoveryService,
     {
       provide: NotificationService,
-      useClass: InMemoryNotificationService,
+      useClass: PipelineNotificationService,
     },
   ],
   exports: [

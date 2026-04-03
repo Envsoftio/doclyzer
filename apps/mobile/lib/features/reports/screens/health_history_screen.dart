@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../reports_repository.dart';
+import '../../../shared/ai_disclaimer_note.dart';
 import 'trend_chart_screen.dart';
 
 enum _HealthHistoryState { loading, loaded, error }
@@ -76,6 +77,8 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final showDisclaimer =
+        _state == _HealthHistoryState.loaded && _params.isNotEmpty;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Health History'),
@@ -85,27 +88,12 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              key: const Key('health-history-disclaimer'),
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 14,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Informational only — not medical advice. Discuss with your doctor.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
+            if (showDisclaimer) ...[
+              const AiDisclaimerNote(
+                key: Key('health-history-disclaimer'),
+              ),
+              const SizedBox(height: 8),
+            ],
             Expanded(child: _buildBody()),
           ],
         ),

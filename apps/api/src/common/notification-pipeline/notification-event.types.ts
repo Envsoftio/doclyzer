@@ -4,6 +4,7 @@ export enum NotifiableEventType {
   ACCOUNT_EMAIL_CHANGED = 'ACCOUNT_EMAIL_CHANGED',
   ACCOUNT_PASSWORD_CHANGED = 'ACCOUNT_PASSWORD_CHANGED',
   ACCOUNT_CLOSURE_CONFIRMED = 'ACCOUNT_CLOSURE_CONFIRMED',
+  ACCOUNT_PASSWORD_RESET = 'ACCOUNT_PASSWORD_RESET',
   REPORT_UPLOAD_COMPLETE = 'REPORT_UPLOAD_COMPLETE',
   REPORT_PARSE_FAILED = 'REPORT_PARSE_FAILED',
   BILLING_PAYMENT_SUCCESS = 'BILLING_PAYMENT_SUCCESS',
@@ -53,6 +54,10 @@ export const EVENT_CATEGORY_MAP: Record<
   [NotifiableEventType.ACCOUNT_CLOSURE_CONFIRMED]: {
     category: 'compliance',
     emailType: 'account.closure_confirmed',
+  },
+  [NotifiableEventType.ACCOUNT_PASSWORD_RESET]: {
+    category: 'security',
+    emailType: 'account.password_reset',
   },
 };
 

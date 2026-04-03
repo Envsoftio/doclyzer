@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../profiles/profiles_repository.dart';
 import '../reports_repository.dart';
+import '../../../shared/ai_disclaimer_note.dart';
 import 'pdf_viewer_screen.dart';
 import 'processing_history_screen.dart';
 import 'trend_chart_screen.dart';
@@ -280,28 +281,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      key: const Key('report-detail-summary-disclaimer'),
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: 14,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'Informational only — not medical advice. Discuss with your doctor.',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
-                        ),
-                      ],
+                    const AiDisclaimerNote(
+                      key: Key('report-detail-summary-disclaimer'),
                     ),
                   ],
                 ),

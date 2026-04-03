@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { razorpayConfig } from './config/razorpay.config';
 import { reportsConfig } from './config/reports.config';
 import { storageConfig } from './config/storage.config';
+import { emailConfig } from './config/email.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataType, newDb } from 'pg-mem';
 import { DataSource, type DataSourceOptions } from 'typeorm';
@@ -31,8 +32,10 @@ import { SuperadminMfaChallengeEntity } from './database/entities/superadmin-mfa
 import { UserEntity } from './database/entities/user.entity';
 import { EmailDeliveryEventEntity } from './database/entities/email-delivery-event.entity';
 import { EmailQueueItemEntity } from './database/entities/email-queue-item.entity';
+import { VerificationEntity } from './database/entities/verification.entity';
 import { migrations } from './database/migrations';
 import { NotificationPipelineModule } from './common/notification-pipeline/notification-pipeline.module';
+import { EmailDeliveryModule } from './common/email-delivery/email-delivery.module';
 import { AccountModule } from './modules/account/account.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BillingModule } from './modules/billing/billing.module';
@@ -71,6 +74,7 @@ const typeOrmEntities = [
   SuperadminAuthAuditEventEntity,
   EmailQueueItemEntity,
   EmailDeliveryEventEntity,
+  VerificationEntity,
 ];
 
 @Module({
@@ -78,7 +82,7 @@ const typeOrmEntities = [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [join(__dirname, '../../../.env'), '.env'],
-      load: [storageConfig, reportsConfig, razorpayConfig],
+      load: [storageConfig, reportsConfig, razorpayConfig, emailConfig],
     }),
     TypeOrmModule.forRootAsync({
       useFactory: (config: ConfigService) => {
@@ -173,6 +177,7 @@ const typeOrmEntities = [
     AuditIncidentModule,
     EmailAdminModule,
     NotificationPipelineModule,
+    EmailDeliveryModule,
   ],
 })
 export class AppModule {}
