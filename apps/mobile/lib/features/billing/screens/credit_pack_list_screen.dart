@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../../../core/api_client.dart';
+import '../../../core/feedback/incident_banner.dart';
 import '../../../core/feedback/status_messenger.dart';
+import '../../incidents/incident_repository.dart';
 import '../billing_repository.dart';
 
 class CreditPackListScreen extends StatefulWidget {
@@ -13,11 +15,13 @@ class CreditPackListScreen extends StatefulWidget {
     required this.billingRepository,
     required this.onBack,
     required this.onPurchaseComplete,
+    this.incidentStatus,
   });
 
   final BillingRepository billingRepository;
   final VoidCallback onBack;
   final VoidCallback onPurchaseComplete;
+  final PublicIncidentStatus? incidentStatus;
 
   @override
   State<CreditPackListScreen> createState() => _CreditPackListScreenState();
@@ -517,9 +521,18 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
       );
     }
 
+    final incident = widget.incidentStatus;
+    final showIncidentBanner = incident != null &&
+        incident.isActive &&
+        incident.affectsSurface('mobile_app');
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (showIncidentBanner) ...[
+          IncidentBanner(incident: incident),
+          const SizedBox(height: 16),
+        ],
         if (_latestPendingOrder != null ||
             _latestFailedOrder != null ||
             _statusBannerMessage != null)

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/feedback/incident_banner.dart';
+import '../../incidents/incident_repository.dart';
 import '../../profiles/profiles_repository.dart';
 import '../../sharing/sharing_repository.dart';
 import '../../sharing/screens/create_share_link_screen.dart';
@@ -19,6 +21,7 @@ class TimelineScreen extends StatefulWidget {
     required this.sharingRepository,
     required this.profileName,
     required this.onUpgrade,
+    this.incidentStatus,
   });
 
   final ReportsRepository reportsRepository;
@@ -28,6 +31,7 @@ class TimelineScreen extends StatefulWidget {
   final SharingRepository sharingRepository;
   final String profileName;
   final VoidCallback onUpgrade;
+  final PublicIncidentStatus? incidentStatus;
 
   @override
   State<TimelineScreen> createState() => _TimelineScreenState();
@@ -98,6 +102,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final incident = widget.incidentStatus;
+    final showIncidentBanner = incident != null &&
+        incident.isActive &&
+        incident.affectsSurface('mobile_app');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reports'),
@@ -131,13 +140,25 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   profileName: widget.profileName,
                   sharingRepository: widget.sharingRepository,
                   onUpgrade: widget.onUpgrade,
+                  incidentStatus: widget.incidentStatus,
                 ),
               ),
             ),
           ),
         ],
       ),
-      body: Padding(padding: const EdgeInsets.all(16), child: _buildBody()),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            if (showIncidentBanner) ...[
+              IncidentBanner(incident: incident),
+              const SizedBox(height: 16),
+            ],
+            Expanded(child: _buildBody()),
+          ],
+        ),
+      ),
     );
   }
 

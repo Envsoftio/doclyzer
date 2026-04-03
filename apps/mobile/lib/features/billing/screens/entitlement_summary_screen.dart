@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/feedback/incident_banner.dart';
 import '../../../core/feedback/status_messenger.dart';
+import '../../incidents/incident_repository.dart';
 import '../billing_repository.dart';
 
 class EntitlementSummaryScreen extends StatefulWidget {
@@ -10,12 +12,14 @@ class EntitlementSummaryScreen extends StatefulWidget {
     required this.onBack,
     this.onBuyCredits,
     this.onUpgrade,
+    this.incidentStatus,
   });
 
   final BillingRepository billingRepository;
   final VoidCallback onBack;
   final VoidCallback? onBuyCredits;
   final VoidCallback? onUpgrade;
+  final PublicIncidentStatus? incidentStatus;
 
   @override
   State<EntitlementSummaryScreen> createState() =>
@@ -136,12 +140,20 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
 
   Widget _buildContent(ThemeData theme) {
     final summary = _summary!;
+    final incident = widget.incidentStatus;
+    final showIncidentBanner = incident != null &&
+        incident.isActive &&
+        incident.affectsSurface('mobile_app');
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (showIncidentBanner) ...[
+            IncidentBanner(incident: incident),
+            const SizedBox(height: 16),
+          ],
           _buildPlanCard(theme, summary),
           const SizedBox(height: 16),
           _buildCreditCard(theme, summary),

@@ -2,6 +2,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/api_client.dart';
+import '../../../core/feedback/incident_banner.dart';
+import '../../../features/incidents/incident_repository.dart';
 import '../reports_repository.dart';
 import 'pdf_viewer_screen.dart';
 
@@ -14,6 +16,7 @@ class UploadReportScreen extends StatefulWidget {
     required this.activeProfileName,
     required this.onBack,
     required this.onComplete,
+    this.incidentStatus,
     this.onUpgrade,
     this.initialReport,
     this.initialDuplicateExistingReport,
@@ -25,6 +28,7 @@ class UploadReportScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onComplete;
   final VoidCallback? onUpgrade;
+  final PublicIncidentStatus? incidentStatus;
   /// For testing: when set, shows result state immediately (bypasses file pick).
   final UploadedReport? initialReport;
   /// For testing duplicate UX: when set with [initialDuplicatePendingPath], shows duplicate dialog immediately.
@@ -202,6 +206,11 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final incident = widget.incidentStatus;
+    final showIncidentBanner = incident != null &&
+        incident.isActive &&
+        incident.affectsSurface('mobile_app');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Upload Report'),
@@ -215,6 +224,10 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (showIncidentBanner) ...[
+              IncidentBanner(incident: incident),
+              const SizedBox(height: 24),
+            ],
             Text(
               'Uploading to: ${widget.activeProfileName}',
               style: Theme.of(context).textTheme.bodyLarge,

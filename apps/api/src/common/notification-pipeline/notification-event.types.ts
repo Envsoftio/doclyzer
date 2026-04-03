@@ -1,4 +1,6 @@
 export enum NotifiableEventType {
+  // dispatch-site: no in-product email/password change flows exist yet (better-auth handles
+  // password reset externally). Wire dispatch when authenticated change flows are implemented.
   ACCOUNT_EMAIL_CHANGED = 'ACCOUNT_EMAIL_CHANGED',
   ACCOUNT_PASSWORD_CHANGED = 'ACCOUNT_PASSWORD_CHANGED',
   ACCOUNT_CLOSURE_CONFIRMED = 'ACCOUNT_CLOSURE_CONFIRMED',

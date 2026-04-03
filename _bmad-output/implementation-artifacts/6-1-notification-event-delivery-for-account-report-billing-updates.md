@@ -1,6 +1,6 @@
 # Story 6.1: Notification Event Delivery for Account/Report/Billing Updates
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -181,3 +181,4 @@ gpt-5
 
 - 2026-04-02: Added notification pipeline taxonomy, service, module, and dispatch wiring across billing, reports, and account closure flows.
 - 2026-04-03: Code review fix — dispatchReportNotification now guards against in-flight statuses ('uploading', 'queued', 'parsing'): only 'parsed' and 'failed_transient'/'failed_terminal' trigger a notification. Previously any non-parsed status fired REPORT_PARSE_FAILED prematurely before parsing completed.
+- 2026-04-03: Code review note — ACCOUNT_EMAIL_CHANGED and ACCOUNT_PASSWORD_CHANGED are defined in the taxonomy but have no dispatch sites. The app has no in-product authenticated email/password change flows (better-auth handles password reset externally). A code comment was added in notification-event.types.ts to flag this; wire dispatch when those flows are implemented. Removed dead redundant guard in suppressedByPreference.

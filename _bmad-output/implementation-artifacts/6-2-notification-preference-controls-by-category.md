@@ -1,6 +1,6 @@
 # Story 6.2: Notification Preference Controls by Category
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -220,3 +220,4 @@ None.
 
 - 2026-04-02: Updated notification taxonomy to avoid cross-module imports, added subscription activation/cancellation dispatches, and removed extra metadata from notification queue events.
 - 2026-04-03: Code review fix — corrected File List to include all files modified during implementation (app.module.ts, notification-pipeline.module.ts, account.module.ts, billing.module.ts, reports.module.ts).
+- 2026-04-03: Code review note — ACCOUNT_EMAIL_CHANGED and ACCOUNT_PASSWORD_CHANGED have no dispatch sites; no authenticated change flows exist yet. Comment added in notification-event.types.ts. Removed dead guard in suppressedByPreference (category !== 'product' check was unreachable after mandatory-categories check).

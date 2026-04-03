@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const config = useRuntimeConfig()
 const siteUrl = config.public.siteUrl
+const { incident: incidentStatus } = useIncidentStatus()
 
 useSeoMeta({
   title: 'Doclyzer — Understand Your Medical Reports',
@@ -21,6 +22,9 @@ useHead({
 
 <template>
   <main class="hero">
+    <div class="incident-slot">
+      <IncidentBanner :incident="incidentStatus" surface="web_landing" />
+    </div>
     <p class="eyebrow">Doclyzer Admin Preview</p>
     <h1>Secure health records, superadmin control</h1>
     <p>
@@ -56,5 +60,9 @@ useHead({
   background: #f8fafc;
   padding: 2px 6px;
   border-radius: 6px;
+}
+
+.incident-slot {
+  margin-bottom: 24px;
 }
 </style>

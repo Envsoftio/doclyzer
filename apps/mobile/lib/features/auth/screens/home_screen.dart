@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/feedback/status_messenger.dart';
+import '../../../core/feedback/incident_banner.dart';
 import '../../../core/api_client.dart';
 import '../../../features/account/restriction_repository.dart';
+import '../../../features/incidents/incident_repository.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -18,6 +20,7 @@ class HomeScreen extends StatefulWidget {
     required this.onGoToTimeline,
     required this.onGoToBilling,
     required this.restrictionRepository,
+    this.incidentStatus,
   });
 
   final Future<void> Function() onLogout;
@@ -30,6 +33,7 @@ class HomeScreen extends StatefulWidget {
   final Future<void> Function() onGoToTimeline;
   final VoidCallback onGoToBilling;
   final RestrictionRepository restrictionRepository;
+  final PublicIncidentStatus? incidentStatus;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -91,6 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isRestricted = _restrictionStatus?.isRestricted ?? false;
+    final incident = widget.incidentStatus;
+    final showIncidentBanner = incident != null &&
+        incident.isActive &&
+        incident.affectsSurface('mobile_app');
 
     return Scaffold(
       appBar: AppBar(
@@ -111,6 +119,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (showIncidentBanner) ...[
+                      IncidentBanner(incident: incident),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
                     if (isRestricted) ...[
                       _RestrictionBanner(
                         rationale: _restrictionStatus?.rationale ?? '',

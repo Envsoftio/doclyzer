@@ -111,7 +111,6 @@ export class NotificationPipelineService {
     category: NotificationCategory,
   ): Promise<boolean> {
     if (MANDATORY_NOTIFICATION_CATEGORIES.has(category)) return false;
-    if (category !== 'product') return false;
 
     const preference = await this.preferenceRepo.findOne({
       where: { userId },

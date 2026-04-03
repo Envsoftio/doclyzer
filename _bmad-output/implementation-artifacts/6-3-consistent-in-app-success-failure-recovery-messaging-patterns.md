@@ -1,6 +1,6 @@
 # Story 6.3: Consistent In-App Success/Failure/Recovery Messaging Patterns
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -154,3 +154,4 @@ gpt-5
 
 - 2026-04-03: Created story file for Epic 6 Story 6.3.
 - 2026-04-03: Standardized in-app messaging helper and refactored mobile/admin status callouts.
+- 2026-04-03: Code review fix — added `role="status" aria-live="polite"` to `modalSuccess` callout in risk/index.vue (was missing; error box already had `role="alert"`). Marked story done.

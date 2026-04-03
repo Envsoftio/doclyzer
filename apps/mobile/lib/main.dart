@@ -5,6 +5,8 @@ import 'core/api_config.dart';
 import 'core/feedback/status_messenger.dart';
 import 'core/theme/app_theme.dart';
 import 'core/token_storage.dart';
+import 'features/incidents/api_incident_repository.dart';
+import 'features/incidents/incident_repository.dart';
 import 'features/account/api_account_repository.dart';
 import 'features/account/api_communication_preferences_repository.dart';
 import 'features/account/api_data_rights_repository.dart';
@@ -81,6 +83,7 @@ class DoclyzerApp extends StatefulWidget {
     this.reportsRepository,
     this.sharingRepository,
     this.billingRepository,
+    this.incidentRepository,
   });
 
   final AuthRepository? authRepository;
@@ -93,12 +96,14 @@ class DoclyzerApp extends StatefulWidget {
   final ReportsRepository? reportsRepository;
   final SharingRepository? sharingRepository;
   final BillingRepository? billingRepository;
+  final IncidentRepository? incidentRepository;
 
   @override
   State<DoclyzerApp> createState() => _DoclyzerAppState();
 }
 
-class _DoclyzerAppState extends State<DoclyzerApp> {
+class _DoclyzerAppState extends State<DoclyzerApp>
+    with WidgetsBindingObserver {
   ApiClient? _apiClient;
   ApiAuthRepository? _authRepository;
   late final AccountRepository _accountRepository;
@@ -111,6 +116,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
   late final ReportsRepository _reportsRepository;
   late final SharingRepository _sharingRepository;
   late final BillingRepository _billingRepository;
+  late final IncidentRepository _incidentRepository;
 
   _AuthView _authView = _AuthView.login;
   String? _prefillEmail;
@@ -119,11 +125,20 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
   String? _timelineProfileId;
   String? _timelineProfileName;
   bool _initialized = false;
+  PublicIncidentStatus? _incidentStatus;
+  DateTime? _incidentFetchedAt;
+
+  static const Duration _incidentCacheTtl = Duration(minutes: 5);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.authRepository != null) {
+      _apiClient = ApiClient(
+        baseUrl: apiBaseUrl,
+        onRefreshToken: () async => null,
+      );
       _accountRepository = widget.accountRepository!;
       _profilesRepository = widget.profilesRepository!;
       _sessionsRepository = widget.sessionsRepository!;
@@ -134,7 +149,10 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
       _reportsRepository = widget.reportsRepository!;
       _sharingRepository = widget.sharingRepository!;
       _billingRepository = widget.billingRepository!;
+      _incidentRepository =
+          widget.incidentRepository ?? ApiIncidentRepository(_apiClient!);
       setState(() => _initialized = true);
+      _refreshIncidentStatus(force: true);
     } else {
       final tokenStorage = TokenStorage();
       _apiClient = ApiClient(
@@ -154,7 +172,45 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
           widget.sharingRepository ?? ApiSharingRepository(_apiClient!);
       _billingRepository =
           widget.billingRepository ?? ApiBillingRepository(_apiClient!);
+      _incidentRepository =
+          widget.incidentRepository ?? ApiIncidentRepository(_apiClient!);
       _initAuth();
+      _refreshIncidentStatus(force: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshIncidentStatus();
+    }
+  }
+
+  Future<void> _refreshIncidentStatus({bool force = false}) async {
+    final lastFetched = _incidentFetchedAt;
+    if (!force &&
+        lastFetched != null &&
+        DateTime.now().difference(lastFetched) < _incidentCacheTtl) {
+      return;
+    }
+    try {
+      final incident = await _incidentRepository.getActiveIncident();
+      if (!mounted) return;
+      setState(() {
+        _incidentStatus = incident;
+        _incidentFetchedAt = DateTime.now();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _incidentFetchedAt = DateTime.now();
+      });
     }
   }
 
@@ -319,6 +375,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
             });
           },
           restrictionRepository: _restrictionRepository,
+          incidentStatus: _incidentStatus,
         ),
         _AuthView.accountProfile => AccountProfileScreen(
           accountRepository: _accountRepository,
@@ -411,6 +468,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
         _AuthView.uploadReport => UploadReportScreen(
           reportsRepository: _reportsRepository,
           activeProfileName: _activeProfileNameForUpload,
+          incidentStatus: _incidentStatus,
           onBack: () {
             setState(() => _authView = _AuthView.home);
           },
@@ -429,6 +487,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
                   profileId: _timelineProfileId!,
                   profileName: _timelineProfileName!,
                   sharingRepository: _sharingRepository,
+                  incidentStatus: _incidentStatus,
                   onBack: () {
                     setState(() => _authView = _AuthView.home);
                   },
@@ -439,6 +498,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
               : const Scaffold(body: Center(child: Text('No active profile'))),
         _AuthView.billing => EntitlementSummaryScreen(
           billingRepository: _billingRepository,
+          incidentStatus: _incidentStatus,
           onBack: () {
             setState(() => _authView = _AuthView.home);
           },
@@ -451,6 +511,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
         ),
         _AuthView.creditPackList => CreditPackListScreen(
           billingRepository: _billingRepository,
+          incidentStatus: _incidentStatus,
           onBack: () {
             setState(() => _authView = _AuthView.billing);
           },
@@ -460,6 +521,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> {
         ),
         _AuthView.planSelection => PlanSelectionScreen(
           billingRepository: _billingRepository,
+          incidentStatus: _incidentStatus,
           onBack: () {
             setState(() => _authView = _AuthView.billing);
           },

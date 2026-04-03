@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
+import '../../../core/feedback/incident_banner.dart';
 import '../../../core/feedback/status_messenger.dart';
+import '../../incidents/incident_repository.dart';
 import '../billing_repository.dart';
 
 class PlanSelectionScreen extends StatefulWidget {
@@ -10,11 +12,13 @@ class PlanSelectionScreen extends StatefulWidget {
     required this.billingRepository,
     required this.onBack,
     required this.onSubscribeComplete,
+    this.incidentStatus,
   });
 
   final BillingRepository billingRepository;
   final VoidCallback onBack;
   final VoidCallback onSubscribeComplete;
+  final PublicIncidentStatus? incidentStatus;
 
   @override
   State<PlanSelectionScreen> createState() => _PlanSelectionScreenState();
@@ -198,9 +202,18 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
       );
     }
 
+    final incident = widget.incidentStatus;
+    final showIncidentBanner = incident != null &&
+        incident.isActive &&
+        incident.affectsSurface('mobile_app');
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (showIncidentBanner) ...[
+          IncidentBanner(incident: incident),
+          const SizedBox(height: 16),
+        ],
         _buildPromoSection(theme),
         const SizedBox(height: 16),
         ...plans.map((plan) => _buildPlanCard(theme, plan)),

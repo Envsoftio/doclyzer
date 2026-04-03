@@ -26,6 +26,8 @@ interface ApiSuccessResponse {
   correlationId: string
 }
 
+const { incident: incidentStatus } = useIncidentStatus()
+
 const route = useRoute()
 const token = route.params.token as string
 const config = useRuntimeConfig()
@@ -102,6 +104,9 @@ const trendDates = computed(() => {
 
 <template>
   <div class="page-wrap">
+    <div class="incident-slot">
+      <IncidentBanner :incident="incidentStatus" surface="web_share" />
+    </div>
     <!-- Loading -->
     <div v-if="loading">
       <p>Loading…</p>
@@ -203,6 +208,10 @@ const trendDates = computed(() => {
   padding: 0 24px;
   font-family: Georgia, 'Times New Roman', serif;
   color: #1a1a1a;
+}
+
+.incident-slot {
+  margin-bottom: 24px;
 }
 
 .page-header {

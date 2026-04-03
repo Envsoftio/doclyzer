@@ -144,7 +144,7 @@ function fmtDate(iso?: string): string {
         <div v-if="modalError" class="error-box" role="alert" aria-live="assertive">
           {{ modalError }}
         </div>
-        <div v-if="modalSuccess" class="success-box">{{ modalSuccess }}</div>
+        <div v-if="modalSuccess" class="success-box" role="status" aria-live="polite">{{ modalSuccess }}</div>
 
         <label class="form-label">
           Mandatory audit note

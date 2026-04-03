@@ -7,6 +7,7 @@ import { RestrictionEntity } from '../../database/entities/restriction.entity';
 import { ShareLinkEntity } from '../../database/entities/share-link.entity';
 import { SuperadminActionAuditEventEntity } from '../../database/entities/superadmin-action-audit-event.entity';
 import { SuspiciousActivityQueueItemEntity } from '../../database/entities/suspicious-activity-queue-item.entity';
+import { ServiceIncidentEntity } from '../../database/entities/service-incident.entity';
 import { UserEntity } from '../../database/entities/user.entity';
 import { AccountOverrideController } from './account-override.controller';
 import { AccountOverrideService } from './account-override.service';
@@ -20,6 +21,11 @@ import { RiskContainmentController } from './risk-containment.controller';
 import { RiskContainmentService } from './risk-containment.service';
 import { SuspiciousActivityController } from './suspicious-activity.controller';
 import { SuspiciousActivityService } from './suspicious-activity.service';
+import {
+  ServiceIncidentAdminController,
+  ServiceIncidentPublicController,
+} from './service-incident.controller';
+import { ServiceIncidentService } from './service-incident.service';
 
 @Module({
   imports: [
@@ -30,6 +36,7 @@ import { SuspiciousActivityService } from './suspicious-activity.service';
       SuspiciousActivityQueueItemEntity,
       ShareLinkEntity,
       RestrictionEntity,
+      ServiceIncidentEntity,
       UserEntity,
     ]),
     AuthModule,
@@ -41,6 +48,8 @@ import { SuspiciousActivityService } from './suspicious-activity.service';
     EmergencyContainmentController,
     SuspiciousActivityController,
     RiskContainmentController,
+    ServiceIncidentPublicController,
+    ServiceIncidentAdminController,
   ],
   providers: [
     AccountOverrideService,
@@ -49,12 +58,14 @@ import { SuspiciousActivityService } from './suspicious-activity.service';
     EmergencyContainmentService,
     SuspiciousActivityService,
     RiskContainmentService,
+    ServiceIncidentService,
   ],
   exports: [
     AccountOverrideService,
     AuditIncidentService,
     RiskContainmentService,
     SuspiciousActivityService,
+    ServiceIncidentService,
   ],
 })
 export class AuditIncidentModule {}

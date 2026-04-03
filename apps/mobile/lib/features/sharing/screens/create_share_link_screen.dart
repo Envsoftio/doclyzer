@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../core/feedback/incident_banner.dart';
+import '../../incidents/incident_repository.dart';
 import '../../../core/api_client.dart';
 import '../../../core/feedback/status_messenger.dart';
 import '../sharing_repository.dart';
@@ -16,11 +18,13 @@ class CreateShareLinkScreen extends StatefulWidget {
     required this.profileName,
     required this.sharingRepository,
     required this.onUpgrade,
+    this.incidentStatus,
   });
   final String profileId;
   final String profileName;
   final SharingRepository sharingRepository;
   final VoidCallback onUpgrade;
+  final PublicIncidentStatus? incidentStatus;
 
   @override
   State<CreateShareLinkScreen> createState() => _CreateShareLinkScreenState();
@@ -197,6 +201,11 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final incident = widget.incidentStatus;
+    final showIncidentBanner = incident != null &&
+        incident.isActive &&
+        incident.affectsSurface('mobile_app');
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Share ${widget.profileName}\'s Reports'),
@@ -214,6 +223,10 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (showIncidentBanner) ...[
+                IncidentBanner(incident: incident),
+                const SizedBox(height: 16),
+              ],
               // --- Existing links section ---
               if (_loadingExistingLinks)
                 const Center(child: CircularProgressIndicator(key: Key('existing-links-loading')))
