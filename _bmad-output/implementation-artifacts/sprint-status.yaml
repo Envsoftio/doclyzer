@@ -38,7 +38,7 @@ project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
-last_updated: 2026-04-03T14:52:08Z
+last_updated: 2026-04-07T13:00:00Z
 
 development_status:
   epic-0: in-progress
@@ -109,7 +109,7 @@ development_status:
   5-3-promo-code-crud-and-lifecycle-management: done
   5-4-promo-redemption-and-revenue-impact-analytics: done
   5-5-core-product-analytics-dashboard-signups-usage-monetization-behavior: done
-  5-6-phi-safe-analytics-taxonomy-and-governance-controls: in-progress
+  5-6-phi-safe-analytics-taxonomy-and-governance-controls: done
   5-7-auditable-superadmin-action-logging: done
   5-8-access-share-consent-policy-records-query-console: done
   5-9-suspicious-activity-detection-and-review-queue: done
@@ -135,7 +135,7 @@ development_status:
 
   epic-7: in-progress
   7-1-ai-informational-only-disclaimer-enforcement-across-surfaces: review
-  7-2-phi-safe-telemetry-and-operational-logging-enforcement: backlog
+  7-2-phi-safe-telemetry-and-operational-logging-enforcement: review
   7-3-compliance-guardrail-test-gates-ci-cd-policy-checks: backlog
   7-4-cross-epic-guardrail-conformance-checklist-and-audit-evidence: backlog
   epic-7-retrospective: optional

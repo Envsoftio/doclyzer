@@ -90,6 +90,13 @@ export class AnalyticsAdminController {
     return successResponse(data, correlationId);
   }
 
+  @Get('governance/review-summary')
+  async getGovernanceReviewSummary(@Req() req: Request): Promise<object> {
+    const correlationId = getCorrelationId(req);
+    const data = await this.analyticsGovernanceService.getReviewStateSummary();
+    return successResponse(data, correlationId);
+  }
+
   @Post('governance/validate')
   async validateGovernance(
     @Req() req: Request,

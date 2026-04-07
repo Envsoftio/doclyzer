@@ -14,6 +14,21 @@ const SENSITIVE_KEYS = [
   'SECRET',
 ] as const;
 
+/**
+ * PHI field names whose values must never appear in operational logs.
+ * These are clinical/personal data fields — log only safe identifiers
+ * (reportId, profileId, userId) instead.
+ */
+const PHI_FIELD_NAMES = [
+  'summary',
+  'transcript',
+  'parsedText',
+  'displayName',
+  'labValue',
+  'diagnosis',
+  'reportContent',
+] as const;
+
 const REDACTED = '***REDACTED***';
 
 /**
@@ -31,5 +46,27 @@ export function redactSecrets(value: string | undefined | null): string {
   // Common patterns that might leak in error messages
   out = out.replace(/postgres(ql)?:\/\/[^\s]+/gi, `postgres***://${REDACTED}`);
   out = out.replace(/Bearer\s+[\w.-]+/gi, 'Bearer ***REDACTED***');
+  return out;
+}
+
+/**
+ * Redacts PHI field values from a string so it can be logged safely.
+ * Covers clinical and personal data fields that must never appear in
+ * operational logs. Use alongside redactSecrets() when logging any
+ * data that may have passed through PHI-bearing fields.
+ *
+ * Default-deny policy: logging bodies of PHI-bearing endpoints is
+ * forbidden; use safe identifiers (reportId, profileId, userId) instead.
+ */
+export function redactPhi(value: string | undefined | null): string {
+  if (value == null) return '';
+  let out = value;
+  for (const field of PHI_FIELD_NAMES) {
+    // field=value or "field":"value" patterns — redact the value portion
+    const reAssignment = new RegExp(`(${field}=)[^\\s,}\\]]+`, 'gi');
+    out = out.replace(reAssignment, `$1${REDACTED}`);
+    const reJson = new RegExp(`("${field}"\\s*:\\s*")[^"]*"`, 'gi');
+    out = out.replace(reJson, `$1${REDACTED}"`);
+  }
   return out;
 }

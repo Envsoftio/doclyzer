@@ -21,10 +21,6 @@ export class AnalyticsGovernanceFieldDto {
   @IsNotEmpty()
   name!: string;
 
-  @IsString()
-  @IsNotEmpty()
-  type!: string;
-
   @IsIn(['non_phi', 'pii', 'phi'])
   classification!: AnalyticsFieldClassification;
 }

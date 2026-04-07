@@ -10,6 +10,10 @@ import type { Request, Response } from 'express';
 import { getCorrelationId } from './correlation-id.middleware';
 import { redactSecrets } from './redact-secrets';
 
+// DEFAULT-DENY BODY LOGGING POLICY: This filter intentionally never logs
+// request or response bodies. PHI-bearing endpoints (reports, profiles,
+// sharing) must not expose clinical or personal data in operational logs.
+// Log only: status, path, correlationId, error code — never body content.
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiExceptionFilter.name);

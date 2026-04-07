@@ -14,10 +14,12 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs}/**/*.ts\" --fix",
     "governance:validate": "ts-node scripts/analytics-governance-ci.ts",
+    "governance:test-phi-rejection": "ts-node scripts/analytics-governance-phi-rejection-test.ts",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/database/data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
-    "seed:superadmin": "ts-node src/database/seeds/superadmin.seed.ts"
+    "seed:superadmin": "ts-node src/database/seeds/superadmin.seed.ts",
+    "telemetry:phi-check": "ts-node scripts/phi-telemetry-check.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1007.0",

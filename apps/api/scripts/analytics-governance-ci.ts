@@ -188,7 +188,9 @@ async function run(): Promise<void> {
     }
     process.exitCode = 1;
   } finally {
-    await app.close();
+    await app.close().catch((closeErr) => {
+      console.error('Failed to close application context:', closeErr);
+    });
   }
 }
 

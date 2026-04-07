@@ -1,6 +1,6 @@
 # Story 5.6: PHI-Safe Analytics Taxonomy and Governance Controls
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -34,7 +34,10 @@ so that analytics never leak sensitive data.
 
 ### Review Follow-ups (AI)
 - [x] [AI-Review][HIGH] AC4 not implemented: CI/CD quality gate that blocks pipeline when PHI-safe governance check fails is missing. No `.github/workflows` or equivalent pipeline configuration was added. Requires a workflow job that calls `POST /admin/analytics/governance/validate` or a standalone script invokable from CI with actionable exit codes. [apps/api/src/modules/analytics-admin/analytics-governance.service.ts]
-- [ ] [AI-Review][MEDIUM] CI gate happy-path only: proposed.json only contains non_phi approved fields so the gate never exercises the PHI rejection path. A dedicated test (separate from the live gate file) should verify that a phi-classified field causes exit=1. Cannot add PHI fields to proposed.json directly as that would break CI on every run. [.github/analytics-governance/proposed.json]
+- [x] [AI-Review][MEDIUM] CI gate happy-path only: proposed.json only contains non_phi approved fields so the gate never exercises the PHI rejection path. A dedicated test (separate from the live gate file) should verify that a phi-classified field causes exit=1. Cannot add PHI fields to proposed.json directly as that would break CI on every run. [.github/analytics-governance/proposed.json]
+- [x] [AI-Review][MEDIUM] `app.close()` in finally block could swallow exit code if it threw; wrapped in `.catch()` to prevent masking CI failure signal. [apps/api/scripts/analytics-governance-ci.ts]
+- [x] [AI-Review][LOW] `AnalyticsGovernanceFieldDto.type` field was declared and validated but never used by the service; removed to avoid misleading API surface. [apps/api/src/modules/analytics-admin/analytics-governance.dto.ts]
+- [x] [AI-Review][LOW] `getReviewStateSummary()` was implemented in service but had no controller endpoint; wired up at `GET /admin/analytics/governance/review-summary`. [apps/api/src/modules/analytics-admin/analytics-admin.controller.ts]
 
 ## Dev Notes
 
@@ -89,6 +92,7 @@ GPT-5 (Codex)
 - Added a CI governance gate script that seeds the allow-list, validates proposed analytics payloads, and fails the pipeline on PHI violations or review-required payloads.
 - Added a GitHub Actions job to run the governance gate with a Postgres-backed schema and explicit exit codes.
 - ✅ Resolved review finding [HIGH]: AC4 governance quality gate now blocks CI on failed PHI-safe validation with actionable diagnostics.
+- ✅ Resolved review finding [MEDIUM]: Added `scripts/analytics-governance-phi-rejection-test.ts` — a DB-free standalone test script (5 cases) that exercises the PHI rejection path and asserts exit=1. Added `governance:test-phi-rejection` npm script and a pre-gate CI step so the rejection path is verified on every CI run without polluting proposed.json.
 
 ### File List
 
@@ -108,6 +112,7 @@ GPT-5 (Codex)
 - apps/api/src/database/migrations/index.ts
 - apps/api/package.json
 - apps/web/server/api/admin/phi-analytics-governance-contracts.get.ts
+- apps/api/scripts/analytics-governance-phi-rejection-test.ts
 
 ### Change Log
 
@@ -115,3 +120,5 @@ GPT-5 (Codex)
 - 2026-03-30: Code review fixes — added missing `ANALYTICS_GOVERNANCE_REVIEW_REQUIRED` import in `analytics-governance.service.ts` (was a compile error); replaced `@IsEnum(AnalyticsFieldClassification)` with `@IsIn(['non_phi', 'pii', 'phi'])` in governance DTO (`AnalyticsFieldClassification` is a type alias, not an enum object, causing runtime validation failure); AC4 CI/CD gate logged as open action item.
 - 2026-04-02: Added PHI-safe governance CI gate (workflow + script + allow-list/proposed payload files) to block releases on validation failures; resolved AC4 review item.
 - 2026-04-02: Code review fixes — enabled CI workflow push/PR triggers (gate was unreachable on workflow_dispatch-only); switched phi-governance-gate job to dedicated `doclyzer_governance_test` DB to prevent ghost superadmin user contaminating main DB; improved CI diagnostic output to print PHI violation field names, codes, and remediation hints from exception response body; removed phantom `data-source.ts` entry from File List (no actual change to that file).
+- 2026-04-07: Added `scripts/analytics-governance-phi-rejection-test.ts` — DB-free PHI rejection verification test (5 cases covering phi proposal, phi reclassification, allow-listed-phi, non-phi approval, and PII review-required paths). Added `governance:test-phi-rejection` npm script and a pre-gate step in `.github/workflows/ci.yml` so the PHI rejection code path is exercised on every CI run without touching proposed.json.
+- 2026-04-07: Code review fixes — wrapped `app.close()` in `.catch()` to prevent finally block masking CI exit code; removed unused `type` field from `AnalyticsGovernanceFieldDto`; wired `getReviewStateSummary()` to `GET /admin/analytics/governance/review-summary`.

@@ -28,6 +28,9 @@ async function bootstrap() {
   });
 
   app.use(correlationIdMiddleware);
+  // DEFAULT-DENY BODY LOGGING POLICY: No middleware or interceptor logs raw
+  // request/response bodies. PHI-bearing endpoints must not expose clinical
+  // or personal data in operational logs. See ApiExceptionFilter for details.
   app.useGlobalFilters(new ApiExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({

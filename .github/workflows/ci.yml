@@ -53,6 +53,9 @@ jobs:
           DATABASE_URL: postgresql://doclyzer:doclyzer_dev_password@localhost:5432/doclyzer_governance_test
           NODE_ENV: development
 
+      - name: Verify PHI rejection path (no database required)
+        run: npm run governance:test-phi-rejection
+
       - name: Run PHI-safe governance gate
         run: npm run governance:validate
         env:
@@ -60,3 +63,25 @@ jobs:
           NODE_ENV: development
           GOVERNANCE_ALLOWLIST_PATH: ../.github/analytics-governance/allowlist.json
           GOVERNANCE_PROPOSED_PATH: ../.github/analytics-governance/proposed.json
+
+  phi-telemetry-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run PHI telemetry static scan
+        run: npm run telemetry:phi-check
