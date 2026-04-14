@@ -1,6 +1,6 @@
 # Story 6.4: Major Service Incident Status Communication to Users
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -50,10 +50,10 @@ so that I understand disruptions and the current status while using the product.
   - [x] Severity drives styling only (no functional blocks in this story). If a blocking state is needed later, add a new story.
   - [x] Include “Last updated” and short “What’s affected” summary text.
 
-- [ ] Task 5: Manual validation (no automated tests per project policy)
-  - [ ] Activate an incident affecting `mobile_app` and confirm banner appears on app home and upload flow.
-  - [ ] Activate an incident affecting `web_share` and confirm banner appears on share page without login.
-  - [ ] Resolve incident and confirm banner disappears (or transitions to `resolved` status if configured).
+- [x] Task 5: Manual validation (no automated tests per project policy)
+  - [x] Activate an incident affecting `mobile_app` and confirm banner appears on app home and upload flow.
+  - [x] Activate an incident affecting `web_share` and confirm banner appears on share page without login.
+  - [x] Resolve incident and confirm banner disappears (or transitions to `resolved` status if configured).
 
 ## Dev Notes
 
@@ -193,3 +193,4 @@ gpt-5
 
 - 2026-04-03: Story created (ready-for-dev).
 - 2026-04-03: Implemented incident status contracts, API endpoints, and mobile/web banners (manual QA pending).
+- 2026-04-14: All tasks complete; story marked review.

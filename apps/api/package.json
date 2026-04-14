@@ -19,7 +19,9 @@
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
     "seed:superadmin": "ts-node src/database/seeds/superadmin.seed.ts",
-    "telemetry:phi-check": "ts-node scripts/phi-telemetry-check.ts"
+    "telemetry:phi-check": "ts-node scripts/phi-telemetry-check.ts",
+    "migration:check-pending": "ts-node scripts/migration-check.ts",
+    "security:policy-check": "ts-node scripts/security-policy-check.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1007.0",

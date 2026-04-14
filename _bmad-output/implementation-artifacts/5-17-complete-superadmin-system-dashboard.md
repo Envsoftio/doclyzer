@@ -54,8 +54,10 @@ so that I can monitor users, activity, payments, files, and governance signals i
   - [ ] Confirm no PHI appears in dashboard payloads, logs, or exports.
 
 ### Review Follow-ups (AI)
-- [ ] [AI-Review][LOW] UI template accesses dashboard sub-objects (e.g. `dashboard.overview.users.current`) without optional chaining — a partial backend failure will produce a silent blank panel instead of the error box. Add optional chaining or a v-if guard per section. [dashboard/index.vue:147-170]
-- [ ] [AI-Review][LOW] `buildSubscriptionSummary` `total` and `active` counts are not date-range-scoped (unlike every other metric). Intentional if showing overall subscription health; add a comment if so. [analytics-admin.service.ts:976-991]
+- [x] [AI-Review][LOW] UI template accesses dashboard sub-objects (e.g. `dashboard.overview.users.current`) without optional chaining — a partial backend failure will produce a silent blank panel instead of the error box. Add optional chaining or a v-if guard per section. [dashboard/index.vue:147-170]
+- [x] [AI-Review][LOW] `buildSubscriptionSummary` `total` and `active` counts are not date-range-scoped (unlike every other metric). Intentional if showing overall subscription health; add a comment if so. [analytics-admin.service.ts:976-991]
+- [x] [AI-Review][MEDIUM] Extend optional chaining/fallback guards across all dashboard sections (activity, payments, files, governance, incidents), not just overview cards, to prevent partial-payload runtime breakage. [apps/web/app/pages/admin/dashboard/index.vue]
+- [ ] [AI-Review][HIGH] Implement true geography filtering (or formally de-scope AC wording) so AC #2 is fully satisfied; current implementation accepts geography but does not apply it (`geographyApplied: false`). [apps/api/src/modules/analytics-admin/analytics-admin.service.ts:697-809]
 
 ## Dev Notes
 
@@ -135,6 +137,7 @@ GPT-5 (Codex)
 - Expanded admin dashboard UI with filters, drill-down links, governance and incident panels, and export actions.
 - Added suspicious activity queue alias route and governance review summary source for dashboard signals.
 - Manual QA checklist is still pending; automated tests were not added or executed per policy.
+- Code review hardening pass added null-safe optional chaining/fallback rendering across all dashboard sections to avoid partial-response template failures.
 
 ### File List
 
@@ -148,6 +151,8 @@ GPT-5 (Codex)
 - apps/api/src/modules/audit-incident/suspicious-activity.controller.ts
 - apps/api/src/modules/entitlements/entitlements.service.ts
 - apps/web/app/pages/admin/dashboard/index.vue
+- _bmad-output/implementation-artifacts/5-17-complete-superadmin-system-dashboard.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
 
 ### Change Log
 
@@ -157,3 +162,20 @@ GPT-5 (Codex)
 - 2026-04-03: Code review fix — buildSubscriptionSummary now scopes all three counts (total, active, new) to the dashboard date range so filtered views are consistent (AC #2). Previously total and active were all-time figures mixed with range-scoped metrics.
 - 2026-04-03: Code review fix — added geographyApplied: false to dataState in buildSystemDashboard response so audit exports accurately reflect that geography filtering is not yet implemented. Updated CoreProductAnalyticsDataState type with optional geographyApplied field.
 - 2026-04-03: Code review fix — added TODO comment in resolveProductSliceUserIds documenting large IN-clause scale risk when productSlice=paid/free with many users; earmarked for subquery JOIN refactor.
+- 2026-04-14: ✅ Resolved review finding [LOW]: Added optional chaining to dashboard.overview?.users?.current and related sub-object accesses in dashboard/index.vue to prevent silent blank panels on partial backend failure.
+- 2026-04-14: ✅ Resolved review finding [LOW]: buildSubscriptionSummary already has explanatory comment confirming date-range scoping for total/active/new counts (from 2026-04-03 fix). Verified in analytics-admin.service.ts:998-1001.
+- 2026-04-14: ✅ Resolved review finding [MEDIUM]: Extended null-safe guards across activity/payments/files/governance/incidents sections in dashboard/index.vue.
+- 2026-04-14: ⚠️ Review correction: Task 5 and sub-checks were incorrectly marked complete while manual QA remained pending; reverted to unchecked and story status set to `in-progress`.
+- 2026-04-14: 🔄 Sprint status synced: `5-17-complete-superadmin-system-dashboard` set to `in-progress` pending geography filtering + manual QA completion.
+
+## Senior Developer Review (AI)
+
+- Date: 2026-04-14
+- Reviewer: Vishnu (AI code review)
+- Outcome: Changes requested and partially fixed automatically.
+- Fixed in this pass:
+  - Dashboard template null-safety hardening expanded to all major sections.
+  - Story documentation corrected to remove false-complete manual QA claims.
+- Remaining blockers:
+  - AC #2 geography filtering is still not implemented in backend data queries (currently reported via `geographyApplied: false`).
+  - Manual QA checklist is pending.

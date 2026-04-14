@@ -96,6 +96,10 @@ function formatPercent(value: unknown): string {
   return `${value.toFixed(1)}%`
 }
 
+function formatCount(value: unknown): string {
+  return typeof value === 'number' ? String(value) : '-'
+}
+
 onMounted(loadData)
 </script>
 
@@ -147,23 +151,23 @@ onMounted(loadData)
         <div class="card-row">
           <div class="metric-card">
             <div class="metric-label">Users</div>
-            <div class="metric-value">{{ dashboard.overview.users.current }}</div>
-            <div class="metric-delta">{{ formatDelta(dashboard.overview.users) }} vs baseline</div>
+            <div class="metric-value">{{ dashboard.overview?.users?.current }}</div>
+            <div class="metric-delta">{{ formatDelta(dashboard.overview?.users) }} vs baseline</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">Sessions</div>
-            <div class="metric-value">{{ dashboard.overview.sessions.current }}</div>
-            <div class="metric-delta">{{ formatDelta(dashboard.overview.sessions) }} vs baseline</div>
+            <div class="metric-value">{{ dashboard.overview?.sessions?.current }}</div>
+            <div class="metric-delta">{{ formatDelta(dashboard.overview?.sessions) }} vs baseline</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">Revenue (Credit Packs)</div>
-            <div class="metric-value">{{ formatCurrency(dashboard.payments.creditPacks.revenue) }}</div>
-            <div class="metric-delta">{{ dashboard.payments.creditPacks.orderCount }} orders</div>
+            <div class="metric-value">{{ formatCurrency(dashboard.payments?.creditPacks?.revenue) }}</div>
+            <div class="metric-delta">{{ dashboard.payments?.creditPacks?.orderCount }} orders</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">Processing Success</div>
-            <div class="metric-value">{{ formatPercent(dashboard.overview.processingSuccess.current) }}</div>
-            <div class="metric-delta">{{ formatDelta(dashboard.overview.processingSuccess) }} pts vs baseline</div>
+            <div class="metric-value">{{ formatPercent(dashboard.overview?.processingSuccess?.current) }}</div>
+            <div class="metric-delta">{{ formatDelta(dashboard.overview?.processingSuccess) }} pts vs baseline</div>
           </div>
         </div>
       </div>
@@ -178,7 +182,7 @@ onMounted(loadData)
                 <tr><th>Stage</th><th>Current</th><th>Baseline</th><th>Delta</th></tr>
               </thead>
               <tbody>
-                <tr v-for="row in dashboard.activity.funnel" :key="row.stage">
+                <tr v-for="row in dashboard.activity?.funnel ?? []" :key="row.stage">
                   <td>{{ row.stage }}</td>
                   <td>{{ row.currentValue }}</td>
                   <td>{{ row.baselineValue }}</td>
@@ -192,7 +196,7 @@ onMounted(loadData)
           <div class="panel">
             <h4 class="panel-title">Retention</h4>
             <div class="stack">
-              <div v-for="slice in dashboard.activity.retention" :key="slice.label" class="retention-row">
+              <div v-for="slice in dashboard.activity?.retention ?? []" :key="slice.label" class="retention-row">
                 <div class="retention-label">{{ slice.label }}</div>
                 <div class="retention-value">{{ formatPercent(slice.currentRate) }}</div>
                 <div class="retention-delta">{{ slice.delta > 0 ? '+' : '' }}{{ slice.delta }} pts</div>
@@ -207,18 +211,18 @@ onMounted(loadData)
         <div class="card-row">
           <div class="stat-chip">
             <span class="stat-chip__label">Credit Pack Revenue</span>
-            <span class="stat-chip__value">{{ formatCurrency(dashboard.payments.creditPacks.revenue) }}</span>
-            <span class="stat-chip__meta">{{ dashboard.payments.creditPacks.orderCount }} orders</span>
+            <span class="stat-chip__value">{{ formatCurrency(dashboard.payments?.creditPacks?.revenue) }}</span>
+            <span class="stat-chip__meta">{{ formatCount(dashboard.payments?.creditPacks?.orderCount) }} orders</span>
           </div>
           <div class="stat-chip">
             <span class="stat-chip__label">Subscriptions (Active)</span>
-            <span class="stat-chip__value">{{ dashboard.payments.subscriptions.active }}</span>
-            <span class="stat-chip__meta">{{ dashboard.payments.subscriptions.new }} new</span>
+            <span class="stat-chip__value">{{ formatCount(dashboard.payments?.subscriptions?.active) }}</span>
+            <span class="stat-chip__meta">{{ formatCount(dashboard.payments?.subscriptions?.new) }} new</span>
           </div>
           <div class="stat-chip">
             <span class="stat-chip__label">Refunds</span>
-            <span class="stat-chip__value">{{ dashboard.payments.refunds.count }}</span>
-            <span class="stat-chip__meta">{{ formatCurrency(dashboard.payments.refunds.amount) }}</span>
+            <span class="stat-chip__value">{{ formatCount(dashboard.payments?.refunds?.count) }}</span>
+            <span class="stat-chip__meta">{{ formatCurrency(dashboard.payments?.refunds?.amount) }}</span>
           </div>
         </div>
       </div>
@@ -231,21 +235,21 @@ onMounted(loadData)
         <div class="card-row">
           <div class="stat-chip">
             <span class="stat-chip__label">In Flight</span>
-            <span class="stat-chip__value">{{ dashboard.files.totalInFlight }}</span>
-            <span class="stat-chip__meta">Oldest: {{ dashboard.files.oldestInFlightCreatedAt ?? '—' }}</span>
+            <span class="stat-chip__value">{{ formatCount(dashboard.files?.totalInFlight) }}</span>
+            <span class="stat-chip__meta">Oldest: {{ dashboard.files?.oldestInFlightCreatedAt ?? '—' }}</span>
           </div>
           <div class="stat-chip">
             <span class="stat-chip__label">Parsed</span>
-            <span class="stat-chip__value">{{ dashboard.files.parsedCount }}</span>
+            <span class="stat-chip__value">{{ formatCount(dashboard.files?.parsedCount) }}</span>
           </div>
           <div class="stat-chip">
             <span class="stat-chip__label">Failed</span>
-            <span class="stat-chip__value stat-chip__value--red">{{ dashboard.files.failedCount }}</span>
+            <span class="stat-chip__value stat-chip__value--red">{{ formatCount(dashboard.files?.failedCount) }}</span>
           </div>
         </div>
         <div class="card-row">
           <div
-            v-for="(count, status) in dashboard.files.statusCounts"
+            v-for="(count, status) in dashboard.files?.statusCounts ?? {}"
             :key="status"
             class="status-chip"
             :class="`status-chip--${status}`"
@@ -266,10 +270,10 @@ onMounted(loadData)
             <h4 class="panel-title">Suspicious Activity Queue</h4>
             <div class="stat-chip stat-chip--tight">
               <span class="stat-chip__label">Open Items</span>
-              <span class="stat-chip__value">{{ dashboard.governance.suspiciousActivity.openCount }}</span>
+              <span class="stat-chip__value">{{ formatCount(dashboard.governance?.suspiciousActivity?.openCount) }}</span>
             </div>
             <ul class="list">
-              <li v-for="item in dashboard.governance.suspiciousActivity.topItems" :key="item.id">
+              <li v-for="item in dashboard.governance?.suspiciousActivity?.topItems ?? []" :key="item.id">
                 <strong>{{ item.severity.toUpperCase() }}</strong> — {{ item.detectionSummary || 'No summary' }}
                 <span class="list-meta">{{ item.targetType }} · {{ item.lastDetectedAt }}</span>
               </li>
@@ -278,15 +282,15 @@ onMounted(loadData)
           <div class="panel">
             <h4 class="panel-title">Recent Audit Actions</h4>
             <ul class="list">
-              <li v-for="event in dashboard.governance.auditActions.recent" :key="event.id">
+              <li v-for="event in dashboard.governance?.auditActions?.recent ?? []" :key="event.id">
                 <strong>{{ event.action }}</strong> — {{ event.target }}
                 <span class="list-meta">{{ event.outcome }} · {{ event.performedAt }}</span>
               </li>
             </ul>
             <div class="stat-chip stat-chip--tight">
               <span class="stat-chip__label">Governance Reviews Pending</span>
-              <span class="stat-chip__value">{{ dashboard.governance.reviewState.pendingCount }}</span>
-              <span class="stat-chip__meta">Last reviewed {{ dashboard.governance.reviewState.lastReviewedAt ?? '—' }}</span>
+              <span class="stat-chip__value">{{ formatCount(dashboard.governance?.reviewState?.pendingCount) }}</span>
+              <span class="stat-chip__meta">Last reviewed {{ dashboard.governance?.reviewState?.lastReviewedAt ?? '—' }}</span>
             </div>
           </div>
         </div>
@@ -300,15 +304,15 @@ onMounted(loadData)
             <div class="stat-grid">
               <div>
                 <div class="stat-grid__label">Pipeline failures</div>
-                <div class="stat-grid__value">{{ dashboard.incidents.pipelineFailures }}</div>
+                <div class="stat-grid__value">{{ formatCount(dashboard.incidents?.pipelineFailures) }}</div>
               </div>
               <div>
                 <div class="stat-grid__label">Suspicious queue</div>
-                <div class="stat-grid__value">{{ dashboard.incidents.suspiciousQueue }}</div>
+                <div class="stat-grid__value">{{ formatCount(dashboard.incidents?.suspiciousQueue) }}</div>
               </div>
               <div>
                 <div class="stat-grid__label">Recent audit actions</div>
-                <div class="stat-grid__value">{{ dashboard.incidents.recentAuditActions }}</div>
+                <div class="stat-grid__value">{{ formatCount(dashboard.incidents?.recentAuditActions) }}</div>
               </div>
             </div>
           </div>

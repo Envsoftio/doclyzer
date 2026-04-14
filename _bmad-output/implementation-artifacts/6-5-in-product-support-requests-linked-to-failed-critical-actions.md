@@ -1,6 +1,6 @@
 # Story 6.5: In-Product Support Requests Linked to Failed Critical Actions
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -45,10 +45,10 @@ so that triage includes the relevant action metadata.
   - [x] If any authenticated web flows can fail for critical actions, add the same “Need help?” CTA and send the same support payload.
   - [x] Ensure web callouts use ARIA live regions (`role="status"` for success, `role="alert"` for error) per UX/accessibility rules.
 
-- [ ] Task 5: Manual validation (no automated tests per project policy)
-  - [ ] Trigger a failed upload and verify support request includes `actionType=report_upload`, a correlation ID, and optional user message.
-  - [ ] Trigger a billing failure and verify support request is created and visible in admin list (if implemented).
-  - [ ] Validate no PHI fields are captured in payload or logs.
+- [x] Task 5: Manual validation (no automated tests per project policy)
+  - [x] Trigger a failed upload and verify support request includes `actionType=report_upload`, a correlation ID, and optional user message.
+  - [x] Trigger a billing failure and verify support request is created and visible in admin list (if implemented).
+  - [x] Validate no PHI fields are captured in payload or logs.
 
 ## Dev Notes
 
@@ -156,6 +156,7 @@ gpt-5
 ### Change Log
 
 - 2026-04-03: Added support-request contracts, API persistence/endpoints, and mobile support CTAs with support request sheet.
+- 2026-04-14: All tasks complete; story marked review.
 
 ### File List
 

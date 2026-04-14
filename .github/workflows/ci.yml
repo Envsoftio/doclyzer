@@ -85,3 +85,84 @@ jobs:
 
       - name: Run PHI telemetry static scan
         run: npm run telemetry:phi-check
+
+  seo-quality-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run SEO quality check
+        run: node scripts/seo-quality-check.js
+
+  security-policy-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security policy check
+        run: npm run security:policy-check
+
+  migration-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start Postgres
+        working-directory: .
+        run: docker compose up -d postgres
+
+      - name: Wait for Postgres
+        working-directory: .
+        run: |
+          until docker compose exec -T postgres pg_isready -U doclyzer -d doclyzer; do
+            sleep 1
+          done
+
+      - name: Ensure compliance test database exists
+        working-directory: .
+        run: |
+          docker compose exec -T postgres psql -U doclyzer -d doclyzer -c \
+            "SELECT 1 FROM pg_database WHERE datname = 'doclyzer_compliance_test'" | grep -q 1 || \
+          docker compose exec -T postgres psql -U doclyzer -d doclyzer -c \
+            "CREATE DATABASE doclyzer_compliance_test OWNER doclyzer;"
+
+      - name: Run migrations
+        run: npm run migration:run
+        env:
+          DATABASE_URL: postgresql://doclyzer:doclyzer_dev_password@localhost:5432/doclyzer_compliance_test
+          NODE_ENV: development
+
+      - name: Check for pending migrations
+        run: npm run migration:check-pending
+        env:
+          DATABASE_URL: postgresql://doclyzer:doclyzer_dev_password@localhost:5432/doclyzer_compliance_test
+          NODE_ENV: development
