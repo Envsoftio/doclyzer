@@ -95,6 +95,15 @@ jobs:
       - name: Run SEO quality check
         run: node scripts/seo-quality-check.js
 
+  guardrail-conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run guardrail conformance check
+        run: node scripts/guardrail-conformance-check.js
+
   security-policy-check:
     runs-on: ubuntu-latest
     defaults:

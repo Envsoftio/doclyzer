@@ -1,4 +1,4 @@
-# generated: 2026-03-16
+# generated: 2026-04-16
 # project: doclyzer
 # project_key: NOKEY
 # tracking_system: file-system
@@ -33,20 +33,20 @@
 # - SM typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 2026-03-19
+generated: 2026-04-16
 project: doclyzer
 project_key: NOKEY
 tracking_system: file-system
 story_location: "{project-root}/_bmad-output/implementation-artifacts"
-last_updated: 2026-04-14T12:26:46Z
+last_updated: 2026-04-16T12:10:00.000Z
 
 development_status:
   epic-0: in-progress
-  0-1-typeorm-integration-database-entities-migrations: done
-  0-2-jwt-access-refresh-token-auth-db-backed-sessions: done
+  0-1-typeorm-integration-database-entities-and-migrations: done
+  0-2-jwt-access-plus-refresh-token-auth-with-db-backed-sessions: done
   0-3-replace-all-in-memory-services-with-typeorm-repositories: done
   0-4-e2e-test-infrastructure-with-real-test-database: done
-  0-5-backblaze-b2-object-storage-reports-profile-pics-file-uploads: done
+  0-5-backblaze-b2-object-storage-for-reports-profile-pictures-and-file-uploads: done
   epic-0-retrospective: optional
 
   epic-1: in-progress
@@ -63,10 +63,10 @@ development_status:
   epic-1-retrospective: optional
 
   epic-2: in-progress
-  # 2-0-postgresql-persistence-setup absorbed into Epic 0 stories 0.1–0.4
+  2-0-postgresql-persistence-setup-foundation: in-progress
   2-1-upload-report-to-active-profile: done
   2-2-parsing-status-lifecycle-visibility: done
-  2-3-parse-failure-recovery-retry-keep-file-anyway: done
+  2-3-parse-failure-recovery-retry-plus-keep-file-anyway: done
   2-4-original-pdf-viewing-parsed-and-unparsed: done
   2-5-duplicate-report-detection-and-user-choice: done
   2-6-timeline-view-scoped-to-active-profile: done
@@ -76,8 +76,8 @@ development_status:
   2-10-profile-level-consolidated-health-history: done
   2-11-processing-attempt-history-per-report: done
   2-12-post-upload-report-reassignment-to-correct-profile: done
-  2-13-real-ai-report-summary-pipeline: done
-  2-14-persist-docling-parsed-transcript-in-db: done
+  2-13-real-ai-report-summary-pipeline-replace-stub: done
+  2-14-persist-docling-parsed-report-transcript-in-db: done
   epic-2-retrospective: optional
 
   epic-3: in-progress
@@ -86,7 +86,7 @@ development_status:
   3-3-default-share-policy-settings-for-new-links: done
   3-4-copy-distribute-share-link-ux: done
   3-5-recipient-access-via-valid-link-no-account: done
-  3-6-doctor-friendly-share-page-timeline-trends-print-friendly: done
+  3-6-doctor-friendly-share-page-timeline-plus-trends-print-friendly: done
   3-7-share-access-event-history-for-link-owner: done
   3-8-enforce-profile-isolation-in-shared-output: done
   3-9-landing-seo-mvp-metadata-canonical-sitemap-robots-structured-data: done
@@ -97,14 +97,14 @@ development_status:
   4-1-credit-balance-and-entitlement-summary-view: done
   4-2-credit-pack-purchase-flow: done
   4-3-subscription-purchase-flow: done
-  4-4-promo-code-apply-validate-at-checkout: done  # subscription promos deferred until Razorpay Offers configured
+  4-4-promo-code-apply-validate-at-checkout: done
   4-5-usage-limit-enforcement-free-paid-tiers: done
   4-6-billing-outcome-states-pending-failed-reconciled: done
   4-7-entitlement-change-reason-visibility: done
   epic-4-retrospective: optional
 
   epic-5: in-progress
-  5-1-superadmin-authentication-hardening-mfa-role-guard-baseline: done
+  5-1-superadmin-authentication-hardening-mfa-plus-role-guard-baseline: done
   5-2-plan-definition-and-limit-configuration-management: done
   5-3-promo-code-crud-and-lifecycle-management: done
   5-4-promo-redemption-and-revenue-impact-analytics: done
@@ -120,8 +120,7 @@ development_status:
   5-14-emergency-containment-actions-with-mandatory-audit-notes: done
   5-15-email-queue-delivery-analytics-and-sending-history-admin-panel: done
   5-16-admin-level-email-sending-with-audit-and-recipient-controls: done
-  5-17-complete-superadmin-system-dashboard: in-progress
-  5-18-user-activity-and-file-analytics: done
+  5-17-complete-superadmin-system-dashboard: review
   epic-5-retrospective: optional
 
   epic-6: in-progress
@@ -137,9 +136,5 @@ development_status:
   7-1-ai-informational-only-disclaimer-enforcement-across-surfaces: review
   7-2-phi-safe-telemetry-and-operational-logging-enforcement: review
   7-3-compliance-guardrail-test-gates-ci-cd-policy-checks: review
-  7-4-cross-epic-guardrail-conformance-checklist-and-audit-evidence: backlog
+  7-4-cross-epic-guardrail-conformance-checklist-and-audit-evidence: done
   epic-7-retrospective: optional
-
-  epic-8: in-progress
-  8-1-better-auth-migration: done
-  epic-8-retrospective: optional

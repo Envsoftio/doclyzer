@@ -787,8 +787,15 @@ export class AnalyticsAdminService {
           status: 'open',
           page: 1,
           limit: 5,
+          minDetectedAt: currentRange.start.toISOString(),
+          maxDetectedAt: currentRange.end.toISOString(),
         }),
-        this.auditIncidentService.searchAuditActions({ page: 1, limit: 5 }),
+        this.auditIncidentService.searchAuditActions({
+          page: 1,
+          limit: 5,
+          minTimestamp: currentRange.start.toISOString(),
+          maxTimestamp: currentRange.end.toISOString(),
+        }),
         this.governanceService.getReviewStateSummary(),
       ]);
 

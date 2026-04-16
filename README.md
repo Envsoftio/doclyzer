@@ -32,14 +32,14 @@ cp .env.example .env
 # - Web: http://localhost:3001
 ```
 
-### 2. Start Database & Cache Services
+### 2. Start API + Database Stack with Docker Compose
 
 ```bash
-# Start PostgreSQL and Redis containers
-docker-compose up -d
+# Start API + PostgreSQL (+ Redis + Docling dependencies)
+docker compose up -d api postgres
 
 # Verify services are running
-docker-compose ps
+docker compose ps
 ```
 
 ### 3. Run the API (Backend)
@@ -57,7 +57,7 @@ npm run migration:run
 npm run start:dev
 ```
 
-The API will be available at **http://localhost:4000**
+Alternative: if `api` service is already started via compose in Step 2, API is available at **http://localhost:4000** without running these commands.
 
 ### 4. Run the Web App (Frontend)
 
@@ -93,8 +93,8 @@ flutter run -d "iPhone 15"
 Open separate terminal windows for each service:
 
 ```bash
-# Terminal 1: Database & Cache
-docker-compose up
+# Terminal 1: API + Infra
+docker compose up
 
 # Terminal 2: API
 cd apps/api && npm install && npm run start:dev
@@ -147,20 +147,21 @@ npm run preview
 
 ```bash
 # Start services
-docker-compose up
+docker compose up
 
 # Start in background
-docker-compose up -d
+docker compose up -d
 
 # Stop services
-docker-compose down
+docker compose down
 
 # View logs
-docker-compose logs
+docker compose logs
 
 # View specific service logs
-docker-compose logs postgres
-docker-compose logs redis
+docker compose logs api
+docker compose logs postgres
+docker compose logs redis
 ```
 
 ## Environment Configuration
@@ -206,13 +207,13 @@ RAZORPAY_KEY_SECRET=change-me-in-production
 ### Database Connection Issues
 ```bash
 # Check if PostgreSQL is running
-docker-compose ps
+docker compose ps
 
 # Restart PostgreSQL
-docker-compose restart postgres
+docker compose restart postgres
 
 # View PostgreSQL logs
-docker-compose logs postgres
+docker compose logs postgres
 ```
 
 ### Port Already in Use
@@ -225,8 +226,8 @@ REDIS_PORT=6380
 
 Then restart containers:
 ```bash
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 ```
 
 ### Dependencies Issues

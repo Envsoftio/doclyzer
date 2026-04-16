@@ -1,6 +1,35 @@
 name: doclyzer
 
 services:
+  api:
+    image: node:24-alpine
+    container_name: doclyzer-api
+    working_dir: /workspace/apps/api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-doclyzer}:${POSTGRES_PASSWORD:-doclyzer_dev_password}@postgres:5432/${POSTGRES_DB:-doclyzer}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      HOST: 0.0.0.0
+    command: >
+      sh -c "npm install && npm run migration:run && npm run start:dev -- --host 0.0.0.0"
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./:/workspace
+      - api_node_modules:/workspace/apps/api/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      docling:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - doclyzer_net
+
   postgres:
     image: postgres:16-alpine
     container_name: doclyzer-postgres
@@ -49,6 +78,7 @@ services:
       - doclyzer_net
 
 volumes:
+  api_node_modules:
   doclyzer_postgres_data:
   doclyzer_redis_data:
 

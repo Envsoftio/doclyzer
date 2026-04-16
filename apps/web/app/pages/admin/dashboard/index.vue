@@ -8,7 +8,6 @@ const { adminFetch } = useAdminApi()
 
 const startDate = ref(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))
 const endDate = ref(new Date().toISOString().slice(0, 10))
-const geography = ref('all')
 const productSlice = ref<'all' | 'free' | 'paid'>('all')
 
 const dashboard = ref<Record<string, any> | null>(null)
@@ -16,8 +15,9 @@ const loading = ref(true)
 const exportLoading = ref(false)
 const error = ref('')
 
-// Geography filtering is not yet implemented in backend queries; only 'all' is available.
-const geographyOptions = ['all']
+// Geography filtering is not implemented: no geography column exists on user/session/report entities.
+// The filter is removed from the UI; the backend still accepts the param for forward-compatibility
+// but reports geographyApplied: false in dataState so callers and audit exports are accurate.
 const productOptions: Array<{ label: string; value: 'all' | 'free' | 'paid' }> = [
   { label: 'All plans', value: 'all' },
   { label: 'Free tier', value: 'free' },
@@ -29,7 +29,7 @@ async function loadData() {
   error.value = ''
   try {
     const response = await adminFetch<{ data: Record<string, any> }>(
-      `/admin/analytics/system-dashboard?startDate=${startDate.value}T00:00:00Z&endDate=${endDate.value}T23:59:59Z&geography=${geography.value}&productSlice=${productSlice.value}`,
+      `/admin/analytics/system-dashboard?startDate=${startDate.value}T00:00:00Z&endDate=${endDate.value}T23:59:59Z&productSlice=${productSlice.value}`,
     )
     dashboard.value = (response as Record<string, any>).data as Record<string, any>
   } catch (e: unknown) {
@@ -50,7 +50,6 @@ async function exportDashboard(format: 'json' | 'csv') {
         body: {
           startDate: `${startDate.value}T00:00:00Z`,
           endDate: `${endDate.value}T23:59:59Z`,
-          geography: geography.value,
           productSlice: productSlice.value,
           format,
         },
@@ -100,6 +99,18 @@ function formatCount(value: unknown): string {
   return typeof value === 'number' ? String(value) : '-'
 }
 
+function resolveAccountWorkbenchLink(): string {
+  const topItem = dashboard.value?.governance?.suspiciousActivity?.topItems?.[0]
+  if (!topItem || typeof topItem.targetId !== 'string' || topItem.targetId.length === 0) {
+    return '/admin/users'
+  }
+  const targetType = typeof topItem.targetType === 'string' ? topItem.targetType.toLowerCase() : ''
+  if (targetType === 'user' || targetType === 'account') {
+    return `/admin/users/${topItem.targetId}`
+  }
+  return '/admin/users'
+}
+
 onMounted(loadData)
 </script>
 
@@ -119,12 +130,9 @@ onMounted(loadData)
     <div class="filters">
       <label>From <input v-model="startDate" type="date" class="date-input" /></label>
       <label>To <input v-model="endDate" type="date" class="date-input" /></label>
-      <label>
-        Geography
-        <select v-model="geography" class="select-input">
-          <option v-for="option in geographyOptions" :key="option" :value="option">{{ option }}</option>
-        </select>
-      </label>
+      <!-- Geography filter is formally de-scoped: entities have no geography column yet.
+           The backend accepts the parameter for future compatibility but does not apply it. -->
+      <span class="filter-note">Geography: not available (see data state)</span>
       <label>
         Product Slice
         <select v-model="productSlice" class="select-input">
@@ -136,6 +144,12 @@ onMounted(loadData)
 
     <div v-if="error" class="error-box" role="alert" aria-live="assertive">
       {{ error }}
+    </div>
+
+    <!-- Geography filtering is formally de-scoped: no geography column exists on entities yet.
+         The backend surfaces geographyApplied: false so this notice is always shown when data loads. -->
+    <div v-if="dashboard?.dataState?.geographyApplied === false" class="info-box" role="note">
+      Geography filtering is not yet available — all data shown is global. Filtered views by region will be added when entity geography columns are introduced.
     </div>
 
     <template v-if="loading">
@@ -325,7 +339,7 @@ onMounted(loadData)
               </li>
               <li>
                 Investigate affected accounts in the user workbench.
-                <NuxtLink to="/admin/users" class="inline-link">Open user directory</NuxtLink>
+                <NuxtLink :to="resolveAccountWorkbenchLink()" class="inline-link">Open account workbench</NuxtLink>
               </li>
               <li>
                 Audit failed file processing batches for remediation.
@@ -403,6 +417,23 @@ onMounted(loadData)
   padding: 10px 14px;
   font-size: 13px;
   margin-bottom: 16px;
+}
+
+.info-box {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.filter-note {
+  font-size: 12px;
+  color: #6b7280;
+  align-self: center;
+  font-style: italic;
 }
 
 .section { margin-bottom: 32px; }
