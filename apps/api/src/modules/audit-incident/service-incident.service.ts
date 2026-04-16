@@ -8,7 +8,10 @@ import {
   ServiceIncidentInvalidStatusException,
   ServiceIncidentNotFoundException,
 } from './service-incident.types';
-import type { CreateServiceIncidentDto, ResolveServiceIncidentDto } from './service-incident.dto';
+import type {
+  CreateServiceIncidentDto,
+  ResolveServiceIncidentDto,
+} from './service-incident.dto';
 
 const ACTIVE_INCIDENT_STATUSES = ['active', 'monitoring'] as const;
 
@@ -19,7 +22,9 @@ export class ServiceIncidentService {
     private readonly incidentRepository: Repository<ServiceIncidentEntity>,
   ) {}
 
-  async upsertIncident(dto: CreateServiceIncidentDto): Promise<PublicIncidentStatus> {
+  async upsertIncident(
+    dto: CreateServiceIncidentDto,
+  ): Promise<PublicIncidentStatus> {
     if (!ACTIVE_INCIDENT_STATUSES.includes(dto.status)) {
       throw new ServiceIncidentInvalidStatusException(
         'Active incidents must be in active or monitoring status',

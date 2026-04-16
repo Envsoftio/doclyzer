@@ -25,7 +25,9 @@ async function seedSuperadmin() {
       await userRepo.update(existingUser.id, { role: 'superadmin' });
       console.log(`✓ Updated existing user role to superadmin.`);
     } else {
-      console.log(`Superadmin user with email ${email} already exists with correct role.`);
+      console.log(
+        `Superadmin user with email ${email} already exists with correct role.`,
+      );
     }
     await dataSource.destroy();
     return;

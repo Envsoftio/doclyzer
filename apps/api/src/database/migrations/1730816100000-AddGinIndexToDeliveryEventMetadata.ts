@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddGinIndexToDeliveryEventMetadata1730816100000
-  implements MigrationInterface
-{
+export class AddGinIndexToDeliveryEventMetadata1730816100000 implements MigrationInterface {
   name = 'AddGinIndexToDeliveryEventMetadata1730816100000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

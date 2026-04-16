@@ -527,7 +527,8 @@ export class ReportsService {
     // In-flight statuses ('uploading', 'queued', 'parsing') have not completed parsing yet;
     // firing REPORT_PARSE_FAILED for them would be premature and incorrect.
     const isParsed = input.status === 'parsed';
-    const isFailed = input.status === 'failed_transient' || input.status === 'failed_terminal';
+    const isFailed =
+      input.status === 'failed_transient' || input.status === 'failed_terminal';
     if (!isParsed && !isFailed) return;
 
     const correlationId = input.correlationId ?? randomUUID();

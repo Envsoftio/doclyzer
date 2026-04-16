@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddRestrictionReviewMode1730815600000
-  implements MigrationInterface
-{
+export class AddRestrictionReviewMode1730815600000 implements MigrationInterface {
   name = 'AddRestrictionReviewMode1730815600000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -24,7 +24,12 @@ export class EmailQueueItemEntity {
   status!: EmailQueueStatus;
 
   @Index('UQ_email_queue_idempotency', { unique: true })
-  @Column({ type: 'varchar', length: 128, name: 'idempotency_key', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 128,
+    name: 'idempotency_key',
+    nullable: true,
+  })
   idempotencyKey!: string | null;
 
   @Column({ type: 'timestamptz', name: 'scheduled_at' })

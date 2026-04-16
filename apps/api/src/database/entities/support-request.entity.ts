@@ -29,7 +29,12 @@ export class SupportRequestEntity {
   @Column({ type: 'varchar', length: 128, name: 'correlation_id' })
   correlationId!: string;
 
-  @Column({ type: 'varchar', length: 128, name: 'client_action_id', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 128,
+    name: 'client_action_id',
+    nullable: true,
+  })
   clientActionId!: string | null;
 
   @Column({ type: 'varchar', length: 64, name: 'error_code', nullable: true })

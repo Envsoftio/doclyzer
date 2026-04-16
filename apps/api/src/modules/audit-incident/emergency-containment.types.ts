@@ -2,8 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 
 export const EMERGENCY_ACTION_NOTE_REQUIRED =
   'EMERGENCY_ACTION_NOTE_REQUIRED' as const;
-export const EMERGENCY_TARGET_NOT_FOUND =
-  'EMERGENCY_TARGET_NOT_FOUND' as const;
+export const EMERGENCY_TARGET_NOT_FOUND = 'EMERGENCY_TARGET_NOT_FOUND' as const;
 
 // Action name prefixes used when recording emergency actions in the audit log
 export const EMERGENCY_ACTION_PREFIX = 'EMERGENCY_';

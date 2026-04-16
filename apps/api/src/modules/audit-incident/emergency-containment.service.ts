@@ -218,7 +218,9 @@ function toAuditOutcome(state: RiskContainmentState): AuditActionOutcome {
   return state;
 }
 
-function toEmergencyState(state: RiskContainmentState): EmergencyContainmentState {
+function toEmergencyState(
+  state: RiskContainmentState,
+): EmergencyContainmentState {
   if (state === 'pending') return 'failure';
   return state;
 }

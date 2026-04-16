@@ -48,7 +48,12 @@ export class EmailSendingHistoryQueryDto {
   recipientScope?: string;
 
   @IsOptional()
-  @IsIn(['pending', 'sent', 'failed', 'bounced'] satisfies EmailDeliveryOutcome[])
+  @IsIn([
+    'pending',
+    'sent',
+    'failed',
+    'bounced',
+  ] satisfies EmailDeliveryOutcome[])
   outcome?: EmailDeliveryOutcome;
 
   @IsOptional()

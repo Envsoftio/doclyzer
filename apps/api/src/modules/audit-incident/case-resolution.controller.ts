@@ -21,9 +21,7 @@ import { ResolutionQueryDto, SubmitResolutionDto } from './case-resolution.dto';
 @Controller('admin/accounts/:userId/resolutions')
 @UseGuards(AuthGuard, SuperadminGuard)
 export class CaseResolutionController {
-  constructor(
-    private readonly caseResolutionService: CaseResolutionService,
-  ) {}
+  constructor(private readonly caseResolutionService: CaseResolutionService) {}
 
   /**
    * POST /admin/accounts/:userId/resolutions

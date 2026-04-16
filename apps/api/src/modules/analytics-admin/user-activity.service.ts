@@ -45,7 +45,12 @@ export interface UserWorkbench {
     role: string;
     createdAt: string;
   };
-  profiles: { id: string; name: string; createdAt: string; reportCount: number }[];
+  profiles: {
+    id: string;
+    name: string;
+    createdAt: string;
+    reportCount: number;
+  }[];
   reports: {
     id: string;
     profileId: string;
@@ -74,6 +79,30 @@ export interface FilePipelineStatus {
 const IN_FLIGHT_STATUSES: ReportStatus[] = ['uploading', 'queued', 'parsing'];
 const FAILED_STATUSES: ReportStatus[] = ['failed_transient', 'failed_terminal'];
 
+interface CountRawRow {
+  count: string | number | null;
+}
+
+interface UserDirectoryRawRow {
+  id: string;
+  email: string;
+  displayName: string | null;
+  role: string;
+  createdAt: Date | string;
+  profileCount: string | number | null;
+  reportCount: string | number | null;
+  lastLoginAt: Date | string | null;
+}
+
+interface StatusCountRawRow {
+  status: string;
+  count: string | number | null;
+}
+
+interface OldestRawRow {
+  oldest: Date | string | null;
+}
+
 @Injectable()
 export class UserActivityService {
   constructor(
@@ -90,20 +119,25 @@ export class UserActivityService {
   async getUserActivityMetrics(): Promise<UserActivityMetrics> {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const [totalUsers, totalProfiles, reportsInPipeline, totalParsedReports, totalFailedReports] =
-      await Promise.all([
-        this.userRepo.count(),
-        this.profileRepo.count(),
-        this.reportRepo.count({ where: { status: In(IN_FLIGHT_STATUSES) } }),
-        this.reportRepo.count({ where: { status: 'parsed' } }),
-        this.reportRepo.count({ where: { status: In(FAILED_STATUSES) } }),
-      ]);
+    const [
+      totalUsers,
+      totalProfiles,
+      reportsInPipeline,
+      totalParsedReports,
+      totalFailedReports,
+    ] = await Promise.all([
+      this.userRepo.count(),
+      this.profileRepo.count(),
+      this.reportRepo.count({ where: { status: In(IN_FLIGHT_STATUSES) } }),
+      this.reportRepo.count({ where: { status: 'parsed' } }),
+      this.reportRepo.count({ where: { status: In(FAILED_STATUSES) } }),
+    ]);
 
     const activeRow = await this.sessionRepo
       .createQueryBuilder('session')
       .select('COUNT(DISTINCT session.user_id)', 'count')
       .where('session.created_at >= :since', { since: sevenDaysAgo })
-      .getRawOne();
+      .getRawOne<CountRawRow>();
 
     return {
       totalUsers,
@@ -115,7 +149,9 @@ export class UserActivityService {
     };
   }
 
-  async getUserDirectory(query: UserDirectoryQueryDto): Promise<UserDirectoryResult> {
+  async getUserDirectory(
+    query: UserDirectoryQueryDto,
+  ): Promise<UserDirectoryResult> {
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 50, 200);
     const sortBy = query.sortBy ?? 'createdAt';
@@ -147,7 +183,7 @@ export class UserActivityService {
     if (query.search) {
       countQb.where('u.email ILIKE :search', { search: `%${query.search}%` });
     }
-    const countRow = await countQb.getRawOne();
+    const countRow = await countQb.getRawOne<CountRawRow>();
     const total = Number(countRow?.count ?? 0);
 
     const orderColumn =
@@ -159,17 +195,22 @@ export class UserActivityService {
 
     qb.orderBy(orderColumn, sortDir).offset(offset).limit(limit);
 
-    const rows = await qb.getRawMany();
+    const rows = await qb.getRawMany<UserDirectoryRawRow>();
 
     const users: UserDirectoryItem[] = rows.map((row) => ({
       id: row.id,
       email: row.email,
       displayName: row.displayName ?? null,
       role: row.role,
-      createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : String(row.createdAt),
+      createdAt:
+        row.createdAt instanceof Date
+          ? row.createdAt.toISOString()
+          : String(row.createdAt),
       profileCount: Number(row.profileCount ?? 0),
       reportCount: Number(row.reportCount ?? 0),
-      lastLoginAt: row.lastLoginAt ? new Date(row.lastLoginAt).toISOString() : null,
+      lastLoginAt: row.lastLoginAt
+        ? new Date(row.lastLoginAt).toISOString()
+        : null,
     }));
 
     return { users, total, page, limit };
@@ -177,18 +218,29 @@ export class UserActivityService {
 
   async getUserWorkbench(userId: string): Promise<UserWorkbench> {
     const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'User not found' });
+    if (!user)
+      throw new NotFoundException({
+        code: 'USER_NOT_FOUND',
+        message: 'User not found',
+      });
 
     const [profiles, reports, sessions] = await Promise.all([
       this.profileRepo.find({ where: { userId }, order: { createdAt: 'ASC' } }),
       this.reportRepo.find({ where: { userId }, order: { createdAt: 'DESC' } }),
-      this.sessionRepo.find({ where: { userId }, order: { createdAt: 'DESC' }, take: 50 }),
+      this.sessionRepo.find({
+        where: { userId },
+        order: { createdAt: 'DESC' },
+        take: 50,
+      }),
     ]);
 
     // Profile report counts
     const profileReportCounts = new Map<string, number>();
     for (const r of reports) {
-      profileReportCounts.set(r.profileId, (profileReportCounts.get(r.profileId) ?? 0) + 1);
+      profileReportCounts.set(
+        r.profileId,
+        (profileReportCounts.get(r.profileId) ?? 0) + 1,
+      );
     }
 
     // Report status summary
@@ -237,7 +289,7 @@ export class UserActivityService {
       .select('r.status', 'status')
       .addSelect('COUNT(r.id)', 'count')
       .groupBy('r.status')
-      .getRawMany();
+      .getRawMany<StatusCountRawRow>();
 
     const statusCounts: Record<string, number> = {};
     for (const row of rows) {
@@ -253,7 +305,7 @@ export class UserActivityService {
       .createQueryBuilder('r')
       .select('MIN(r.created_at)', 'oldest')
       .where('r.status IN (:...statuses)', { statuses: IN_FLIGHT_STATUSES })
-      .getRawOne();
+      .getRawOne<OldestRawRow>();
 
     const oldestInFlightCreatedAt = oldestRow?.oldest
       ? new Date(oldestRow.oldest).toISOString()

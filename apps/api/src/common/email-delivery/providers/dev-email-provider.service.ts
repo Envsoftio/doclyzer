@@ -8,12 +8,13 @@ import type {
 
 @Injectable()
 export class DevEmailProviderService implements EmailProvider {
-  async send(_input: EmailSendInput): Promise<EmailSendResult> {
-    return {
+  send(input: EmailSendInput): Promise<EmailSendResult> {
+    void input;
+    return Promise.resolve({
       outcome: 'sent',
       provider: 'dev-stub',
       providerMessageId: randomUUID(),
       errorCode: null,
-    };
+    });
   }
 }

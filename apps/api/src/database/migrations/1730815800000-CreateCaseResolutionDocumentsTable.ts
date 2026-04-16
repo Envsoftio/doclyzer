@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateCaseResolutionDocumentsTable1730815800000
-  implements MigrationInterface
-{
+export class CreateCaseResolutionDocumentsTable1730815800000 implements MigrationInterface {
   name = 'CreateCaseResolutionDocumentsTable1730815800000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

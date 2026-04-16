@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateAccountOverridesTable1730815700000
-  implements MigrationInterface
-{
+export class CreateAccountOverridesTable1730815700000 implements MigrationInterface {
   name = 'CreateAccountOverridesTable1730815700000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -34,12 +32,8 @@ export class CreateAccountOverridesTable1730815700000
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP INDEX "IDX_account_overrides_user_active"`,
-    );
-    await queryRunner.query(
-      `DROP INDEX "IDX_account_overrides_user_id"`,
-    );
+    await queryRunner.query(`DROP INDEX "IDX_account_overrides_user_active"`);
+    await queryRunner.query(`DROP INDEX "IDX_account_overrides_user_id"`);
     await queryRunner.query(`DROP TABLE "account_overrides"`);
   }
 }

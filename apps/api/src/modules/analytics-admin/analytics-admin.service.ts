@@ -44,6 +44,28 @@ interface DateRange {
   end: Date;
 }
 
+interface CountRawRow {
+  count: string | number | null;
+}
+
+interface TotalAndCountRawRow {
+  total: string | number | null;
+  count: string | number | null;
+}
+
+interface MaxRawRow {
+  max: Date | string | null;
+}
+
+interface StatusCountRawRow {
+  status: string;
+  count: string | number | null;
+}
+
+interface OldestRawRow {
+  oldest: Date | string | null;
+}
+
 @Injectable()
 export class AnalyticsAdminService {
   private readonly logger = new Logger(AnalyticsAdminService.name);
@@ -273,7 +295,11 @@ export class AnalyticsAdminService {
     format: 'json' | 'csv';
     generatedAt: string;
     filters: SystemDashboardResponse['filters'];
-    rows: Array<{ metric_name: string; metric_value: number; plan_tier: string }>;
+    rows: Array<{
+      metric_name: string;
+      metric_value: number;
+      plan_tier: string;
+    }>;
     csv?: string;
   }> {
     const dashboard = await this.buildSystemDashboard(input.query);
@@ -529,7 +555,7 @@ export class AnalyticsAdminService {
     if (userIds?.length) {
       qb.andWhere('session.user_id IN (:...userIds)', { userIds });
     }
-    const row = await qb.getRawOne();
+    const row = await qb.getRawOne<CountRawRow>();
     return Number(row?.count ?? 0);
   }
 
@@ -581,9 +607,9 @@ export class AnalyticsAdminService {
     if (userIds?.length) {
       qb.andWhere('order.user_id IN (:...userIds)', { userIds });
     }
-    const row = await qb.getRawOne();
+    const row = await qb.getRawOne<TotalAndCountRawRow>();
 
-    const total = parseFloat(row?.total ?? '0') || 0;
+    const total = parseFloat(String(row?.total ?? '0')) || 0;
     return { total, count: Number(row?.count ?? 0) };
   }
 
@@ -641,7 +667,7 @@ export class AnalyticsAdminService {
     if (userIds?.length) {
       qb.where('report.user_id IN (:...userIds)', { userIds });
     }
-    const row = await qb.getRawOne();
+    const row = await qb.getRawOne<MaxRawRow>();
     return row?.max ? new Date(row.max) : null;
   }
 
@@ -655,7 +681,7 @@ export class AnalyticsAdminService {
     if (userIds?.length) {
       qb.where('order.user_id IN (:...userIds)', { userIds });
     }
-    const row = await qb.getRawOne();
+    const row = await qb.getRawOne<MaxRawRow>();
     return row?.max ? new Date(row.max) : null;
   }
 
@@ -715,7 +741,6 @@ export class AnalyticsAdminService {
       currentFailedReports,
       baselineFailedReports,
       currentRevenue,
-      baselineRevenue,
     ] = await Promise.all([
       this.countUsersInRange(currentRange, userIds),
       this.countUsersInRange(baselineRange, userIds),
@@ -732,7 +757,6 @@ export class AnalyticsAdminService {
       this.countReportsInRange(currentRange, FAILURE_STATUSES, userIds),
       this.countReportsInRange(baselineRange, FAILURE_STATUSES, userIds),
       this.sumRevenue(currentRange, userIds),
-      this.sumRevenue(baselineRange, userIds),
     ]);
 
     const processingSuccessCurrent = this.computeBehaviorScore(
@@ -897,7 +921,8 @@ export class AnalyticsAdminService {
     productSlice: SystemDashboardProductSlice,
   ): Promise<string[] | null> {
     if (productSlice === 'all') return null;
-    const userIds = await this.entitlementsService.listUserIdsByTier(productSlice);
+    const userIds =
+      await this.entitlementsService.listUserIdsByTier(productSlice);
     // Performance note: userIds is passed as IN (:...userIds) to every downstream query.
     // At large scale (thousands of paid users) this produces oversized SQL IN clauses.
     // TODO(perf): replace with a correlated subquery JOIN on user_entitlements to avoid
@@ -951,7 +976,7 @@ export class AnalyticsAdminService {
     if (userIds?.length) {
       qb.andWhere('r.user_id IN (:...userIds)', { userIds });
     }
-    const rows = await qb.getRawMany();
+    const rows = await qb.getRawMany<StatusCountRawRow>();
 
     const statusCounts: Record<string, number> = {};
     for (const row of rows) {
@@ -981,7 +1006,7 @@ export class AnalyticsAdminService {
     if (userIds?.length) {
       oldestQb.andWhere('r.user_id IN (:...userIds)', { userIds });
     }
-    const oldestRow = await oldestQb.getRawOne();
+    const oldestRow = await oldestQb.getRawOne<OldestRawRow>();
 
     return {
       statusCounts,
@@ -1008,7 +1033,10 @@ export class AnalyticsAdminService {
     // total (subscriptions created in range are by definition "new").
     const [total, active] = await Promise.all([
       this.countSubscriptions({ range }, userIds),
-      this.countSubscriptions({ range, statuses: SUBSCRIPTION_ACTIVE_STATUSES }, userIds),
+      this.countSubscriptions(
+        { range, statuses: SUBSCRIPTION_ACTIVE_STATUSES },
+        userIds,
+      ),
     ]);
 
     return { total, active, new: total };
@@ -1032,7 +1060,9 @@ export class AnalyticsAdminService {
     }
     if (input.statuses?.length) {
       if (hasWhere) {
-        qb.andWhere('sub.status IN (:...statuses)', { statuses: input.statuses });
+        qb.andWhere('sub.status IN (:...statuses)', {
+          statuses: input.statuses,
+        });
       } else {
         qb.where('sub.status IN (:...statuses)', { statuses: input.statuses });
         hasWhere = true;
@@ -1046,7 +1076,7 @@ export class AnalyticsAdminService {
         hasWhere = true;
       }
     }
-    const row = await qb.getRawOne();
+    const row = await qb.getRawOne<CountRawRow>();
     return Number(row?.count ?? 0);
   }
 
@@ -1055,27 +1085,95 @@ export class AnalyticsAdminService {
   ): Array<{ metric_name: string; metric_value: number; plan_tier: string }> {
     const planTier = dashboard.filters.productSlice;
     return [
-      { metric_name: 'users', metric_value: dashboard.overview.users.current, plan_tier: planTier },
-      { metric_name: 'sessions', metric_value: dashboard.overview.sessions.current, plan_tier: planTier },
-      { metric_name: 'uploads', metric_value: dashboard.overview.uploads.current, plan_tier: planTier },
-      { metric_name: 'share_links', metric_value: dashboard.overview.shareLinks.current, plan_tier: planTier },
-      { metric_name: 'processing_success_rate', metric_value: dashboard.overview.processingSuccess.current, plan_tier: planTier },
-      { metric_name: 'credit_pack_revenue', metric_value: dashboard.payments.creditPacks.revenue, plan_tier: planTier },
-      { metric_name: 'credit_pack_orders', metric_value: dashboard.payments.creditPacks.orderCount, plan_tier: planTier },
-      { metric_name: 'subscriptions_total', metric_value: dashboard.payments.subscriptions.total, plan_tier: planTier },
-      { metric_name: 'subscriptions_active', metric_value: dashboard.payments.subscriptions.active, plan_tier: planTier },
-      { metric_name: 'subscriptions_new', metric_value: dashboard.payments.subscriptions.new, plan_tier: planTier },
-      { metric_name: 'reports_in_flight', metric_value: dashboard.files.totalInFlight, plan_tier: planTier },
-      { metric_name: 'reports_failed', metric_value: dashboard.files.failedCount, plan_tier: planTier },
-      { metric_name: 'reports_parsed', metric_value: dashboard.files.parsedCount, plan_tier: planTier },
-      { metric_name: 'suspicious_queue_open', metric_value: dashboard.governance.suspiciousActivity.openCount, plan_tier: planTier },
-      { metric_name: 'audit_actions_recent', metric_value: dashboard.governance.auditActions.recent.length, plan_tier: planTier },
-      { metric_name: 'governance_reviews_pending', metric_value: dashboard.governance.reviewState.pendingCount, plan_tier: planTier },
+      {
+        metric_name: 'users',
+        metric_value: dashboard.overview.users.current,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'sessions',
+        metric_value: dashboard.overview.sessions.current,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'uploads',
+        metric_value: dashboard.overview.uploads.current,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'share_links',
+        metric_value: dashboard.overview.shareLinks.current,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'processing_success_rate',
+        metric_value: dashboard.overview.processingSuccess.current,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'credit_pack_revenue',
+        metric_value: dashboard.payments.creditPacks.revenue,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'credit_pack_orders',
+        metric_value: dashboard.payments.creditPacks.orderCount,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'subscriptions_total',
+        metric_value: dashboard.payments.subscriptions.total,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'subscriptions_active',
+        metric_value: dashboard.payments.subscriptions.active,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'subscriptions_new',
+        metric_value: dashboard.payments.subscriptions.new,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'reports_in_flight',
+        metric_value: dashboard.files.totalInFlight,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'reports_failed',
+        metric_value: dashboard.files.failedCount,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'reports_parsed',
+        metric_value: dashboard.files.parsedCount,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'suspicious_queue_open',
+        metric_value: dashboard.governance.suspiciousActivity.openCount,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'audit_actions_recent',
+        metric_value: dashboard.governance.auditActions.recent.length,
+        plan_tier: planTier,
+      },
+      {
+        metric_name: 'governance_reviews_pending',
+        metric_value: dashboard.governance.reviewState.pendingCount,
+        plan_tier: planTier,
+      },
     ];
   }
 
   private formatCsv(
-    rows: Array<{ metric_name: string; metric_value: number; plan_tier: string }>,
+    rows: Array<{
+      metric_name: string;
+      metric_value: number;
+      plan_tier: string;
+    }>,
   ): string {
     const header = 'metric_name,metric_value,plan_tier';
     const lines = rows.map(

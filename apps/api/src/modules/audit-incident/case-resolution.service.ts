@@ -4,7 +4,10 @@ import type { SelectQueryBuilder } from 'typeorm';
 import { Repository } from 'typeorm';
 import { CaseResolutionDocumentEntity } from '../../database/entities/case-resolution-document.entity';
 import { UserEntity } from '../../database/entities/user.entity';
-import type { SubmitResolutionDto, ResolutionQueryDto } from './case-resolution.dto';
+import type {
+  SubmitResolutionDto,
+  ResolutionQueryDto,
+} from './case-resolution.dto';
 import type {
   CaseResolutionDocument,
   CaseResolutionSubmitResult,
@@ -182,7 +185,9 @@ export class CaseResolutionService {
     }
   }
 
-  private toRecord(entity: CaseResolutionDocumentEntity): CaseResolutionDocument {
+  private toRecord(
+    entity: CaseResolutionDocumentEntity,
+  ): CaseResolutionDocument {
     return {
       id: entity.id,
       targetUserId: entity.targetUserId,

@@ -166,12 +166,8 @@ export class BetterAuthService {
             return compare(password, hashValue);
           },
         },
-        sendResetPassword: async ({ user, token }) => {
-          void this.notificationService.sendPasswordResetToken(
-            user.email,
-            token,
-          );
-        },
+        sendResetPassword: ({ user, token }) =>
+          this.notificationService.sendPasswordResetToken(user.email, token),
       },
       advanced: {
         disableCSRFCheck: true,

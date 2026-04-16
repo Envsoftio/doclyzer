@@ -29,8 +29,7 @@ import { EmailDeliveryWorkerService } from './email-delivery.worker';
         configService: ConfigService,
         devProvider: DevEmailProviderService,
       ) => {
-        const provider =
-          configService.get<string>('email.provider') ?? 'dev';
+        const provider = configService.get<string>('email.provider') ?? 'dev';
         if (provider === 'dev') return devProvider;
         return devProvider;
       },

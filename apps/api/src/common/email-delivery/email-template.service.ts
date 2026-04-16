@@ -39,11 +39,14 @@ export class EmailTemplateService {
     data: Record<string, string | number | boolean | null>,
     escapeHtml: boolean,
   ): string {
-    return template.replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g, (_m, key) => {
-      const raw = data[key];
-      const value = raw === null || raw === undefined ? '' : String(raw);
-      return escapeHtml ? this.escapeHtml(value) : value;
-    });
+    return template.replace(
+      /{{\s*([a-zA-Z0-9_]+)\s*}}/g,
+      (_m: string, key: string) => {
+        const raw = data[key];
+        const value = raw === null || raw === undefined ? '' : String(raw);
+        return escapeHtml ? this.escapeHtml(value) : value;
+      },
+    );
   }
 
   private escapeHtml(value: string): string {

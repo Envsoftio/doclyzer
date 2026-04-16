@@ -49,7 +49,12 @@ export class CaseResolutionDocumentEntity {
   outcome!: string;
 
   // Optional audit correlation ID linking to the superadmin action audit event
-  @Column({ type: 'varchar', length: 128, name: 'audit_correlation_id', nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 128,
+    name: 'audit_correlation_id',
+    nullable: true,
+  })
   auditCorrelationId!: string | null;
 
   // Version chain: if this is a re-closure after re-investigation, links to prior doc

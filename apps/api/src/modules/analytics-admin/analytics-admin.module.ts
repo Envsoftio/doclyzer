@@ -43,6 +43,10 @@ import { EntitlementsModule } from '../entitlements/entitlements.module';
     ]),
   ],
   controllers: [AnalyticsAdminController],
-  providers: [AnalyticsAdminService, AnalyticsGovernanceService, UserActivityService],
+  providers: [
+    AnalyticsAdminService,
+    AnalyticsGovernanceService,
+    UserActivityService,
+  ],
 })
 export class AnalyticsAdminModule {}

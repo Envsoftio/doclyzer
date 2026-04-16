@@ -153,28 +153,30 @@ export class AuthGuard implements CanActivate {
     handlerKey: string,
   ): RestrictedReviewAction | null {
     return (
-      {
-        'ReportsController.uploadReport': 'upload_report',
-        'ReportsController.listReports': 'view_timeline',
-        'ReportsController.getLabTrends': 'view_timeline',
-        'ReportsController.getReport': 'view_timeline',
-        'ReportsController.getProcessingAttempts': 'view_timeline',
-        'ReportsController.getReportFile': 'view_timeline',
-        'ProfilesController.createProfile': 'manage_profiles',
-        'ProfilesController.updateProfile': 'manage_profiles',
-        'ProfilesController.activateProfile': 'manage_profiles',
-        'ProfilesController.deleteProfile': 'manage_profiles',
-        'SharingController.createShareLink': 'manage_sharing',
-        'SharingController.listShareLinks': 'manage_sharing',
-        'SharingController.revokeShareLink': 'manage_sharing',
-        'SharingController.updateExpiry': 'manage_sharing',
-        'SharingController.listAccessEvents': 'manage_sharing',
-        'SharingController.getSharePolicy': 'manage_sharing',
-        'SharingController.upsertSharePolicy': 'manage_sharing',
-        'AccountController.updateProfile': 'update_account_profile',
-        'AccountController.uploadAvatar': 'update_account_profile',
-      } as Record<string, RestrictedReviewAction>
-    )[handlerKey] ?? null;
+      (
+        {
+          'ReportsController.uploadReport': 'upload_report',
+          'ReportsController.listReports': 'view_timeline',
+          'ReportsController.getLabTrends': 'view_timeline',
+          'ReportsController.getReport': 'view_timeline',
+          'ReportsController.getProcessingAttempts': 'view_timeline',
+          'ReportsController.getReportFile': 'view_timeline',
+          'ProfilesController.createProfile': 'manage_profiles',
+          'ProfilesController.updateProfile': 'manage_profiles',
+          'ProfilesController.activateProfile': 'manage_profiles',
+          'ProfilesController.deleteProfile': 'manage_profiles',
+          'SharingController.createShareLink': 'manage_sharing',
+          'SharingController.listShareLinks': 'manage_sharing',
+          'SharingController.revokeShareLink': 'manage_sharing',
+          'SharingController.updateExpiry': 'manage_sharing',
+          'SharingController.listAccessEvents': 'manage_sharing',
+          'SharingController.getSharePolicy': 'manage_sharing',
+          'SharingController.upsertSharePolicy': 'manage_sharing',
+          'AccountController.updateProfile': 'update_account_profile',
+          'AccountController.uploadAvatar': 'update_account_profile',
+        } as Record<string, RestrictedReviewAction>
+      )[handlerKey] ?? null
+    );
   }
 
   private isRestrictionExpired(restriction: RestrictionEntity): boolean {

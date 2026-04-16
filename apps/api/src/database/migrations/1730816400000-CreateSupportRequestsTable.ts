@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateSupportRequestsTable1730816400000
-  implements MigrationInterface
-{
+export class CreateSupportRequestsTable1730816400000 implements MigrationInterface {
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       CREATE TABLE "support_requests" (

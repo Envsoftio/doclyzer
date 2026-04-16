@@ -161,7 +161,9 @@ export class ReportsController {
       await this.reportsService.getReportFile(userId, reportId);
     const safeName = originalFileName.replace(/[^\w.-]/g, '_');
     // RFC 5987: filename* for non-ASCII; filename for legacy clients
-    const hasNonAscii = /[^\x00-\x7F]/.test(originalFileName);
+    const hasNonAscii = Array.from(originalFileName).some(
+      (char) => char.charCodeAt(0) > 0x7f,
+    );
     const disposition = hasNonAscii
       ? `inline; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(originalFileName)}`
       : `inline; filename="${safeName}"`;

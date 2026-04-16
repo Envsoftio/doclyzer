@@ -37,9 +37,7 @@ import { EmergencyContainmentService } from './emergency-containment.service';
 @Controller('admin/emergency')
 @UseGuards(AuthGuard, SuperadminGuard)
 export class EmergencyContainmentController {
-  constructor(
-    private readonly emergencyService: EmergencyContainmentService,
-  ) {}
+  constructor(private readonly emergencyService: EmergencyContainmentService) {}
 
   /**
    * Emergency suspend or unsuspend an account.

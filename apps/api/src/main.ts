@@ -1,6 +1,7 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { inspect } from 'node:util';
 import { AppModule } from './app.module';
 import { ApiExceptionFilter } from './common/api-exception.filter';
 import { correlationIdMiddleware } from './common/correlation-id.middleware';
@@ -45,7 +46,13 @@ async function bootstrap() {
 
 bootstrap().catch((err: unknown) => {
   const msg =
-    err instanceof Error ? err.message : err != null ? String(err) : 'Unknown';
+    err instanceof Error
+      ? err.message
+      : typeof err === 'string'
+        ? err
+        : err != null
+          ? inspect(err, { depth: 1, breakLength: 120 })
+          : 'Unknown';
   logger.error(redactSecrets(`Bootstrap failed: ${msg}`));
   process.exit(1);
 });

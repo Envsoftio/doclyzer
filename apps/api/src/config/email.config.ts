@@ -30,8 +30,7 @@ export const emailConfig = registerAs('email', () => {
       ),
     },
     auth: {
-      baseUrl:
-        process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+      baseUrl: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
       basePath: process.env.BETTER_AUTH_BASE_PATH ?? '/v1/auth',
     },
   };

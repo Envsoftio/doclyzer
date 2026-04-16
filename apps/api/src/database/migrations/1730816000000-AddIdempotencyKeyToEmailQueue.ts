@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddIdempotencyKeyToEmailQueue1730816000000
-  implements MigrationInterface
-{
+export class AddIdempotencyKeyToEmailQueue1730816000000 implements MigrationInterface {
   name = 'AddIdempotencyKeyToEmailQueue1730816000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -15,9 +13,7 @@ export class AddIdempotencyKeyToEmailQueue1730816000000
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      'DROP INDEX "public"."UQ_email_queue_idempotency"',
-    );
+    await queryRunner.query('DROP INDEX "public"."UQ_email_queue_idempotency"');
     await queryRunner.query(
       'ALTER TABLE "email_queue_items" DROP COLUMN "idempotency_key"',
     );

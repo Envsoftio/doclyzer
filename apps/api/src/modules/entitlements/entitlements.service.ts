@@ -145,9 +145,9 @@ export class EntitlementsService {
       .select('entitlement.user_id', 'userId')
       .where('entitlement.status = :status', { status: 'active' })
       .andWhere('plan.tier = :tier', { tier })
-      .getRawMany();
+      .getRawMany<{ userId: string }>();
 
-    return rows.map((row) => row.userId as string);
+    return rows.map((row) => row.userId);
   }
 
   /**

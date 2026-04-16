@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SupportRequestEntity } from '../../database/entities/support-request.entity';
-import type { CreateSupportRequestDto, SupportRequestAdminQueryDto } from './support-request.dto';
+import type {
+  CreateSupportRequestDto,
+  SupportRequestAdminQueryDto,
+} from './support-request.dto';
 import {
   SupportRequestContextException,
   SupportRequestDetail,
@@ -29,8 +32,7 @@ export class SupportRequestService {
   }): Promise<{ id: string; correlationId: string }> {
     const { userId, dto } = input;
     const actionCorrelationId =
-      dto.context.correlationId?.trim() ||
-      dto.context.clientActionId?.trim();
+      dto.context.correlationId?.trim() || dto.context.clientActionId?.trim();
 
     if (!actionCorrelationId) {
       throw new SupportRequestContextException();
@@ -51,7 +53,7 @@ export class SupportRequestService {
         userMessage: dto.userMessage?.trim() ?? null,
         status: 'open',
         metadata,
-      }) as SupportRequestEntity,
+      }),
     );
 
     return { id: saved.id, correlationId: saved.correlationId };
@@ -104,7 +106,9 @@ export class SupportRequestService {
     };
   }
 
-  async getSupportRequestById(id: string): Promise<SupportRequestDetail | null> {
+  async getSupportRequestById(
+    id: string,
+  ): Promise<SupportRequestDetail | null> {
     const entity = await this.supportRepo.findOne({ where: { id } });
     return entity ? this.mapDetail(entity) : null;
   }

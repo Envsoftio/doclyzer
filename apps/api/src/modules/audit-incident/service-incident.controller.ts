@@ -22,7 +22,9 @@ import {
 
 @Controller('incidents')
 export class ServiceIncidentPublicController {
-  constructor(private readonly serviceIncidentService: ServiceIncidentService) {}
+  constructor(
+    private readonly serviceIncidentService: ServiceIncidentService,
+  ) {}
 
   @Get('active')
   async getActiveIncident(@Req() req: Request): Promise<object> {
@@ -35,7 +37,9 @@ export class ServiceIncidentPublicController {
 @Controller('admin/incidents')
 @UseGuards(AuthGuard, SuperadminGuard)
 export class ServiceIncidentAdminController {
-  constructor(private readonly serviceIncidentService: ServiceIncidentService) {}
+  constructor(
+    private readonly serviceIncidentService: ServiceIncidentService,
+  ) {}
 
   @Post()
   async upsertIncident(

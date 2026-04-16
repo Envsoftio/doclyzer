@@ -62,9 +62,8 @@ export class SupportRequestAdminController {
     @Param('supportRequestId') supportRequestId: string,
   ): Promise<object> {
     const correlationId = getCorrelationId(req);
-    const data = await this.supportRequestService.getSupportRequestById(
-      supportRequestId,
-    );
+    const data =
+      await this.supportRequestService.getSupportRequestById(supportRequestId);
     if (!data) {
       throw new NotFoundException({
         code: 'SUPPORT_REQUEST_NOT_FOUND',

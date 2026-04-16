@@ -111,8 +111,10 @@ export class EmailDeliveryWorkerService
     const queueItemId = item.id;
 
     try {
-      const { subject, templateKey, templateData } =
-        await this.resolveTemplate(item, metadata);
+      const { subject, templateKey, templateData } = await this.resolveTemplate(
+        item,
+        metadata,
+      );
 
       const recipients = await this.resolveRecipients(item, metadata);
 
@@ -131,9 +133,7 @@ export class EmailDeliveryWorkerService
         html,
         text,
         fromName: this.configService.getOrThrow<string>('email.fromName'),
-        fromAddress: this.configService.getOrThrow<string>(
-          'email.fromAddress',
-        ),
+        fromAddress: this.configService.getOrThrow<string>('email.fromAddress'),
         metadata: {
           queueItemId,
           emailType: item.emailType,
@@ -152,12 +152,16 @@ export class EmailDeliveryWorkerService
         }),
       );
     } catch (error) {
-      await this.applyOutcome(item, {
-        outcome: 'failed',
-        provider: 'worker',
-        providerMessageId: null,
-        errorCode: 'EMAIL_WORKER_ERROR',
-      }, null);
+      await this.applyOutcome(
+        item,
+        {
+          outcome: 'failed',
+          provider: 'worker',
+          providerMessageId: null,
+          errorCode: 'EMAIL_WORKER_ERROR',
+        },
+        null,
+      );
 
       const msg = error instanceof Error ? error.message : String(error);
       this.logger.error(
@@ -201,7 +205,8 @@ export class EmailDeliveryWorkerService
   }> {
     if (metadata.templateKey) {
       return {
-        subject: EMAIL_TEMPLATE_REGISTRY[item.emailType]?.subject ??
+        subject:
+          EMAIL_TEMPLATE_REGISTRY[item.emailType]?.subject ??
           EMAIL_TEMPLATE_REGISTRY[metadata.templateKey]?.subject ??
           'Doclyzer update',
         templateKey: metadata.templateKey,
@@ -252,7 +257,9 @@ export class EmailDeliveryWorkerService
     }
 
     const baseUrl = this.configService.getOrThrow<string>('email.auth.baseUrl');
-    const basePath = this.configService.getOrThrow<string>('email.auth.basePath');
+    const basePath = this.configService.getOrThrow<string>(
+      'email.auth.basePath',
+    );
 
     const resetLink = `${baseUrl}${basePath}/reset-password?token=${encodeURIComponent(
       verification.value,

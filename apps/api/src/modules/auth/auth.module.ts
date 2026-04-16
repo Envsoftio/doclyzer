@@ -18,11 +18,7 @@ import { ProfilesModule } from '../profiles/profiles.module';
   imports: [
     forwardRef(() => ProfilesModule),
     NotificationPipelineModule,
-    TypeOrmModule.forFeature([
-      UserEntity,
-      SessionEntity,
-      RestrictionEntity,
-    ]),
+    TypeOrmModule.forFeature([UserEntity, SessionEntity, RestrictionEntity]),
   ],
   controllers: [AuthController],
   providers: [

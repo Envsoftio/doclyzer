@@ -112,7 +112,9 @@ export class AccountOverrideService {
     };
   }
 
-  async listOverrides(targetUserId: string): Promise<AccountOverrideListResult> {
+  async listOverrides(
+    targetUserId: string,
+  ): Promise<AccountOverrideListResult> {
     const entities = await this.overrideRepo.find({
       where: { userId: targetUserId },
       order: { createdAt: 'DESC' },
@@ -200,9 +202,10 @@ export class AccountOverrideService {
    * Auto-reverts any overrides whose expiresAt has passed (idempotent:
    * only processes isActive=true rows, so re-running produces no duplicates).
    */
-  async evaluateActiveOverrides(
-    userId: string,
-  ): Promise<{ overriddenActions: string[]; overrides: AccountOverrideRecord[] }> {
+  async evaluateActiveOverrides(userId: string): Promise<{
+    overriddenActions: string[];
+    overrides: AccountOverrideRecord[];
+  }> {
     const activeEntities = await this.overrideRepo.find({
       where: { userId, isActive: true },
     });

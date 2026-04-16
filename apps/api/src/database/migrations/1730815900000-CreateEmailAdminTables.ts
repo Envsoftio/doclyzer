@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateEmailAdminTables1730815900000
-  implements MigrationInterface
-{
+export class CreateEmailAdminTables1730815900000 implements MigrationInterface {
   name = 'CreateEmailAdminTables1730815900000';
 
   async up(queryRunner: QueryRunner): Promise<void> {

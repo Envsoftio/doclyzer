@@ -13,13 +13,10 @@ export class DoclingClient {
       this.configService.get<boolean>('reports.doclingEnabled') ?? false;
     if (!enabled) return null;
 
-    const url =
-      this.configService.get<string>('reports.doclingHttpUrl') ?? '';
+    const url = this.configService.get<string>('reports.doclingHttpUrl') ?? '';
     if (!url) {
       this.logger.warn(
-        redactSecrets(
-          'Docling enabled but DOCLING_HTTP_URL is not set',
-        ),
+        redactSecrets('Docling enabled but DOCLING_HTTP_URL is not set'),
       );
       return null;
     }
@@ -64,10 +61,8 @@ export class DoclingClient {
           (data as Record<string, Record<string, unknown>>).document
             .export_formats as Record<string, unknown>
         ).md === 'string'
-          ? (
-              (data as Record<string, Record<string, Record<string, string>>>)
-                .document.export_formats.md
-            )
+          ? (data as Record<string, Record<string, Record<string, string>>>)
+              .document.export_formats.md
           : null;
 
       if (!md) {

@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddEntitlementChangeReasonToUserEntitlements1730816200000
-  implements MigrationInterface
-{
+export class AddEntitlementChangeReasonToUserEntitlements1730816200000 implements MigrationInterface {
   name = 'AddEntitlementChangeReasonToUserEntitlements1730816200000';
 
   async up(queryRunner: QueryRunner): Promise<void> {

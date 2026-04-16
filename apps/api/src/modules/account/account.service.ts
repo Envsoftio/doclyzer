@@ -27,7 +27,10 @@ import type {
   ClosureRequest,
   RestrictionStatus,
 } from './account.types';
-import { COMM_PREF_CATEGORY, ClosureConfirmationRequiredException } from './account.types';
+import {
+  COMM_PREF_CATEGORY,
+  ClosureConfirmationRequiredException,
+} from './account.types';
 import {
   ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS,
   RESTRICTED_REVIEW_ACTIONS,

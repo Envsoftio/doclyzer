@@ -85,7 +85,8 @@ export class EmailAdminService {
     const snapshot: EmailQueueStatusSnapshot = {
       snapshotAt: new Date().toISOString(),
       counts,
-      total: counts.pending + counts.processing + counts.completed + unknownCount,
+      total:
+        counts.pending + counts.processing + counts.completed + unknownCount,
     };
 
     await this.recordAudit({
@@ -500,7 +501,9 @@ export class EmailAdminService {
       this.logger.error(
         'EMAIL_ADMIN_APPROVAL_SECRET is not configured — approval token check cannot proceed',
       );
-      throw new EmailAdminInvalidApprovalTokenException('Invalid approval token');
+      throw new EmailAdminInvalidApprovalTokenException(
+        'Invalid approval token',
+      );
     }
     // Use timing-safe comparison to prevent timing-based token oracle attacks.
     const tokenBuf = Buffer.from(token);
@@ -509,7 +512,9 @@ export class EmailAdminService {
       tokenBuf.length === secretBuf.length &&
       timingSafeEqual(tokenBuf, secretBuf);
     if (!tokensMatch) {
-      throw new EmailAdminInvalidApprovalTokenException('Invalid approval token');
+      throw new EmailAdminInvalidApprovalTokenException(
+        'Invalid approval token',
+      );
     }
   }
 

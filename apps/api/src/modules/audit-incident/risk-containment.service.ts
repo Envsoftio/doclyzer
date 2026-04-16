@@ -247,10 +247,8 @@ export class RiskContainmentService {
         isRestricted: nextRestricted,
         restrictedReviewMode: nextReviewMode,
         restrictedUntil,
-        rationale:
-          nextMode === 'none' ? null : (dto.rationale ?? null),
-        nextSteps:
-          nextMode === 'none' ? null : (dto.nextSteps ?? null),
+        rationale: nextMode === 'none' ? null : (dto.rationale ?? null),
+        nextSteps: nextMode === 'none' ? null : (dto.nextSteps ?? null),
       });
     } else {
       restriction.isRestricted = nextRestricted;
@@ -284,9 +282,7 @@ export class RiskContainmentService {
         outcome: state,
         reasonCode: dto.reasonCode,
         description:
-          nextMode === 'none'
-            ? 'Account restriction removed'
-            : dto.rationale,
+          nextMode === 'none' ? 'Account restriction removed' : dto.rationale,
         metadata: {
           targetType: 'account',
           restrictionMode: nextMode,

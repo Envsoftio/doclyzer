@@ -24,19 +24,15 @@ export class LabValueExtractor {
     const results: ExtractedLabValue[] = [];
 
     // Pattern 1: "Name: value unit" — e.g. "Glucose: 95 mg/dL"
-    const colonPattern = /([\w\s\-\/()]+):\s*([\d.]+)\s*([\w/%]+)?/g;
+    const colonPattern = /([\w\s/()-]+):\s*([\d.]+)\s*([\w/%]+)?/g;
     // Pattern 2: pipe-delimited — "Name | value | unit"
     const pipePattern = /^([^|]+)\|\s*([\d.]+)\s*\|\s*([\w/%]*)/gm;
     // Pattern 3: tab-separated table rows — "Name\tvalue\tunit"
-    const tabPattern = /^([\w\s\-\/()]+)\t([\d.]+)\t([\w/%]*)/gm;
+    const tabPattern = /^([\w\s/()-]+)\t([\d.]+)\t([\w/%]*)/gm;
 
     const seen = new Set<string>();
 
-    const add = (
-      name: string,
-      value: string,
-      unit: string | null,
-    ): void => {
+    const add = (name: string, value: string, unit: string | null): void => {
       if (results.length >= MAX_EXTRACTED_VALUES) return;
       if (!isValidNumber(value)) return;
       const cleaned = toTitleCase(name);
@@ -44,7 +40,12 @@ export class LabValueExtractor {
       const key = `${cleaned}:${value}`;
       if (seen.has(key)) return;
       seen.add(key);
-      results.push({ parameterName: cleaned, value, unit: unit || null, sampleDate: null });
+      results.push({
+        parameterName: cleaned,
+        value,
+        unit: unit || null,
+        sampleDate: null,
+      });
     };
 
     // Run pipe pattern first (more specific)

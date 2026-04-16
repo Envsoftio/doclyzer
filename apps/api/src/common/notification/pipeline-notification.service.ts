@@ -17,7 +17,8 @@ export class PipelineNotificationService extends NotificationService {
     super();
   }
 
-  async sendPasswordResetToken(email: string, _rawToken: string): Promise<void> {
+  async sendPasswordResetToken(email: string, rawToken: string): Promise<void> {
+    void rawToken;
     const normalizedEmail = email.trim().toLowerCase();
     const user = await this.userRepo.findOne({
       where: { email: normalizedEmail },

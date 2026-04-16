@@ -60,6 +60,10 @@ interface QueryFilters {
   shareLinkId: string | null;
 }
 
+interface MaxRawRow {
+  max: Date | string | null;
+}
+
 @Injectable()
 export class AnalyticsGovernanceService {
   private readonly logger = new Logger(AnalyticsGovernanceService.name);
@@ -208,12 +212,14 @@ export class AnalyticsGovernanceService {
       this.reviewRepo
         .createQueryBuilder('review')
         .select('MAX(review.updated_at)', 'max')
-        .getRawOne(),
+        .getRawOne<MaxRawRow>(),
     ]);
 
     return {
       pendingCount,
-      lastReviewedAt: latestRow?.max ? new Date(latestRow.max).toISOString() : null,
+      lastReviewedAt: latestRow?.max
+        ? new Date(latestRow.max).toISOString()
+        : null,
     };
   }
 

@@ -11,7 +11,10 @@ import {
   SUPPORT_ACTION_TYPES,
   SUPPORT_REQUEST_STATUSES,
 } from './support-request.types';
-import type { SupportActionType, SupportRequestStatus } from './support-request.types';
+import type {
+  SupportActionType,
+  SupportRequestStatus,
+} from './support-request.types';
 
 export class SupportRequestContextDto {
   @IsIn(SUPPORT_ACTION_TYPES)
