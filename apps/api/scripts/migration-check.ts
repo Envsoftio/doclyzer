@@ -32,6 +32,7 @@ async function run(): Promise<void> {
 
     const pending = AppDataSource.migrations
       .map((m) => m.name)
+      .filter((name): name is string => Boolean(name))
       .filter((name) => !appliedNames.has(name));
 
     console.error(`\n🚫 Migration check FAILED — ${pending.length} pending migration(s) detected:\n`);

@@ -68,7 +68,7 @@ services:
       - doclyzer_net
 
   docling:
-    image: ds4sd/docling-serve:latest
+    image: quay.io/docling-project/docling-serve-cpu:latest
     ports:
       - "5001:5001"
     environment:

@@ -25,7 +25,7 @@ export class ServiceIncidentService {
   async upsertIncident(
     dto: CreateServiceIncidentDto,
   ): Promise<PublicIncidentStatus> {
-    if (!ACTIVE_INCIDENT_STATUSES.includes(dto.status)) {
+    if (dto.status !== 'active' && dto.status !== 'monitoring') {
       throw new ServiceIncidentInvalidStatusException(
         'Active incidents must be in active or monitoring status',
       );

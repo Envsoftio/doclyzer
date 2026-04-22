@@ -146,6 +146,13 @@ gpt-5 (Codex)
 - `npm run migration:run` (apps/api) → wiring valid, but runtime failed with `ECONNREFUSED` because local Postgres was not reachable.
 - `docker compose config --services` (repo root) → validated compose file and confirmed services include `api`, `postgres`, `redis`, `docling`.
 - `docker compose up -d postgres` (repo root) → failed because local Docker daemon socket was unavailable.
+- `npm run test` (apps/api, 2026-04-22) → failed: missing script `test`.
+- `npm run test:e2e` (apps/api, 2026-04-22) → failed: missing script `test:e2e`.
+- `rg --files apps/api | rg '\.spec\.ts$|\.e2e-spec\.ts$'` (2026-04-22) → no existing API spec files found.
+- `npm run lint` (apps/api, 2026-04-22) → passed.
+- `npm run build` (apps/api, 2026-04-22) → failed with unrelated pre-existing TypeScript errors in analytics-admin, audit-incident, entitlements, and scripts/migration-check.
+- `npm run migration:check-pending` (apps/api, 2026-04-22) → failed because `scripts/migration-check.ts` has a TypeScript compile error.
+- `docker compose config --services` (repo root, 2026-04-22) → confirms `docling`, `postgres`, `redis`, `api`.
 
 ### Implementation Plan
 
@@ -160,6 +167,8 @@ gpt-5 (Codex)
 - Added `api` service to compose and updated root README commands to standard `docker compose` flow for API + Postgres startup.
 - Remaining blocker for AC3 completion: test/e2e scripts are not present in `apps/api/package.json`, and baseline build/lint currently fail due pre-existing unrelated issues.
 - Story remains `in-progress` until regression/e2e validation can be executed in a clean baseline.
+- Re-validated AC3 gating on 2026-04-22: API still has no `test`/`test:e2e` scripts and no existing spec files, so required persistence/e2e regression execution cannot yet be completed for this story.
+- Current baseline quality check on 2026-04-22: lint passes, but build and migration check still fail due pre-existing unrelated TypeScript issues outside this story's persistence foundation scope.
 
 ### File List
 
@@ -172,3 +181,4 @@ gpt-5 (Codex)
 
 - 2026-04-16: Created story context with architecture guardrails, prior-work reuse guidance, and implementation/test constraints.
 - 2026-04-16: Reconciled persistence baseline, added compose API runtime path, updated docker compose documentation, and logged validation blockers (missing test scripts + pre-existing regression failures).
+- 2026-04-22: Re-ran validation commands for Task 3 and captured current blockers; story remains in-progress pending availability of runnable API regression/e2e suite.

@@ -19,6 +19,15 @@ import { PlanConfigNotFoundException } from './exceptions/plan-config-not-found.
 import { PlanConfigValidationException } from './exceptions/plan-config-validation.exception';
 import { PlanConfigVersionConflictException } from './exceptions/plan-config-version-conflict.exception';
 
+const ENTITLEMENT_CHANGE_REASONS: EntitlementChangeReason[] = [
+  'initial_provision',
+  'credit_pack_purchase',
+  'subscription_upgrade',
+  'plan_downgrade',
+  'admin_adjustment',
+  'system_reconciliation',
+];
+
 @Injectable()
 export class EntitlementsService {
   private readonly logger = new Logger(EntitlementsService.name);
@@ -48,7 +57,9 @@ export class EntitlementsService {
       expiresAt: entitlement.expiresAt
         ? entitlement.expiresAt.toISOString()
         : null,
-      lastChangeReason: entitlement.lastChangeReason ?? null,
+      lastChangeReason: this.toEntitlementChangeReason(
+        entitlement.lastChangeReason,
+      ),
       lastChangeAt: entitlement.lastChangeAt
         ? entitlement.lastChangeAt.toISOString()
         : null,
@@ -482,5 +493,17 @@ export class EntitlementsService {
         errorCode: input.errorCode,
       }),
     );
+  }
+
+  private toEntitlementChangeReason(
+    value: string | null,
+  ): EntitlementChangeReason | null {
+    if (!value) {
+      return null;
+    }
+
+    return ENTITLEMENT_CHANGE_REASONS.includes(value as EntitlementChangeReason)
+      ? (value as EntitlementChangeReason)
+      : null;
   }
 }

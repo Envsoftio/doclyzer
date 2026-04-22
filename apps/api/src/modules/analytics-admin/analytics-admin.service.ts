@@ -311,9 +311,9 @@ export class AnalyticsAdminService {
       dto: {
         eventName: 'core_product_metric',
         fields: [
-          { name: 'metric_name', type: 'string', classification: 'non_phi' },
-          { name: 'metric_value', type: 'number', classification: 'non_phi' },
-          { name: 'plan_tier', type: 'string', classification: 'non_phi' },
+          { name: 'metric_name', classification: 'non_phi' },
+          { name: 'metric_value', classification: 'non_phi' },
+          { name: 'plan_tier', classification: 'non_phi' },
         ],
         changeSummary: 'System dashboard export',
       },
