@@ -24,8 +24,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      docling:
-        condition: service_started
     restart: unless-stopped
     networks:
       - doclyzer_net
@@ -64,16 +62,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - doclyzer_net
-
-  docling:
-    image: quay.io/docling-project/docling-serve-cpu:latest
-    ports:
-      - "5001:5001"
-    environment:
-      - DOCLING_NUM_THREADS=2
-    restart: unless-stopped
     networks:
       - doclyzer_net
 

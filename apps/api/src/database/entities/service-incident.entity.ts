@@ -44,18 +44,18 @@ export class ServiceIncidentEntity {
   @Column({ type: 'text', name: 'whats_affected' })
   whatsAffected!: string;
 
-  @Column({ type: 'text', array: true })
+  @Column({ type: 'text', array: true, name: 'affected_surfaces' })
   affectedSurfaces!: IncidentSurface[];
 
-  @Column({ type: 'timestamptz' })
+  @Column({ type: 'timestamptz', name: 'started_at' })
   startedAt!: Date;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true, name: 'resolved_at' })
   resolvedAt!: Date | null;
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 }

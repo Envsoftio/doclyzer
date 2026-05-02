@@ -45,6 +45,7 @@ class Report {
     this.summary,
     this.parsedTranscript,
     this.extractedLabValues = const [],
+    this.structuredReport,
   });
 
   final String id;
@@ -57,6 +58,54 @@ class Report {
   final String? summary;
   final String? parsedTranscript;
   final List<ExtractedLabValue> extractedLabValues;
+  final StructuredReport? structuredReport;
+}
+
+class StructuredPatientDetails {
+  const StructuredPatientDetails({
+    this.name,
+    this.age,
+    this.gender,
+    this.bookingId,
+    this.sampleCollectionDate,
+  });
+
+  final String? name;
+  final String? age;
+  final String? gender;
+  final String? bookingId;
+  final String? sampleCollectionDate;
+}
+
+class StructuredSectionItem {
+  const StructuredSectionItem({
+    required this.parameterName,
+    required this.value,
+    this.unit,
+    this.sampleDate,
+  });
+
+  final String parameterName;
+  final String value;
+  final String? unit;
+  final String? sampleDate;
+}
+
+class StructuredSection {
+  const StructuredSection({required this.heading, required this.tests});
+
+  final String heading;
+  final List<StructuredSectionItem> tests;
+}
+
+class StructuredReport {
+  const StructuredReport({
+    required this.patientDetails,
+    required this.sections,
+  });
+
+  final StructuredPatientDetails patientDetails;
+  final List<StructuredSection> sections;
 }
 
 /// A single trend data point (date + numeric value).
@@ -105,8 +154,10 @@ class ProcessingAttempt {
 abstract class ReportsRepository {
   /// Upload a report file. Returns metadata including reportId and status.
   /// When [forceUploadAnyway] is true, bypasses duplicate check (use after user chooses "Upload anyway").
-  Future<UploadedReport> uploadReport(String filePath,
-      {bool forceUploadAnyway = false});
+  Future<UploadedReport> uploadReport(
+    String filePath, {
+    bool forceUploadAnyway = false,
+  });
 
   /// List reports for the given profile, newest first.
   Future<List<Report>> listReports(String profileId);
@@ -115,7 +166,7 @@ abstract class ReportsRepository {
   Future<Report> getReport(String reportId);
 
   /// Retry parsing for a report that failed. Returns updated report.
-  Future<Report> retryParse(String reportId);
+  Future<Report> retryParse(String reportId, {bool force = false});
 
   /// Mark report as kept (unparsed) when user chooses "Keep file anyway".
   Future<Report> keepFile(String reportId);
@@ -124,7 +175,10 @@ abstract class ReportsRepository {
   Future<List<int>> getReportFile(String reportId);
 
   /// Fetch lab trend data for a profile, optionally filtered by parameterName.
-  Future<LabTrendsResult> getLabTrends(String profileId, {String? parameterName});
+  Future<LabTrendsResult> getLabTrends(
+    String profileId, {
+    String? parameterName,
+  });
 
   /// Fetch processing attempt history for a report, oldest first.
   Future<List<ProcessingAttempt>> getProcessingAttempts(String reportId);

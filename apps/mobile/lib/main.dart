@@ -106,8 +106,7 @@ class DoclyzerApp extends StatefulWidget {
   State<DoclyzerApp> createState() => _DoclyzerAppState();
 }
 
-class _DoclyzerAppState extends State<DoclyzerApp>
-    with WidgetsBindingObserver {
+class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
 
@@ -133,6 +132,7 @@ class _DoclyzerAppState extends State<DoclyzerApp>
   String? _timelineProfileId;
   String? _timelineProfileName;
   bool _initialized = false;
+  bool _isHandlingUnauthorized = false;
   PublicIncidentStatus? _incidentStatus;
   DateTime? _incidentFetchedAt;
 
@@ -146,6 +146,7 @@ class _DoclyzerAppState extends State<DoclyzerApp>
       _apiClient = ApiClient(
         baseUrl: apiBaseUrl,
         onRefreshToken: () async => null,
+        onUnauthorized: _handleUnauthorized,
       );
       _accountRepository = widget.accountRepository!;
       _profilesRepository = widget.profilesRepository!;
@@ -168,6 +169,7 @@ class _DoclyzerAppState extends State<DoclyzerApp>
       _apiClient = ApiClient(
         baseUrl: apiBaseUrl,
         onRefreshToken: () => _authRepository!.refreshTokens(),
+        onUnauthorized: _handleUnauthorized,
       );
       _authRepository = ApiAuthRepository(_apiClient!, tokenStorage);
       _accountRepository = ApiAccountRepository(_apiClient!);
@@ -273,6 +275,26 @@ class _DoclyzerAppState extends State<DoclyzerApp>
     }
   }
 
+  Future<void> _handleUnauthorized() async {
+    if (_isHandlingUnauthorized) return;
+    _isHandlingUnauthorized = true;
+    try {
+      await _auth.logout();
+      if (mounted) {
+        setState(() {
+          _authView = _AuthView.login;
+          _prefillEmail = null;
+          _editingProfile = null;
+          _activeProfileNameForUpload = '';
+          _timelineProfileId = null;
+          _timelineProfileName = null;
+        });
+      }
+    } finally {
+      _isHandlingUnauthorized = false;
+    }
+  }
+
   Future<void> _requestPasswordReset(String email) async {
     await _auth.requestPasswordReset(email: email);
   }
@@ -288,23 +310,32 @@ class _DoclyzerAppState extends State<DoclyzerApp>
     final message = forUpload
         ? 'Create a default profile before uploading a report.'
         : 'Create a default profile before viewing your timeline.';
-    final statusContext = _scaffoldMessengerKey.currentContext;
-    if (statusContext == null) return;
-    StatusMessenger.showInfo(statusContext, message);
+    final messenger = _scaffoldMessengerKey.currentState;
+    if (messenger == null) return;
+    StatusMessenger.showInfoOnMessenger(messenger, message);
   }
 
   void _showProfileLoadError(String message) {
-    final statusContext = _scaffoldMessengerKey.currentContext;
-    if (statusContext == null) return;
-    StatusMessenger.showError(
-      statusContext,
+    final messenger = _scaffoldMessengerKey.currentState;
+    if (messenger == null) return;
+    StatusMessenger.showErrorOnMessenger(
+      messenger,
       message.isNotEmpty ? message : 'Unable to load profiles right now.',
     );
   }
 
-  Future<Profile?> _getActiveProfileOrNotify({
-    required bool forUpload,
-  }) async {
+  String _friendlyProfileLoadError(ApiException e, {required bool forUpload}) {
+    if (e.code == 'NETWORK_ERROR') {
+      return forUpload
+          ? 'Cannot upload right now because profile data could not be loaded. Please ensure API server is running and try again.'
+          : 'Cannot open timeline right now because profile data could not be loaded. Please ensure API server is running and try again.';
+    }
+    return e.message.isNotEmpty
+        ? e.message
+        : 'Unable to load profiles right now. Please try again.';
+  }
+
+  Future<Profile?> _getActiveProfileOrNotify({required bool forUpload}) async {
     try {
       final profiles = await _profilesRepository.getProfiles();
       for (final profile in profiles) {
@@ -317,7 +348,11 @@ class _DoclyzerAppState extends State<DoclyzerApp>
         await _logout();
         return null;
       }
-      if (mounted) _showProfileLoadError(e.message);
+      if (mounted) {
+        _showProfileLoadError(
+          _friendlyProfileLoadError(e, forUpload: forUpload),
+        );
+      }
       return null;
     } catch (_) {
       if (mounted) {
@@ -511,6 +546,15 @@ class _DoclyzerAppState extends State<DoclyzerApp>
           },
           onComplete: () {
             setState(() => _authView = _AuthView.home);
+          },
+          onGoToTimeline: () async {
+            final active = await _getActiveProfileOrNotify(forUpload: false);
+            if (active == null || !mounted) return;
+            setState(() {
+              _authView = _AuthView.timeline;
+              _timelineProfileId = active.id;
+              _timelineProfileName = active.name;
+            });
           },
           onUpgrade: () {
             setState(() => _authView = _AuthView.billing);

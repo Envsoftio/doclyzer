@@ -4,7 +4,6 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createHash, randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
@@ -19,7 +18,8 @@ import { ReportProcessingAttemptEntity } from '../../database/entities/report-pr
 import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
-import { DoclingClient } from './docling.client';
+import { OpenDataLoaderClient } from './opendataloader.client';
+import { OpenDataLoaderJsonParser } from './opendataloader-json-parser';
 import { LabValueExtractor } from './lab-value-extractor';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
@@ -67,6 +67,39 @@ export interface ReportDto {
   summary?: string;
   parsedTranscript?: string;
   extractedLabValues: ExtractedLabValueDto[];
+  structuredReport?: StructuredReportDto;
+}
+
+export interface StructuredPatientDetailsDto {
+  name?: string;
+  age?: string;
+  gender?: string;
+  bookingId?: string;
+  sampleCollectionDate?: string;
+}
+
+export interface StructuredSectionItemDto {
+  parameterName: string;
+  value: string;
+  unit?: string;
+  sampleDate?: string;
+}
+
+export interface StructuredSectionDto {
+  heading: string;
+  tests: StructuredSectionItemDto[];
+}
+
+export interface StructuredReportDto {
+  patientDetails: StructuredPatientDetailsDto;
+  sections: StructuredSectionDto[];
+}
+
+interface StructuredReportLabInput {
+  parameterName: string;
+  value: string;
+  unit: string | null;
+  sampleDate: string | null;
 }
 
 export interface TrendDataPoint {
@@ -94,6 +127,7 @@ export interface ProcessingAttemptDto {
 @Injectable()
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
+  private static readonly MIN_PARSE_TEXT_LENGTH = 120;
 
   constructor(
     @InjectRepository(ReportEntity)
@@ -104,16 +138,16 @@ export class ReportsService {
     private readonly attemptRepo: Repository<ReportProcessingAttemptEntity>,
     private readonly profilesService: ProfilesService,
     @Inject(FILE_STORAGE) private readonly fileStorage: FileStorageService,
-    private readonly configService: ConfigService,
     private readonly reportSummaryService: ReportSummaryService,
     private readonly usageLimitsService: UsageLimitsService,
-    private readonly doclingClient: DoclingClient,
+    private readonly openDataLoaderClient: OpenDataLoaderClient,
     private readonly notificationPipeline: NotificationPipelineService,
   ) {
     this.labExtractor = new LabValueExtractor();
   }
 
   private readonly labExtractor: LabValueExtractor;
+  private readonly odlJsonParser = new OpenDataLoaderJsonParser();
 
   private throwIfAlreadyParsed(status: string): void {
     if (status === 'parsed') {
@@ -192,19 +226,25 @@ export class ReportsService {
 
     await this.fileStorage.upload(storageKey, file.buffer, file.mimetype);
 
-    const doclingEnabled =
-      this.configService.get<boolean>('reports.doclingEnabled') ?? false;
-    let status: ReportStatus;
-    let transcript: string | null;
-    if (doclingEnabled) {
-      const doclingResult = await this.doclingClient.parsePdf(file.buffer);
-      status = doclingResult ? 'parsed' : 'failed_transient';
-      transcript = doclingResult?.text ?? null;
-    } else {
-      ({ status, transcript } = this.runParseStub(file.buffer));
-    }
+    const { status, transcript, opendataloaderJson } = await this.parseReportBuffer(
+      file.buffer,
+      'upload',
+      reportId,
+    );
 
-    const labValues = transcript ? this.labExtractor.extract(transcript) : [];
+    const parsedFromJson = opendataloaderJson
+      ? this.odlJsonParser.parse(opendataloaderJson)
+      : null;
+    const labValues = parsedFromJson
+      ? parsedFromJson.extractedLabValues
+      : transcript
+        ? this.labExtractor.extract(transcript)
+        : [];
+    const structuredReport =
+      status === 'parsed'
+        ? parsedFromJson?.structuredReport ??
+          this.buildStructuredReport(transcript, labValues)
+        : null;
 
     const summary =
       status === 'parsed'
@@ -222,6 +262,7 @@ export class ReportsService {
       status,
       summary,
       parsedTranscript: status === 'parsed' ? transcript : null,
+      structuredReport: structuredReport as Record<string, unknown> | null,
       contentHash,
     });
 
@@ -323,7 +364,7 @@ export class ReportsService {
       where: { reportId },
       order: { sortOrder: 'ASC', parameterName: 'ASC' },
     });
-    return this.toDto(entity, labValues, true);
+    return this.toDto(entity, labValues, true, true);
   }
 
   /** List reports for a profile. Validates user owns the profile (throws if not). */
@@ -452,6 +493,7 @@ export class ReportsService {
   async retryParse(
     userId: string,
     reportId: string,
+    options?: { force?: boolean },
     correlationId?: string,
   ): Promise<ReportDto> {
     if (!isUUID(reportId)) throw new ReportNotFoundException();
@@ -459,25 +501,26 @@ export class ReportsService {
       where: { id: reportId, userId },
     });
     if (!entity) throw new ReportNotFoundException();
-    this.throwIfAlreadyParsed(entity.status);
+    const force = options?.force === true;
+    if (!force) {
+      this.throwIfAlreadyParsed(entity.status);
+    }
 
     const buffer = await this.fileStorage.get(entity.originalFileStorageKey);
 
-    const doclingEnabled =
-      this.configService.get<boolean>('reports.doclingEnabled') ?? false;
-    let status: ReportStatus;
-    let transcript: string | null;
-    if (doclingEnabled) {
-      const doclingResult = await this.doclingClient.parsePdf(buffer);
-      status = doclingResult ? 'parsed' : 'failed_transient';
-      transcript = doclingResult?.text ?? null;
-    } else {
-      ({ status, transcript } = this.runParseStub(buffer, true));
-    }
+    const { status, transcript, opendataloaderJson } = await this.parseReportBuffer(
+      buffer,
+      'retry',
+      entity.id,
+    );
 
+    const retryFromJson = opendataloaderJson
+      ? this.odlJsonParser.parse(opendataloaderJson)
+      : null;
     const retryLabValues =
-      status === 'parsed' && transcript
-        ? this.labExtractor.extract(transcript)
+      status === 'parsed'
+        ? retryFromJson?.extractedLabValues ??
+          (transcript ? this.labExtractor.extract(transcript) : [])
         : [];
 
     entity.status = status;
@@ -488,8 +531,18 @@ export class ReportsService {
     // Only overwrite transcript on success; preserve existing on failure (AC3)
     if (status === 'parsed') {
       entity.parsedTranscript = transcript;
+      entity.structuredReport = JSON.parse(
+        JSON.stringify(
+          retryFromJson?.structuredReport ??
+            this.buildStructuredReport(transcript, retryLabValues),
+        ),
+      ) as unknown as Record<string, unknown>;
     }
     await this.reportRepo.save(entity);
+
+    // Replace previous extracted values on successful parse to avoid duplicated rows
+    // when users intentionally reprocess the same report.
+    await this.reportLabValueRepo.delete({ reportId: entity.id });
 
     if (retryLabValues.length > 0) {
       const labEntities = retryLabValues.map((lv, i) =>
@@ -514,7 +567,89 @@ export class ReportsService {
       correlationId,
     });
 
-    return this.toDto(entity, [], true);
+    const refreshedLabValues = await this.reportLabValueRepo.find({
+      where: { reportId: entity.id },
+      order: { sortOrder: 'ASC', parameterName: 'ASC' },
+    });
+    return this.toDto(entity, refreshedLabValues, true, true);
+  }
+
+  private evaluateParsedTranscript(text: string | null | undefined): {
+    ok: boolean;
+    text: string | null;
+  } {
+    const cleaned = this.sanitizeParsedTranscript(text);
+    if (!cleaned) return { ok: false, text: null };
+    if (cleaned.length < ReportsService.MIN_PARSE_TEXT_LENGTH) {
+      return { ok: false, text: cleaned };
+    }
+    const alphaCount = (cleaned.match(/[A-Za-z]/g) ?? []).length;
+    if (alphaCount < 30) {
+      return { ok: false, text: cleaned };
+    }
+    return { ok: true, text: cleaned };
+  }
+
+  private async parseReportBuffer(
+    buffer: Buffer,
+    trigger: 'upload' | 'retry',
+    reportId: string,
+  ): Promise<{
+    status: ReportStatus;
+    transcript: string | null;
+    opendataloaderJson?: unknown;
+  }> {
+    const result = await this.openDataLoaderClient.parsePdf(buffer);
+    const evaluated = this.evaluateParsedTranscript(result?.text);
+    const status = evaluated.ok ? 'parsed' : 'failed_transient';
+    this.logParseQuality(trigger, reportId, evaluated.text, status);
+    return {
+      status,
+      transcript: evaluated.text,
+      ...(result?.parsedJson ? { opendataloaderJson: result.parsedJson } : {}),
+    };
+  }
+
+  private sanitizeParsedTranscript(text: string | null | undefined): string {
+    if (!text) return '';
+    let cleaned = text;
+    // Remove markdown image tags (common in parser output for scanned PDFs)
+    cleaned = cleaned.replace(/!\[[^\]]*]\([^)\n]*\)/g, ' ');
+    // Remove inline data URIs if any survived markdown stripping
+    cleaned = cleaned.replace(
+      /data:image\/[a-zA-Z+]+;base64,[A-Za-z0-9+/=\s]+/g,
+      ' ',
+    );
+    // Remove long base64-like blobs and long opaque tokens
+    cleaned = cleaned.replace(/[A-Za-z0-9+/=]{200,}/g, ' ');
+    // Normalize whitespace
+    cleaned = cleaned
+      .replace(/\r\n/g, '\n')
+      .replace(/[ \t]+/g, ' ')
+      .trim();
+    return cleaned;
+  }
+
+  private logParseQuality(
+    trigger: 'upload' | 'retry',
+    reportId: string,
+    transcript: string | null,
+    status: ReportStatus,
+  ): void {
+    const text = transcript ?? '';
+    const preview = text.slice(0, 180).replace(/\s+/g, ' ');
+    const alphaCount = (text.match(/[A-Za-z]/g) ?? []).length;
+    this.logger.log(
+      JSON.stringify({
+        action: 'REPORT_PARSE_RESULT',
+        trigger,
+        reportId,
+        status,
+        transcriptChars: text.length,
+        transcriptAlphaChars: alphaCount,
+        preview,
+      }),
+    );
   }
 
   private dispatchReportNotification(input: {
@@ -630,45 +765,21 @@ export class ReportsService {
     entity.status = 'unparsed';
     entity.summary = null;
     entity.parsedTranscript = null;
+    entity.structuredReport = null;
     await this.reportRepo.save(entity);
     return this.toDto(entity);
-  }
-
-  private runParseStub(
-    _buffer: Buffer,
-    isRetry = false,
-  ): { status: ReportStatus; transcript: string | null } {
-    const fail =
-      this.configService.get<boolean>('reports.parseStubFail') ?? false;
-    const retrySucceeds =
-      this.configService.get<boolean>('reports.parseStubRetrySucceeds') ??
-      false;
-    const contentNotRecognized =
-      this.configService.get<boolean>(
-        'reports.parseStubContentNotRecognized',
-      ) ?? false;
-    if (isRetry && retrySucceeds)
-      return {
-        status: 'parsed',
-        transcript: 'Stub transcript: lab values extracted.',
-      };
-    if (fail) {
-      return {
-        status: contentNotRecognized ? 'content_not_recognized' : 'unparsed',
-        transcript: null,
-      };
-    }
-    return {
-      status: 'parsed',
-      transcript: 'Stub transcript: lab values extracted.',
-    };
   }
 
   private toDto(
     e: ReportEntity,
     labValues: ReportLabValueEntity[] = [],
     includeTranscript = false,
+    includeStructuredReport = false,
   ): ReportDto {
+    const structuredReport = includeStructuredReport
+      ? this.getStoredStructuredReport(e)
+      : undefined;
+
     return {
       id: e.id,
       profileId: e.profileId,
@@ -686,6 +797,158 @@ export class ReportsService {
         ...(lv.unit != null && lv.unit !== '' && { unit: lv.unit }),
         ...(lv.sampleDate != null && { sampleDate: lv.sampleDate }),
       })),
+      ...(structuredReport &&
+        structuredReport.sections.length > 0 && { structuredReport }),
     };
+  }
+
+  private getStoredStructuredReport(
+    report: ReportEntity,
+  ): StructuredReportDto | undefined {
+    const raw = report.structuredReport;
+    if (!raw || typeof raw !== 'object') return undefined;
+    const candidate = raw as Partial<StructuredReportDto>;
+    if (!candidate.patientDetails || !Array.isArray(candidate.sections)) {
+      return undefined;
+    }
+    return candidate as StructuredReportDto;
+  }
+
+  private buildStructuredReport(
+    transcript: string | null,
+    labValues: StructuredReportLabInput[],
+  ): StructuredReportDto {
+    const patientDetails = this.extractPatientDetails(transcript);
+    const sectionsMap = new Map<string, StructuredSectionItemDto[]>();
+
+    for (const lv of labValues) {
+      const heading = this.resolveSectionHeading(lv.parameterName);
+      if (!sectionsMap.has(heading)) {
+        sectionsMap.set(heading, []);
+      }
+      sectionsMap.get(heading)!.push({
+        parameterName: lv.parameterName,
+        value: lv.value,
+        ...(lv.unit ? { unit: lv.unit } : {}),
+        ...(lv.sampleDate ? { sampleDate: lv.sampleDate } : {}),
+      });
+    }
+
+    const sectionOrder = [
+      'Thyroid Function',
+      'Liver Function',
+      'Kidney Function',
+      'Lipid Profile',
+      'Diabetes',
+      'Complete Blood Count',
+      'Iron Studies',
+      'Vitamin Profile',
+      'Inflammation / Autoimmune',
+      'Urine Analysis',
+      'Hormones',
+      'Other Tests',
+    ];
+
+    const sections: StructuredSectionDto[] = Array.from(sectionsMap.entries())
+      .sort((a, b) => {
+        const ai = sectionOrder.indexOf(a[0]);
+        const bi = sectionOrder.indexOf(b[0]);
+        if (ai === -1 && bi === -1) return a[0].localeCompare(b[0]);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      })
+      .map(([heading, tests]) => ({ heading, tests }));
+
+    return { patientDetails, sections };
+  }
+
+  private extractPatientDetails(
+    transcript: string | null,
+  ): StructuredPatientDetailsDto {
+    if (!transcript) return {};
+    const compact = transcript.replace(/\s+/g, ' ').trim();
+    const read = (re: RegExp): string | undefined => {
+      const m = compact.match(re);
+      return m?.[1]?.trim();
+    };
+    const name =
+      read(
+        /Patient Name\s*:\s*([^|]+?)(?:\s{2,}|Age\/Gender|Barcode|Order Id|$)/i,
+      ) ?? read(/\bDear\s+([A-Za-z][A-Za-z ]{1,60})[,!]/i);
+    const ageGender = read(/Age\/Gender\s*:\s*([^|]+?)(?:\s{2,}|Order Id|$)/i);
+    const age = ageGender?.match(
+      /(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?|\d+\s*Yrs?)/i,
+    )?.[1];
+    const gender = ageGender?.match(/\b(Male|Female|Other)\b/i)?.[1];
+    return {
+      ...(name ? { name } : {}),
+      ...(age ? { age } : {}),
+      ...(gender ? { gender } : {}),
+      ...(read(/Booking ID\s*:\s*([A-Za-z0-9-]+)/i)
+        ? { bookingId: read(/Booking ID\s*:\s*([A-Za-z0-9-]+)/i) }
+        : {}),
+      ...(read(
+        /Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i,
+      )
+        ? {
+            sampleCollectionDate: read(
+              /Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i,
+            ),
+          }
+        : {}),
+    };
+  }
+
+  private resolveSectionHeading(parameterName: string): string {
+    const p = parameterName.toLowerCase();
+    if (/tsh|thyroid|t3|t4|tri-iodothyronine|thyroxine/.test(p)) {
+      return 'Thyroid Function';
+    }
+    if (
+      /alt|ast|bilirubin|ggt|alkaline phosphatase|albumin|globulin|sgot|sgpt|liver/.test(
+        p,
+      )
+    ) {
+      return 'Liver Function';
+    }
+    if (
+      /creatinine|gfr|urea|bun|uric acid|sodium|chloride|calcium|potassium|kidney/.test(
+        p,
+      )
+    ) {
+      return 'Kidney Function';
+    }
+    if (/cholesterol|hdl|ldl|vldl|triglycerides|non-hdl|lipid/.test(p)) {
+      return 'Lipid Profile';
+    }
+    if (/hba1c|glucose|fasting blood sugar|estimated glucose/.test(p)) {
+      return 'Diabetes';
+    }
+    if (
+      /haemoglobin|hemoglobin|rbc|wbc|leucocyte|lymphocyte|neutrophil|monocyte|eosinophil|basophil|platelet|mcv|mch|mchc|rdw|cbc|pcv/.test(
+        p,
+      )
+    ) {
+      return 'Complete Blood Count';
+    }
+    if (/iron|uibc|tibc|transferrin/.test(p)) {
+      return 'Iron Studies';
+    }
+    if (/vitamin b12|vitamin d/.test(p)) {
+      return 'Vitamin Profile';
+    }
+    if (/crp|c-reactive|rheumatoid/.test(p)) {
+      return 'Inflammation / Autoimmune';
+    }
+    if (
+      /urine|pus cells|epithelial|ketones|nitrite|leucocyte esterase/.test(p)
+    ) {
+      return 'Urine Analysis';
+    }
+    if (/cortisol/.test(p)) {
+      return 'Hormones';
+    }
+    return 'Other Tests';
   }
 }

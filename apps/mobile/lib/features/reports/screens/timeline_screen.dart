@@ -106,7 +106,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
   @override
   Widget build(BuildContext context) {
     final incident = widget.incidentStatus;
-    final showIncidentBanner = incident != null &&
+    final showIncidentBanner =
+        incident != null &&
         incident.isActive &&
         incident.affectsSurface('mobile_app');
 
@@ -236,10 +237,22 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   static String _statusLabel(String status) {
     switch (status) {
+      case 'uploading':
+        return 'Uploading';
+      case 'queued':
+        return 'Queued for parsing';
+      case 'parsing':
+        return 'Parsing in progress';
+      case 'parsed':
+        return 'Parsed';
       case 'content_not_recognized':
         return 'Not a health report';
       case 'unparsed':
         return 'Unparsed';
+      case 'failed_transient':
+        return 'Processing delayed';
+      case 'failed_terminal':
+        return 'Parsing failed';
       default:
         return status;
     }

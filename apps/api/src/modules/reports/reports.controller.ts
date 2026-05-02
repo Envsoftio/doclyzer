@@ -206,12 +206,14 @@ export class ReportsController {
   @Post(':id/retry')
   async retryParse(
     @Param('id') reportId: string,
+    @Query('force') force: string | undefined,
     @Req() req: Request,
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const data = await this.reportsService.retryParse(
       userId,
       reportId,
+      { force: force === 'true' },
       getCorrelationId(req),
     );
     return successResponse(data, getCorrelationId(req));

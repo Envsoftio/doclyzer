@@ -6,9 +6,47 @@ class ApiReportsRepository implements ReportsRepository {
 
   final ApiClient _client;
 
+  StructuredReport? _parseStructuredReport(Map<String, dynamic> d) {
+    final sr = d['structuredReport'];
+    if (sr is! Map<String, dynamic>) return null;
+
+    final pd = sr['patientDetails'] as Map<String, dynamic>? ?? const {};
+    final sectionsRaw = sr['sections'] as List<dynamic>? ?? const [];
+
+    final sections = sectionsRaw.whereType<Map<String, dynamic>>().map((s) {
+      final testsRaw = s['tests'] as List<dynamic>? ?? const [];
+      final tests = testsRaw.whereType<Map<String, dynamic>>().map((t) {
+        return StructuredSectionItem(
+          parameterName: t['parameterName'] as String? ?? '',
+          value: t['value'] as String? ?? '',
+          unit: t['unit'] as String?,
+          sampleDate: t['sampleDate'] as String?,
+        );
+      }).toList();
+
+      return StructuredSection(
+        heading: s['heading'] as String? ?? 'Other Tests',
+        tests: tests,
+      );
+    }).toList();
+
+    return StructuredReport(
+      patientDetails: StructuredPatientDetails(
+        name: pd['name'] as String?,
+        age: pd['age'] as String?,
+        gender: pd['gender'] as String?,
+        bookingId: pd['bookingId'] as String?,
+        sampleCollectionDate: pd['sampleCollectionDate'] as String?,
+      ),
+      sections: sections,
+    );
+  }
+
   @override
-  Future<UploadedReport> uploadReport(String filePath,
-      {bool forceUploadAnyway = false}) async {
+  Future<UploadedReport> uploadReport(
+    String filePath, {
+    bool forceUploadAnyway = false,
+  }) async {
     final queryParams = forceUploadAnyway
         ? <String, String>{'duplicateAction': 'upload_anyway'}
         : null;
@@ -36,17 +74,19 @@ class ApiReportsRepository implements ReportsRepository {
     return list.map((d) {
       final map = d as Map<String, dynamic>;
       final createdAt = map['createdAt'] as String?;
-    return Report(
-      id: map['id'] as String,
-      profileId: map['profileId'] as String,
-      originalFileName: map['originalFileName'] as String,
-      contentType: map['contentType'] as String,
-      sizeBytes: map['sizeBytes'] as int,
-      status: map['status'] as String,
-      createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
-      extractedLabValues: const [],
-    );
-  }).toList();
+      return Report(
+        id: map['id'] as String,
+        profileId: map['profileId'] as String,
+        originalFileName: map['originalFileName'] as String,
+        contentType: map['contentType'] as String,
+        sizeBytes: map['sizeBytes'] as int,
+        status: map['status'] as String,
+        createdAt: createdAt != null
+            ? DateTime.parse(createdAt)
+            : DateTime.now(),
+        extractedLabValues: const [],
+      );
+    }).toList();
   }
 
   @override
@@ -75,14 +115,28 @@ class ApiReportsRepository implements ReportsRepository {
       summary: d['summary'] as String?,
       parsedTranscript: d['parsedTranscript'] as String?,
       extractedLabValues: extractedLabValues,
+      structuredReport: _parseStructuredReport(d),
     );
   }
 
   @override
-  Future<Report> retryParse(String reportId) async {
-    final data = await _client.post('v1/reports/$reportId/retry');
+  Future<Report> retryParse(String reportId, {bool force = false}) async {
+    final path = force
+        ? 'v1/reports/$reportId/retry?force=true'
+        : 'v1/reports/$reportId/retry';
+    final data = await _client.post(path);
     final d = data['data'] as Map<String, dynamic>;
     final createdAt = d['createdAt'] as String?;
+    final labList = d['extractedLabValues'] as List<dynamic>? ?? [];
+    final extractedLabValues = labList.map((e) {
+      final m = e as Map<String, dynamic>;
+      return ExtractedLabValue(
+        parameterName: m['parameterName'] as String? ?? '',
+        value: m['value'] as String? ?? '',
+        unit: m['unit'] as String?,
+        sampleDate: m['sampleDate'] as String?,
+      );
+    }).toList();
     return Report(
       id: d['id'] as String,
       profileId: d['profileId'] as String,
@@ -93,7 +147,8 @@ class ApiReportsRepository implements ReportsRepository {
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
       summary: d['summary'] as String?,
       parsedTranscript: d['parsedTranscript'] as String?,
-      extractedLabValues: const [],
+      extractedLabValues: extractedLabValues,
+      structuredReport: _parseStructuredReport(d),
     );
   }
 
@@ -111,8 +166,7 @@ class ApiReportsRepository implements ReportsRepository {
         ? 'v1/reports/lab-trends?profileId=$profileId&parameterName=${Uri.encodeComponent(parameterName)}'
         : 'v1/reports/lab-trends?profileId=$profileId';
     final data = await _client.get(query);
-    final paramList =
-        data['data']?['parameters'] as List<dynamic>? ?? [];
+    final paramList = data['data']?['parameters'] as List<dynamic>? ?? [];
     final parameters = paramList.map((p) {
       final pm = p as Map<String, dynamic>;
       final dpList = pm['dataPoints'] as List<dynamic>? ?? [];

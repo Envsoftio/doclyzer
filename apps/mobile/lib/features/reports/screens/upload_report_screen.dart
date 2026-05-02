@@ -8,6 +8,7 @@ import '../../../features/support/support_models.dart';
 import '../../../features/support/support_repository.dart';
 import '../../../features/support/support_request_sheet.dart';
 import '../reports_repository.dart';
+import 'health_history_screen.dart';
 import 'pdf_viewer_screen.dart';
 
 enum _UploadState { idle, uploading, reading, success, error, duplicate, limit }
@@ -19,6 +20,7 @@ class UploadReportScreen extends StatefulWidget {
     required this.activeProfileName,
     required this.onBack,
     required this.onComplete,
+    required this.onGoToTimeline,
     this.incidentStatus,
     this.onUpgrade,
     required this.supportRepository,
@@ -31,11 +33,14 @@ class UploadReportScreen extends StatefulWidget {
   final String activeProfileName;
   final VoidCallback onBack;
   final VoidCallback onComplete;
+  final VoidCallback onGoToTimeline;
   final VoidCallback? onUpgrade;
   final PublicIncidentStatus? incidentStatus;
   final SupportRepository supportRepository;
+
   /// For testing: when set, shows result state immediately (bypasses file pick).
   final UploadedReport? initialReport;
+
   /// For testing duplicate UX: when set with [initialDuplicatePendingPath], shows duplicate dialog immediately.
   final Map<String, dynamic>? initialDuplicateExistingReport;
   final String? initialDuplicatePendingPath;
@@ -165,8 +170,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           _supportContext = buildSupportRequestContext(
             actionType: SupportActionType.reportUpload,
           );
-          _supportErrorMessage =
-              e.toString().replaceFirst('Exception: ', '');
+          _supportErrorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -216,8 +220,10 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       _errorMessage = null;
     });
     try {
-      final report = await widget.reportsRepository.uploadReport(path,
-          forceUploadAnyway: true);
+      final report = await widget.reportsRepository.uploadReport(
+        path,
+        forceUploadAnyway: true,
+      );
       if (mounted) {
         setState(() {
           _state = _UploadState.success;
@@ -236,10 +242,49 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     }
   }
 
+  Future<void> _onDuplicateProcessAgain() async {
+    final existing = _existingReport;
+    if (existing == null) return;
+    final id = existing['id'] as String?;
+    if (id == null) return;
+    setState(() {
+      _state = _UploadState.reading;
+      _errorMessage = null;
+    });
+    try {
+      final report = await widget.reportsRepository.retryParse(id, force: true);
+      if (mounted) {
+        setState(() {
+          _state = _UploadState.success;
+          _result = UploadedReport(
+            reportId: report.id,
+            profileId: report.profileId,
+            fileName: report.originalFileName,
+            contentType: report.contentType,
+            sizeBytes: report.sizeBytes,
+            status: report.status,
+          );
+          _pendingDuplicatePath = null;
+          _existingReport = null;
+          _supportContext = null;
+          _supportErrorMessage = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _state = _UploadState.duplicate;
+          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final incident = widget.incidentStatus;
-    final showIncidentBanner = incident != null &&
+    final showIncidentBanner =
+        incident != null &&
         incident.isActive &&
         incident.affectsSurface('mobile_app');
 
@@ -269,9 +314,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
               _UploadState.idle => _buildIdle(),
               _UploadState.uploading => _buildProgress('Uploading…'),
               _UploadState.reading => _buildProgress('Reading report…'),
-              _UploadState.success => _isParseFailure()
-                  ? _buildParseFailure()
-                  : _buildSuccess(),
+              _UploadState.success =>
+                _isParseFailure() ? _buildParseFailure() : _buildSuccess(),
               _UploadState.duplicate => _buildDuplicateDialog(),
               _UploadState.limit => _buildLimitWarning(),
               _UploadState.error => _buildError(),
@@ -366,8 +410,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             apiException: e is ApiException ? e : null,
             entityIds: _result != null ? {'reportId': _result!.reportId} : null,
           );
-          _supportErrorMessage =
-              e.toString().replaceFirst('Exception: ', '');
+          _supportErrorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -464,26 +507,72 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
 
   Widget _buildSuccess() {
     final r = _result;
+    final status = r?.status ?? '';
+    final processingInProgress =
+        status == 'uploading' ||
+        status == 'queued' ||
+        status == 'parsing' ||
+        status == 'failed_transient';
+    final statusMessage = switch (status) {
+      'parsed' => 'Report parsed successfully. Review results and trends.',
+      'uploading' || 'queued' || 'parsing' =>
+        'We are still processing this report. You can check status in Timeline.',
+      'failed_transient' =>
+        'Processing is taking longer than expected. Check Timeline for updates.',
+      _ => null,
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Icon(Icons.check_circle, color: Colors.green, size: 48),
+        Icon(
+          processingInProgress ? Icons.hourglass_top : Icons.check_circle,
+          color: processingInProgress ? Colors.orange : Colors.green,
+          size: 48,
+        ),
         const SizedBox(height: 16),
         Text(
           'Report added to ${widget.activeProfileName}',
           style: Theme.of(context).textTheme.titleMedium,
         ),
         if (r != null)
+          Text(r.fileName, style: Theme.of(context).textTheme.bodyMedium),
+        if (statusMessage != null) ...[
+          const SizedBox(height: 8),
           Text(
-            r.fileName,
+            statusMessage,
+            key: const Key('upload-success-status-message'),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
+        ],
         const SizedBox(height: 24),
         FilledButton(
           key: const Key('view-pdf-button'),
           onPressed: _onViewPdf,
           child: const Text('View PDF'),
         ),
+        const SizedBox(height: 8),
+        FilledButton.icon(
+          key: const Key('upload-go-to-timeline'),
+          onPressed: widget.onGoToTimeline,
+          icon: const Icon(Icons.timeline),
+          label: const Text('Open Timeline'),
+        ),
+        if (r != null) ...[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            key: const Key('upload-go-to-history'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => HealthHistoryScreen(
+                  profileId: r.profileId,
+                  reportsRepository: widget.reportsRepository,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.show_chart),
+            label: const Text('View Health History'),
+          ),
+        ],
         const SizedBox(height: 8),
         FilledButton(
           key: const Key('upload-report-done'),
@@ -539,11 +628,26 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           child: const Text('Keep existing'),
         ),
         const SizedBox(height: 8),
+        FilledButton(
+          key: const Key('duplicate-process-again'),
+          onPressed: _onDuplicateProcessAgain,
+          child: const Text('Process PDF Again'),
+        ),
+        const SizedBox(height: 8),
         OutlinedButton(
           key: const Key('duplicate-upload-anyway'),
           onPressed: _onDuplicateUploadAnyway,
-          child: const Text('Upload anyway'),
+          child: const Text('Upload as new copy'),
         ),
+        if (_errorMessage != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _errorMessage!,
+            key: const Key('duplicate-error'),
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ],
     );
   }
@@ -561,10 +665,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           _limitMessage ?? 'You have reached your report limit.',
           key: const Key('upload-limit-warning'),
         ),
-        if (usageText != null) ...[
-          const SizedBox(height: 8),
-          Text(usageText),
-        ],
+        if (usageText != null) ...[const SizedBox(height: 8), Text(usageText)],
         if (_limitUpgradeHint != null) ...[
           const SizedBox(height: 8),
           Text(_limitUpgradeHint!),
@@ -576,10 +677,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           child: const Text('Upgrade'),
         ),
         const SizedBox(height: 8),
-        OutlinedButton(
-          onPressed: widget.onBack,
-          child: const Text('Back'),
-        ),
+        OutlinedButton(onPressed: widget.onBack, child: const Text('Back')),
         if (_supportContext != null) ...[
           const SizedBox(height: 8),
           TextButton(
@@ -606,10 +704,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       children: [
         Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
         const SizedBox(height: 16),
-        Text(
-          _errorMessage ?? 'Upload failed',
-          key: const Key('upload-error'),
-        ),
+        Text(_errorMessage ?? 'Upload failed', key: const Key('upload-error')),
         const SizedBox(height: 24),
         FilledButton(
           onPressed: () {

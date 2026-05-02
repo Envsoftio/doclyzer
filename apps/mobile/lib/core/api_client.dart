@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -7,10 +8,12 @@ class ApiClient {
   ApiClient({
     required this.baseUrl,
     required this.onRefreshToken,
+    this.onUnauthorized,
   });
 
   final String baseUrl;
   final Future<String?> Function() onRefreshToken;
+  final Future<void> Function()? onUnauthorized;
 
   String? _accessToken;
 
@@ -164,12 +167,25 @@ class ApiClient {
   Future<T> _requestWithRefresh<T>(Future<T> Function() fn, bool auth) async {
     try {
       return await fn();
+    } on SocketException {
+      throw ApiException(
+        'NETWORK_ERROR',
+        'Cannot connect to server. Please check your internet or API server.',
+      );
+    } on http.ClientException {
+      throw ApiException(
+        'NETWORK_ERROR',
+        'Cannot connect to server. Please check your internet or API server.',
+      );
     } on ApiException catch (e) {
       if (auth && e.code == 'AUTH_UNAUTHORIZED') {
         final newToken = await onRefreshToken();
         if (newToken != null) {
           _accessToken = newToken;
           return await fn();
+        }
+        if (onUnauthorized != null) {
+          await onUnauthorized!();
         }
       }
       rethrow;

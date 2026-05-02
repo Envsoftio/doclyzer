@@ -71,6 +71,40 @@ class StatusMessenger {
     );
   }
 
+  static void showInfoOnMessenger(
+    ScaffoldMessengerState messenger,
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+    Duration duration = const Duration(seconds: 3),
+  }) {
+    _showOnMessenger(
+      messenger,
+      message,
+      variant: _StatusVariant.info,
+      duration: duration,
+      actionLabel: actionLabel,
+      onAction: onAction,
+    );
+  }
+
+  static void showErrorOnMessenger(
+    ScaffoldMessengerState messenger,
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+    Duration duration = const Duration(seconds: 4),
+  }) {
+    _showOnMessenger(
+      messenger,
+      message,
+      variant: _StatusVariant.error,
+      duration: duration,
+      actionLabel: actionLabel,
+      onAction: onAction,
+    );
+  }
+
   static void _show(
     BuildContext context,
     String message, {
@@ -79,8 +113,27 @@ class StatusMessenger {
     String? actionLabel,
     VoidCallback? onAction,
   }) {
-    final messenger = ScaffoldMessenger.of(context);
-    final theme = Theme.of(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    _showOnMessenger(
+      messenger,
+      message,
+      variant: variant,
+      duration: duration,
+      actionLabel: actionLabel,
+      onAction: onAction,
+    );
+  }
+
+  static void _showOnMessenger(
+    ScaffoldMessengerState messenger,
+    String message, {
+    required _StatusVariant variant,
+    required Duration duration,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
+    final theme = Theme.of(messenger.context);
     final colorScheme = theme.colorScheme;
 
     final backgroundColor = switch (variant) {

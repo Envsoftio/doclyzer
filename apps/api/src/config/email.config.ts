@@ -1,10 +1,16 @@
 import { join } from 'path';
 import { registerAs } from '@nestjs/config';
+import { existsSync } from 'node:fs';
 
 export const emailConfig = registerAs('email', () => {
+  const explicitTemplatesPath = process.env.EMAIL_TEMPLATES_PATH;
   const templatesPath =
-    process.env.EMAIL_TEMPLATES_PATH ??
-    join(process.cwd(), 'apps/api/src/email/templates');
+    explicitTemplatesPath ??
+    [
+      join(process.cwd(), 'src/email/templates'),
+      join(process.cwd(), 'apps/api/src/email/templates'),
+    ].find((candidate) => existsSync(candidate)) ??
+    join(process.cwd(), 'src/email/templates');
 
   const env = process.env.NODE_ENV ?? 'development';
   const workerEnabledRaw = process.env.EMAIL_WORKER_ENABLED;

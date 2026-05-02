@@ -31,7 +31,7 @@ This script will:
 docker-compose up -d
 ```
 
-This starts PostgreSQL, Redis, and Docling services.
+This starts PostgreSQL and Redis services.
 
 ### 2. Run Migrations
 

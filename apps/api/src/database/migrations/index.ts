@@ -35,6 +35,7 @@ import { AddGinIndexToDeliveryEventMetadata1730816100000 } from './1730816100000
 import { AddEntitlementChangeReasonToUserEntitlements1730816200000 } from './1730816200000-AddEntitlementChangeReasonToUserEntitlements';
 import { CreateServiceIncidentsTable1730816300000 } from './1730816300000-CreateServiceIncidentsTable';
 import { CreateSupportRequestsTable1730816400000 } from './1730816400000-CreateSupportRequestsTable';
+import { AddStructuredReportToReports1730816500000 } from './1730816500000-AddStructuredReportToReports';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -74,4 +75,5 @@ export const migrations = [
   AddEntitlementChangeReasonToUserEntitlements1730816200000,
   CreateServiceIncidentsTable1730816300000,
   CreateSupportRequestsTable1730816400000,
+  AddStructuredReportToReports1730816500000,
 ];

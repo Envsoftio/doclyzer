@@ -67,6 +67,9 @@ export class ReportEntity {
   @Column({ type: 'text', nullable: true, name: 'parsed_transcript' })
   parsedTranscript!: string | null;
 
+  @Column({ type: 'jsonb', nullable: true, name: 'structured_report' })
+  structuredReport!: Record<string, unknown> | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

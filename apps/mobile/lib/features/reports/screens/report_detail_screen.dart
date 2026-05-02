@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../profiles/profiles_repository.dart';
 import '../reports_repository.dart';
 import '../../../shared/ai_disclaimer_note.dart';
+import 'health_history_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'processing_history_screen.dart';
 import 'trend_chart_screen.dart';
@@ -187,10 +188,22 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   static String _statusLabel(String status) {
     switch (status) {
+      case 'uploading':
+        return 'Uploading';
+      case 'queued':
+        return 'Queued for parsing';
+      case 'parsing':
+        return 'Parsing in progress';
+      case 'parsed':
+        return 'Parsed';
       case 'content_not_recognized':
         return 'Not a health report';
       case 'unparsed':
         return 'Unparsed';
+      case 'failed_transient':
+        return 'Processing delayed';
+      case 'failed_terminal':
+        return 'Parsing failed';
       default:
         return status;
     }
@@ -311,6 +324,21 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             icon: const Icon(Icons.history),
             label: const Text('View attempt history'),
           ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            key: const Key('report-detail-health-history'),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => HealthHistoryScreen(
+                  profileId: widget.profileId,
+                  reportsRepository: widget.reportsRepository,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.show_chart),
+            label: const Text('Compare With Previous Reports'),
+          ),
           if (_profiles.where((p) => p.id != widget.profileId).isNotEmpty) ...[
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -355,9 +383,116 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               child: const Text('Keep file anyway'),
             ),
           ],
+          if (report.structuredReport != null &&
+              report.structuredReport!.sections.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              'Patient details',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (report.structuredReport!.patientDetails.name != null)
+                      Text(
+                        'Name: ${report.structuredReport!.patientDetails.name!}',
+                      ),
+                    if (report.structuredReport!.patientDetails.age != null)
+                      Text(
+                        'Age: ${report.structuredReport!.patientDetails.age!}',
+                      ),
+                    if (report.structuredReport!.patientDetails.gender != null)
+                      Text(
+                        'Gender: ${report.structuredReport!.patientDetails.gender!}',
+                      ),
+                    if (report.structuredReport!.patientDetails.bookingId !=
+                        null)
+                      Text(
+                        'Booking ID: ${report.structuredReport!.patientDetails.bookingId!}',
+                      ),
+                    if (report
+                            .structuredReport!
+                            .patientDetails
+                            .sampleCollectionDate !=
+                        null)
+                      Text(
+                        'Sample Collection Date: ${report.structuredReport!.patientDetails.sampleCollectionDate!}',
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Categorized test results',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            ...report.structuredReport!.sections.map((section) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          section.heading,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        ...section.tests.map((test) {
+                          final unitSuffix =
+                              (test.unit != null && test.unit!.isNotEmpty)
+                              ? ' ${test.unit}'
+                              : '';
+                          return InkWell(
+                            onTap: () => _openTrendChart(test.parameterName),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      test.parameterName,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                    ),
+                                  ),
+                                  Text('${test.value}$unitSuffix'),
+                                  const SizedBox(width: 6),
+                                  const Icon(Icons.chevron_right, size: 16),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
           if (report.extractedLabValues.isNotEmpty) ...[
             const SizedBox(height: 24),
             Text('Lab values', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 4),
+            Text(
+              'Tap any value to open its trend graph and compare with older reports.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 8),
             Card(
               key: const Key('report-detail-lab-values'),
@@ -423,6 +558,24 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               'No structured data',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          if (report.parsedTranscript != null &&
+              report.parsedTranscript!.trim().isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              'Complete parsed report',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: SelectableText(
+                  report.parsedTranscript!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
             ),
           ],

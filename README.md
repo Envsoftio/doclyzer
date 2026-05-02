@@ -35,7 +35,7 @@ cp .env.example .env
 ### 2. Start API + Database Stack with Docker Compose
 
 ```bash
-# Start API + PostgreSQL (+ Redis + Docling dependencies)
+# Start API + PostgreSQL (+ Redis dependencies)
 docker compose up -d api postgres
 
 # Verify services are running

@@ -33,6 +33,21 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
   bool _saving = false;
   bool _uploadingAvatar = false;
 
+  String _friendlyErrorMessage(Object error) {
+    if (error is ApiException) {
+      if (error.code == 'NETWORK_ERROR') {
+        return 'Cannot connect to server. Please check your internet or API server.';
+      }
+      return error.message.isNotEmpty
+          ? error.message
+          : 'Something went wrong. Please try again.';
+    }
+    if (error is AccountException) {
+      return error.message;
+    }
+    return 'Something went wrong. Please try again.';
+  }
+
   bool _isActionBlocked(String action) {
     final status = _restrictionStatus;
     if (status == null || !status.isRestricted) {
@@ -88,15 +103,39 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           _loading = false;
         });
       }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = _friendlyErrorMessage(e);
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = _friendlyErrorMessage(e);
+          _loading = false;
+        });
+      }
     }
   }
 
   Future<void> _loadRestrictionStatus() async {
-    final status = await widget.restrictionRepository.getStatus();
-    if (mounted) {
-      setState(() {
-        _restrictionStatus = status;
-      });
+    try {
+      final status = await widget.restrictionRepository.getStatus();
+      if (mounted) {
+        setState(() {
+          _restrictionStatus = status;
+        });
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        StatusMessenger.showWarning(context, _friendlyErrorMessage(e));
+      }
+    } catch (e) {
+      if (mounted) {
+        StatusMessenger.showWarning(context, _friendlyErrorMessage(e));
+      }
     }
   }
 

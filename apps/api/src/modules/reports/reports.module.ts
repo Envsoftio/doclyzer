@@ -11,7 +11,7 @@ import { NotificationPipelineModule } from '../../common/notification-pipeline/n
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
-import { DoclingClient } from './docling.client';
+import { OpenDataLoaderClient } from './opendataloader.client';
 
 @Module({
   imports: [
@@ -27,6 +27,10 @@ import { DoclingClient } from './docling.client';
     NotificationPipelineModule,
   ],
   controllers: [ReportsController],
-  providers: [ReportsService, ReportSummaryService, DoclingClient],
+  providers: [
+    ReportsService,
+    ReportSummaryService,
+    OpenDataLoaderClient,
+  ],
 })
 export class ReportsModule {}
