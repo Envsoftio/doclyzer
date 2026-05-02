@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
@@ -352,17 +352,22 @@ export class EntitlementsService {
       where: { userId },
       relations: ['plan'],
     });
-    if (existing) return existing;
+    if (existing) {
+      if (existing.plan) return existing;
+
+      // Self-heal legacy/broken records where plan relation is missing.
+      const freePlan = await this.findActiveFreePlanOrThrow();
+      existing.planId = freePlan.id;
+      await this.entitlementRepo.save(existing);
+
+      return this.entitlementRepo.findOneOrFail({
+        where: { id: existing.id },
+        relations: ['plan'],
+      });
+    }
 
     // Auto-provision: find the free-tier plan and create an entitlement
-    const freePlan = await this.planRepo.findOne({
-      where: { tier: 'free', isActive: true },
-    });
-    if (!freePlan) {
-      throw new Error(
-        'Free-tier plan not found in database. Run migrations to seed it.',
-      );
-    }
+    const freePlan = await this.findActiveFreePlanOrThrow();
 
     const entitlement = this.entitlementRepo.create({
       userId,
@@ -380,6 +385,19 @@ export class EntitlementsService {
       relations: ['plan'],
     });
     return reloaded;
+  }
+
+  private async findActiveFreePlanOrThrow(): Promise<PlanEntity> {
+    const freePlan = await this.planRepo.findOne({
+      where: { tier: 'free', isActive: true },
+    });
+    if (freePlan) return freePlan;
+
+    throw new InternalServerErrorException({
+      code: 'ENTITLEMENTS_PLAN_CONFIG_MISSING',
+      message:
+        'Account plan configuration is unavailable. Please contact support.',
+    });
   }
 
   private validatePlanLimits(dto: UpdatePlanConfigDto): void {

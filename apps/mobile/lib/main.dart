@@ -108,6 +108,9 @@ class DoclyzerApp extends StatefulWidget {
 
 class _DoclyzerAppState extends State<DoclyzerApp>
     with WidgetsBindingObserver {
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+
   ApiClient? _apiClient;
   ApiAuthRepository? _authRepository;
   late final AccountRepository _accountRepository;
@@ -285,7 +288,45 @@ class _DoclyzerAppState extends State<DoclyzerApp>
     final message = forUpload
         ? 'Create a default profile before uploading a report.'
         : 'Create a default profile before viewing your timeline.';
-    StatusMessenger.showInfo(context, message);
+    final statusContext = _scaffoldMessengerKey.currentContext;
+    if (statusContext == null) return;
+    StatusMessenger.showInfo(statusContext, message);
+  }
+
+  void _showProfileLoadError(String message) {
+    final statusContext = _scaffoldMessengerKey.currentContext;
+    if (statusContext == null) return;
+    StatusMessenger.showError(
+      statusContext,
+      message.isNotEmpty ? message : 'Unable to load profiles right now.',
+    );
+  }
+
+  Future<Profile?> _getActiveProfileOrNotify({
+    required bool forUpload,
+  }) async {
+    try {
+      final profiles = await _profilesRepository.getProfiles();
+      for (final profile in profiles) {
+        if (profile.isActive) return profile;
+      }
+      if (mounted) _showMissingProfileSnackBar(forUpload: forUpload);
+      return null;
+    } on ApiException catch (e) {
+      if (e.code == 'AUTH_UNAUTHORIZED') {
+        await _logout();
+        return null;
+      }
+      if (mounted) _showProfileLoadError(e.message);
+      return null;
+    } catch (_) {
+      if (mounted) {
+        _showProfileLoadError(
+          'Unable to load profiles right now. Please try again.',
+        );
+      }
+      return null;
+    }
   }
 
   @override
@@ -300,6 +341,7 @@ class _DoclyzerAppState extends State<DoclyzerApp>
     return MaterialApp(
       title: 'Doclyzer',
       theme: AppTheme.light,
+      scaffoldMessengerKey: _scaffoldMessengerKey,
       home: switch (_authView) {
         _AuthView.login => LoginScreen(
           onLogin: _login,
@@ -341,16 +383,8 @@ class _DoclyzerAppState extends State<DoclyzerApp>
             setState(() => _authView = _AuthView.dataRights);
           },
           onGoToUploadReport: () async {
-            final profiles = await _profilesRepository.getProfiles();
-            Profile? active;
-            for (final p in profiles) {
-              if (p.isActive) {
-                active = p;
-                break;
-              }
-            }
+            final active = await _getActiveProfileOrNotify(forUpload: true);
             if (active == null) {
-              if (mounted) _showMissingProfileSnackBar(forUpload: true);
               return;
             }
             if (!mounted) return;
@@ -364,16 +398,8 @@ class _DoclyzerAppState extends State<DoclyzerApp>
             setState(() => _authView = _AuthView.billing);
           },
           onGoToTimeline: () async {
-            final profiles = await _profilesRepository.getProfiles();
-            Profile? active;
-            for (final p in profiles) {
-              if (p.isActive) {
-                active = p;
-                break;
-              }
-            }
+            final active = await _getActiveProfileOrNotify(forUpload: false);
             if (active == null) {
-              if (mounted) _showMissingProfileSnackBar(forUpload: false);
               return;
             }
             if (!mounted) return;

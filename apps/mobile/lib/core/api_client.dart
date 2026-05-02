@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -69,15 +68,14 @@ class ApiClient {
       if (res.statusCode >= 200 && res.statusCode < 300) {
         return res.bodyBytes;
       }
-      Map<String, dynamic> body = {};
-      if (res.body.isNotEmpty) {
-        try {
-          body = jsonDecode(res.body) as Map<String, dynamic>;
-        } catch (_) {}
-      }
-      final error = body['error'] as Map<String, dynamic>?;
-      final code = error?['code'] as String? ?? 'UNKNOWN';
-      final message = error?['message'] as String? ?? 'Request failed';
+      final body = _decodeJsonObject(res.body);
+      final dynamic errorRaw = body['error'];
+      final error = errorRaw is Map<String, dynamic> ? errorRaw : null;
+      final code = _asString(error?['code']) ?? 'UNKNOWN';
+      final message =
+          _asString(error?['message']) ??
+          _asString(body['message']) ??
+          'Request failed (${res.statusCode})';
       throw ApiException(code, message, body);
     }, auth);
   }
@@ -179,17 +177,34 @@ class ApiClient {
   }
 
   Map<String, dynamic> _handleResponse(http.Response res) {
-    final body = res.body.isEmpty
-        ? <String, dynamic>{}
-        : jsonDecode(res.body) as Map<String, dynamic>;
+    final body = _decodeJsonObject(res.body);
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return body;
     }
-    final error = body['error'] as Map<String, dynamic>?;
-    final code = error?['code'] as String? ?? 'UNKNOWN';
-    final message = error?['message'] as String? ?? 'Request failed';
+    final dynamic errorRaw = body['error'];
+    final error = errorRaw is Map<String, dynamic> ? errorRaw : null;
+    final code = _asString(error?['code']) ?? 'UNKNOWN';
+    final message =
+        _asString(error?['message']) ??
+        _asString(body['message']) ??
+        'Request failed (${res.statusCode})';
     throw ApiException(code, message, body);
   }
+
+  Map<String, dynamic> _decodeJsonObject(String raw) {
+    if (raw.isEmpty) return <String, dynamic>{};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      // Normalize non-object payloads (e.g. true / [] / "ok") so callers do not crash.
+      return <String, dynamic>{'data': decoded};
+    } catch (_) {
+      // Keep raw text in response payload for debugging unexpected upstream responses.
+      return <String, dynamic>{'message': raw};
+    }
+  }
+
+  String? _asString(Object? value) => value is String ? value : null;
 }
 
 class ApiException implements Exception {

@@ -5,4 +5,4 @@ import 'dart:io' show Platform;
 /// - iOS Simulator / Desktop: localhost
 /// - Physical device: set via env or build flavor to your machine's IP
 String get apiBaseUrl =>
-    Platform.isAndroid ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+    Platform.isAndroid ? 'http://10.0.2.2:4000' : 'http://localhost:4000';

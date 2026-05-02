@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { razorpayConfig } from './config/razorpay.config';
@@ -81,7 +81,11 @@ const typeOrmEntities = [
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [join(__dirname, '../../../.env'), '.env'],
+      envFilePath: [
+        resolve(process.cwd(), '../../.env'),
+        resolve(process.cwd(), '.env'),
+        '.env',
+      ],
       load: [storageConfig, reportsConfig, razorpayConfig, emailConfig],
     }),
     TypeOrmModule.forRootAsync({

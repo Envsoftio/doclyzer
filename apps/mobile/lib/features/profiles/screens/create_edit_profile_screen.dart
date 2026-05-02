@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/api_client.dart';
 import '../profiles_repository.dart';
 
 DateTime? _parseDob(String? s) {
@@ -70,8 +71,19 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
 
   Future<void> _submit() async {
     final name = _nameController.text.trim();
+    final relation = _relationController.text.trim();
     if (name.isEmpty) {
       setState(() => _error = 'Name is required');
+      return;
+    }
+    if (name.length > 100) {
+      setState(() => _error = 'Name must be 100 characters or fewer.');
+      return;
+    }
+    if (relation.length > 50) {
+      setState(
+        () => _error = 'Relation must be 50 characters or fewer.',
+      );
       return;
     }
 
@@ -82,28 +94,33 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
 
     try {
       final dob = _selectedDob != null ? _formatDob(_selectedDob!) : null;
-      final relation = _relationController.text.trim().isEmpty
-          ? null
-          : _relationController.text.trim();
+      final relationValue = relation.isEmpty ? null : relation;
 
       if (widget.existingProfile != null) {
         await widget.profilesRepository.updateProfile(
           id: widget.existingProfile!.id,
           name: name,
           dateOfBirth: dob,
-          relation: relation,
+          relation: relationValue,
         );
       } else {
         await widget.profilesRepository.createProfile(
           name: name,
           dateOfBirth: dob,
-          relation: relation,
+          relation: relationValue,
         );
       }
       widget.onComplete();
     } on ProfileLimitExceededException catch (e) {
       setState(() {
         _error = e.message;
+        _submitting = false;
+      });
+    } on ApiException catch (e) {
+      setState(() {
+        _error = e.message.isNotEmpty
+            ? e.message
+            : 'Failed to save profile. Please try again.';
         _submitting = false;
       });
     } catch (e) {

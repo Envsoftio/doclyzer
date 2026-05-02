@@ -32,6 +32,10 @@ useHead({
       multi-profile, analytics, and sharing workflows. If you are part of the squad, hop over to
       <code>/admin</code> to start working with the dashboard and MFA-protected actions.
     </p>
+    <div class="actions">
+      <NuxtLink to="/admin" class="btn btn-primary">Open Superadmin Panel</NuxtLink>
+      <NuxtLink to="/admin/login" class="btn btn-secondary">Admin Login</NuxtLink>
+    </div>
   </main>
 </template>
 
@@ -64,5 +68,30 @@ useHead({
 
 .incident-slot {
   margin-bottom: 24px;
+}
+
+.actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: #0f172a;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 </style>
