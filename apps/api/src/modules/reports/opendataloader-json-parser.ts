@@ -13,9 +13,10 @@ interface FlatNode {
   bbox: [number, number, number, number] | null;
 }
 
-interface ParsedCandidateRow {
-  row: StructuredSectionItemDto;
-  kind: 'complete' | 'name_only' | 'value_only';
+interface ParsedValueRow {
+  value: string;
+  unit?: string;
+  nextTestName?: string;
 }
 
 export interface OpenDataLoaderParsedOutput {
@@ -52,8 +53,10 @@ export class OpenDataLoaderJsonParser {
 
   private flattenNodes(input: unknown): FlatNode[] {
     const out: FlatNode[] = [];
+
     const walk = (node: unknown): void => {
       if (!node || typeof node !== 'object') return;
+
       const obj = node as Record<string, unknown>;
       const type = typeof obj.type === 'string' ? obj.type : '';
       const content = typeof obj.content === 'string' ? obj.content.trim() : '';
@@ -66,16 +69,19 @@ export class OpenDataLoaderJsonParser {
         bboxRaw.every((v) => typeof v === 'number')
           ? (bboxRaw as [number, number, number, number])
           : null;
-      if (type && content) out.push({ type, content, pageNumber, bbox });
-      const kids = obj.kids;
-      if (Array.isArray(kids)) {
-        for (const k of kids) walk(k);
+
+      if (type && content) {
+        out.push({ type, content, pageNumber, bbox });
       }
-      const listItems = obj['list items'];
-      if (Array.isArray(listItems)) {
-        for (const li of listItems) walk(li);
+
+      if (Array.isArray(obj.kids)) {
+        for (const kid of obj.kids) walk(kid);
+      }
+      if (Array.isArray(obj['list items'])) {
+        for (const item of obj['list items']) walk(item);
       }
     };
+
     walk(input);
     return out;
   }
@@ -86,14 +92,17 @@ export class OpenDataLoaderJsonParser {
       const m = full.match(re);
       return m?.[1]?.trim();
     };
+
     const name =
       read(/Patient Name\s*:\s*([^|]+?)(?:\s{2,}|Age\/Gender|Barcode|Order Id|$)/i) ??
       read(/\bDear\s+([A-Za-z][A-Za-z ]{1,80})[,!]/i) ??
       read(/^\s*([A-Za-z][A-Za-z ]{2,80})\s*$/m);
+
     const ageGender = read(/Age\/Gender\s*:\s*([^|]+?)(?:\s{2,}|Order Id|$)/i);
     const age =
       ageGender?.match(/(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?|\d+\s*Yrs?)/i)?.[1];
     const gender = ageGender?.match(/\b(Male|Female|Other)\b/i)?.[1];
+
     return {
       ...(name ? { name } : {}),
       ...(age ? { age } : {}),
@@ -115,225 +124,337 @@ export class OpenDataLoaderJsonParser {
 
   private extractSections(nodes: FlatNode[]): StructuredSectionDto[] {
     const sections = new Map<string, StructuredSectionItemDto[]>();
-    let currentSection = 'Other Tests';
-    let pendingParameterName: string | null = null;
-    const stitchedRows = this.stitchRowsByPageAndY(nodes);
+    const pages = new Map<number, FlatNode[]>();
 
-    for (const node of [...nodes, ...stitchedRows]) {
-      if (node.type.toLowerCase().includes('heading')) {
-        const normalized = this.normalizeSectionHeading(node.content);
-        if (normalized) currentSection = normalized;
+    for (const node of nodes) {
+      if (node.pageNumber == null || node.bbox == null) continue;
+      if (!pages.has(node.pageNumber)) pages.set(node.pageNumber, []);
+      pages.get(node.pageNumber)!.push(node);
+    }
+
+    const pageNumbers = Array.from(pages.keys()).sort((a, b) => a - b);
+    for (const page of pageNumbers) {
+      const pageNodes = pages.get(page)!;
+      const sorted = pageNodes
+        .slice()
+        .sort((a, b) => (b.bbox![1] - a.bbox![1]) || (a.bbox![0] - b.bbox![0]));
+
+      const tableHeaderIndexes: number[] = [];
+      for (let i = 0; i < sorted.length; i++) {
+        if (this.isTableHeader(sorted[i].content)) {
+          tableHeaderIndexes.push(i);
+        }
       }
-      const parsed = this.parseTestRow(node.content);
-      if (!parsed) continue;
+      if (tableHeaderIndexes.length === 0) continue;
 
-      if (parsed.kind === 'name_only') {
-        pendingParameterName = parsed.row.parameterName;
+      for (let i = 0; i < tableHeaderIndexes.length; i++) {
+        const start = tableHeaderIndexes[i] + 1;
+        const end =
+          i + 1 < tableHeaderIndexes.length
+            ? tableHeaderIndexes[i + 1]
+            : sorted.length;
+        const headerY = sorted[tableHeaderIndexes[i]].bbox![1];
+        const rows = sorted
+          .slice(start, end)
+          .filter((n) => n.bbox![1] < headerY - 0.5 && n.bbox![1] > 120);
+        this.extractRowsFromTableBlock(rows, sections);
+      }
+    }
+
+    return Array.from(sections.entries())
+      .map(([heading, tests]) => ({
+        heading,
+        tests: this.deduplicateRows(tests),
+      }))
+      .filter((s) => s.tests.length > 0);
+  }
+
+  private extractRowsFromTableBlock(
+    rows: FlatNode[],
+    sections: Map<string, StructuredSectionItemDto[]>,
+  ): void {
+    let currentSection = 'Other Tests';
+    let pendingTestName: string | null = null;
+
+    for (const row of rows) {
+      const content = this.normalizeSpace(row.content);
+      if (!content) continue;
+      if (this.isIgnorableRow(content, row.type)) continue;
+
+      if (
+        row.type.toLowerCase().includes('heading') &&
+        this.isLikelySectionHeading(content, row)
+      ) {
+        currentSection = this.cleanHeading(content);
+        pendingTestName = this.isLikelyTestName(content)
+          ? this.cleanName(content)
+          : null;
         continue;
       }
 
-      const heading =
-        'sectionHint' in node && typeof node.sectionHint === 'string'
-          ? node.sectionHint
-          : currentSection;
-
-      if (parsed.kind === 'value_only') {
-        if (!pendingParameterName) continue;
-        parsed.row.parameterName = pendingParameterName;
-        pendingParameterName = null;
-      } else {
-        pendingParameterName = null;
+      const parsedValue = this.parseValueLedRow(content);
+      if (parsedValue) {
+        if (pendingTestName && this.isLikelyTestName(pendingTestName)) {
+          if (!sections.has(currentSection)) sections.set(currentSection, []);
+          sections.get(currentSection)!.push({
+            parameterName: this.normalizeParameterName(pendingTestName),
+            value: parsedValue.value,
+            ...(parsedValue.unit ? { unit: parsedValue.unit } : {}),
+          });
+        }
+        pendingTestName =
+          parsedValue.nextTestName && this.isLikelyTestName(parsedValue.nextTestName)
+            ? this.cleanName(parsedValue.nextTestName)
+            : null;
+        continue;
       }
 
-      if (!sections.has(heading)) sections.set(heading, []);
-      sections.get(heading)!.push(parsed.row);
-    }
-
-    return Array.from(sections.entries()).map(([heading, tests]) => ({
-      heading,
-      tests: this.deduplicateRows(tests),
-    }));
-  }
-
-  private stitchRowsByPageAndY(nodes: FlatNode[]): FlatNode[] {
-    const candidates = nodes.filter(
-      (n) =>
-        n.pageNumber != null &&
-        n.bbox != null &&
-        n.type.toLowerCase() !== 'heading' &&
-        !/^\s*method\s*:/i.test(n.content) &&
-        !this.isLikelyNarrative(n.content),
-    );
-    const byPage = new Map<number, FlatNode[]>();
-    for (const node of candidates) {
-      const p = node.pageNumber!;
-      if (!byPage.has(p)) byPage.set(p, []);
-      byPage.get(p)!.push(node);
-    }
-
-    const stitched: FlatNode[] = [];
-    const yTolerance = 2.2;
-
-    for (const [, pageNodes] of byPage.entries()) {
-      pageNodes.sort((a, b) => (b.bbox![1] - a.bbox![1]) || (a.bbox![0] - b.bbox![0]));
-      const rows: FlatNode[][] = [];
-
-      for (const n of pageNodes) {
-        const y = n.bbox![1];
-        let bucket: FlatNode[] | undefined;
-        for (const r of rows) {
-          const ry = r[0].bbox![1];
-          if (Math.abs(ry - y) <= yTolerance) {
-            bucket = r;
-            break;
-          }
-        }
-        if (!bucket) {
-          rows.push([n]);
-        } else {
-          bucket.push(n);
-        }
-      }
-
-      for (const rowNodes of rows) {
-        rowNodes.sort((a, b) => a.bbox![0] - b.bbox![0]);
-        const content = rowNodes.map((r) => r.content).join(' ').replace(/\s+/g, ' ').trim();
-        if (content.length < 6) continue;
-        if (/test name value unit bio\.? ref/i.test(content)) continue;
-        stitched.push({
-          type: 'stitched_row',
-          content,
-          pageNumber: rowNodes[0].pageNumber ?? null,
-          bbox: rowNodes[0].bbox ?? null,
+      const nameLed = this.parseNameLedValueRow(content);
+      if (nameLed) {
+        if (!sections.has(currentSection)) sections.set(currentSection, []);
+        sections.get(currentSection)!.push({
+          parameterName: this.normalizeParameterName(nameLed.parameterName),
+          value: nameLed.value,
+          ...(nameLed.unit ? { unit: nameLed.unit } : {}),
         });
+        pendingTestName =
+          nameLed.nextTestName && this.isLikelyTestName(nameLed.nextTestName)
+            ? this.cleanName(nameLed.nextTestName)
+            : null;
+        continue;
+      }
+
+      const parsedName = this.parseNameOnlyRow(content);
+      if (parsedName) {
+        pendingTestName = parsedName;
       }
     }
-
-    return stitched;
   }
 
-  private normalizeSectionHeading(raw: string): string | null {
-    const h = raw.replace(/\s+/g, ' ').trim();
-    if (!h) return null;
-    const l = h.toLowerCase();
+  private isTableHeader(content: string): boolean {
+    return /test name value unit bio\.? ref interval/i.test(content);
+  }
+
+  private isLikelySectionHeading(content: string, row: FlatNode): boolean {
+    const x = row.bbox?.[0] ?? 999;
+    const l = content.toLowerCase();
+    if (x > 140) return false;
+    if (content.length < 3 || content.length > 100) return false;
+    if (/^[<>]?\s*[-+]?\d/.test(content)) return false;
     if (
-      /test name value unit|smart report|summary|suggestions|end of report/.test(
+      /\b(department|test name|smart report|summary|suggestions|end of report|pregnancy interval|machine)\b/.test(
         l,
       )
     ) {
-      return null;
+      return false;
     }
-    if (/thyroid/.test(l)) return 'Thyroid Function';
-    if (/liver|lft/.test(l)) return 'Liver Function';
-    if (/kidney|kft/.test(l)) return 'Kidney Function';
-    if (/lipid|cholesterol/.test(l)) return 'Lipid Profile';
-    if (/hba1c|glucose|diabet/.test(l)) return 'Diabetes';
-    if (/blood count|hemogram|haematology|hematology/.test(l)) {
-      return 'Complete Blood Count';
-    }
-    if (/iron/.test(l)) return 'Iron Studies';
-    if (/vitamin/.test(l)) return 'Vitamin Profile';
-    if (/urine|clinical pathology/.test(l)) return 'Urine Analysis';
-    if (/crp|rheumatoid|inflammation/.test(l)) return 'Inflammation / Autoimmune';
-    if (/cortisol|immunology/.test(l)) return 'Hormones';
-    return h;
+    // Lab panel style headings generally sit close to left margin.
+    return true;
   }
 
-  private parseTestRow(content: string): ParsedCandidateRow | null {
-    const c = content.replace(/\s+/g, ' ').trim();
-    if (!c || this.isLikelyNarrative(c)) return null;
+  private isIgnorableRow(content: string, type: string): boolean {
+    const l = content.toLowerCase();
+    const t = type.toLowerCase();
+    if (
+      t.includes('footer') ||
+      t.includes('caption') ||
+      t.includes('list item') ||
+      t === 'list'
+    ) {
+      return true;
+    }
+    if (this.isTableHeader(content)) return true;
+    if (/^\s*method\s*:/i.test(content)) return true;
+    if (
+      /\b(page\s+\d+\s+of\s+\d+|sin no|barcode|sample collected on|sample received on|report generated on|customer since|report status|sample temperature|referred by|order id|booking id)\b/i.test(
+        l,
+      )
+    ) {
+      return true;
+    }
+    if (
+      /\b(interpretation|reference range|as per american|healthians recommends|clinical interpretation|conditions that can result|calculated from test reports)\b/i.test(
+        l,
+      )
+    ) {
+      return true;
+    }
+    if (content.length > 180) return true;
+    return false;
+  }
 
-    const colon = c.match(
-      /^([A-Za-z][A-Za-z0-9\s/(),._%-]{2,100})\s*:\s*([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)\s*([A-Za-zµ/%^0-9._-]{0,20})/i,
+  private parseNameOnlyRow(content: string): string | null {
+    if (/[:|]/.test(content)) return null;
+    if (/^[<>]?\s*[-+]?\d/.test(content)) return null;
+    let name = this.cleanName(content);
+    const lower = name.toLowerCase();
+    const secondAbsolute = lower.indexOf(' absolute ', 1);
+    if (secondAbsolute > 0) {
+      name = this.cleanName(name.slice(secondAbsolute + 1));
+    }
+    name = this.normalizeParameterName(name);
+    if (!this.isLikelyTestName(name)) return null;
+    return name;
+  }
+
+  private parseNameLedValueRow(
+    content: string,
+  ): (ParsedValueRow & { parameterName: string }) | null {
+    const c = this.normalizeSpace(content);
+    const m = c.match(
+      /^([A-Za-z][A-Za-z0-9\s(),/%._-]{1,80})\s+(Negative|Positive|Nil|Normal|Absent|Present|Clear|Cloudy|Turbid|Trace)\s+([A-Za-z][A-Za-z0-9\s(),/%._-]{1,80})$/i,
     );
-    if (colon) {
-      const parameterName = this.cleanName(colon[1]);
-      if (!this.isLikelyTestName(parameterName)) return null;
+    if (!m) return null;
+
+    const parameterName = this.cleanName(m[1]);
+    if (!this.isLikelyTestName(parameterName)) return null;
+    return {
+      parameterName,
+      value: this.cleanValuePhrase(m[2]),
+      nextTestName: this.cleanName(m[3]),
+    };
+  }
+
+  private parseValueLedRow(content: string): ParsedValueRow | null {
+    const c = this.normalizeSpace(content);
+    if (!c) return null;
+
+    const numeric = c.match(/^([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)(?:\s+(.+))?$/);
+    if (numeric) {
+      const value = this.normalizeNumericValue(numeric[1]);
+      let rest = numeric[2] ?? '';
+      let unit: string | undefined;
+      const tokens = rest.split(/\s+/).filter(Boolean);
+      if (tokens.length > 0 && this.isLikelyUnitToken(tokens[0])) {
+        unit = tokens[0];
+        rest = tokens.slice(1).join(' ');
+      }
+      const nextTestName = this.extractTrailingTestName(rest);
       return {
-        kind: 'complete',
-        row: {
-          parameterName,
-          value: this.normalizeValue(colon[2]),
-          ...(colon[3] ? { unit: colon[3].trim() } : {}),
-        },
+        value,
+        ...(unit ? { unit } : {}),
+        ...(nextTestName ? { nextTestName } : {}),
       };
     }
 
-    const nameFirst = c.match(
-      /^([A-Za-z][A-Za-z0-9\s/(),._%-]{2,100})\s+([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)\s*([A-Za-zµ/%^0-9._-]{0,20})(?:\s|$)/,
-    );
-    if (nameFirst) {
-      const parameterName = this.cleanName(nameFirst[1]);
-      if (!this.isLikelyTestName(parameterName)) return null;
+    const qual = this.parseQualitativeValue(c);
+    if (qual) {
+      const nextTestName = this.extractTrailingTestName(qual.rest);
       return {
-        kind: 'complete',
-        row: {
-          parameterName,
-          value: this.normalizeValue(nameFirst[2]),
-          ...(nameFirst[3] ? { unit: nameFirst[3].trim() } : {}),
-        },
-      };
-    }
-
-    const valueFirst = c.match(
-      /^([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)\s*([A-Za-zµ/%^0-9._-]{0,20})(?:\s+\d[\d.\s-]*)?\s+([A-Za-z][A-Za-z0-9\s/(),._%-]{2,100})$/i,
-    );
-    if (valueFirst) {
-      const parameterName = this.cleanName(valueFirst[3]);
-      if (!this.isLikelyTestName(parameterName)) return null;
-      return {
-        kind: 'complete',
-        row: {
-          parameterName,
-          value: this.normalizeValue(valueFirst[1]),
-          ...(valueFirst[2] ? { unit: valueFirst[2].trim() } : {}),
-        },
-      };
-    }
-
-    const nameOnly = c.match(/^([A-Za-z][A-Za-z0-9\s/(),._%-]{2,100})$/);
-    if (nameOnly) {
-      const parameterName = this.cleanName(nameOnly[1]);
-      if (!this.isLikelyTestName(parameterName)) return null;
-      return {
-        kind: 'name_only',
-        row: { parameterName, value: '' },
-      };
-    }
-
-    const valueOnly = c.match(
-      /^([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)\s*([A-Za-zµ/%^0-9._-]{0,20})(?:\s+\d[\d.\s-]*)?$/,
-    );
-    if (valueOnly) {
-      return {
-        kind: 'value_only',
-        row: {
-          parameterName: '',
-          value: this.normalizeValue(valueOnly[1]),
-          ...(valueOnly[2] ? { unit: valueOnly[2].trim() } : {}),
-        },
+        value: qual.value,
+        ...(qual.unit ? { unit: qual.unit } : {}),
+        ...(nextTestName ? { nextTestName } : {}),
       };
     }
 
     return null;
   }
 
-  private isLikelyNarrative(content: string): boolean {
-    const l = content.toLowerCase();
-    return (
-      /test name value unit bio\.? ref|method\s*:|interpretation|reference range|suggested supplement|health score|personalized summary|congratulations|calculated from test reports|standards of medical care|american diabetes association|recommends|clinical interpretation|conditions that can result/.test(
+  private parseQualitativeValue(
+    content: string,
+  ): { value: string; unit?: string; rest: string } | null {
+    const c = this.normalizeSpace(content);
+    const lower = c.toLowerCase();
+    const qualifiers = [
+      'negative',
+      'positive',
+      'nil',
+      'normal',
+      'absent',
+      'present',
+      'clear',
+      'cloudy',
+      'turbid',
+      'trace',
+      'amber',
+      'yellow',
+      'straw',
+      'pale yellow',
+    ];
+
+    let matched: string | null = null;
+    for (const q of qualifiers) {
+      if (lower.startsWith(`${q} `) || lower === q) {
+        matched = q;
+        break;
+      }
+    }
+    if (!matched) return null;
+
+    const consumed = matched.split(' ').length;
+    const tokens = c.split(/\s+/).filter(Boolean);
+    let idx = consumed;
+    let unit: string | undefined;
+    if (tokens[idx] && this.isLikelyUnitToken(tokens[idx])) {
+      unit = tokens[idx];
+      idx += 1;
+    }
+    const rest = tokens.slice(idx).join(' ');
+    return {
+      value: this.cleanValuePhrase(tokens.slice(0, consumed).join(' ')),
+      ...(unit ? { unit } : {}),
+      rest,
+    };
+  }
+
+  private extractTrailingTestName(rest: string): string | null {
+    const tokens = rest.split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return null;
+
+    for (let start = 0; start < tokens.length; start++) {
+      const raw = tokens.slice(start).join(' ');
+      const candidate = raw.replace(/^[^A-Za-z]+/, '').trim();
+      if (!candidate) continue;
+      if (!/[A-Za-z]/.test(candidate)) continue;
+      if (!this.isLikelyTestName(candidate)) continue;
+      return this.cleanName(candidate);
+    }
+    return null;
+  }
+
+  private isLikelyUnitToken(token: string): boolean {
+    const t = token.trim().replace(/[.,;:]+$/, '');
+    const l = t.toLowerCase();
+    if (!t) return false;
+    if (t.length > 20) return false;
+    if (/^[-–]$/.test(t)) return false;
+    if (/^[<>]?\d[\d,]*(?:\.\d+)?$/.test(t)) return false;
+    if (/^\d+\s*-\s*\d+$/.test(t)) return false;
+    if (/[:]/.test(t)) return false;
+    if (
+      /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale|yellow|desirable|borderline|optimal|high|low|risk|first|second|third)$/i.test(
         l,
-      ) || l.length > 220
-    );
+      )
+    ) {
+      return false;
+    }
+    if (/^[A-Za-z]+$/.test(t)) {
+      return t.length <= 4 || l === 'ratio';
+    }
+    if (/^[A-Za-zµ/%][A-Za-zµ/%^0-9._/-]*$/.test(t)) return true;
+    if (/^\d+\^\d+\/[A-Za-zµ/%][A-Za-zµ/%^0-9._/-]*$/.test(t)) return true;
+    if (/^\/[A-Za-z]+$/i.test(t)) return true;
+    return false;
   }
 
   private isLikelyTestName(name: string): boolean {
-    const l = name.toLowerCase();
-    if (name.length < 3 || name.length > 100) return false;
-    if ((name.match(/\d/g) ?? []).length > 10) return false;
-    if ((name.match(/[a-z]/gi) ?? []).length < 3) return false;
+    const n = this.normalizeSpace(name);
+    const l = n.toLowerCase();
+    if (n.length < 2 || n.length > 100) return false;
+    if (!/[A-Za-z]/.test(n)) return false;
+    if ((n.match(/[A-Za-z]/g) ?? []).length < 2) return false;
+    if ((n.match(/\s+/g) ?? []).length > 10) return false;
+    if (/[:|]/.test(n)) return false;
+    if (/^[<>]?\s*[-+]?\d/.test(n)) return false;
     if (
-      /\b(report|summary|method|interpretation|reference|booking|sample|department|status|customer|doctor|recommend|analysis)\b/.test(
+      /\b(department|test name|smart report|summary|suggestions|report generated|sample|customer|barcode|booking|order id|page \d|sin no|method|interpretation|reference|desirable|borderline|optimal|risk|first trimester|second trimester|third trimester|healthians|american diabetes association|end of report)\b/.test(
+        l,
+      )
+    ) {
+      return false;
+    }
+    if (
+      /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale|yellow|amber|straw)\b/.test(
         l,
       )
     ) {
@@ -342,22 +463,41 @@ export class OpenDataLoaderJsonParser {
     return true;
   }
 
-  private cleanName(name: string): string {
-    return name
-      .replace(/\s+/g, ' ')
-      .trim()
-      .replace(/\b\w/g, (m) => m.toUpperCase());
+  private cleanHeading(heading: string): string {
+    return this.normalizeSpace(heading).replace(/^\*+\s*|\s*\*+$/g, '').trim();
   }
 
-  private normalizeValue(value: string): string {
+  private cleanName(name: string): string {
+    return this.normalizeSpace(name)
+      .replace(/^[\s:;,-]+/, '')
+      .replace(/[\s:;,-]+$/, '')
+      .trim();
+  }
+
+  private normalizeParameterName(name: string): string {
+    return name
+      .replace(/^(physical|chemical)\s+examination\s+/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private cleanValuePhrase(value: string): string {
+    return this.normalizeSpace(value).trim();
+  }
+
+  private normalizeNumericValue(value: string): string {
     return value.replace(/[,\s]+/g, '').trim();
+  }
+
+  private normalizeSpace(value: string): string {
+    return value.replace(/\s+/g, ' ').trim();
   }
 
   private deduplicate(values: ExtractedLabValue[]): ExtractedLabValue[] {
     const seen = new Set<string>();
     const out: ExtractedLabValue[] = [];
     for (const v of values) {
-      const key = `${v.parameterName}::${v.value}::${v.unit ?? ''}`;
+      const key = `${v.parameterName.toLowerCase()}::${v.value.toLowerCase()}::${(v.unit ?? '').toLowerCase()}`;
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(v);
@@ -369,7 +509,7 @@ export class OpenDataLoaderJsonParser {
     const seen = new Set<string>();
     const out: StructuredSectionItemDto[] = [];
     for (const row of rows) {
-      const key = `${row.parameterName}::${row.value}::${row.unit ?? ''}`;
+      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}::${(row.unit ?? '').toLowerCase()}`;
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(row);
