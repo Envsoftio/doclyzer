@@ -16,7 +16,15 @@ interface FlatNode {
 interface ParsedValueRow {
   value: string;
   unit?: string;
+  referenceRange?: string;
+  isAbnormal?: boolean;
   nextTestName?: string;
+}
+
+interface ExtractionStats {
+  candidateRows: number;
+  parsedRows: number;
+  aiCandidateRows: string[];
 }
 
 export interface OpenDataLoaderParsedOutput {
@@ -24,11 +32,36 @@ export interface OpenDataLoaderParsedOutput {
   structuredReport: StructuredReportDto;
 }
 
+export interface OpenDataLoaderParseDiagnostics {
+  confidence: number;
+  coverage: number;
+  candidateRows: number;
+  parsedRows: number;
+  extractedRows: number;
+  sectionCount: number;
+  lowConfidenceReasons: string[];
+  aiCandidateRows: string[];
+}
+
+export interface OpenDataLoaderParsedWithDiagnosticsOutput extends OpenDataLoaderParsedOutput {
+  diagnostics: OpenDataLoaderParseDiagnostics;
+}
+
 export class OpenDataLoaderJsonParser {
   parse(input: unknown): OpenDataLoaderParsedOutput {
+    const parsed = this.parseWithDiagnostics(input);
+    return {
+      extractedLabValues: parsed.extractedLabValues,
+      structuredReport: parsed.structuredReport,
+    };
+  }
+
+  parseWithDiagnostics(
+    input: unknown,
+  ): OpenDataLoaderParsedWithDiagnosticsOutput {
     const nodes = this.flattenNodes(input);
     const patientDetails = this.extractPatientDetails(nodes);
-    const sections = this.extractSections(nodes);
+    const { sections, stats } = this.extractSections(nodes);
 
     const extractedLabValues: ExtractedLabValue[] = [];
     for (const section of sections) {
@@ -38,16 +71,28 @@ export class OpenDataLoaderJsonParser {
           value: test.value,
           unit: test.unit ?? null,
           sampleDate: test.sampleDate ?? null,
+          ...(test.referenceRange ? { referenceRange: test.referenceRange } : {}),
+          ...(typeof test.isAbnormal === 'boolean'
+            ? { isAbnormal: test.isAbnormal }
+            : {}),
         });
       }
     }
 
+    const deduped = this.deduplicate(extractedLabValues);
+    const diagnostics = this.buildDiagnostics({
+      stats,
+      extractedRows: deduped.length,
+      sectionCount: sections.length,
+    });
+
     return {
-      extractedLabValues: this.deduplicate(extractedLabValues),
+      extractedLabValues: deduped,
       structuredReport: {
         patientDetails,
         sections: sections.filter((s) => s.tests.length > 0),
       },
+      diagnostics,
     };
   }
 
@@ -86,7 +131,9 @@ export class OpenDataLoaderJsonParser {
     return out;
   }
 
-  private extractPatientDetails(nodes: FlatNode[]): StructuredPatientDetailsDto {
+  private extractPatientDetails(
+    nodes: FlatNode[],
+  ): StructuredPatientDetailsDto {
     const full = nodes.map((n) => n.content).join(' ');
     const read = (re: RegExp): string | undefined => {
       const m = full.match(re);
@@ -94,13 +141,16 @@ export class OpenDataLoaderJsonParser {
     };
 
     const name =
-      read(/Patient Name\s*:\s*([^|]+?)(?:\s{2,}|Age\/Gender|Barcode|Order Id|$)/i) ??
+      read(
+        /Patient Name\s*:\s*([^|]+?)(?:\s{2,}|Age\/Gender|Barcode|Order Id|$)/i,
+      ) ??
       read(/\bDear\s+([A-Za-z][A-Za-z ]{1,80})[,!]/i) ??
       read(/^\s*([A-Za-z][A-Za-z ]{2,80})\s*$/m);
 
     const ageGender = read(/Age\/Gender\s*:\s*([^|]+?)(?:\s{2,}|Order Id|$)/i);
-    const age =
-      ageGender?.match(/(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?|\d+\s*Yrs?)/i)?.[1];
+    const age = ageGender?.match(
+      /(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?|\d+\s*Yrs?)/i,
+    )?.[1];
     const gender = ageGender?.match(/\b(Male|Female|Other)\b/i)?.[1];
 
     return {
@@ -122,9 +172,17 @@ export class OpenDataLoaderJsonParser {
     };
   }
 
-  private extractSections(nodes: FlatNode[]): StructuredSectionDto[] {
+  private extractSections(nodes: FlatNode[]): {
+    sections: StructuredSectionDto[];
+    stats: ExtractionStats;
+  } {
     const sections = new Map<string, StructuredSectionItemDto[]>();
     const pages = new Map<number, FlatNode[]>();
+    const stats: ExtractionStats = {
+      candidateRows: 0,
+      parsedRows: 0,
+      aiCandidateRows: [],
+    };
 
     for (const node of nodes) {
       if (node.pageNumber == null || node.bbox == null) continue;
@@ -137,7 +195,7 @@ export class OpenDataLoaderJsonParser {
       const pageNodes = pages.get(page)!;
       const sorted = pageNodes
         .slice()
-        .sort((a, b) => (b.bbox![1] - a.bbox![1]) || (a.bbox![0] - b.bbox![0]));
+        .sort((a, b) => b.bbox![1] - a.bbox![1] || a.bbox![0] - b.bbox![0]);
 
       const tableHeaderIndexes: number[] = [];
       for (let i = 0; i < sorted.length; i++) {
@@ -157,21 +215,31 @@ export class OpenDataLoaderJsonParser {
         const rows = sorted
           .slice(start, end)
           .filter((n) => n.bbox![1] < headerY - 0.5 && n.bbox![1] > 120);
-        this.extractRowsFromTableBlock(rows, sections);
+        this.extractRowsFromTableBlock(rows, sections, stats);
       }
     }
 
-    return Array.from(sections.entries())
-      .map(([heading, tests]) => ({
-        heading,
-        tests: this.deduplicateRows(tests),
-      }))
-      .filter((s) => s.tests.length > 0);
+    return {
+      sections: Array.from(sections.entries())
+        .map(([heading, tests]) => ({
+          heading,
+          tests: this.deduplicateRows(tests),
+        }))
+        .filter((s) => s.tests.length > 0),
+      stats: {
+        ...stats,
+        aiCandidateRows: this.uniqueTrimmed(stats.aiCandidateRows).slice(
+          0,
+          400,
+        ),
+      },
+    };
   }
 
   private extractRowsFromTableBlock(
     rows: FlatNode[],
     sections: Map<string, StructuredSectionItemDto[]>,
+    stats: ExtractionStats,
   ): void {
     let currentSection = 'Other Tests';
     let pendingTestName: string | null = null;
@@ -189,21 +257,36 @@ export class OpenDataLoaderJsonParser {
         pendingTestName = this.isLikelyTestName(content)
           ? this.cleanName(content)
           : null;
+        if (this.isSafeAiCandidate(content)) {
+          stats.aiCandidateRows.push(content);
+        }
         continue;
       }
 
       const parsedValue = this.parseValueLedRow(content);
       if (parsedValue) {
+        stats.candidateRows += 1;
+        if (this.isSafeAiCandidate(content)) {
+          stats.aiCandidateRows.push(content);
+        }
         if (pendingTestName && this.isLikelyTestName(pendingTestName)) {
           if (!sections.has(currentSection)) sections.set(currentSection, []);
           sections.get(currentSection)!.push({
             parameterName: this.normalizeParameterName(pendingTestName),
             value: parsedValue.value,
             ...(parsedValue.unit ? { unit: parsedValue.unit } : {}),
+            ...(parsedValue.referenceRange
+              ? { referenceRange: parsedValue.referenceRange }
+              : {}),
+            ...(typeof parsedValue.isAbnormal === 'boolean'
+              ? { isAbnormal: parsedValue.isAbnormal }
+              : {}),
           });
+          stats.parsedRows += 1;
         }
         pendingTestName =
-          parsedValue.nextTestName && this.isLikelyTestName(parsedValue.nextTestName)
+          parsedValue.nextTestName &&
+          this.isLikelyTestName(parsedValue.nextTestName)
             ? this.cleanName(parsedValue.nextTestName)
             : null;
         continue;
@@ -211,12 +294,23 @@ export class OpenDataLoaderJsonParser {
 
       const nameLed = this.parseNameLedValueRow(content);
       if (nameLed) {
+        stats.candidateRows += 1;
+        if (this.isSafeAiCandidate(content)) {
+          stats.aiCandidateRows.push(content);
+        }
         if (!sections.has(currentSection)) sections.set(currentSection, []);
         sections.get(currentSection)!.push({
           parameterName: this.normalizeParameterName(nameLed.parameterName),
           value: nameLed.value,
           ...(nameLed.unit ? { unit: nameLed.unit } : {}),
+          ...(nameLed.referenceRange
+            ? { referenceRange: nameLed.referenceRange }
+            : {}),
+          ...(typeof nameLed.isAbnormal === 'boolean'
+            ? { isAbnormal: nameLed.isAbnormal }
+            : {}),
         });
+        stats.parsedRows += 1;
         pendingTestName =
           nameLed.nextTestName && this.isLikelyTestName(nameLed.nextTestName)
             ? this.cleanName(nameLed.nextTestName)
@@ -226,9 +320,61 @@ export class OpenDataLoaderJsonParser {
 
       const parsedName = this.parseNameOnlyRow(content);
       if (parsedName) {
+        stats.candidateRows += 1;
+        if (this.isSafeAiCandidate(content)) {
+          stats.aiCandidateRows.push(content);
+        }
         pendingTestName = parsedName;
       }
     }
+  }
+
+  private buildDiagnostics(input: {
+    stats: ExtractionStats;
+    extractedRows: number;
+    sectionCount: number;
+  }): OpenDataLoaderParseDiagnostics {
+    const { stats, extractedRows, sectionCount } = input;
+    const coverage =
+      stats.candidateRows > 0 ? stats.parsedRows / stats.candidateRows : 0;
+    const lowConfidenceReasons: string[] = [];
+
+    if (stats.candidateRows === 0) {
+      lowConfidenceReasons.push('No table candidate rows were detected.');
+    }
+    if (coverage < 0.45) {
+      lowConfidenceReasons.push(
+        `Low row coverage (${Math.round(coverage * 100)}%).`,
+      );
+    }
+    if (extractedRows < 8) {
+      lowConfidenceReasons.push(
+        `Very few tests extracted (${extractedRows} rows).`,
+      );
+    }
+    if (sectionCount < 2) {
+      lowConfidenceReasons.push(
+        `Very few sections extracted (${sectionCount}).`,
+      );
+    }
+
+    let confidence =
+      coverage * 0.6 +
+      Math.min(1, extractedRows / 40) * 0.25 +
+      Math.min(1, sectionCount / 8) * 0.15;
+    confidence = Math.max(0, Math.min(1, confidence));
+    if (stats.candidateRows === 0) confidence = 0;
+
+    return {
+      confidence: Number(confidence.toFixed(3)),
+      coverage: Number(coverage.toFixed(3)),
+      candidateRows: stats.candidateRows,
+      parsedRows: stats.parsedRows,
+      extractedRows,
+      sectionCount,
+      lowConfidenceReasons,
+      aiCandidateRows: stats.aiCandidateRows,
+    };
   }
 
   private isTableHeader(content: string): boolean {
@@ -248,7 +394,6 @@ export class OpenDataLoaderJsonParser {
     ) {
       return false;
     }
-    // Lab panel style headings generally sit close to left margin.
     return true;
   }
 
@@ -283,6 +428,19 @@ export class OpenDataLoaderJsonParser {
     return false;
   }
 
+  private isSafeAiCandidate(content: string): boolean {
+    const l = content.toLowerCase();
+    if (content.length > 140) return false;
+    if (
+      /\b(patient|name|age\/gender|mobile|phone|address|email|booking id|order id|barcode|referred by|sample collected on|sample received on|report generated on)\b/.test(
+        l,
+      )
+    ) {
+      return false;
+    }
+    return true;
+  }
+
   private parseNameOnlyRow(content: string): string | null {
     if (/[:|]/.test(content)) return null;
     if (/^[<>]?\s*[-+]?\d/.test(content)) return null;
@@ -308,9 +466,12 @@ export class OpenDataLoaderJsonParser {
 
     const parameterName = this.cleanName(m[1]);
     if (!this.isLikelyTestName(parameterName)) return null;
+    const referenceRange = this.cleanValuePhrase(m[2]);
     return {
       parameterName,
       value: this.cleanValuePhrase(m[2]),
+      referenceRange,
+      isAbnormal: false,
       nextTestName: this.cleanName(m[3]),
     };
   }
@@ -329,20 +490,32 @@ export class OpenDataLoaderJsonParser {
         unit = tokens[0];
         rest = tokens.slice(1).join(' ');
       }
-      const nextTestName = this.extractTrailingTestName(rest);
+      const extractedRef = this.extractReferenceRange(rest);
+      const nextTestName = this.extractTrailingTestName(extractedRef.remainder);
+      const isAbnormal = this.evaluateAbnormal(value, extractedRef.referenceRange);
       return {
         value,
         ...(unit ? { unit } : {}),
+        ...(extractedRef.referenceRange
+          ? { referenceRange: extractedRef.referenceRange }
+          : {}),
+        ...(typeof isAbnormal === 'boolean' ? { isAbnormal } : {}),
         ...(nextTestName ? { nextTestName } : {}),
       };
     }
 
     const qual = this.parseQualitativeValue(c);
     if (qual) {
-      const nextTestName = this.extractTrailingTestName(qual.rest);
+      const extractedRef = this.extractReferenceRange(qual.rest);
+      const nextTestName = this.extractTrailingTestName(extractedRef.remainder);
+      const isAbnormal = this.evaluateAbnormal(qual.value, extractedRef.referenceRange);
       return {
         value: qual.value,
         ...(qual.unit ? { unit: qual.unit } : {}),
+        ...(extractedRef.referenceRange
+          ? { referenceRange: extractedRef.referenceRange }
+          : {}),
+        ...(typeof isAbnormal === 'boolean' ? { isAbnormal } : {}),
         ...(nextTestName ? { nextTestName } : {}),
       };
     }
@@ -395,6 +568,95 @@ export class OpenDataLoaderJsonParser {
       ...(unit ? { unit } : {}),
       rest,
     };
+  }
+
+  private extractReferenceRange(rest: string): {
+    referenceRange?: string;
+    remainder: string;
+  } {
+    const cleaned = this.normalizeSpace(rest);
+    if (!cleaned) return { remainder: '' };
+
+    const between = cleaned.match(
+      /^\s*(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)(?:\s+(.*))?$/,
+    );
+    if (between) {
+      return {
+        referenceRange: `${between[1]} - ${between[2]}`,
+        remainder: this.normalizeSpace(between[3] ?? ''),
+      };
+    }
+
+    const cmp = cleaned.match(/^\s*([<>]=?)\s*(-?\d+(?:\.\d+)?)(?:\s+(.*))?$/);
+    if (cmp) {
+      return {
+        referenceRange: `${cmp[1]}${cmp[2]}`,
+        remainder: this.normalizeSpace(cmp[3] ?? ''),
+      };
+    }
+
+    const qual = cleaned.match(
+      /^\s*(Negative|Positive|Nil|Normal|Absent|Present|Clear|Cloudy|Turbid|Trace|Pale Yellow|Yellow|Amber|Straw)(?:\s+(.*))?$/i,
+    );
+    if (qual) {
+      return {
+        referenceRange: this.cleanValuePhrase(qual[1]),
+        remainder: this.normalizeSpace(qual[2] ?? ''),
+      };
+    }
+
+    return { remainder: cleaned };
+  }
+
+  private evaluateAbnormal(
+    rawValue: string,
+    referenceRange?: string,
+  ): boolean | undefined {
+    if (!referenceRange) return undefined;
+
+    const ref = referenceRange.trim();
+    const refLower = ref.toLowerCase();
+    const qual =
+      /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale yellow|yellow|amber|straw)$/i;
+
+    if (qual.test(refLower)) {
+      const valueLower = rawValue.trim().toLowerCase();
+      if (!qual.test(valueLower)) return undefined;
+      return valueLower !== refLower;
+    }
+
+    const numericValue = this.tryParseNumeric(rawValue);
+    if (numericValue === null) return undefined;
+
+    const between = ref.match(
+      /^\s*(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)\s*$/,
+    );
+    if (between) {
+      const low = Number(between[1]);
+      const high = Number(between[2]);
+      if (!Number.isFinite(low) || !Number.isFinite(high)) return undefined;
+      return (
+        numericValue < Math.min(low, high) || numericValue > Math.max(low, high)
+      );
+    }
+
+    const lt = ref.match(/^\s*<\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (lt) return numericValue >= Number(lt[1]);
+    const lte = ref.match(/^\s*<=\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (lte) return numericValue > Number(lte[1]);
+    const gt = ref.match(/^\s*>\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (gt) return numericValue <= Number(gt[1]);
+    const gte = ref.match(/^\s*>=\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (gte) return numericValue < Number(gte[1]);
+
+    return undefined;
+  }
+
+  private tryParseNumeric(raw: string): number | null {
+    const cleaned = raw.replace(/^[<>]=?\s*/, '').replace(/,/g, '').trim();
+    if (!/^-?\d+(?:\.\d+)?$/.test(cleaned)) return null;
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : null;
   }
 
   private extractTrailingTestName(rest: string): string | null {
@@ -464,7 +726,9 @@ export class OpenDataLoaderJsonParser {
   }
 
   private cleanHeading(heading: string): string {
-    return this.normalizeSpace(heading).replace(/^\*+\s*|\s*\*+$/g, '').trim();
+    return this.normalizeSpace(heading)
+      .replace(/^\*+\s*|\s*\*+$/g, '')
+      .trim();
   }
 
   private cleanName(name: string): string {
@@ -493,6 +757,20 @@ export class OpenDataLoaderJsonParser {
     return value.replace(/\s+/g, ' ').trim();
   }
 
+  private uniqueTrimmed(items: string[]): string[] {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const item of items) {
+      const cleaned = this.normalizeSpace(item);
+      if (!cleaned) continue;
+      const key = cleaned.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(cleaned);
+    }
+    return out;
+  }
+
   private deduplicate(values: ExtractedLabValue[]): ExtractedLabValue[] {
     const seen = new Set<string>();
     const out: ExtractedLabValue[] = [];
@@ -505,11 +783,13 @@ export class OpenDataLoaderJsonParser {
     return out;
   }
 
-  private deduplicateRows(rows: StructuredSectionItemDto[]): StructuredSectionItemDto[] {
+  private deduplicateRows(
+    rows: StructuredSectionItemDto[],
+  ): StructuredSectionItemDto[] {
     const seen = new Set<string>();
     const out: StructuredSectionItemDto[] = [];
     for (const row of rows) {
-      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}::${(row.unit ?? '').toLowerCase()}`;
+      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}::${(row.unit ?? '').toLowerCase()}::${(row.referenceRange ?? '').toLowerCase()}`;
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(row);

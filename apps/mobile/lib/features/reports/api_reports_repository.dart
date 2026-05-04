@@ -21,6 +21,8 @@ class ApiReportsRepository implements ReportsRepository {
           value: t['value'] as String? ?? '',
           unit: t['unit'] as String?,
           sampleDate: t['sampleDate'] as String?,
+          referenceRange: t['referenceRange'] as String?,
+          isAbnormal: t['isAbnormal'] as bool?,
         );
       }).toList();
 
@@ -74,6 +76,7 @@ class ApiReportsRepository implements ReportsRepository {
     return list.map((d) {
       final map = d as Map<String, dynamic>;
       final createdAt = map['createdAt'] as String?;
+      final parsedAt = map['parsedAt'] as String?;
       return Report(
         id: map['id'] as String,
         profileId: map['profileId'] as String,
@@ -84,6 +87,7 @@ class ApiReportsRepository implements ReportsRepository {
         createdAt: createdAt != null
             ? DateTime.parse(createdAt)
             : DateTime.now(),
+        parsedAt: parsedAt != null ? DateTime.parse(parsedAt) : null,
         extractedLabValues: const [],
       );
     }).toList();
@@ -94,6 +98,7 @@ class ApiReportsRepository implements ReportsRepository {
     final data = await _client.get('v1/reports/$reportId');
     final d = data['data'] as Map<String, dynamic>;
     final createdAt = d['createdAt'] as String?;
+    final parsedAt = d['parsedAt'] as String?;
     final labList = d['extractedLabValues'] as List<dynamic>? ?? [];
     final extractedLabValues = labList.map((e) {
       final m = e as Map<String, dynamic>;
@@ -102,6 +107,8 @@ class ApiReportsRepository implements ReportsRepository {
         value: m['value'] as String? ?? '',
         unit: m['unit'] as String?,
         sampleDate: m['sampleDate'] as String?,
+        referenceRange: m['referenceRange'] as String?,
+        isAbnormal: m['isAbnormal'] as bool?,
       );
     }).toList();
     return Report(
@@ -112,6 +119,7 @@ class ApiReportsRepository implements ReportsRepository {
       sizeBytes: d['sizeBytes'] as int,
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
+      parsedAt: parsedAt != null ? DateTime.parse(parsedAt) : null,
       summary: d['summary'] as String?,
       parsedTranscript: d['parsedTranscript'] as String?,
       extractedLabValues: extractedLabValues,
@@ -127,6 +135,7 @@ class ApiReportsRepository implements ReportsRepository {
     final data = await _client.post(path);
     final d = data['data'] as Map<String, dynamic>;
     final createdAt = d['createdAt'] as String?;
+    final parsedAt = d['parsedAt'] as String?;
     final labList = d['extractedLabValues'] as List<dynamic>? ?? [];
     final extractedLabValues = labList.map((e) {
       final m = e as Map<String, dynamic>;
@@ -135,6 +144,8 @@ class ApiReportsRepository implements ReportsRepository {
         value: m['value'] as String? ?? '',
         unit: m['unit'] as String?,
         sampleDate: m['sampleDate'] as String?,
+        referenceRange: m['referenceRange'] as String?,
+        isAbnormal: m['isAbnormal'] as bool?,
       );
     }).toList();
     return Report(
@@ -145,6 +156,7 @@ class ApiReportsRepository implements ReportsRepository {
       sizeBytes: d['sizeBytes'] as int,
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
+      parsedAt: parsedAt != null ? DateTime.parse(parsedAt) : null,
       summary: d['summary'] as String?,
       parsedTranscript: d['parsedTranscript'] as String?,
       extractedLabValues: extractedLabValues,
@@ -212,6 +224,7 @@ class ApiReportsRepository implements ReportsRepository {
     );
     final d = data['data'] as Map<String, dynamic>;
     final createdAt = d['createdAt'] as String?;
+    final parsedAt = d['parsedAt'] as String?;
     return Report(
       id: d['id'] as String,
       profileId: d['profileId'] as String,
@@ -220,6 +233,7 @@ class ApiReportsRepository implements ReportsRepository {
       sizeBytes: d['sizeBytes'] as int,
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
+      parsedAt: parsedAt != null ? DateTime.parse(parsedAt) : null,
       summary: d['summary'] as String?,
       extractedLabValues: const [],
     );
@@ -230,6 +244,7 @@ class ApiReportsRepository implements ReportsRepository {
     final data = await _client.post('v1/reports/$reportId/keep-file');
     final d = data['data'] as Map<String, dynamic>;
     final createdAt = d['createdAt'] as String?;
+    final parsedAt = d['parsedAt'] as String?;
     return Report(
       id: d['id'] as String,
       profileId: d['profileId'] as String,
@@ -238,6 +253,7 @@ class ApiReportsRepository implements ReportsRepository {
       sizeBytes: d['sizeBytes'] as int,
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
+      parsedAt: parsedAt != null ? DateTime.parse(parsedAt) : null,
       extractedLabValues: const [],
     );
   }

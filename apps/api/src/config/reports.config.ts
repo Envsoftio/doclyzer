@@ -17,6 +17,18 @@ export interface ReportsConfig {
   opendataloaderTimeoutMs: number;
   /** Extra CLI arguments passed to OpenDataLoader command. */
   opendataloaderExtraArgs: string;
+  /** Enable/disable low-confidence AI fallback for lab extraction. */
+  labAiFallbackEnabled: boolean;
+  /** OpenAI API key for low-confidence lab extraction fallback. */
+  labAiFallbackOpenaiApiKey: string;
+  /** OpenAI model used for fallback extraction. */
+  labAiFallbackOpenaiModel: string;
+  /** OpenAI base URL override (optional). */
+  labAiFallbackOpenaiBaseUrl: string;
+  /** Timeout in ms for fallback extraction model call. */
+  labAiFallbackTimeoutMs: number;
+  /** Minimum deterministic confidence required to skip AI fallback. */
+  labAiFallbackMinConfidence: number;
 }
 
 export const reportsConfig = registerAs(
@@ -37,5 +49,20 @@ export const reportsConfig = registerAs(
       10,
     ),
     opendataloaderExtraArgs: process.env.OPENDATALOADER_EXTRA_ARGS ?? '',
+    labAiFallbackEnabled: process.env.REPORT_LAB_AI_FALLBACK_ENABLED === 'true',
+    labAiFallbackOpenaiApiKey:
+      process.env.REPORT_LAB_AI_FALLBACK_OPENAI_API_KEY ?? '',
+    labAiFallbackOpenaiModel:
+      process.env.REPORT_LAB_AI_FALLBACK_OPENAI_MODEL ?? 'gpt-5-mini',
+    labAiFallbackOpenaiBaseUrl:
+      process.env.REPORT_LAB_AI_FALLBACK_OPENAI_BASE_URL ??
+      'https://api.openai.com/v1',
+    labAiFallbackTimeoutMs: parseInt(
+      process.env.REPORT_LAB_AI_FALLBACK_TIMEOUT_MS ?? '10000',
+      10,
+    ),
+    labAiFallbackMinConfidence: parseFloat(
+      process.env.REPORT_LAB_AI_FALLBACK_MIN_CONFIDENCE ?? '0.72',
+    ),
   }),
 );

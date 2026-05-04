@@ -15,7 +15,8 @@ class ProcessingHistoryScreen extends StatefulWidget {
   final ReportsRepository reportsRepository;
 
   @override
-  State<ProcessingHistoryScreen> createState() => _ProcessingHistoryScreenState();
+  State<ProcessingHistoryScreen> createState() =>
+      _ProcessingHistoryScreenState();
 }
 
 class _ProcessingHistoryScreenState extends State<ProcessingHistoryScreen> {
@@ -35,8 +36,9 @@ class _ProcessingHistoryScreenState extends State<ProcessingHistoryScreen> {
       _errorMessage = null;
     });
     try {
-      final attempts =
-          await widget.reportsRepository.getProcessingAttempts(widget.reportId);
+      final attempts = await widget.reportsRepository.getProcessingAttempts(
+        widget.reportId,
+      );
       if (mounted) {
         setState(() {
           _attempts = attempts;
@@ -87,16 +89,26 @@ class _ProcessingHistoryScreenState extends State<ProcessingHistoryScreen> {
         '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
   }
 
+  Color _outcomeColor(BuildContext context, String outcome) {
+    switch (outcome) {
+      case 'parsed':
+        return Colors.green.shade700;
+      case 'failed_transient':
+        return Colors.orange.shade700;
+      case 'unparsed':
+      case 'content_not_recognized':
+      case 'failed_terminal':
+        return Theme.of(context).colorScheme.error;
+      default:
+        return Theme.of(context).colorScheme.primary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Attempt History'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: _buildBody(),
-      ),
+      appBar: AppBar(title: const Text('Attempt History')),
+      body: Padding(padding: const EdgeInsets.all(16), child: _buildBody()),
     );
   }
 
@@ -119,10 +131,7 @@ class _ProcessingHistoryScreenState extends State<ProcessingHistoryScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _loadAttempts,
-              child: const Text('Retry'),
-            ),
+            FilledButton(onPressed: _loadAttempts, child: const Text('Retry')),
           ],
         ),
       );
@@ -133,17 +142,73 @@ class _ProcessingHistoryScreenState extends State<ProcessingHistoryScreen> {
         child: Text('No attempt history available.'),
       );
     }
-    return ListView.builder(
+    return ListView.separated(
       itemCount: _attempts.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final a = _attempts[index];
-        return ListTile(
+        final outcomeColor = _outcomeColor(context, a.outcome);
+        return Card(
           key: Key('processing-history-attempt-${a.id}'),
-          title: Text(_triggerLabel(a.trigger)),
-          subtitle: Text(_outcomeLabel(a.outcome)),
-          trailing: Text(
-            _formatDateTime(a.attemptedAt),
-            style: Theme.of(context).textTheme.bodySmall,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        a.trigger == 'retry'
+                            ? Icons.refresh
+                            : Icons.upload_file,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _triggerLabel(a.trigger),
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                    Chip(
+                      avatar: Icon(Icons.circle, size: 10, color: outcomeColor),
+                      label: Text(_outcomeLabel(a.outcome)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.schedule,
+                      size: 15,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        _formatDateTime(a.attemptedAt),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },

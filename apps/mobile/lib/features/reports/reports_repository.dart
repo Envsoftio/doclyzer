@@ -24,12 +24,16 @@ class ExtractedLabValue {
     required this.value,
     this.unit,
     this.sampleDate,
+    this.referenceRange,
+    this.isAbnormal,
   });
 
   final String parameterName;
   final String value;
   final String? unit;
   final String? sampleDate;
+  final String? referenceRange;
+  final bool? isAbnormal;
 }
 
 /// Report for display (from GET /reports/:id).
@@ -42,6 +46,7 @@ class Report {
     required this.sizeBytes,
     required this.status,
     required this.createdAt,
+    this.parsedAt,
     this.summary,
     this.parsedTranscript,
     this.extractedLabValues = const [],
@@ -55,6 +60,7 @@ class Report {
   final int sizeBytes;
   final String status;
   final DateTime createdAt;
+  final DateTime? parsedAt;
   final String? summary;
   final String? parsedTranscript;
   final List<ExtractedLabValue> extractedLabValues;
@@ -83,12 +89,16 @@ class StructuredSectionItem {
     required this.value,
     this.unit,
     this.sampleDate,
+    this.referenceRange,
+    this.isAbnormal,
   });
 
   final String parameterName;
   final String value;
   final String? unit;
   final String? sampleDate;
+  final String? referenceRange;
+  final bool? isAbnormal;
 }
 
 class StructuredSection {

@@ -3,6 +3,8 @@ export interface ExtractedLabValue {
   value: string;
   unit: string | null;
   sampleDate: string | null;
+  referenceRange?: string | null;
+  isAbnormal?: boolean | null;
 }
 
 function toTitleCase(s: string): string {

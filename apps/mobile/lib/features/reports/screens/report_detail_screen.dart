@@ -104,6 +104,16 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
+  void _openParsedReportReader() {
+    final text = _report?.parsedTranscript;
+    if (text == null || text.trim().isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => _ParsedReportReaderScreen(rawText: text),
+      ),
+    );
+  }
+
   Future<void> _onRetryParse() async {
     if (_report == null) return;
     setState(() {
@@ -209,6 +219,21 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     }
   }
 
+  Color _statusColor(BuildContext context, String status) {
+    switch (status) {
+      case 'parsed':
+        return Colors.green.shade700;
+      case 'failed_terminal':
+      case 'content_not_recognized':
+      case 'unparsed':
+        return Theme.of(context).colorScheme.error;
+      case 'failed_transient':
+        return Colors.orange.shade700;
+      default:
+        return Theme.of(context).colorScheme.primary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -249,30 +274,64 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ),
       );
     }
+
     final report = _report!;
     final summary = report.summary;
+    final statusColor = _statusColor(context, report.status);
+
     return SingleChildScrollView(
       key: const Key('report-detail-content'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    report.originalFileName,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${_statusLabel(report.status)} · ${_formatDate(report.createdAt)}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.primaryContainer,
+                  Theme.of(context).colorScheme.surfaceContainerHighest,
                 ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.description_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        report.originalFileName,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Chip(
+                      avatar: Icon(Icons.circle, size: 10, color: statusColor),
+                      label: Text(_statusLabel(report.status)),
+                    ),
+                    Chip(
+                      avatar: const Icon(Icons.event, size: 16),
+                      label: Text(_formatDate(report.createdAt)),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           if (summary != null && summary.isNotEmpty) ...[
@@ -303,41 +362,55 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             ),
           ],
           const SizedBox(height: 16),
-          FilledButton.icon(
-            key: const Key('report-detail-view-pdf'),
-            onPressed: _openPdf,
-            icon: const Icon(Icons.picture_as_pdf),
-            label: const Text('View PDF'),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            key: const Key('report-detail-view-attempts'),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => ProcessingHistoryScreen(
-                  reportId: report.id,
-                  reportsRepository: widget.reportsRepository,
+          _SectionCard(
+            child: Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                FilledButton.icon(
+                  key: const Key('report-detail-view-pdf'),
+                  onPressed: _openPdf,
+                  icon: const Icon(Icons.picture_as_pdf),
+                  label: const Text('View PDF'),
                 ),
-              ),
-            ),
-            icon: const Icon(Icons.history),
-            label: const Text('View attempt history'),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            key: const Key('report-detail-health-history'),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => HealthHistoryScreen(
-                  profileId: widget.profileId,
-                  reportsRepository: widget.reportsRepository,
+                OutlinedButton.icon(
+                  key: const Key('report-detail-view-attempts'),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => ProcessingHistoryScreen(
+                        reportId: report.id,
+                        reportsRepository: widget.reportsRepository,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.history),
+                  label: const Text('Attempt history'),
                 ),
-              ),
+                OutlinedButton.icon(
+                  key: const Key('report-detail-health-history'),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => HealthHistoryScreen(
+                        profileId: widget.profileId,
+                        reportsRepository: widget.reportsRepository,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.show_chart),
+                  label: const Text('Compare reports'),
+                ),
+                if (report.parsedTranscript != null &&
+                    report.parsedTranscript!.trim().isNotEmpty)
+                  FilledButton.tonalIcon(
+                    key: const Key('report-detail-open-parsed-reader'),
+                    onPressed: _openParsedReportReader,
+                    icon: const Icon(Icons.menu_book_outlined),
+                    label: const Text('Read Parsed Report'),
+                  ),
+              ],
             ),
-            icon: const Icon(Icons.show_chart),
-            label: const Text('Compare With Previous Reports'),
           ),
           if (_profiles.where((p) => p.id != widget.profileId).isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -386,50 +459,52 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           if (report.structuredReport != null &&
               report.structuredReport!.sections.isNotEmpty) ...[
             const SizedBox(height: 24),
-            Text(
-              'Patient details',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
+            const _SectionTitle('Patient details', icon: Icons.person_outline),
             const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (report.structuredReport!.patientDetails.name != null)
-                      Text(
-                        'Name: ${report.structuredReport!.patientDetails.name!}',
-                      ),
-                    if (report.structuredReport!.patientDetails.age != null)
-                      Text(
-                        'Age: ${report.structuredReport!.patientDetails.age!}',
-                      ),
-                    if (report.structuredReport!.patientDetails.gender != null)
-                      Text(
-                        'Gender: ${report.structuredReport!.patientDetails.gender!}',
-                      ),
-                    if (report.structuredReport!.patientDetails.bookingId !=
-                        null)
-                      Text(
-                        'Booking ID: ${report.structuredReport!.patientDetails.bookingId!}',
-                      ),
-                    if (report
-                            .structuredReport!
-                            .patientDetails
-                            .sampleCollectionDate !=
-                        null)
-                      Text(
-                        'Sample Collection Date: ${report.structuredReport!.patientDetails.sampleCollectionDate!}',
-                      ),
-                  ],
-                ),
+            _SectionCard(
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  if (report.structuredReport!.patientDetails.name != null)
+                    _InfoPill(
+                      label: 'Name',
+                      value: report.structuredReport!.patientDetails.name!,
+                    ),
+                  if (report.structuredReport!.patientDetails.age != null)
+                    _InfoPill(
+                      label: 'Age',
+                      value: report.structuredReport!.patientDetails.age!,
+                    ),
+                  if (report.structuredReport!.patientDetails.gender != null)
+                    _InfoPill(
+                      label: 'Gender',
+                      value: report.structuredReport!.patientDetails.gender!,
+                    ),
+                  if (report.structuredReport!.patientDetails.bookingId != null)
+                    _InfoPill(
+                      label: 'Booking ID',
+                      value: report.structuredReport!.patientDetails.bookingId!,
+                    ),
+                  if (report
+                          .structuredReport!
+                          .patientDetails
+                          .sampleCollectionDate !=
+                      null)
+                    _InfoPill(
+                      label: 'Sample Collection',
+                      value: report
+                          .structuredReport!
+                          .patientDetails
+                          .sampleCollectionDate!,
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
-            Text(
+            const _SectionTitle(
               'Categorized test results',
-              style: Theme.of(context).textTheme.titleSmall,
+              icon: Icons.analytics_outlined,
             ),
             const SizedBox(height: 8),
             ...report.structuredReport!.sections.map((section) {
@@ -451,11 +526,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                               (test.unit != null && test.unit!.isNotEmpty)
                               ? ' ${test.unit}'
                               : '';
+                          final referenceRange = test.referenceRange;
+                          final abnormal = test.isAbnormal == true;
+                          final normalRangeColor = abnormal
+                              ? Colors.red.shade700
+                              : Theme.of(context).colorScheme.onSurfaceVariant;
                           return InkWell(
                             onTap: () => _openTrendChart(test.parameterName),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 6),
                               child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
                                     child: Text(
@@ -468,7 +549,39 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                                           ),
                                     ),
                                   ),
-                                  Text('${test.value}$unitSuffix'),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '${test.value}$unitSuffix',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: abnormal
+                                                  ? Colors.red.shade700
+                                                  : null,
+                                              fontWeight: abnormal
+                                                  ? FontWeight.w600
+                                                  : null,
+                                            ),
+                                      ),
+                                      if (referenceRange != null &&
+                                          referenceRange.isNotEmpty)
+                                        Text(
+                                          'Normal: $referenceRange',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: normalRangeColor,
+                                                fontWeight: abnormal
+                                                    ? FontWeight.w600
+                                                    : null,
+                                              ),
+                                        ),
+                                    ],
+                                  ),
                                   const SizedBox(width: 6),
                                   const Icon(Icons.chevron_right, size: 16),
                                 ],
@@ -485,7 +598,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           ],
           if (report.extractedLabValues.isNotEmpty) ...[
             const SizedBox(height: 24),
-            Text('Lab values', style: Theme.of(context).textTheme.titleSmall),
+            const _SectionTitle('Lab values', icon: Icons.biotech_outlined),
             const SizedBox(height: 4),
             Text(
               'Tap any value to open its trend graph and compare with older reports.',
@@ -503,6 +616,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final lab = report.extractedLabValues[index];
+                  final abnormal = lab.isAbnormal == true;
+                  final referenceRange = lab.referenceRange;
+                  final normalRangeColor = abnormal
+                      ? Colors.red.shade700
+                      : Theme.of(context).colorScheme.onSurfaceVariant;
                   return InkWell(
                     key: Key('lab-row-${lab.parameterName}'),
                     onTap: () => _openTrendChart(lab.parameterName),
@@ -525,9 +643,34 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                             ),
                           ),
                           Expanded(
-                            child: Text(
-                              lab.value.isNotEmpty ? lab.value : '—',
-                              style: Theme.of(context).textTheme.bodyMedium,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  lab.value.isNotEmpty ? lab.value : '—',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: abnormal
+                                            ? Colors.red.shade700
+                                            : null,
+                                        fontWeight: abnormal
+                                            ? FontWeight.w600
+                                            : null,
+                                      ),
+                                ),
+                                if (referenceRange != null &&
+                                    referenceRange.isNotEmpty)
+                                  Text(
+                                    'Normal: $referenceRange',
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: normalRangeColor,
+                                          fontWeight: abnormal
+                                              ? FontWeight.w600
+                                              : null,
+                                        ),
+                                  ),
+                              ],
                             ),
                           ),
                           if (lab.unit != null && lab.unit!.isNotEmpty)
@@ -563,19 +706,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           ],
           if (report.parsedTranscript != null &&
               report.parsedTranscript!.trim().isNotEmpty) ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Text(
-              'Complete parsed report',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: SelectableText(
-                  report.parsedTranscript!,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+              'Parsed report is available in Reader mode for easier access and better readability.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -583,4 +718,204 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       ),
     );
   }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.title, {required this.icon});
+
+  final String title;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(width: 8),
+        Text(title, style: Theme.of(context).textTheme.titleSmall),
+      ],
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(padding: const EdgeInsets.all(12), child: child),
+    );
+  }
+}
+
+class _InfoPill extends StatelessWidget {
+  const _InfoPill({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: RichText(
+        text: TextSpan(
+          style: Theme.of(context).textTheme.bodySmall,
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            TextSpan(text: value),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ParsedReportReaderScreen extends StatelessWidget {
+  const _ParsedReportReaderScreen({required this.rawText});
+
+  final String rawText;
+
+  @override
+  Widget build(BuildContext context) {
+    final blocks = _toBlocks(rawText);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Parsed Report')),
+      body: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        itemCount: blocks.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
+        itemBuilder: (context, index) {
+          final block = blocks[index];
+          return _buildBlock(context, block);
+        },
+      ),
+    );
+  }
+
+  Widget _buildBlock(BuildContext context, _ReaderBlock block) {
+    switch (block.type) {
+      case _ReaderBlockType.heading:
+        return Text(
+          block.text,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        );
+      case _ReaderBlockType.bullet:
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 6, right: 8),
+              child: Icon(
+                Icons.circle,
+                size: 7,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            Expanded(
+              child: SelectableText(
+                block.text,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ],
+        );
+      case _ReaderBlockType.paragraph:
+        return SelectableText(
+          block.text,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
+        );
+    }
+  }
+
+  List<_ReaderBlock> _toBlocks(String text) {
+    final lines = text
+        .replaceAll('\r\n', '\n')
+        .split('\n')
+        .map((e) => e.trimRight())
+        .toList();
+    final blocks = <_ReaderBlock>[];
+    final paragraph = StringBuffer();
+
+    void flushParagraph() {
+      final value = paragraph.toString().trim();
+      if (value.isNotEmpty) {
+        blocks.add(_ReaderBlock(_ReaderBlockType.paragraph, value));
+      }
+      paragraph.clear();
+    }
+
+    for (final rawLine in lines) {
+      final line = rawLine.trim();
+      if (line.isEmpty) {
+        flushParagraph();
+        continue;
+      }
+
+      final heading = _stripMarkdownHeading(line);
+      if (heading != null) {
+        flushParagraph();
+        blocks.add(_ReaderBlock(_ReaderBlockType.heading, heading));
+        continue;
+      }
+
+      final bullet = _stripMarkdownBullet(line);
+      if (bullet != null) {
+        flushParagraph();
+        blocks.add(_ReaderBlock(_ReaderBlockType.bullet, bullet));
+        continue;
+      }
+
+      if (paragraph.isNotEmpty) paragraph.write(' ');
+      paragraph.write(_stripInlineMarkdown(line));
+    }
+    flushParagraph();
+    return blocks;
+  }
+
+  String? _stripMarkdownHeading(String line) {
+    final match = RegExp(r'^#{1,6}\s+(.+)$').firstMatch(line);
+    if (match != null) return _stripInlineMarkdown(match.group(1)!);
+    final looksLikeAllCaps =
+        line.length > 4 && line == line.toUpperCase() && !line.contains(':');
+    if (looksLikeAllCaps) return _stripInlineMarkdown(line);
+    return null;
+  }
+
+  String? _stripMarkdownBullet(String line) {
+    final match = RegExp(r'^[-*]\s+(.+)$').firstMatch(line);
+    if (match != null) return _stripInlineMarkdown(match.group(1)!);
+    final numbered = RegExp(r'^\d+\.\s+(.+)$').firstMatch(line);
+    if (numbered != null) return _stripInlineMarkdown(numbered.group(1)!);
+    return null;
+  }
+
+  String _stripInlineMarkdown(String line) {
+    return line
+        .replaceAllMapped(RegExp(r'\*\*(.*?)\*\*'), (m) => m.group(1) ?? '')
+        .replaceAllMapped(RegExp(r'__(.*?)__'), (m) => m.group(1) ?? '')
+        .replaceAllMapped(RegExp(r'`(.*?)`'), (m) => m.group(1) ?? '')
+        .trim();
+  }
+}
+
+enum _ReaderBlockType { heading, paragraph, bullet }
+
+class _ReaderBlock {
+  const _ReaderBlock(this.type, this.text);
+
+  final _ReaderBlockType type;
+  final String text;
 }

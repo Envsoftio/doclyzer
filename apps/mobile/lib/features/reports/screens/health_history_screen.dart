@@ -37,11 +37,12 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
       _errorMessage = null;
     });
     try {
-      final result = await widget.reportsRepository.getLabTrends(widget.profileId);
-      final allParams = result.parameters
-          .where((p) => p.dataPoints.isNotEmpty)
-          .toList()
-        ..sort((a, b) => a.parameterName.compareTo(b.parameterName));
+      final result = await widget.reportsRepository.getLabTrends(
+        widget.profileId,
+      );
+      final allParams =
+          result.parameters.where((p) => p.dataPoints.isNotEmpty).toList()
+            ..sort((a, b) => a.parameterName.compareTo(b.parameterName));
       if (mounted) {
         setState(() {
           _params = allParams;
@@ -72,7 +73,8 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
   }
 
   String _formatDate(DateTime d) {
-    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final local = d.toLocal();
+    return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -80,19 +82,17 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
     final showDisclaimer =
         _state == _HealthHistoryState.loaded && _params.isNotEmpty;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Health History'),
-      ),
+      appBar: AppBar(title: const Text('Health History')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (showDisclaimer) ...[
-              const AiDisclaimerNote(
-                key: Key('health-history-disclaimer'),
-              ),
-              const SizedBox(height: 8),
+              _HistoryHeader(parameterCount: _params.length),
+              const SizedBox(height: 10),
+              const AiDisclaimerNote(key: Key('health-history-disclaimer')),
+              const SizedBox(height: 10),
             ],
             Expanded(child: _buildBody()),
           ],
@@ -120,36 +120,153 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _loadData,
-              child: const Text('Retry'),
-            ),
+            FilledButton(onPressed: _loadData, child: const Text('Retry')),
           ],
         ),
       );
     }
     if (_params.isEmpty) {
-      return const Center(
+      return Center(
         key: Key('health-history-empty'),
-        child: Text(
-          'No health data yet. Upload a report to see your health history.',
-          textAlign: TextAlign.center,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Text(
+            'No health data yet. Upload a report to see your health history.',
+            textAlign: TextAlign.center,
+          ),
         ),
       );
     }
-    return ListView.builder(
+    return ListView.separated(
       itemCount: _params.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final param = _params[index];
         final latest = param.dataPoints.last;
-        return ListTile(
+        final first = param.dataPoints.first;
+        return Card(
           key: Key('health-history-param-${param.parameterName}'),
-          title: Text(param.parameterName),
-          subtitle: Text('${latest.value}${param.unit != null ? ' ${param.unit}' : ''}  ·  ${_formatDate(latest.date)}'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _openTrendChart(param),
+          margin: EdgeInsets.zero,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _openTrendChart(param),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          param.parameterName,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _InfoBadge(
+                        icon: Icons.monitor_heart_outlined,
+                        label:
+                            'Latest: ${latest.value}${param.unit != null ? ' ${param.unit}' : ''}',
+                      ),
+                      _InfoBadge(
+                        icon: Icons.event,
+                        label: 'Updated: ${_formatDate(latest.date)}',
+                      ),
+                      if (param.dataPoints.length > 1)
+                        _InfoBadge(
+                          icon: Icons.timeline,
+                          label:
+                              '${param.dataPoints.length} points since ${_formatDate(first.date)}',
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
       },
+    );
+  }
+}
+
+class _HistoryHeader extends StatelessWidget {
+  const _HistoryHeader({required this.parameterCount});
+
+  final int parameterCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primaryContainer,
+            Theme.of(context).colorScheme.surfaceContainerHighest,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.insights_outlined,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '$parameterCount lab parameters tracked',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoBadge extends StatelessWidget {
+  const _InfoBadge({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 6),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ),
     );
   }
 }

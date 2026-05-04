@@ -12,6 +12,7 @@ import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
+import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { OpenDataLoaderClient } from './opendataloader.client';
     ReportsService,
     ReportSummaryService,
     OpenDataLoaderClient,
+    ReportLabAiFallbackService,
   ],
 })
 export class ReportsModule {}

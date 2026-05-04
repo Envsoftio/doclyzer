@@ -216,23 +216,113 @@ class _TimelineScreenState extends State<TimelineScreen> {
       itemCount: _reports.length,
       itemBuilder: (context, index) {
         final report = _reports[index];
+        final statusColor = _statusColor(context, report.status);
         return Card(
           key: Key('timeline-report-${report.id}'),
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            title: Text(report.originalFileName),
-            subtitle: Text(
-              '${_statusLabel(report.status)} · ${_formatDate(report.createdAt)}',
-            ),
+          margin: const EdgeInsets.only(bottom: 10),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
             onTap: () => _openReport(report),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          report.originalFileName,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Chip(
+                        avatar: Icon(
+                          Icons.circle,
+                          size: 10,
+                          color: statusColor,
+                        ),
+                        label: Text(_statusLabel(report.status)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 6,
+                    children: [
+                      _dateBadge(
+                        context,
+                        icon: Icons.event_note,
+                        label: 'Report date',
+                        value: _formatDate(report.createdAt),
+                      ),
+                      _dateBadge(
+                        context,
+                        icon: Icons.check_circle_outline,
+                        label: 'Parsed date',
+                        value: report.parsedAt != null
+                            ? _formatDate(report.parsedAt!)
+                            : '—',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },
     );
   }
 
+  Widget _dateBadge(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 6),
+          Text('$label: $value', style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ),
+    );
+  }
+
   String _formatDate(DateTime d) {
-    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final local = d.toLocal();
+    return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
+  }
+
+  Color _statusColor(BuildContext context, String status) {
+    switch (status) {
+      case 'parsed':
+        return Colors.green.shade700;
+      case 'failed_transient':
+        return Colors.orange.shade700;
+      case 'failed_terminal':
+      case 'content_not_recognized':
+      case 'unparsed':
+        return Theme.of(context).colorScheme.error;
+      default:
+        return Theme.of(context).colorScheme.primary;
+    }
   }
 
   static String _statusLabel(String status) {

@@ -19,8 +19,12 @@ import { ReportLabValueEntity } from '../../database/entities/report-lab-value.e
 import { ProfilesService } from '../profiles/profiles.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
-import { OpenDataLoaderJsonParser } from './opendataloader-json-parser';
+import {
+  OpenDataLoaderJsonParser,
+  type OpenDataLoaderParsedWithDiagnosticsOutput,
+} from './opendataloader-json-parser';
 import { LabValueExtractor } from './lab-value-extractor';
+import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
 import { ReportLimitExceededException } from './exceptions/report-limit-exceeded.exception';
@@ -54,6 +58,8 @@ export interface ExtractedLabValueDto {
   value: string;
   unit?: string;
   sampleDate?: string;
+  referenceRange?: string;
+  isAbnormal?: boolean;
 }
 
 export interface ReportDto {
@@ -83,6 +89,8 @@ export interface StructuredSectionItemDto {
   value: string;
   unit?: string;
   sampleDate?: string;
+  referenceRange?: string;
+  isAbnormal?: boolean;
 }
 
 export interface StructuredSectionDto {
@@ -100,6 +108,13 @@ interface StructuredReportLabInput {
   value: string;
   unit: string | null;
   sampleDate: string | null;
+  referenceRange: string | null;
+  isAbnormal: boolean | null;
+}
+
+interface SelectedOdlLabOutput {
+  extractedLabValues: StructuredReportLabInput[];
+  structuredReport: StructuredReportDto;
 }
 
 export interface TrendDataPoint {
@@ -141,6 +156,7 @@ export class ReportsService {
     private readonly reportSummaryService: ReportSummaryService,
     private readonly usageLimitsService: UsageLimitsService,
     private readonly openDataLoaderClient: OpenDataLoaderClient,
+    private readonly reportLabAiFallbackService: ReportLabAiFallbackService,
     private readonly notificationPipeline: NotificationPipelineService,
   ) {
     this.labExtractor = new LabValueExtractor();
@@ -226,24 +242,25 @@ export class ReportsService {
 
     await this.fileStorage.upload(storageKey, file.buffer, file.mimetype);
 
-    const { status, transcript, opendataloaderJson } = await this.parseReportBuffer(
-      file.buffer,
-      'upload',
-      reportId,
-    );
+    const { status, transcript, opendataloaderJson } =
+      await this.parseReportBuffer(file.buffer, 'upload', reportId);
 
     const parsedFromJson = opendataloaderJson
-      ? this.odlJsonParser.parse(opendataloaderJson)
+      ? await this.extractLabValuesFromOdlJsonWithFallback({
+          opendataloaderJson,
+          reportId,
+          trigger: 'upload',
+        })
       : null;
     const labValues = parsedFromJson
       ? parsedFromJson.extractedLabValues
       : transcript
-        ? this.labExtractor.extract(transcript)
+        ? this.toStructuredLabInputs(this.labExtractor.extract(transcript))
         : [];
     const structuredReport =
       status === 'parsed'
-        ? parsedFromJson?.structuredReport ??
-          this.buildStructuredReport(transcript, labValues)
+        ? (parsedFromJson?.structuredReport ??
+          this.buildStructuredReport(transcript, labValues))
         : null;
 
     const summary =
@@ -508,19 +525,22 @@ export class ReportsService {
 
     const buffer = await this.fileStorage.get(entity.originalFileStorageKey);
 
-    const { status, transcript, opendataloaderJson } = await this.parseReportBuffer(
-      buffer,
-      'retry',
-      entity.id,
-    );
+    const { status, transcript, opendataloaderJson } =
+      await this.parseReportBuffer(buffer, 'retry', entity.id);
 
     const retryFromJson = opendataloaderJson
-      ? this.odlJsonParser.parse(opendataloaderJson)
+      ? await this.extractLabValuesFromOdlJsonWithFallback({
+          opendataloaderJson,
+          reportId: entity.id,
+          trigger: 'retry',
+        })
       : null;
     const retryLabValues =
       status === 'parsed'
-        ? retryFromJson?.extractedLabValues ??
-          (transcript ? this.labExtractor.extract(transcript) : [])
+        ? (retryFromJson?.extractedLabValues ??
+          (transcript
+            ? this.toStructuredLabInputs(this.labExtractor.extract(transcript))
+            : []))
         : [];
 
     entity.status = status;
@@ -608,6 +628,239 @@ export class ReportsService {
       transcript: evaluated.text,
       ...(result?.parsedJson ? { opendataloaderJson: result.parsedJson } : {}),
     };
+  }
+
+  private async extractLabValuesFromOdlJsonWithFallback(input: {
+    opendataloaderJson: unknown;
+    reportId: string;
+    trigger: 'upload' | 'retry';
+  }): Promise<SelectedOdlLabOutput> {
+    const deterministic = this.odlJsonParser.parseWithDiagnostics(
+      input.opendataloaderJson,
+    );
+    let extractedLabValues = this.toStructuredLabInputs(
+      deterministic.extractedLabValues,
+    );
+    let structuredReport = deterministic.structuredReport;
+
+    const aiFallback = await this.reportLabAiFallbackService.tryExtract({
+      reportId: input.reportId,
+      trigger: input.trigger,
+      confidence: deterministic.diagnostics.confidence,
+      lowConfidenceReasons: deterministic.diagnostics.lowConfidenceReasons,
+      candidateRows: deterministic.diagnostics.aiCandidateRows,
+    });
+
+    if (!aiFallback) {
+      this.logger.log(
+        JSON.stringify({
+          action: 'REPORT_LAB_AI_FALLBACK_DECISION',
+          reportId: input.reportId,
+          trigger: input.trigger,
+          deterministicConfidence: deterministic.diagnostics.confidence,
+          deterministicRows: extractedLabValues.length,
+          aiRows: 0,
+          aiFallbackUsed: false,
+          selectedSource: 'deterministic_json',
+        }),
+      );
+      return { extractedLabValues, structuredReport };
+    }
+
+    const aiValues = this.toStructuredLabInputs(aiFallback.extractedLabValues);
+    const shouldUseAi = this.shouldUseAiFallbackResult(
+      extractedLabValues,
+      aiValues,
+      deterministic,
+    );
+
+    this.logger.log(
+      JSON.stringify({
+        action: 'REPORT_LAB_AI_FALLBACK_DECISION',
+        reportId: input.reportId,
+        trigger: input.trigger,
+        deterministicConfidence: deterministic.diagnostics.confidence,
+        deterministicRows: extractedLabValues.length,
+        aiRows: aiValues.length,
+        aiFallbackUsed: shouldUseAi,
+        selectedSource: shouldUseAi ? 'ai_fallback' : 'deterministic_json',
+      }),
+    );
+
+    if (!shouldUseAi) {
+      return { extractedLabValues, structuredReport };
+    }
+
+    extractedLabValues = aiValues;
+    structuredReport = {
+      patientDetails: deterministic.structuredReport.patientDetails,
+      sections: this.buildStructuredReport(null, aiValues).sections,
+    };
+    return { extractedLabValues, structuredReport };
+  }
+
+  private toStructuredLabInputs(
+    values: Array<{
+      parameterName: string;
+      value: string;
+      unit?: string | null;
+      sampleDate?: string | null;
+      referenceRange?: string | null;
+      isAbnormal?: boolean | null;
+    }>,
+  ): StructuredReportLabInput[] {
+    const out: StructuredReportLabInput[] = [];
+    for (const value of values) {
+      const parameterName = value.parameterName?.trim();
+      const parsedValue = value.value?.trim();
+      if (!parameterName || !parsedValue) continue;
+      const referenceRange = value.referenceRange?.trim() || null;
+      const inferredAbnormal = this.evaluateAbnormalFromReference(
+        parsedValue,
+        referenceRange,
+      );
+      out.push({
+        parameterName,
+        value: parsedValue,
+        unit: value.unit?.trim() || null,
+        sampleDate: value.sampleDate?.trim() || null,
+        referenceRange,
+        isAbnormal:
+          typeof value.isAbnormal === 'boolean'
+            ? value.isAbnormal
+            : inferredAbnormal,
+      });
+    }
+    return out;
+  }
+
+  private evaluateAbnormalFromReference(
+    rawValue: string,
+    referenceRange: string | null,
+  ): boolean | null {
+    if (!referenceRange) return null;
+
+    const valueNum = this.tryParseNumeric(rawValue);
+    const ref = referenceRange.trim();
+    const refLower = ref.toLowerCase();
+
+    const qual = /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale yellow|yellow|amber|straw)$/i;
+    if (qual.test(refLower)) {
+      const v = rawValue.trim().toLowerCase();
+      if (!qual.test(v)) return null;
+      return v !== refLower;
+    }
+
+    if (valueNum === null) return null;
+
+    const between = ref.match(
+      /^\s*(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)\s*$/,
+    );
+    if (between) {
+      const low = Number(between[1]);
+      const high = Number(between[2]);
+      if (!Number.isFinite(low) || !Number.isFinite(high)) return null;
+      return valueNum < Math.min(low, high) || valueNum > Math.max(low, high);
+    }
+
+    const lt = ref.match(/^\s*<\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (lt) return valueNum >= Number(lt[1]);
+    const lte = ref.match(/^\s*<=\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (lte) return valueNum > Number(lte[1]);
+    const gt = ref.match(/^\s*>\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (gt) return valueNum <= Number(gt[1]);
+    const gte = ref.match(/^\s*>=\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (gte) return valueNum < Number(gte[1]);
+
+    return null;
+  }
+
+  private tryParseNumeric(raw: string): number | null {
+    const cleaned = raw.replace(/^[<>]=?\s*/, '').replace(/,/g, '').trim();
+    if (!/^-?\d+(?:\.\d+)?$/.test(cleaned)) return null;
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private labRowKey(
+    parameterName: string,
+    value: string,
+    unit: string | null,
+  ): string | null {
+    const p = parameterName?.trim();
+    const v = value?.trim();
+    if (!p || !v) return null;
+    return `${p.toLowerCase()}::${v.toLowerCase()}::${(unit ?? '').trim().toLowerCase()}`;
+  }
+
+  private shouldUseAiFallbackResult(
+    deterministic: StructuredReportLabInput[],
+    aiFallback: StructuredReportLabInput[],
+    parserResult: OpenDataLoaderParsedWithDiagnosticsOutput,
+  ): boolean {
+    if (aiFallback.length === 0) return false;
+    if (deterministic.length === 0) return true;
+
+    const baseScore = this.scoreLabExtractionQuality(deterministic);
+    const aiScore = this.scoreLabExtractionQuality(aiFallback);
+
+    if (aiScore > baseScore * 1.03) return true;
+    if (
+      parserResult.diagnostics.confidence < 0.55 &&
+      aiScore >= baseScore * 0.95 &&
+      aiFallback.length >= Math.max(8, Math.floor(deterministic.length * 0.8))
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  private scoreLabExtractionQuality(
+    values: StructuredReportLabInput[],
+  ): number {
+    if (values.length === 0) return 0;
+    const distinctNames = new Set<string>();
+    let score = 0;
+
+    for (const value of values) {
+      const name = value.parameterName.trim();
+      const normalizedName = name.toLowerCase();
+      const parsedValue = value.value.trim();
+      distinctNames.add(normalizedName);
+
+      if (this.isLikelyLabName(name)) score += 1.2;
+      else score -= 0.8;
+
+      if (/^[<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?$/.test(parsedValue)) {
+        score += 1;
+      } else if (
+        /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale yellow|yellow|amber|straw)$/i.test(
+          parsedValue,
+        )
+      ) {
+        score += 0.7;
+      } else {
+        score -= 0.6;
+      }
+
+      if (value.unit && value.unit.length <= 24) score += 0.2;
+    }
+
+    score += distinctNames.size * 0.3;
+    return score;
+  }
+
+  private isLikelyLabName(name: string): boolean {
+    if (!name || name.length > 100) return false;
+    const n = name.toLowerCase();
+    if (
+      /\b(patient|booking|order id|sample|report|summary|suggestion|page \d|sin no|barcode|method|reference|department)\b/.test(
+        n,
+      )
+    ) {
+      return false;
+    }
+    return /[a-z]/i.test(name);
   }
 
   private sanitizeParsedTranscript(text: string | null | undefined): string {
@@ -779,6 +1032,38 @@ export class ReportsService {
     const structuredReport = includeStructuredReport
       ? this.getStoredStructuredReport(e)
       : undefined;
+    const rangeByKey = new Map<
+      string,
+      { referenceRange?: string; isAbnormal?: boolean }
+    >();
+    const rangeByName = new Map<
+      string,
+      { referenceRange?: string; isAbnormal?: boolean }
+    >();
+    if (structuredReport) {
+      for (const section of structuredReport.sections) {
+        for (const test of section.tests) {
+          const key =
+            this.labRowKey(
+              test.parameterName,
+              test.value,
+              test.unit ?? null,
+            ) ?? null;
+          if (!key) continue;
+          const meta = {
+            ...(test.referenceRange ? { referenceRange: test.referenceRange } : {}),
+            ...(typeof test.isAbnormal === 'boolean'
+              ? { isAbnormal: test.isAbnormal }
+              : {}),
+          };
+          rangeByKey.set(key, meta);
+          const byNameKey = test.parameterName.trim().toLowerCase();
+          if (byNameKey && !rangeByName.has(byNameKey)) {
+            rangeByName.set(byNameKey, meta);
+          }
+        }
+      }
+    }
 
     return {
       id: e.id,
@@ -791,12 +1076,23 @@ export class ReportsService {
       ...(e.summary != null && { summary: e.summary }),
       ...(includeTranscript &&
         e.parsedTranscript != null && { parsedTranscript: e.parsedTranscript }),
-      extractedLabValues: labValues.map((lv) => ({
-        parameterName: lv.parameterName,
-        value: lv.value,
-        ...(lv.unit != null && lv.unit !== '' && { unit: lv.unit }),
-        ...(lv.sampleDate != null && { sampleDate: lv.sampleDate }),
-      })),
+      extractedLabValues: labValues.map((lv) => {
+        const key =
+          this.labRowKey(lv.parameterName, lv.value, lv.unit ?? null) ?? '';
+        const meta =
+          rangeByKey.get(key) ??
+          rangeByName.get(lv.parameterName.trim().toLowerCase());
+        return {
+          parameterName: lv.parameterName,
+          value: lv.value,
+          ...(lv.unit != null && lv.unit !== '' && { unit: lv.unit }),
+          ...(lv.sampleDate != null && { sampleDate: lv.sampleDate }),
+          ...(meta?.referenceRange ? { referenceRange: meta.referenceRange } : {}),
+          ...(typeof meta?.isAbnormal === 'boolean'
+            ? { isAbnormal: meta.isAbnormal }
+            : {}),
+        };
+      }),
       ...(structuredReport &&
         structuredReport.sections.length > 0 && { structuredReport }),
     };
@@ -831,6 +1127,10 @@ export class ReportsService {
         value: lv.value,
         ...(lv.unit ? { unit: lv.unit } : {}),
         ...(lv.sampleDate ? { sampleDate: lv.sampleDate } : {}),
+        ...(lv.referenceRange ? { referenceRange: lv.referenceRange } : {}),
+        ...(typeof lv.isAbnormal === 'boolean'
+          ? { isAbnormal: lv.isAbnormal }
+          : {}),
       });
     }
 

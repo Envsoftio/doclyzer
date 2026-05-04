@@ -59,13 +59,13 @@ export class OpenDataLoaderClient {
         } catch {
           parsedJson = undefined;
         }
-        // Explicit debug visibility requested: log complete parser JSON output.
-        this.logger.log(
-          JSON.stringify({
-            action: 'OPENDATALOADER_PARSED_JSON',
-            parsedJson: parsedJson ?? json,
-          }),
-        );
+        // Disabled for now: full parser JSON is too large/noisy in logs.
+        // this.logger.log(
+        //   JSON.stringify({
+        //     action: 'OPENDATALOADER_PARSED_JSON',
+        //     parsedJson: parsedJson ?? json,
+        //   }),
+        // );
       }
       const markdown = await this.readLargestMarkdown(outputDir);
       if (!markdown) {
