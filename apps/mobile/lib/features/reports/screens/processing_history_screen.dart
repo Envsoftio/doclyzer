@@ -73,7 +73,7 @@ class _ProcessingHistoryScreenState extends State<ProcessingHistoryScreen> {
       case 'unparsed':
         return 'Parsing failed';
       case 'content_not_recognized':
-        return 'Not a health report';
+        return 'Not a lab report';
       case 'failed_transient':
         return 'Transient failure';
       case 'failed_terminal':

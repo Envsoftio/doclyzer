@@ -362,7 +362,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
 
   String _parseFailureMessage(String? status) {
     if (status == 'content_not_recognized') {
-      return 'This doesn\'t look like a health report. Your file is saved.';
+      return 'This doesn\'t look like a valid lab report. Your file is saved.';
     }
     return 'We couldn\'t read this format. Your file is saved.';
   }
@@ -458,6 +458,16 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           style: Theme.of(context).textTheme.titleMedium,
           textAlign: TextAlign.center,
         ),
+        if (_result?.status == 'content_not_recognized') ...[
+          const SizedBox(height: 8),
+          Text(
+            'Upload a diagnostic lab report PDF that includes test names and values.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
         if (_errorMessage case final err?) ...[
           const SizedBox(height: 8),
           Text(

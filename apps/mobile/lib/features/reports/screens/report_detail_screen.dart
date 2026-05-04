@@ -207,7 +207,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       case 'parsed':
         return 'Parsed';
       case 'content_not_recognized':
-        return 'Not a health report';
+        return 'Not a lab report';
       case 'unparsed':
         return 'Unparsed';
       case 'failed_transient':
@@ -435,6 +435,16 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           if (report.status == 'unparsed' ||
               report.status == 'content_not_recognized') ...[
             const SizedBox(height: 12),
+            if (report.status == 'content_not_recognized') ...[
+              Text(
+                'This file does not appear to be a valid lab report. You can still keep and view the PDF.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+            ],
             if (_errorMessage != null) ...[
               Text(
                 _errorMessage!,

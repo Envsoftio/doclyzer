@@ -37,6 +37,7 @@ import {
   ALLOWED_CONTENT_TYPES,
   MAX_REPORT_SIZE_BYTES,
   REPORT_ALREADY_PARSED,
+  REPORT_CONTENT_NOT_RECOGNIZED,
   REPORT_FILE_EMPTY,
   REPORT_FILE_REQUIRED,
   REPORT_FILE_TOO_LARGE,
@@ -262,9 +263,42 @@ export class ReportsService {
         ? (parsedFromJson?.structuredReport ??
           this.buildStructuredReport(transcript, labValues))
         : null;
+    const finalStatus = this.resolveParsedReportStatus(
+      status,
+      transcript,
+      labValues,
+    );
+    if (finalStatus === 'content_not_recognized') {
+      try {
+        await this.fileStorage.delete(storageKey);
+      } catch (deleteErr) {
+        this.logger.warn(
+          redactSecrets(
+            `Cleanup: failed to delete invalid report file ${storageKey}: ${deleteErr instanceof Error ? deleteErr.message : String(deleteErr)}`,
+          ),
+        );
+      }
+      throw new ReportUploadException(
+        REPORT_CONTENT_NOT_RECOGNIZED,
+        'Uploaded file is not a valid lab report and was not saved.',
+      );
+    }
+    this.logger.log(
+      JSON.stringify({
+        action: 'REPORT_VALID_LAB_FILE_ACCEPTED',
+        trigger: 'upload',
+        reportId,
+        userId,
+        profileId: activeProfileId,
+        fileName: originalFileName,
+        status: finalStatus,
+        extractedLabValues: labValues.length,
+      }),
+    );
+    const persistedLabValues = finalStatus === 'parsed' ? labValues : [];
 
     const summary =
-      status === 'parsed'
+      finalStatus === 'parsed'
         ? await this.reportSummaryService.generateSummary(file.buffer)
         : null;
 
@@ -276,10 +310,13 @@ export class ReportsService {
       contentType: file.mimetype,
       sizeBytes: file.buffer.length,
       originalFileStorageKey: storageKey,
-      status,
+      status: finalStatus,
       summary,
-      parsedTranscript: status === 'parsed' ? transcript : null,
-      structuredReport: structuredReport as Record<string, unknown> | null,
+      parsedTranscript: finalStatus === 'parsed' ? transcript : null,
+      structuredReport:
+        finalStatus === 'parsed'
+          ? (structuredReport as Record<string, unknown> | null)
+          : null,
       contentHash,
     });
 
@@ -298,8 +335,8 @@ export class ReportsService {
       throw err;
     }
 
-    if (labValues.length > 0) {
-      const labEntities = labValues.map((lv, i) =>
+    if (persistedLabValues.length > 0) {
+      const labEntities = persistedLabValues.map((lv, i) =>
         this.reportLabValueRepo.create({
           reportId: entity.id,
           parameterName: lv.parameterName,
@@ -542,14 +579,35 @@ export class ReportsService {
             ? this.toStructuredLabInputs(this.labExtractor.extract(transcript))
             : []))
         : [];
+    const finalStatus = this.resolveParsedReportStatus(
+      status,
+      transcript,
+      retryLabValues,
+    );
+    if (finalStatus === 'parsed') {
+      this.logger.log(
+        JSON.stringify({
+          action: 'REPORT_VALID_LAB_FILE_ACCEPTED',
+          trigger: 'retry',
+          reportId: entity.id,
+          userId,
+          profileId: entity.profileId,
+          fileName: entity.originalFileName,
+          status: finalStatus,
+          extractedLabValues: retryLabValues.length,
+        }),
+      );
+    }
+    const persistedRetryLabValues =
+      finalStatus === 'parsed' ? retryLabValues : [];
 
-    entity.status = status;
+    entity.status = finalStatus;
     entity.summary =
-      status === 'parsed'
+      finalStatus === 'parsed'
         ? await this.reportSummaryService.generateSummary(buffer)
         : null;
     // Only overwrite transcript on success; preserve existing on failure (AC3)
-    if (status === 'parsed') {
+    if (finalStatus === 'parsed') {
       entity.parsedTranscript = transcript;
       entity.structuredReport = JSON.parse(
         JSON.stringify(
@@ -564,8 +622,8 @@ export class ReportsService {
     // when users intentionally reprocess the same report.
     await this.reportLabValueRepo.delete({ reportId: entity.id });
 
-    if (retryLabValues.length > 0) {
-      const labEntities = retryLabValues.map((lv, i) =>
+    if (persistedRetryLabValues.length > 0) {
+      const labEntities = persistedRetryLabValues.map((lv, i) =>
         this.reportLabValueRepo.create({
           reportId: entity.id,
           parameterName: lv.parameterName,
@@ -592,6 +650,41 @@ export class ReportsService {
       order: { sortOrder: 'ASC', parameterName: 'ASC' },
     });
     return this.toDto(entity, refreshedLabValues, true, true);
+  }
+
+  private resolveParsedReportStatus(
+    initialStatus: ReportStatus,
+    transcript: string | null,
+    labValues: StructuredReportLabInput[],
+  ): ReportStatus {
+    if (initialStatus !== 'parsed') return initialStatus;
+    if (this.isLikelyLabReport(transcript, labValues)) return 'parsed';
+    return 'content_not_recognized';
+  }
+
+  private isLikelyLabReport(
+    transcript: string | null,
+    labValues: StructuredReportLabInput[],
+  ): boolean {
+    if (labValues.length >= 2) return true;
+    if (!transcript) return false;
+
+    const text = transcript.toLowerCase();
+    const signals = [
+      /\b(hemoglobin|haemoglobin|hba1c)\b/,
+      /\b(wbc|rbc|platelet|esr|pcv|mcv|mch|mchc)\b/,
+      /\b(glucose|creatinine|urea|uric acid|bilirubin|albumin|globulin)\b/,
+      /\b(cholesterol|triglycerides|hdl|ldl|vldl)\b/,
+      /\b(tsh|t3|t4|ft3|ft4)\b/,
+      /\b(reference range|normal range|test name|result|unit)\b/,
+      /\b(cbc|lft|kft|lipid profile|thyroid profile|urine routine)\b/,
+    ];
+    const hitCount = signals.reduce(
+      (count, re) => count + (re.test(text) ? 1 : 0),
+      0,
+    );
+
+    return hitCount >= 2 && labValues.length >= 1;
   }
 
   private evaluateParsedTranscript(text: string | null | undefined): {
@@ -968,7 +1061,7 @@ export class ReportsService {
     if (!report) throw new ReportNotFoundException();
     const attempts = await this.attemptRepo.find({
       where: { reportId },
-      order: { attemptedAt: 'ASC' },
+      order: { attemptedAt: 'DESC' },
     });
     return attempts.map((a) => ({
       id: a.id,

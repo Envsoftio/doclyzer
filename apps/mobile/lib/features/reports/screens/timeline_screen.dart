@@ -336,7 +336,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
       case 'parsed':
         return 'Parsed';
       case 'content_not_recognized':
-        return 'Not a health report';
+        return 'Not a lab report';
       case 'unparsed':
         return 'Unparsed';
       case 'failed_transient':
