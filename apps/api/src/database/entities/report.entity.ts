@@ -75,4 +75,10 @@ export class ReportEntity {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
+
+  @Column({ type: 'timestamptz', name: 'deleted_at', nullable: true })
+  deletedAt!: Date | null;
+
+  @Column({ type: 'timestamptz', name: 'purge_after_at', nullable: true })
+  purgeAfterAt!: Date | null;
 }

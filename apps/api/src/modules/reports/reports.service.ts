@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createHash, randomUUID } from 'node:crypto';
-import { Repository } from 'typeorm';
+import { IsNull, LessThanOrEqual, Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { redactSecrets } from '../../common/redact-secrets';
 import type { FileStorageService } from '../../common/storage/file-storage.interface';
@@ -71,6 +71,8 @@ export interface ReportDto {
   sizeBytes: number;
   status: string;
   createdAt: string;
+  deletedAt?: string;
+  purgeAfterAt?: string;
   summary?: string;
   parsedTranscript?: string;
   extractedLabValues: ExtractedLabValueDto[];
@@ -144,6 +146,7 @@ export interface ProcessingAttemptDto {
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
   private static readonly MIN_PARSE_TEXT_LENGTH = 120;
+  private static readonly RECYCLE_BIN_RETENTION_DAYS = 30;
 
   constructor(
     @InjectRepository(ReportEntity)
@@ -173,6 +176,18 @@ export class ReportsService {
         message: 'Report is already parsed; nothing to retry or keep.',
       });
     }
+  }
+
+  private async getActiveReportOrThrow(
+    userId: string,
+    reportId: string,
+  ): Promise<ReportEntity> {
+    if (!isUUID(reportId)) throw new ReportNotFoundException();
+    const entity = await this.reportRepo.findOne({
+      where: { id: reportId, userId, deletedAt: IsNull() },
+    });
+    if (!entity) throw new ReportNotFoundException();
+    return entity;
   }
 
   async uploadReport(
@@ -386,11 +401,7 @@ export class ReportsService {
     contentType: string;
     originalFileName: string;
   }> {
-    if (!isUUID(reportId)) throw new ReportNotFoundException();
-    const entity = await this.reportRepo.findOne({
-      where: { id: reportId, userId },
-    });
-    if (!entity) throw new ReportNotFoundException();
+    const entity = await this.getActiveReportOrThrow(userId, reportId);
     try {
       const buffer = await this.fileStorage.get(entity.originalFileStorageKey);
       return {
@@ -409,11 +420,7 @@ export class ReportsService {
   }
 
   async getReport(userId: string, reportId: string): Promise<ReportDto> {
-    if (!isUUID(reportId)) throw new ReportNotFoundException();
-    const entity = await this.reportRepo.findOne({
-      where: { id: reportId, userId },
-    });
-    if (!entity) throw new ReportNotFoundException();
+    const entity = await this.getActiveReportOrThrow(userId, reportId);
     const labValues = await this.reportLabValueRepo.find({
       where: { reportId },
       order: { sortOrder: 'ASC', parameterName: 'ASC' },
@@ -428,7 +435,7 @@ export class ReportsService {
   ): Promise<ReportDto[]> {
     await this.profilesService.getProfile(userId, profileId);
     const entities = await this.reportRepo.find({
-      where: { profileId },
+      where: { profileId, userId, deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
     });
     return entities.map((e) => this.toDto(e));
@@ -467,7 +474,7 @@ export class ReportsService {
 
     // First get report IDs for this profile (profile ownership already validated above)
     const reports = await this.reportRepo.find({
-      where: { profileId },
+      where: { profileId, userId, deletedAt: IsNull() },
       select: ['id', 'createdAt'],
     });
 
@@ -550,11 +557,7 @@ export class ReportsService {
     options?: { force?: boolean },
     correlationId?: string,
   ): Promise<ReportDto> {
-    if (!isUUID(reportId)) throw new ReportNotFoundException();
-    const entity = await this.reportRepo.findOne({
-      where: { id: reportId, userId },
-    });
-    if (!entity) throw new ReportNotFoundException();
+    const entity = await this.getActiveReportOrThrow(userId, reportId);
     const force = options?.force === true;
     if (!force) {
       this.throwIfAlreadyParsed(entity.status);
@@ -1054,11 +1057,7 @@ export class ReportsService {
     userId: string,
     reportId: string,
   ): Promise<ProcessingAttemptDto[]> {
-    if (!isUUID(reportId)) throw new ReportNotFoundException();
-    const report = await this.reportRepo.findOne({
-      where: { id: reportId, userId },
-    });
-    if (!report) throw new ReportNotFoundException();
+    const report = await this.getActiveReportOrThrow(userId, reportId);
     const attempts = await this.attemptRepo.find({
       where: { reportId },
       order: { attemptedAt: 'DESC' },
@@ -1076,17 +1075,13 @@ export class ReportsService {
     reportId: string,
     targetProfileId: string,
   ): Promise<ReportDto> {
-    if (!isUUID(reportId)) throw new ReportNotFoundException();
     if (!isUUID(targetProfileId)) {
       throw new BadRequestException({
         code: 'TARGET_PROFILE_ID_INVALID',
         message: 'targetProfileId must be a valid UUID.',
       });
     }
-    const entity = await this.reportRepo.findOne({
-      where: { id: reportId, userId },
-    });
-    if (!entity) throw new ReportNotFoundException();
+    const entity = await this.getActiveReportOrThrow(userId, reportId);
     // Validates user owns targetProfileId (throws ProfileNotFoundException → 404 if not)
     await this.profilesService.getProfile(userId, targetProfileId);
     if (entity.profileId === targetProfileId) {
@@ -1101,11 +1096,7 @@ export class ReportsService {
   }
 
   async keepFile(userId: string, reportId: string): Promise<ReportDto> {
-    if (!isUUID(reportId)) throw new ReportNotFoundException();
-    const entity = await this.reportRepo.findOne({
-      where: { id: reportId, userId },
-    });
-    if (!entity) throw new ReportNotFoundException();
+    const entity = await this.getActiveReportOrThrow(userId, reportId);
     this.throwIfAlreadyParsed(entity.status);
     // Sets to unparsed so user sees "View PDF"; applies to unparsed and content_not_recognized
     entity.status = 'unparsed';
@@ -1114,6 +1105,81 @@ export class ReportsService {
     entity.structuredReport = null;
     await this.reportRepo.save(entity);
     return this.toDto(entity);
+  }
+
+  async moveToRecycleBin(userId: string, reportId: string): Promise<ReportDto> {
+    const entity = await this.getActiveReportOrThrow(userId, reportId);
+    const now = new Date();
+    const purgeAfterAt = new Date(now);
+    purgeAfterAt.setDate(
+      purgeAfterAt.getDate() + ReportsService.RECYCLE_BIN_RETENTION_DAYS,
+    );
+    entity.deletedAt = now;
+    entity.purgeAfterAt = purgeAfterAt;
+    await this.reportRepo.save(entity);
+    return this.toDto(entity);
+  }
+
+  async listRecycleBin(
+    userId: string,
+    profileId?: string,
+  ): Promise<ReportDto[]> {
+    if (profileId) {
+      await this.profilesService.getProfile(userId, profileId);
+    }
+    const entities = await this.reportRepo.find({
+      where: {
+        userId,
+        ...(profileId ? { profileId } : {}),
+        deletedAt: LessThanOrEqual(new Date()),
+      },
+      order: { deletedAt: 'DESC', createdAt: 'DESC' },
+    });
+    return entities.map((e) => this.toDto(e));
+  }
+
+  async restoreFromRecycleBin(
+    userId: string,
+    reportId: string,
+  ): Promise<ReportDto> {
+    if (!isUUID(reportId)) throw new ReportNotFoundException();
+    const entity = await this.reportRepo.findOne({
+      where: { id: reportId, userId, deletedAt: LessThanOrEqual(new Date()) },
+    });
+    if (!entity) throw new ReportNotFoundException();
+    entity.deletedAt = null;
+    entity.purgeAfterAt = null;
+    await this.reportRepo.save(entity);
+    return this.toDto(entity);
+  }
+
+  async purgeExpiredRecycleBinReports(): Promise<number> {
+    const now = new Date();
+    const expired = await this.reportRepo.find({
+      where: {
+        deletedAt: LessThanOrEqual(now),
+        purgeAfterAt: LessThanOrEqual(now),
+      },
+      select: ['id', 'originalFileStorageKey'],
+      order: { purgeAfterAt: 'ASC' },
+      take: 500,
+    });
+
+    let deletedCount = 0;
+    for (const report of expired) {
+      try {
+        await this.fileStorage.delete(report.originalFileStorageKey);
+      } catch (err) {
+        this.logger.warn(
+          redactSecrets(
+            `Recycle bin purge: failed to delete file key=${report.originalFileStorageKey}: ${err instanceof Error ? err.message : String(err)}`,
+          ),
+        );
+      }
+      await this.reportRepo.delete({ id: report.id });
+      deletedCount += 1;
+    }
+    return deletedCount;
   }
 
   private toDto(
@@ -1166,6 +1232,8 @@ export class ReportsService {
       sizeBytes: e.sizeBytes,
       status: e.status,
       createdAt: e.createdAt.toISOString(),
+      ...(e.deletedAt ? { deletedAt: e.deletedAt.toISOString() } : {}),
+      ...(e.purgeAfterAt ? { purgeAfterAt: e.purgeAfterAt.toISOString() } : {}),
       ...(e.summary != null && { summary: e.summary }),
       ...(includeTranscript &&
         e.parsedTranscript != null && { parsedTranscript: e.parsedTranscript }),

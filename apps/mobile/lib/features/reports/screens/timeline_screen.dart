@@ -8,6 +8,7 @@ import '../../sharing/screens/create_share_link_screen.dart';
 import '../../support/support_repository.dart';
 import '../reports_repository.dart';
 import 'health_history_screen.dart';
+import 'recycle_bin_screen.dart';
 import 'report_detail_screen.dart';
 
 enum _TimelineState { loading, loaded, error }
@@ -132,6 +133,23 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 ),
               ),
             ),
+          ),
+          IconButton(
+            key: const Key('timeline-recycle-bin-button'),
+            icon: const Icon(Icons.delete_outline),
+            tooltip: 'Recycle Bin',
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => RecycleBinScreen(
+                    reportsRepository: widget.reportsRepository,
+                    profileId: widget.profileId,
+                  ),
+                ),
+              );
+              if (!mounted) return;
+              await _loadReports();
+            },
           ),
           IconButton(
             key: const Key('timeline-share-button'),

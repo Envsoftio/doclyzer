@@ -164,6 +164,19 @@ class ApiClient {
     }, auth);
   }
 
+  Future<Map<String, dynamic>> deleteAndGetJson(
+    String path, {
+    bool auth = true,
+  }) async {
+    return _requestWithRefresh(() async {
+      final res = await http.delete(
+        Uri.parse(_url(path)),
+        headers: _headers(auth: auth),
+      );
+      return _handleResponse(res);
+    }, auth);
+  }
+
   Future<T> _requestWithRefresh<T>(Future<T> Function() fn, bool auth) async {
     try {
       return await fn();

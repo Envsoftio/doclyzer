@@ -168,6 +168,49 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     }
   }
 
+  Future<void> _onDeleteReport() async {
+    final report = _report;
+    if (report == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Move to recycle bin?'),
+        content: const Text(
+          'This report will move to recycle bin and be permanently deleted after 30 days.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() {
+      _state = _ReportDetailState.loading;
+      _errorMessage = null;
+    });
+    try {
+      await widget.reportsRepository.deleteReport(report.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Report moved to recycle bin')),
+      );
+      widget.onBack();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _state = _ReportDetailState.loaded;
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+    }
+  }
+
   Future<void> _showReassignDialog() async {
     final otherProfiles = _profiles
         .where((p) => p.id != widget.profileId)
@@ -400,6 +443,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   ),
                   icon: const Icon(Icons.show_chart),
                   label: const Text('Compare reports'),
+                ),
+                OutlinedButton.icon(
+                  key: const Key('report-detail-delete'),
+                  onPressed: _onDeleteReport,
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Delete'),
                 ),
                 if (report.parsedTranscript != null &&
                     report.parsedTranscript!.trim().isNotEmpty)

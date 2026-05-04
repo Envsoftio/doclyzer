@@ -77,6 +77,8 @@ class ApiReportsRepository implements ReportsRepository {
       final map = d as Map<String, dynamic>;
       final createdAt = map['createdAt'] as String?;
       final parsedAt = map['parsedAt'] as String?;
+      final deletedAt = map['deletedAt'] as String?;
+      final purgeAfterAt = map['purgeAfterAt'] as String?;
       return Report(
         id: map['id'] as String,
         profileId: map['profileId'] as String,
@@ -88,6 +90,8 @@ class ApiReportsRepository implements ReportsRepository {
             ? DateTime.parse(createdAt)
             : DateTime.now(),
         parsedAt: parsedAt != null ? DateTime.parse(parsedAt) : null,
+        deletedAt: deletedAt != null ? DateTime.parse(deletedAt) : null,
+        purgeAfterAt: purgeAfterAt != null ? DateTime.parse(purgeAfterAt) : null,
         extractedLabValues: const [],
       );
     }).toList();
@@ -99,6 +103,8 @@ class ApiReportsRepository implements ReportsRepository {
     final d = data['data'] as Map<String, dynamic>;
     final createdAt = d['createdAt'] as String?;
     final parsedAt = d['parsedAt'] as String?;
+    final deletedAt = d['deletedAt'] as String?;
+    final purgeAfterAt = d['purgeAfterAt'] as String?;
     final labList = d['extractedLabValues'] as List<dynamic>? ?? [];
     final extractedLabValues = labList.map((e) {
       final m = e as Map<String, dynamic>;
@@ -120,6 +126,8 @@ class ApiReportsRepository implements ReportsRepository {
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
       parsedAt: parsedAt != null ? DateTime.parse(parsedAt) : null,
+      deletedAt: deletedAt != null ? DateTime.parse(deletedAt) : null,
+      purgeAfterAt: purgeAfterAt != null ? DateTime.parse(purgeAfterAt) : null,
       summary: d['summary'] as String?,
       parsedTranscript: d['parsedTranscript'] as String?,
       extractedLabValues: extractedLabValues,
@@ -136,6 +144,8 @@ class ApiReportsRepository implements ReportsRepository {
     final d = data['data'] as Map<String, dynamic>;
     final createdAt = d['createdAt'] as String?;
     final parsedAt = d['parsedAt'] as String?;
+    final deletedAt = d['deletedAt'] as String?;
+    final purgeAfterAt = d['purgeAfterAt'] as String?;
     final labList = d['extractedLabValues'] as List<dynamic>? ?? [];
     final extractedLabValues = labList.map((e) {
       final m = e as Map<String, dynamic>;
@@ -157,6 +167,8 @@ class ApiReportsRepository implements ReportsRepository {
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
       parsedAt: parsedAt != null ? DateTime.parse(parsedAt) : null,
+      deletedAt: deletedAt != null ? DateTime.parse(deletedAt) : null,
+      purgeAfterAt: purgeAfterAt != null ? DateTime.parse(purgeAfterAt) : null,
       summary: d['summary'] as String?,
       parsedTranscript: d['parsedTranscript'] as String?,
       extractedLabValues: extractedLabValues,
@@ -225,6 +237,8 @@ class ApiReportsRepository implements ReportsRepository {
     final d = data['data'] as Map<String, dynamic>;
     final createdAt = d['createdAt'] as String?;
     final parsedAt = d['parsedAt'] as String?;
+    final deletedAt = d['deletedAt'] as String?;
+    final purgeAfterAt = d['purgeAfterAt'] as String?;
     return Report(
       id: d['id'] as String,
       profileId: d['profileId'] as String,
@@ -234,6 +248,8 @@ class ApiReportsRepository implements ReportsRepository {
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
       parsedAt: parsedAt != null ? DateTime.parse(parsedAt) : null,
+      deletedAt: deletedAt != null ? DateTime.parse(deletedAt) : null,
+      purgeAfterAt: purgeAfterAt != null ? DateTime.parse(purgeAfterAt) : null,
       summary: d['summary'] as String?,
       extractedLabValues: const [],
     );
@@ -245,6 +261,8 @@ class ApiReportsRepository implements ReportsRepository {
     final d = data['data'] as Map<String, dynamic>;
     final createdAt = d['createdAt'] as String?;
     final parsedAt = d['parsedAt'] as String?;
+    final deletedAt = d['deletedAt'] as String?;
+    final purgeAfterAt = d['purgeAfterAt'] as String?;
     return Report(
       id: d['id'] as String,
       profileId: d['profileId'] as String,
@@ -254,6 +272,81 @@ class ApiReportsRepository implements ReportsRepository {
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
       parsedAt: parsedAt != null ? DateTime.parse(parsedAt) : null,
+      deletedAt: deletedAt != null ? DateTime.parse(deletedAt) : null,
+      purgeAfterAt: purgeAfterAt != null ? DateTime.parse(purgeAfterAt) : null,
+      extractedLabValues: const [],
+    );
+  }
+
+  @override
+  Future<Report> deleteReport(String reportId) async {
+    final data = await _client.deleteAndGetJson('v1/reports/$reportId');
+    final d = data['data'] as Map<String, dynamic>;
+    final createdAt = d['createdAt'] as String?;
+    final deletedAt = d['deletedAt'] as String?;
+    final purgeAfterAt = d['purgeAfterAt'] as String?;
+    return Report(
+      id: d['id'] as String,
+      profileId: d['profileId'] as String,
+      originalFileName: d['originalFileName'] as String,
+      contentType: d['contentType'] as String,
+      sizeBytes: d['sizeBytes'] as int,
+      status: d['status'] as String,
+      createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
+      deletedAt: deletedAt != null ? DateTime.parse(deletedAt) : null,
+      purgeAfterAt: purgeAfterAt != null ? DateTime.parse(purgeAfterAt) : null,
+      extractedLabValues: const [],
+    );
+  }
+
+  @override
+  Future<List<Report>> listRecycleBin({String? profileId}) async {
+    final path = profileId != null && profileId.isNotEmpty
+        ? 'v1/reports/recycle-bin?profileId=$profileId'
+        : 'v1/reports/recycle-bin';
+    final data = await _client.get(path);
+    final list = data['data']?['reports'] as List<dynamic>? ?? [];
+    return list.map((d) {
+      final map = d as Map<String, dynamic>;
+      final createdAt = map['createdAt'] as String?;
+      final deletedAt = map['deletedAt'] as String?;
+      final purgeAfterAt = map['purgeAfterAt'] as String?;
+      return Report(
+        id: map['id'] as String,
+        profileId: map['profileId'] as String,
+        originalFileName: map['originalFileName'] as String,
+        contentType: map['contentType'] as String,
+        sizeBytes: map['sizeBytes'] as int,
+        status: map['status'] as String,
+        createdAt: createdAt != null
+            ? DateTime.parse(createdAt)
+            : DateTime.now(),
+        deletedAt: deletedAt != null ? DateTime.parse(deletedAt) : null,
+        purgeAfterAt: purgeAfterAt != null ? DateTime.parse(purgeAfterAt) : null,
+        extractedLabValues: const [],
+      );
+    }).toList();
+  }
+
+  @override
+  Future<Report> restoreReport(String reportId) async {
+    final data = await _client.post('v1/reports/$reportId/restore');
+    final d = data['data'] as Map<String, dynamic>;
+    final createdAt = d['createdAt'] as String?;
+    final parsedAt = d['parsedAt'] as String?;
+    final deletedAt = d['deletedAt'] as String?;
+    final purgeAfterAt = d['purgeAfterAt'] as String?;
+    return Report(
+      id: d['id'] as String,
+      profileId: d['profileId'] as String,
+      originalFileName: d['originalFileName'] as String,
+      contentType: d['contentType'] as String,
+      sizeBytes: d['sizeBytes'] as int,
+      status: d['status'] as String,
+      createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
+      parsedAt: parsedAt != null ? DateTime.parse(parsedAt) : null,
+      deletedAt: deletedAt != null ? DateTime.parse(deletedAt) : null,
+      purgeAfterAt: purgeAfterAt != null ? DateTime.parse(purgeAfterAt) : null,
       extractedLabValues: const [],
     );
   }

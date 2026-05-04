@@ -106,6 +106,7 @@ export class SharingService {
       profileId: link.profileId,
       userId: link.userId,
       status: 'parsed' as const,
+      deletedAt: IsNull(),
     };
     switch (link.scope) {
       case 'all':

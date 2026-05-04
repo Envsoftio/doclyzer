@@ -51,6 +51,8 @@ class Report {
     this.parsedTranscript,
     this.extractedLabValues = const [],
     this.structuredReport,
+    this.deletedAt,
+    this.purgeAfterAt,
   });
 
   final String id;
@@ -65,6 +67,8 @@ class Report {
   final String? parsedTranscript;
   final List<ExtractedLabValue> extractedLabValues;
   final StructuredReport? structuredReport;
+  final DateTime? deletedAt;
+  final DateTime? purgeAfterAt;
 }
 
 class StructuredPatientDetails {
@@ -195,4 +199,13 @@ abstract class ReportsRepository {
 
   /// Reassign a report to a different profile. Returns updated report.
   Future<Report> reassignReport(String reportId, String targetProfileId);
+
+  /// Soft-delete report to recycle bin.
+  Future<Report> deleteReport(String reportId);
+
+  /// List soft-deleted reports in recycle bin (optional profile scope).
+  Future<List<Report>> listRecycleBin({String? profileId});
+
+  /// Restore report from recycle bin.
+  Future<Report> restoreReport(String reportId);
 }

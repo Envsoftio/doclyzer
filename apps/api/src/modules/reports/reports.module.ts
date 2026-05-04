@@ -9,6 +9,7 @@ import { ProfilesModule } from '../profiles/profiles.module';
 import { StorageModule } from '../../common/storage/storage.module';
 import { NotificationPipelineModule } from '../../common/notification-pipeline/notification-pipeline.module';
 import { ReportsController } from './reports.controller';
+import { ReportsRecycleBinCleanupService } from './reports-recycle-bin-cleanup.service';
 import { ReportsService } from './reports.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
@@ -30,6 +31,7 @@ import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
   controllers: [ReportsController],
   providers: [
     ReportsService,
+    ReportsRecycleBinCleanupService,
     ReportSummaryService,
     OpenDataLoaderClient,
     ReportLabAiFallbackService,

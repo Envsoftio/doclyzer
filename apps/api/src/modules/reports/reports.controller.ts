@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -73,6 +74,16 @@ export class ReportsController {
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const data = await this.reportsService.listReports(userId, profileId);
+    return successResponse({ reports: data }, getCorrelationId(req));
+  }
+
+  @Get('recycle-bin')
+  async listRecycleBin(
+    @Query('profileId') profileId: string | undefined,
+    @Req() req: Request,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.reportsService.listRecycleBin(userId, profileId);
     return successResponse({ reports: data }, getCorrelationId(req));
   }
 
@@ -226,6 +237,29 @@ export class ReportsController {
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const data = await this.reportsService.keepFile(userId, reportId);
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Delete(':id')
+  async deleteReport(
+    @Param('id') reportId: string,
+    @Req() req: Request,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.reportsService.moveToRecycleBin(userId, reportId);
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Post(':id/restore')
+  async restoreReport(
+    @Param('id') reportId: string,
+    @Req() req: Request,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.reportsService.restoreFromRecycleBin(
+      userId,
+      reportId,
+    );
     return successResponse(data, getCorrelationId(req));
   }
 }

@@ -39,6 +39,9 @@ export class UsageLimitsService {
 
   async getReportUsage(userId: string): Promise<UsageLimitSnapshot> {
     const planInfo = await this.getPlanLimits(userId);
+    // Count both active and recycle-bin reports.
+    // This prevents quota bypass by delete/re-upload loops.
+    // Recycle-bin reports stop counting only after permanent purge.
     const current = await this.reportRepo.count({ where: { userId } });
     return {
       limit: planInfo.limits.maxReports,
