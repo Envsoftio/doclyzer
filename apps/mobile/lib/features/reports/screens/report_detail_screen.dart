@@ -212,10 +212,19 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   }
 
   Future<void> _showReassignDialog() async {
+    final currentProfileId = _report?.profileId ?? widget.profileId;
     final otherProfiles = _profiles
-        .where((p) => p.id != widget.profileId)
+        .where((p) => p.id != currentProfileId)
         .toList();
-    if (otherProfiles.isEmpty) return;
+    if (otherProfiles.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Create another profile to reassign this report.'),
+        ),
+      );
+      return;
+    }
     await showDialog<void>(
       context: context,
       builder: (ctx) => SimpleDialog(

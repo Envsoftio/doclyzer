@@ -44,6 +44,7 @@ class TimelineScreen extends StatefulWidget {
 class _TimelineScreenState extends State<TimelineScreen> {
   _TimelineState _state = _TimelineState.loading;
   List<Report> _reports = [];
+  List<Profile> _profiles = [];
   String? _errorMessage;
 
   @override
@@ -71,9 +72,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
       _errorMessage = null;
     });
     try {
-      final list = await widget.reportsRepository.listReports(widget.profileId);
+      final profiles = await widget.profilesRepository.getProfiles();
+      final list = await widget.reportsRepository.listAllReports();
       if (mounted) {
         setState(() {
+          _profiles = profiles;
           _reports = list;
           _state = _TimelineState.loaded;
         });
@@ -102,6 +105,53 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
     if (!mounted) return;
     await _loadReports();
+  }
+
+  Future<void> _showReassignSheet(Report report) async {
+    final otherProfiles = _profiles
+        .where((p) => p.id != report.profileId)
+        .toList();
+    if (otherProfiles.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Create another profile to move this report.'),
+        ),
+      );
+      return;
+    }
+    final selected = await showModalBottomSheet<Profile>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(title: Text('Move report to profile')),
+            ...otherProfiles.map(
+              (profile) => ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: Text(profile.name),
+                onTap: () => Navigator.of(ctx).pop(profile),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selected == null) return;
+    try {
+      await widget.reportsRepository.reassignReport(report.id, selected.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Moved to ${selected.name}')));
+      await _loadReports();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
   }
 
   @override
@@ -273,6 +323,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     children: [
                       _dateBadge(
                         context,
+                        icon: Icons.person_outline,
+                        label: 'Profile',
+                        value: report.profileName ?? 'Unknown',
+                      ),
+                      _dateBadge(
+                        context,
                         icon: Icons.event_note,
                         label: 'Report date',
                         value: _formatDate(report.createdAt),
@@ -286,6 +342,15 @@ class _TimelineScreenState extends State<TimelineScreen> {
                             : '—',
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => _showReassignSheet(report),
+                      icon: const Icon(Icons.swap_horiz),
+                      label: const Text('Change profile'),
+                    ),
                   ),
                 ],
               ),

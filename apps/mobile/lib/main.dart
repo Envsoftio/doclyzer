@@ -479,6 +479,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         ),
         _AuthView.profileList => ProfileListScreen(
           profilesRepository: _profilesRepository,
+          reportsRepository: _reportsRepository,
           onCreateProfile: () {
             setState(() {
               _editingProfile = null;
@@ -489,6 +490,13 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
             setState(() {
               _editingProfile = profile;
               _authView = _AuthView.editProfile;
+            });
+          },
+          onOpenProfileReports: (profile) {
+            setState(() {
+              _timelineProfileId = profile.id;
+              _timelineProfileName = profile.name;
+              _authView = _AuthView.timeline;
             });
           },
           onBack: () {

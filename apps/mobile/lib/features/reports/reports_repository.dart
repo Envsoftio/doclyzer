@@ -41,6 +41,8 @@ class Report {
   const Report({
     required this.id,
     required this.profileId,
+    this.profileName,
+    this.profileIsActive,
     required this.originalFileName,
     required this.contentType,
     required this.sizeBytes,
@@ -57,6 +59,8 @@ class Report {
 
   final String id;
   final String profileId;
+  final String? profileName;
+  final bool? profileIsActive;
   final String originalFileName;
   final String contentType;
   final int sizeBytes;
@@ -175,6 +179,9 @@ abstract class ReportsRepository {
 
   /// List reports for the given profile, newest first.
   Future<List<Report>> listReports(String profileId);
+
+  /// List reports across all profiles, newest first.
+  Future<List<Report>> listAllReports();
 
   /// Fetch a report by id.
   Future<Report> getReport(String reportId);
