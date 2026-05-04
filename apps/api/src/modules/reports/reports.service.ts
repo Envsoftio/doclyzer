@@ -24,6 +24,7 @@ import {
   type OpenDataLoaderParsedWithDiagnosticsOutput,
 } from './opendataloader-json-parser';
 import { LabValueExtractor } from './lab-value-extractor';
+import { LabDetailsExtractor } from './lab-details-extractor';
 import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
@@ -66,6 +67,8 @@ export interface ExtractedLabValueDto {
 export interface ReportDto {
   id: string;
   profileId: string;
+  profileName?: string;
+  profileIsActive?: boolean;
   originalFileName: string;
   contentType: string;
   sizeBytes: number;
@@ -87,6 +90,14 @@ export interface StructuredPatientDetailsDto {
   sampleCollectionDate?: string;
 }
 
+export interface StructuredLabDetailsDto {
+  name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  location?: string;
+}
+
 export interface StructuredSectionItemDto {
   parameterName: string;
   value: string;
@@ -103,6 +114,7 @@ export interface StructuredSectionDto {
 
 export interface StructuredReportDto {
   patientDetails: StructuredPatientDetailsDto;
+  labDetails?: StructuredLabDetailsDto;
   sections: StructuredSectionDto[];
 }
 
@@ -167,6 +179,7 @@ export class ReportsService {
   }
 
   private readonly labExtractor: LabValueExtractor;
+  private readonly labDetailsExtractor = new LabDetailsExtractor();
   private readonly odlJsonParser = new OpenDataLoaderJsonParser();
 
   private throwIfAlreadyParsed(status: string): void {
@@ -239,7 +252,12 @@ export class ReportsService {
 
     // Duplicate check: best-effort per profile; concurrent uploads of same file can both pass (no locking).
     const existing = await this.reportRepo.findOne({
-      where: { profileId: activeProfileId, contentHash },
+      where: {
+        userId,
+        profileId: activeProfileId,
+        contentHash,
+        deletedAt: IsNull(),
+      },
     });
 
     if (!forceUploadAnyway) {
@@ -278,6 +296,14 @@ export class ReportsService {
         ? (parsedFromJson?.structuredReport ??
           this.buildStructuredReport(transcript, labValues))
         : null;
+    if (status === 'parsed' && structuredReport) {
+      this.logLabDetailsExtraction({
+        trigger: 'upload',
+        reportId,
+        source: parsedFromJson ? 'odl_json' : 'transcript',
+        labDetails: structuredReport.labDetails,
+      });
+    }
     const finalStatus = this.resolveParsedReportStatus(
       status,
       transcript,
@@ -425,7 +451,11 @@ export class ReportsService {
       where: { reportId },
       order: { sortOrder: 'ASC', parameterName: 'ASC' },
     });
-    return this.toDto(entity, labValues, true, true);
+    const profileInfoById = await this.getProfileInfoMap(userId);
+    return this.withProfileInfo(
+      this.toDto(entity, labValues, true, true),
+      profileInfoById,
+    );
   }
 
   /** List reports for a profile. Validates user owns the profile (throws if not). */
@@ -434,17 +464,33 @@ export class ReportsService {
     profileId: string,
   ): Promise<ReportDto[]> {
     await this.profilesService.getProfile(userId, profileId);
+    const profileInfoById = await this.getProfileInfoMap(userId);
     const entities = await this.reportRepo.find({
       where: { profileId, userId, deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
     });
-    return entities.map((e) => this.toDto(e));
+    return entities.map((e) => this.withProfileInfo(this.toDto(e), profileInfoById));
   }
 
   /**
    * List reports: if profileId provided, use it (validates ownership); otherwise use active profile.
    */
-  async listReports(userId: string, profileId?: string): Promise<ReportDto[]> {
+  async listReports(
+    userId: string,
+    profileId?: string,
+    scope: 'active' | 'all' = 'active',
+  ): Promise<ReportDto[]> {
+    if (scope === 'all') {
+      const profileInfoById = await this.getProfileInfoMap(userId);
+      const entities = await this.reportRepo.find({
+        where: { userId, deletedAt: IsNull() },
+        order: { createdAt: 'DESC' },
+      });
+      return entities.map((e) =>
+        this.withProfileInfo(this.toDto(e), profileInfoById),
+      );
+    }
+
     const resolved =
       profileId ??
       (await this.profilesService.getActiveProfileId(userId)) ??
@@ -611,12 +657,18 @@ export class ReportsService {
         : null;
     // Only overwrite transcript on success; preserve existing on failure (AC3)
     if (finalStatus === 'parsed') {
+      const retryStructuredReport =
+        retryFromJson?.structuredReport ??
+        this.buildStructuredReport(transcript, retryLabValues);
+      this.logLabDetailsExtraction({
+        trigger: 'retry',
+        reportId: entity.id,
+        source: retryFromJson ? 'odl_json' : 'transcript',
+        labDetails: retryStructuredReport.labDetails,
+      });
       entity.parsedTranscript = transcript;
       entity.structuredReport = JSON.parse(
-        JSON.stringify(
-          retryFromJson?.structuredReport ??
-            this.buildStructuredReport(transcript, retryLabValues),
-        ),
+        JSON.stringify(retryStructuredReport),
       ) as unknown as Record<string, unknown>;
     }
     await this.reportRepo.save(entity);
@@ -790,6 +842,9 @@ export class ReportsService {
     extractedLabValues = aiValues;
     structuredReport = {
       patientDetails: deterministic.structuredReport.patientDetails,
+      ...(deterministic.structuredReport.labDetails
+        ? { labDetails: deterministic.structuredReport.labDetails }
+        : {}),
       sections: this.buildStructuredReport(null, aiValues).sections,
     };
     return { extractedLabValues, structuredReport };
@@ -1092,7 +1147,8 @@ export class ReportsService {
     }
     entity.profileId = targetProfileId;
     await this.reportRepo.save(entity);
-    return this.toDto(entity);
+    const profileInfoById = await this.getProfileInfoMap(userId);
+    return this.withProfileInfo(this.toDto(entity), profileInfoById);
   }
 
   async keepFile(userId: string, reportId: string): Promise<ReportDto> {
@@ -1104,7 +1160,8 @@ export class ReportsService {
     entity.parsedTranscript = null;
     entity.structuredReport = null;
     await this.reportRepo.save(entity);
-    return this.toDto(entity);
+    const profileInfoById = await this.getProfileInfoMap(userId);
+    return this.withProfileInfo(this.toDto(entity), profileInfoById);
   }
 
   async moveToRecycleBin(userId: string, reportId: string): Promise<ReportDto> {
@@ -1117,7 +1174,8 @@ export class ReportsService {
     entity.deletedAt = now;
     entity.purgeAfterAt = purgeAfterAt;
     await this.reportRepo.save(entity);
-    return this.toDto(entity);
+    const profileInfoById = await this.getProfileInfoMap(userId);
+    return this.withProfileInfo(this.toDto(entity), profileInfoById);
   }
 
   async listRecycleBin(
@@ -1127,6 +1185,7 @@ export class ReportsService {
     if (profileId) {
       await this.profilesService.getProfile(userId, profileId);
     }
+    const profileInfoById = await this.getProfileInfoMap(userId);
     const entities = await this.reportRepo.find({
       where: {
         userId,
@@ -1135,7 +1194,7 @@ export class ReportsService {
       },
       order: { deletedAt: 'DESC', createdAt: 'DESC' },
     });
-    return entities.map((e) => this.toDto(e));
+    return entities.map((e) => this.withProfileInfo(this.toDto(e), profileInfoById));
   }
 
   async restoreFromRecycleBin(
@@ -1150,7 +1209,8 @@ export class ReportsService {
     entity.deletedAt = null;
     entity.purgeAfterAt = null;
     await this.reportRepo.save(entity);
-    return this.toDto(entity);
+    const profileInfoById = await this.getProfileInfoMap(userId);
+    return this.withProfileInfo(this.toDto(entity), profileInfoById);
   }
 
   async purgeExpiredRecycleBinReports(): Promise<number> {
@@ -1255,7 +1315,33 @@ export class ReportsService {
         };
       }),
       ...(structuredReport &&
-        structuredReport.sections.length > 0 && { structuredReport }),
+        (structuredReport.sections.length > 0 ||
+          this.hasLabDetails(structuredReport.labDetails)) && { structuredReport }),
+    };
+  }
+
+  private async getProfileInfoMap(
+    userId: string,
+  ): Promise<Map<string, { name: string; isActive: boolean }>> {
+    const profiles = await this.profilesService.getProfiles(userId);
+    return new Map(
+      profiles.map((profile) => [
+        profile.id,
+        { name: profile.name, isActive: profile.isActive },
+      ]),
+    );
+  }
+
+  private withProfileInfo(
+    dto: ReportDto,
+    profileInfoById: Map<string, { name: string; isActive: boolean }>,
+  ): ReportDto {
+    const profileInfo = profileInfoById.get(dto.profileId);
+    if (!profileInfo) return dto;
+    return {
+      ...dto,
+      profileName: profileInfo.name,
+      profileIsActive: profileInfo.isActive,
     };
   }
 
@@ -1276,6 +1362,7 @@ export class ReportsService {
     labValues: StructuredReportLabInput[],
   ): StructuredReportDto {
     const patientDetails = this.extractPatientDetails(transcript);
+    const labDetails = this.labDetailsExtractor.extractFromTranscript(transcript);
     const sectionsMap = new Map<string, StructuredSectionItemDto[]>();
 
     for (const lv of labValues) {
@@ -1321,7 +1408,11 @@ export class ReportsService {
       })
       .map(([heading, tests]) => ({ heading, tests }));
 
-    return { patientDetails, sections };
+    return {
+      patientDetails,
+      ...(this.hasLabDetails(labDetails) ? { labDetails } : {}),
+      sections,
+    };
   }
 
   private extractPatientDetails(
@@ -1359,6 +1450,31 @@ export class ReportsService {
           }
         : {}),
     };
+  }
+
+  private hasLabDetails(details: StructuredLabDetailsDto | undefined): boolean {
+    if (!details) return false;
+    return Boolean(details.name && details.name.trim().length > 0);
+  }
+
+  private logLabDetailsExtraction(input: {
+    trigger: 'upload' | 'retry';
+    reportId: string;
+    source: 'odl_json' | 'transcript';
+    labDetails: StructuredLabDetailsDto | undefined;
+  }): void {
+    const name = input.labDetails?.name?.trim() ?? '';
+    const shouldExpose = name.length > 0;
+    this.logger.log(
+      JSON.stringify({
+        action: 'REPORT_LAB_DETAILS_EXTRACTED',
+        trigger: input.trigger,
+        reportId: input.reportId,
+        source: input.source,
+        shouldExpose,
+        labDetails: input.labDetails ?? {},
+      }),
+    );
   }
 
   private resolveSectionHeading(parameterName: string): string {

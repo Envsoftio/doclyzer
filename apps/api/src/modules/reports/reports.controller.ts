@@ -70,10 +70,16 @@ export class ReportsController {
   @Get()
   async listReports(
     @Query('profileId') profileId: string | undefined,
+    @Query('scope') scope: string | undefined,
     @Req() req: Request,
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = await this.reportsService.listReports(userId, profileId);
+    const resolvedScope = scope === 'all' ? 'all' : 'active';
+    const data = await this.reportsService.listReports(
+      userId,
+      profileId,
+      resolvedScope,
+    );
     return successResponse({ reports: data }, getCorrelationId(req));
   }
 

@@ -1,10 +1,12 @@
 import type { ExtractedLabValue } from './lab-value-extractor';
 import type {
+  StructuredLabDetailsDto,
   StructuredPatientDetailsDto,
   StructuredReportDto,
   StructuredSectionDto,
   StructuredSectionItemDto,
 } from './reports.service';
+import { LabDetailsExtractor } from './lab-details-extractor';
 
 interface FlatNode {
   type: string;
@@ -48,6 +50,8 @@ export interface OpenDataLoaderParsedWithDiagnosticsOutput extends OpenDataLoade
 }
 
 export class OpenDataLoaderJsonParser {
+  private readonly labDetailsExtractor = new LabDetailsExtractor();
+
   parse(input: unknown): OpenDataLoaderParsedOutput {
     const parsed = this.parseWithDiagnostics(input);
     return {
@@ -61,6 +65,9 @@ export class OpenDataLoaderJsonParser {
   ): OpenDataLoaderParsedWithDiagnosticsOutput {
     const nodes = this.flattenNodes(input);
     const patientDetails = this.extractPatientDetails(nodes);
+    const labDetailLines = nodes.map((n) => this.normalizeSpace(n.content));
+    const labDetails =
+      this.labDetailsExtractor.extractFromLines(labDetailLines);
     const { sections, stats } = this.extractSections(nodes);
 
     const extractedLabValues: ExtractedLabValue[] = [];
@@ -71,7 +78,9 @@ export class OpenDataLoaderJsonParser {
           value: test.value,
           unit: test.unit ?? null,
           sampleDate: test.sampleDate ?? null,
-          ...(test.referenceRange ? { referenceRange: test.referenceRange } : {}),
+          ...(test.referenceRange
+            ? { referenceRange: test.referenceRange }
+            : {}),
           ...(typeof test.isAbnormal === 'boolean'
             ? { isAbnormal: test.isAbnormal }
             : {}),
@@ -90,6 +99,7 @@ export class OpenDataLoaderJsonParser {
       extractedLabValues: deduped,
       structuredReport: {
         patientDetails,
+        ...(this.hasLabDetails(labDetails) ? { labDetails } : {}),
         sections: sections.filter((s) => s.tests.length > 0),
       },
       diagnostics,
@@ -234,6 +244,10 @@ export class OpenDataLoaderJsonParser {
         ),
       },
     };
+  }
+
+  private hasLabDetails(details: StructuredLabDetailsDto): boolean {
+    return Boolean(details.name && details.name.trim().length > 0);
   }
 
   private extractRowsFromTableBlock(
@@ -492,7 +506,10 @@ export class OpenDataLoaderJsonParser {
       }
       const extractedRef = this.extractReferenceRange(rest);
       const nextTestName = this.extractTrailingTestName(extractedRef.remainder);
-      const isAbnormal = this.evaluateAbnormal(value, extractedRef.referenceRange);
+      const isAbnormal = this.evaluateAbnormal(
+        value,
+        extractedRef.referenceRange,
+      );
       return {
         value,
         ...(unit ? { unit } : {}),
@@ -508,7 +525,10 @@ export class OpenDataLoaderJsonParser {
     if (qual) {
       const extractedRef = this.extractReferenceRange(qual.rest);
       const nextTestName = this.extractTrailingTestName(extractedRef.remainder);
-      const isAbnormal = this.evaluateAbnormal(qual.value, extractedRef.referenceRange);
+      const isAbnormal = this.evaluateAbnormal(
+        qual.value,
+        extractedRef.referenceRange,
+      );
       return {
         value: qual.value,
         ...(qual.unit ? { unit: qual.unit } : {}),
@@ -653,7 +673,10 @@ export class OpenDataLoaderJsonParser {
   }
 
   private tryParseNumeric(raw: string): number | null {
-    const cleaned = raw.replace(/^[<>]=?\s*/, '').replace(/,/g, '').trim();
+    const cleaned = raw
+      .replace(/^[<>]=?\s*/, '')
+      .replace(/,/g, '')
+      .trim();
     if (!/^-?\d+(?:\.\d+)?$/.test(cleaned)) return null;
     const n = Number(cleaned);
     return Number.isFinite(n) ? n : null;

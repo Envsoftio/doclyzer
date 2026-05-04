@@ -525,7 +525,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             ),
           ],
           if (report.structuredReport != null &&
-              report.structuredReport!.sections.isNotEmpty) ...[
+              (report.structuredReport!.sections.isNotEmpty ||
+                  ((report.structuredReport!.labDetails?.name ?? '')
+                      .trim()
+                      .isNotEmpty))) ...[
             const SizedBox(height: 24),
             const _SectionTitle('Patient details', icon: Icons.person_outline),
             const SizedBox(height: 8),
@@ -569,100 +572,150 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            const _SectionTitle(
-              'Categorized test results',
-              icon: Icons.analytics_outlined,
-            ),
-            const SizedBox(height: 8),
-            ...report.structuredReport!.sections.map((section) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          section.heading,
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                        const SizedBox(height: 8),
-                        ...section.tests.map((test) {
-                          final unitSuffix =
-                              (test.unit != null && test.unit!.isNotEmpty)
-                              ? ' ${test.unit}'
-                              : '';
-                          final referenceRange = test.referenceRange;
-                          final abnormal = test.isAbnormal == true;
-                          final normalRangeColor = abnormal
-                              ? Colors.red.shade700
-                              : Theme.of(context).colorScheme.onSurfaceVariant;
-                          return InkWell(
-                            onTap: () => _openTrendChart(test.parameterName),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      test.parameterName,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                    ),
-                                  ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        '${test.value}$unitSuffix',
+            if (((report.structuredReport!.labDetails?.name ?? '')
+                .trim()
+                .isNotEmpty)) ...[
+              const SizedBox(height: 16),
+              const _SectionTitle(
+                'Lab details',
+                icon: Icons.local_hospital_outlined,
+              ),
+              const SizedBox(height: 8),
+              _SectionCard(
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    if (report.structuredReport!.labDetails!.name != null)
+                      _InfoPill(
+                        label: 'Lab Name',
+                        value: report.structuredReport!.labDetails!.name!,
+                      ),
+                    if (report.structuredReport!.labDetails!.address != null)
+                      _InfoPill(
+                        label: 'Address',
+                        value: report.structuredReport!.labDetails!.address!,
+                      ),
+                    if (report.structuredReport!.labDetails!.phone != null)
+                      _InfoPill(
+                        label: 'Phone',
+                        value: report.structuredReport!.labDetails!.phone!,
+                      ),
+                    if (report.structuredReport!.labDetails!.email != null)
+                      _InfoPill(
+                        label: 'Email',
+                        value: report.structuredReport!.labDetails!.email!,
+                      ),
+                    if (report.structuredReport!.labDetails!.location != null)
+                      _InfoPill(
+                        label: 'Location',
+                        value: report.structuredReport!.labDetails!.location!,
+                      ),
+                  ],
+                ),
+              ),
+            ],
+            if (report.structuredReport!.sections.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const _SectionTitle(
+                'Categorized test results',
+                icon: Icons.analytics_outlined,
+              ),
+              const SizedBox(height: 8),
+              ...report.structuredReport!.sections.map((section) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            section.heading,
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          ...section.tests.map((test) {
+                            final unitSuffix =
+                                (test.unit != null && test.unit!.isNotEmpty)
+                                ? ' ${test.unit}'
+                                : '';
+                            final referenceRange = test.referenceRange;
+                            final abnormal = test.isAbnormal == true;
+                            final normalRangeColor = abnormal
+                                ? Colors.red.shade700
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant;
+                            return InkWell(
+                              onTap: () => _openTrendChart(test.parameterName),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 6,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        test.parameterName,
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyMedium
                                             ?.copyWith(
-                                              color: abnormal
-                                                  ? Colors.red.shade700
-                                                  : null,
-                                              fontWeight: abnormal
-                                                  ? FontWeight.w600
-                                                  : null,
+                                              fontWeight: FontWeight.w500,
                                             ),
                                       ),
-                                      if (referenceRange != null &&
-                                          referenceRange.isNotEmpty)
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
                                         Text(
-                                          'Normal: $referenceRange',
+                                          '${test.value}$unitSuffix',
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodySmall
+                                              .bodyMedium
                                               ?.copyWith(
-                                                color: normalRangeColor,
+                                                color: abnormal
+                                                    ? Colors.red.shade700
+                                                    : null,
                                                 fontWeight: abnormal
                                                     ? FontWeight.w600
                                                     : null,
                                               ),
                                         ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 6),
-                                  const Icon(Icons.chevron_right, size: 16),
-                                ],
+                                        if (referenceRange != null &&
+                                            referenceRange.isNotEmpty)
+                                          Text(
+                                            'Normal: $referenceRange',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: normalRangeColor,
+                                                  fontWeight: abnormal
+                                                      ? FontWeight.w600
+                                                      : null,
+                                                ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Icon(Icons.chevron_right, size: 16),
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        }),
-                      ],
+                            );
+                          }),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ],
           ],
           if (report.extractedLabValues.isNotEmpty) ...[
             const SizedBox(height: 24),

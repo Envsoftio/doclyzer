@@ -116,13 +116,31 @@ class StructuredSection {
   final List<StructuredSectionItem> tests;
 }
 
+class StructuredLabDetails {
+  const StructuredLabDetails({
+    this.name,
+    this.address,
+    this.phone,
+    this.email,
+    this.location,
+  });
+
+  final String? name;
+  final String? address;
+  final String? phone;
+  final String? email;
+  final String? location;
+}
+
 class StructuredReport {
   const StructuredReport({
     required this.patientDetails,
+    this.labDetails,
     required this.sections,
   });
 
   final StructuredPatientDetails patientDetails;
+  final StructuredLabDetails? labDetails;
   final List<StructuredSection> sections;
 }
 

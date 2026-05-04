@@ -40,6 +40,24 @@ class ApiReportsRepository implements ReportsRepository {
         bookingId: pd['bookingId'] as String?,
         sampleCollectionDate: pd['sampleCollectionDate'] as String?,
       ),
+      labDetails: (sr['labDetails'] is Map<String, dynamic>)
+          ? StructuredLabDetails(
+              name:
+                  (sr['labDetails'] as Map<String, dynamic>)['name'] as String?,
+              address:
+                  (sr['labDetails'] as Map<String, dynamic>)['address']
+                      as String?,
+              phone:
+                  (sr['labDetails'] as Map<String, dynamic>)['phone']
+                      as String?,
+              email:
+                  (sr['labDetails'] as Map<String, dynamic>)['email']
+                      as String?,
+              location:
+                  (sr['labDetails'] as Map<String, dynamic>)['location']
+                      as String?,
+            )
+          : null,
       sections: sections,
     );
   }
