@@ -60,9 +60,9 @@ export class LabValueExtractor {
     // Pattern 1: "Name: value unit" — e.g. "Glucose: 95 mg/dL"
     const colonPattern =
       /(^|\n)\s*([A-Za-z][A-Za-z0-9\s/(),._-]{1,50})\s*:\s*([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)\s*([A-Za-z/%^0-9._-]+)?(?=\n|$)/g;
-    // Pattern 2: pipe-delimited — "Name | value | unit"
+    // Pattern 2: pipe-delimited tables (supports markdown rows with leading/trailing pipes)
     const pipePattern =
-      /^([^|\n]{2,60})\|\s*([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)\s*\|\s*([A-Za-z/%^0-9._-]*)/gm;
+      /^\s*\|?\s*([^|\n]{2,90})\s*\|\s*([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)\s*\|\s*([^|\n]{0,40})(?:\|[^|\n]*)?\|?\s*$/gm;
     // Pattern 3: tab-separated table rows — "Name\tvalue\tunit"
     const tabPattern =
       /^([A-Za-z][A-Za-z0-9\s/(),._-]{1,50})\t([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)\t([A-Za-z/%^0-9._-]*)/gm;
@@ -92,7 +92,8 @@ export class LabValueExtractor {
     // Run pipe pattern first (more specific)
     let m: RegExpExecArray | null;
     while ((m = pipePattern.exec(normalized)) !== null) {
-      add(m[1], m[2], m[3] || null);
+      const unit = (m[3] ?? '').replace(/\s+/g, ' ').trim();
+      add(m[1], m[2], unit || null);
     }
 
     // Tab pattern
@@ -108,6 +109,36 @@ export class LabValueExtractor {
     // Generic line pattern for markdown/text rows — "Name 12.2 g/dL ..."
     while ((m = linePattern.exec(normalized)) !== null) {
       add(m[1], m[2], m[3] || null);
+    }
+
+    // Pattern 5: vertical OCR blocks:
+    // INVESTIGATION -> <name> -> RESULTS -> <value> -> UOM -> <unit>
+    const lines = normalized
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    for (let i = 0; i < lines.length; i++) {
+      if (!/^investigation$/i.test(lines[i])) continue;
+      const name = lines[i + 1] ?? '';
+      if (!name || /^results$/i.test(name) || isLikelyNoiseName(name)) continue;
+
+      let value: string | null = null;
+      let unit: string | null = null;
+      for (let j = i + 2; j < Math.min(i + 12, lines.length); j++) {
+        if (
+          /^results$/i.test(lines[j]) &&
+          lines[j + 1] &&
+          normalizeNumberToken(lines[j + 1]) !== null
+        ) {
+          value = lines[j + 1];
+        }
+        if (/^uom$/i.test(lines[j]) && lines[j + 1]) {
+          unit = lines[j + 1];
+        }
+      }
+      if (value) {
+        add(name, value, unit);
+      }
     }
 
     return results;

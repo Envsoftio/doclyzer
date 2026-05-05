@@ -12,6 +12,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       HOST: 0.0.0.0
+      DOCLING_OCR_ENABLED: "true"
+      DOCLING_OCR_BASE_URL: http://docling:5002
     command: >
       sh -c "npm install && npm run migration:run && npm run start:dev -- --host 0.0.0.0"
     ports:
@@ -24,7 +26,40 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      docling:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - doclyzer_net
+
+  docling:
+    build:
+      context: .
+      dockerfile: docker/docling/Dockerfile
+    container_name: doclyzer-docling
+    restart: unless-stopped
+    mem_limit: 6g
+    environment:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+      TORCH_NUM_THREADS: "1"
+      MALLOC_ARENA_MAX: "2"
+      PYTHON_GC_THRESHOLD: "700,10,10"
+      DOCLING_SERVE_OCR_ENGINE: rapidocr
+    command: >
+      sh -c "docling-serve run --host 0.0.0.0 --port 5002 --workers 1"
+    ports:
+      - "5002:5002"
+    volumes:
+      - docling_cache:/root/.cache
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5002/docs', timeout=2)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 20
+      start_period: 45s
     networks:
       - doclyzer_net
 
@@ -69,6 +104,7 @@ volumes:
   api_node_modules:
   doclyzer_postgres_data:
   doclyzer_redis_data:
+  docling_cache:
 
 networks:
   doclyzer_net:

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 /// Shared HTTP client for API calls. Holds access token, supports refresh on 401.
 class ApiClient {
@@ -146,7 +147,21 @@ class ApiClient {
       }
       request.headers['x-correlation-id'] =
           DateTime.now().millisecondsSinceEpoch.toString();
-      request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
+      final lower = filePath.toLowerCase();
+      final contentType = lower.endsWith('.jpg') || lower.endsWith('.jpeg')
+          ? MediaType('image', 'jpeg')
+          : lower.endsWith('.png')
+              ? MediaType('image', 'png')
+              : lower.endsWith('.pdf')
+                  ? MediaType('application', 'pdf')
+                  : null;
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          fieldName,
+          filePath,
+          contentType: contentType,
+        ),
+      );
       final streamed = await request.send();
       final res = await http.Response.fromStream(streamed);
       return _handleResponse(res);

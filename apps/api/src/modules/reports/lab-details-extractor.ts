@@ -48,7 +48,8 @@ export class LabDetailsExtractor {
 
     const labeled = this.extractLabeledFields(topLines);
     const fallbackName = labeled.name ?? this.extractHeaderLabName(topLines);
-    const fallbackAddress = labeled.address ?? this.extractAddressBlock(topLines);
+    const fallbackAddress =
+      labeled.address ?? this.extractAddressBlock(topLines);
 
     const location =
       labeled.location ?? this.extractLocationFromAddress(fallbackAddress);
@@ -109,7 +110,11 @@ export class LabDetailsExtractor {
       ) {
         continue;
       }
-      if (/\b(lab|laboratory|diagnostic|diagnostics|pathology|hospital|clinic)\b/i.test(line)) {
+      if (
+        /\b(lab|laboratory|diagnostic|diagnostics|pathology|hospital|clinic)\b/i.test(
+          line,
+        )
+      ) {
         return line;
       }
     }
@@ -131,7 +136,9 @@ export class LabDetailsExtractor {
         if (
           next &&
           next.length <= 120 &&
-          !/^(?:phone|mobile|contact|email|patient|report|booking)\b/i.test(next)
+          !/^(?:phone|mobile|contact|email|patient|report|booking)\b/i.test(
+            next,
+          )
         ) {
           candidates.push(next);
         }

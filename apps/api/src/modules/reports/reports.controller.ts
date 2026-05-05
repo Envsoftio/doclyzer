@@ -26,10 +26,14 @@ import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
 import { AuthService } from '../auth/auth.service';
 import { ReportsService } from './reports.service';
+import { Logger } from '@nestjs/common';
 import {
+  ALLOWED_IMAGE_CONTENT_TYPES,
+  ALLOWED_UPLOAD_CONTENT_TYPES,
   ALLOWED_CONTENT_TYPES,
   MAX_REPORT_SIZE_BYTES,
   REPORT_FILE_REQUIRED,
+  REPORT_FILE_TYPE_UNSUPPORTED,
 } from './reports.types';
 
 function getClientIp(req: Request): string {
@@ -41,6 +45,8 @@ function getClientIp(req: Request): string {
 @Controller('reports')
 @UseGuards(AuthGuard)
 export class ReportsController {
+  private readonly logger = new Logger(ReportsController.name);
+
   constructor(
     private readonly reportsService: ReportsService,
     private readonly authService: AuthService,
@@ -100,17 +106,42 @@ export class ReportsController {
       storage: memoryStorage(),
       fileFilter: (_req, file, cb) => {
         if (!file) {
-          cb(new Error('No file'), false);
+          cb(
+            new BadRequestException({
+              code: REPORT_FILE_REQUIRED,
+              message: 'Missing file. Use multipart field "file".',
+            }),
+            false,
+          );
           return;
         }
+        const lowerName = (file.originalname ?? '').toLowerCase();
         const isPdfType = ALLOWED_CONTENT_TYPES.includes(
           file.mimetype as 'application/pdf',
         );
+        const isImageType = ALLOWED_IMAGE_CONTENT_TYPES.includes(
+          file.mimetype as 'image/jpeg' | 'image/png',
+        );
+        const isImageByName = /\.(jpe?g|png)$/i.test(lowerName);
         const isOctetStreamWithPdfName =
           file.mimetype === 'application/octet-stream' &&
-          /\.pdf$/i.test(file.originalname ?? '');
-        if (!isPdfType && !isOctetStreamWithPdfName) {
-          cb(new Error('Only PDF files are allowed'), false);
+          /\.pdf$/i.test(lowerName);
+        const isOctetStreamWithImageName =
+          file.mimetype === 'application/octet-stream' && isImageByName;
+        if (
+          !isPdfType &&
+          !isImageType &&
+          !isImageByName &&
+          !isOctetStreamWithPdfName &&
+          !isOctetStreamWithImageName
+        ) {
+          cb(
+            new BadRequestException({
+              code: REPORT_FILE_TYPE_UNSUPPORTED,
+              message: 'Only PDF, JPG, or PNG files are allowed',
+            }),
+            false,
+          );
           return;
         }
         cb(null, true);
@@ -135,11 +166,27 @@ export class ReportsController {
       duplicateAction === 'upload_anyway'
         ? { duplicateAction: 'upload_anyway' as const }
         : undefined;
-    const mimetype =
-      file.mimetype === 'application/octet-stream' &&
-      /\.pdf$/i.test(file.originalname ?? '')
-        ? 'application/pdf'
-        : (file.mimetype ?? 'application/pdf');
+    const lowerName = (file.originalname ?? '').toLowerCase();
+    const mimetype = ALLOWED_UPLOAD_CONTENT_TYPES.includes(
+      file.mimetype as 'application/pdf' | 'image/jpeg' | 'image/png',
+    )
+      ? file.mimetype
+      : /\.jpe?g$/i.test(lowerName)
+        ? 'image/jpeg'
+        : /\.png$/i.test(lowerName)
+          ? 'image/png'
+          : /\.pdf$/i.test(lowerName)
+            ? 'application/pdf'
+            : 'application/pdf';
+    this.logger.log(
+      JSON.stringify({
+        action: 'REPORT_UPLOAD_MIMETYPE_RESOLVED',
+        originalName: file.originalname ?? null,
+        incomingMimetype: file.mimetype ?? null,
+        resolvedMimetype: mimetype,
+        sizeBytes: file.size ?? 0,
+      }),
+    );
     const data = await this.reportsService.uploadReport(
       userId,
       {

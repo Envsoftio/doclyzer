@@ -14,6 +14,8 @@ import { ReportsService } from './reports.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
 import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
+import { ImageToPdfService } from './image-to-pdf.service';
+import { DoclingOcrClient } from './docling-ocr.client';
 
 @Module({
   imports: [
@@ -34,7 +36,9 @@ import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
     ReportsRecycleBinCleanupService,
     ReportSummaryService,
     OpenDataLoaderClient,
+    DoclingOcrClient,
     ReportLabAiFallbackService,
+    ImageToPdfService,
   ],
 })
 export class ReportsModule {}

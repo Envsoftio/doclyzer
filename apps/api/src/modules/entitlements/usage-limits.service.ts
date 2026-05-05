@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, IsNull, Repository } from 'typeorm';
 import { ReportEntity } from '../../database/entities/report.entity';
 import { ShareLinkEntity } from '../../database/entities/share-link.entity';
 import { UserEntitlementEntity } from '../../database/entities/user-entitlement.entity';
@@ -39,10 +39,11 @@ export class UsageLimitsService {
 
   async getReportUsage(userId: string): Promise<UsageLimitSnapshot> {
     const planInfo = await this.getPlanLimits(userId);
-    // Count both active and recycle-bin reports.
-    // This prevents quota bypass by delete/re-upload loops.
-    // Recycle-bin reports stop counting only after permanent purge.
-    const current = await this.reportRepo.count({ where: { userId } });
+    // Count only successfully parsed, active reports.
+    // Failed/unparsed/content_not_recognized uploads should not consume quota.
+    const current = await this.reportRepo.count({
+      where: { userId, status: 'parsed', deletedAt: IsNull() },
+    });
     return {
       limit: planInfo.limits.maxReports,
       current,

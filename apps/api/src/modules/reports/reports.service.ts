@@ -19,6 +19,8 @@ import { ReportLabValueEntity } from '../../database/entities/report-lab-value.e
 import { ProfilesService } from '../profiles/profiles.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
+import { DoclingOcrClient } from './docling-ocr.client';
+import { ImageToPdfService } from './image-to-pdf.service';
 import {
   OpenDataLoaderJsonParser,
   type OpenDataLoaderParsedWithDiagnosticsOutput,
@@ -36,6 +38,8 @@ import { NotificationPipelineService } from '../../common/notification-pipeline/
 import { NotifiableEventType } from '../../common/notification-pipeline/notification-event.types';
 import {
   ALLOWED_CONTENT_TYPES,
+  ALLOWED_IMAGE_CONTENT_TYPES,
+  ALLOWED_UPLOAD_CONTENT_TYPES,
   MAX_REPORT_SIZE_BYTES,
   REPORT_ALREADY_PARSED,
   REPORT_CONTENT_NOT_RECOGNIZED,
@@ -132,6 +136,16 @@ interface SelectedOdlLabOutput {
   structuredReport: StructuredReportDto;
 }
 
+const OCR_TEXT_LOG_CHAR_LIMIT = 6000;
+
+type ReportInputSource = 'pdf' | 'image';
+
+interface ParsedBufferResult {
+  status: ReportStatus;
+  transcript: string | null;
+  opendataloaderJson?: unknown;
+}
+
 export interface TrendDataPoint {
   date: string;
   value: number;
@@ -172,8 +186,10 @@ export class ReportsService {
     private readonly reportSummaryService: ReportSummaryService,
     private readonly usageLimitsService: UsageLimitsService,
     private readonly openDataLoaderClient: OpenDataLoaderClient,
+    private readonly doclingOcrClient: DoclingOcrClient,
     private readonly reportLabAiFallbackService: ReportLabAiFallbackService,
     private readonly notificationPipeline: NotificationPipelineService,
+    private readonly imageToPdfService: ImageToPdfService,
   ) {
     this.labExtractor = new LabValueExtractor();
   }
@@ -240,14 +256,29 @@ export class ReportsService {
         `File exceeds maximum size of ${MAX_REPORT_SIZE_BYTES / 1024 / 1024} MB`,
       );
     }
-    if (!ALLOWED_CONTENT_TYPES.includes(file.mimetype as 'application/pdf')) {
+    if (
+      !ALLOWED_UPLOAD_CONTENT_TYPES.includes(
+        file.mimetype as 'application/pdf' | 'image/jpeg' | 'image/png',
+      )
+    ) {
       throw new ReportUploadException(
         REPORT_FILE_TYPE_UNSUPPORTED,
-        'Only PDF files are supported',
+        'Only PDF, JPG, and PNG files are supported',
       );
     }
 
-    const contentHash = this.computeContentHash(file.buffer);
+    const normalizedFile = await this.normalizeReportInput(file);
+    this.logger.log(
+      JSON.stringify({
+        action: 'REPORT_UPLOAD_NORMALIZED_SOURCE',
+        trigger: 'upload',
+        source: normalizedFile.source,
+        inputMimetype: file.mimetype,
+        normalizedMimetype: normalizedFile.mimetype,
+        originalName: file.originalname ?? null,
+      }),
+    );
+    const contentHash = this.computeContentHash(normalizedFile.buffer);
     const forceUploadAnyway = options?.duplicateAction === 'upload_anyway';
 
     // Duplicate check: best-effort per profile; concurrent uploads of same file can both pass (no locking).
@@ -272,43 +303,83 @@ export class ReportsService {
 
     const reportId = randomUUID();
     const storageKey = `reports/${userId}/${activeProfileId}/${reportId}.pdf`;
-    const originalFileName = file.originalname?.trim() || 'report.pdf';
+    const originalFileName =
+      normalizedFile.originalname?.trim() || 'report.pdf';
 
-    await this.fileStorage.upload(storageKey, file.buffer, file.mimetype);
+    await this.fileStorage.upload(
+      storageKey,
+      normalizedFile.buffer,
+      normalizedFile.mimetype,
+    );
 
-    const { status, transcript, opendataloaderJson } =
-      await this.parseReportBuffer(file.buffer, 'upload', reportId);
+    let { status, transcript, opendataloaderJson } =
+      await this.parseReportBuffer(
+        normalizedFile.buffer,
+        'upload',
+        reportId,
+        normalizedFile.source,
+      );
 
-    const parsedFromJson = opendataloaderJson
+    let parsedFromJson = opendataloaderJson
       ? await this.extractLabValuesFromOdlJsonWithFallback({
           opendataloaderJson,
           reportId,
           trigger: 'upload',
+          transcript,
         })
       : null;
-    const labValues = parsedFromJson
-      ? parsedFromJson.extractedLabValues
-      : transcript
-        ? this.toStructuredLabInputs(this.labExtractor.extract(transcript))
-        : [];
-    const structuredReport =
-      status === 'parsed'
-        ? (parsedFromJson?.structuredReport ??
-          this.buildStructuredReport(transcript, labValues))
-        : null;
-    if (status === 'parsed' && structuredReport) {
-      this.logLabDetailsExtraction({
-        trigger: 'upload',
-        reportId,
-        source: parsedFromJson ? 'odl_json' : 'transcript',
-        labDetails: structuredReport.labDetails,
-      });
-    }
+    const transcriptLabValuesRaw = transcript
+      ? this.toStructuredLabInputs(this.labExtractor.extract(transcript))
+      : [];
+    const transcriptLabValues = this.filterNoisyLabValues(transcriptLabValuesRaw);
+    const jsonLabValues = this.filterNoisyLabValues(
+      parsedFromJson?.extractedLabValues ?? [],
+    );
+    let labValues =
+      normalizedFile.source === 'image' && jsonLabValues.length > 0
+        ? jsonLabValues
+        : this.selectBestLabValues(jsonLabValues, transcriptLabValues);
+    labValues = this.deduplicateStructuredLabValues(labValues);
+
     const finalStatus = this.resolveParsedReportStatus(
       status,
       transcript,
       labValues,
     );
+    let structuredReport =
+      finalStatus === 'parsed'
+        ? (parsedFromJson?.structuredReport ??
+          this.buildStructuredReport(transcript, labValues))
+        : null;
+    if (finalStatus === 'parsed' && structuredReport) {
+      structuredReport = this.withBestPatientDetails(structuredReport, transcript);
+      structuredReport.sections = this.buildStructuredReport(
+        null,
+        labValues,
+      ).sections;
+    }
+    if (finalStatus === 'parsed' && structuredReport) {
+      this.logLabDetailsExtraction({
+        trigger: 'upload',
+        reportId,
+        source:
+          parsedFromJson && parsedFromJson.extractedLabValues.length > 0
+            ? 'odl_json'
+            : 'transcript',
+        labDetails: structuredReport.labDetails,
+      });
+      if (normalizedFile.source === 'image') {
+        this.logger.log(
+          JSON.stringify({
+            action: 'REPORT_IMAGE_OCR_MAPPED_RESULT_DEBUG',
+            reportId,
+            extractedLabValuesCount: labValues.length,
+            extractedLabValues: labValues,
+            structuredReport,
+          }),
+        );
+      }
+    }
     if (finalStatus === 'content_not_recognized') {
       try {
         await this.fileStorage.delete(storageKey);
@@ -340,7 +411,7 @@ export class ReportsService {
 
     const summary =
       finalStatus === 'parsed'
-        ? await this.reportSummaryService.generateSummary(file.buffer)
+        ? await this.reportSummaryService.generateSummary(normalizedFile.buffer)
         : null;
 
     const entity = this.reportRepo.create({
@@ -348,8 +419,8 @@ export class ReportsService {
       userId,
       profileId: activeProfileId,
       originalFileName,
-      contentType: file.mimetype,
-      sizeBytes: file.buffer.length,
+      contentType: normalizedFile.mimetype,
+      sizeBytes: normalizedFile.buffer.length,
       originalFileStorageKey: storageKey,
       status: finalStatus,
       summary,
@@ -419,6 +490,55 @@ export class ReportsService {
     return createHash('sha256').update(buffer).digest('hex');
   }
 
+  private async normalizeReportInput(file: {
+    buffer: Buffer;
+    originalname: string;
+    mimetype: string;
+    size: number;
+  }): Promise<{
+    buffer: Buffer;
+    originalname: string;
+    mimetype: 'application/pdf';
+    size: number;
+    source: ReportInputSource;
+  }> {
+    if (ALLOWED_CONTENT_TYPES.includes(file.mimetype as 'application/pdf')) {
+      return {
+        buffer: file.buffer,
+        originalname: file.originalname,
+        mimetype: 'application/pdf',
+        size: file.size,
+        source: 'pdf',
+      };
+    }
+    if (
+      ALLOWED_IMAGE_CONTENT_TYPES.includes(
+        file.mimetype as 'image/jpeg' | 'image/png',
+      )
+    ) {
+      const pdfBuffer = await this.imageToPdfService.convertSingleImageToPdf({
+        buffer: file.buffer,
+        mimetype: file.mimetype as 'image/jpeg' | 'image/png',
+      });
+      return {
+        buffer: pdfBuffer,
+        originalname: this.toPdfFileName(file.originalname),
+        mimetype: 'application/pdf',
+        size: pdfBuffer.length,
+        source: 'image',
+      };
+    }
+    throw new ReportUploadException(
+      REPORT_FILE_TYPE_UNSUPPORTED,
+      'Only PDF, JPG, and PNG files are supported',
+    );
+  }
+
+  private toPdfFileName(originalName: string): string {
+    const trimmed = originalName?.trim() || 'report';
+    return trimmed.replace(/\.[^.]+$/, '') + '.pdf';
+  }
+
   async getReportFile(
     userId: string,
     reportId: string,
@@ -469,7 +589,9 @@ export class ReportsService {
       where: { profileId, userId, deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
     });
-    return entities.map((e) => this.withProfileInfo(this.toDto(e), profileInfoById));
+    return entities.map((e) =>
+      this.withProfileInfo(this.toDto(e), profileInfoById),
+    );
   }
 
   /**
@@ -619,19 +741,30 @@ export class ReportsService {
           opendataloaderJson,
           reportId: entity.id,
           trigger: 'retry',
+          transcript,
         })
       : null;
+    const retryTranscriptValuesRaw = transcript
+      ? this.toStructuredLabInputs(this.labExtractor.extract(transcript))
+      : [];
+    const retryTranscriptValues = this.filterNoisyLabValues(
+      retryTranscriptValuesRaw,
+    );
+    const retryJsonValues = this.filterNoisyLabValues(
+      retryFromJson?.extractedLabValues ?? [],
+    );
     const retryLabValues =
       status === 'parsed'
-        ? (retryFromJson?.extractedLabValues ??
-          (transcript
-            ? this.toStructuredLabInputs(this.labExtractor.extract(transcript))
-            : []))
+        ? this.selectBestLabValues(retryJsonValues, retryTranscriptValues)
+        : [];
+    const dedupedRetryLabValues =
+      status === 'parsed'
+        ? this.deduplicateStructuredLabValues(retryLabValues)
         : [];
     const finalStatus = this.resolveParsedReportStatus(
       status,
       transcript,
-      retryLabValues,
+      dedupedRetryLabValues,
     );
     if (finalStatus === 'parsed') {
       this.logger.log(
@@ -648,7 +781,7 @@ export class ReportsService {
       );
     }
     const persistedRetryLabValues =
-      finalStatus === 'parsed' ? retryLabValues : [];
+      finalStatus === 'parsed' ? dedupedRetryLabValues : [];
 
     entity.status = finalStatus;
     entity.summary =
@@ -657,9 +790,17 @@ export class ReportsService {
         : null;
     // Only overwrite transcript on success; preserve existing on failure (AC3)
     if (finalStatus === 'parsed') {
-      const retryStructuredReport =
+      let retryStructuredReport =
         retryFromJson?.structuredReport ??
-        this.buildStructuredReport(transcript, retryLabValues);
+        this.buildStructuredReport(transcript, dedupedRetryLabValues);
+      retryStructuredReport = this.withBestPatientDetails(
+        retryStructuredReport,
+        transcript,
+      );
+      retryStructuredReport.sections = this.buildStructuredReport(
+        null,
+        dedupedRetryLabValues,
+      ).sections;
       this.logLabDetailsExtraction({
         trigger: 'retry',
         reportId: entity.id,
@@ -712,7 +853,13 @@ export class ReportsService {
     transcript: string | null,
     labValues: StructuredReportLabInput[],
   ): ReportStatus {
-    if (initialStatus !== 'parsed') return initialStatus;
+    if (initialStatus !== 'parsed') {
+      // Additive fallback for image/scanned uploads:
+      // if deterministic extraction produced enough lab rows, treat as parsed
+      // even when OCR transcript quality is low.
+      if (labValues.length >= 2) return 'parsed';
+      return initialStatus;
+    }
     if (this.isLikelyLabReport(transcript, labValues)) return 'parsed';
     return 'content_not_recognized';
   }
@@ -762,19 +909,77 @@ export class ReportsService {
     buffer: Buffer,
     trigger: 'upload' | 'retry',
     reportId: string,
-  ): Promise<{
-    status: ReportStatus;
-    transcript: string | null;
-    opendataloaderJson?: unknown;
-  }> {
-    const result = await this.openDataLoaderClient.parsePdf(buffer);
-    const evaluated = this.evaluateParsedTranscript(result?.text);
-    const status = evaluated.ok ? 'parsed' : 'failed_transient';
-    this.logParseQuality(trigger, reportId, evaluated.text, status);
+    source: ReportInputSource = 'pdf',
+  ): Promise<ParsedBufferResult> {
+    if (source === 'image') {
+      const doclingAttempt = await this.doclingOcrClient.parsePdf(buffer, {
+        forceOcr: true,
+      });
+      const bestEval = this.evaluateParsedTranscript(doclingAttempt?.text);
+      const status = bestEval.ok ? 'parsed' : 'failed_transient';
+      this.logParseQuality(trigger, reportId, bestEval.text, status);
+      return {
+        status,
+        transcript: bestEval.text,
+        ...(doclingAttempt?.parsedJson
+          ? { opendataloaderJson: doclingAttempt.parsedJson }
+          : {}),
+      };
+    }
+
+    const firstAttempt = await this.openDataLoaderClient.parsePdf(buffer);
+    const firstEval = this.evaluateParsedTranscript(firstAttempt?.text);
+    if (firstEval.ok) {
+      const status = 'parsed';
+      this.logParseQuality(trigger, reportId, firstEval.text, status);
+      return {
+        status,
+        transcript: firstEval.text,
+        ...(firstAttempt?.parsedJson
+          ? { opendataloaderJson: firstAttempt.parsedJson }
+          : {}),
+      };
+    }
+
+    // Fallback for scanned/image-only PDFs:
+    // when ODL text is too weak, run Docling OCR to recover transcript + JSON.
+    const doclingAttempt = await this.doclingOcrClient.parsePdf(buffer, {
+      forceOcr: true,
+    });
+    const doclingEval = this.evaluateParsedTranscript(doclingAttempt?.text);
+    if (doclingAttempt) {
+      this.logger.log(
+        JSON.stringify({
+          action: 'REPORT_DOCLING_PDF_FALLBACK_ATTEMPT',
+          trigger,
+          reportId,
+          odlTranscriptChars: firstEval.text?.length ?? 0,
+          doclingTranscriptChars: doclingEval.text?.length ?? 0,
+          doclingHasJson: Boolean(doclingAttempt.parsedJson),
+          selected: doclingEval.ok ? 'docling' : 'odl',
+        }),
+      );
+    }
+    if (doclingEval.ok || doclingAttempt?.parsedJson) {
+      const status = doclingEval.ok ? 'parsed' : 'failed_transient';
+      this.logParseQuality(trigger, reportId, doclingEval.text, status);
+      return {
+        status,
+        transcript: doclingEval.text,
+        ...(doclingAttempt?.parsedJson
+          ? { opendataloaderJson: doclingAttempt.parsedJson }
+          : {}),
+      };
+    }
+
+    const status = 'failed_transient';
+    this.logParseQuality(trigger, reportId, firstEval.text, status);
     return {
       status,
-      transcript: evaluated.text,
-      ...(result?.parsedJson ? { opendataloaderJson: result.parsedJson } : {}),
+      transcript: firstEval.text,
+      ...(firstAttempt?.parsedJson
+        ? { opendataloaderJson: firstAttempt.parsedJson }
+        : {}),
     };
   }
 
@@ -782,6 +987,7 @@ export class ReportsService {
     opendataloaderJson: unknown;
     reportId: string;
     trigger: 'upload' | 'retry';
+    transcript: string | null;
   }): Promise<SelectedOdlLabOutput> {
     const deterministic = this.odlJsonParser.parseWithDiagnostics(
       input.opendataloaderJson,
@@ -790,13 +996,38 @@ export class ReportsService {
       deterministic.extractedLabValues,
     );
     let structuredReport = deterministic.structuredReport;
+    if (extractedLabValues.length >= 10) {
+      this.logger.log(
+        JSON.stringify({
+          action: 'REPORT_LAB_AI_FALLBACK_DECISION',
+          reportId: input.reportId,
+          trigger: input.trigger,
+          deterministicConfidence: deterministic.diagnostics.confidence,
+          deterministicRows: extractedLabValues.length,
+          aiRows: 0,
+          aiFallbackUsed: false,
+          selectedSource: 'deterministic_json',
+          reason: 'sufficient_deterministic_rows',
+        }),
+      );
+      return { extractedLabValues, structuredReport };
+    }
+    const transcriptCandidates = this.extractAiFallbackCandidatesFromTranscript(
+      input.transcript,
+    );
+    const candidateRows = Array.from(
+      new Set([
+        ...deterministic.diagnostics.aiCandidateRows,
+        ...transcriptCandidates,
+      ]),
+    ).slice(0, 400);
 
     const aiFallback = await this.reportLabAiFallbackService.tryExtract({
       reportId: input.reportId,
       trigger: input.trigger,
       confidence: deterministic.diagnostics.confidence,
       lowConfidenceReasons: deterministic.diagnostics.lowConfidenceReasons,
-      candidateRows: deterministic.diagnostics.aiCandidateRows,
+      candidateRows,
     });
 
     if (!aiFallback) {
@@ -865,6 +1096,9 @@ export class ReportsService {
       const parameterName = value.parameterName?.trim();
       const parsedValue = value.value?.trim();
       if (!parameterName || !parsedValue) continue;
+      if (this.isLikelyNoiseLabRow(parameterName, parsedValue, value.unit)) {
+        continue;
+      }
       const referenceRange = value.referenceRange?.trim() || null;
       const inferredAbnormal = this.evaluateAbnormalFromReference(
         parsedValue,
@@ -895,7 +1129,8 @@ export class ReportsService {
     const ref = referenceRange.trim();
     const refLower = ref.toLowerCase();
 
-    const qual = /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale yellow|yellow|amber|straw)$/i;
+    const qual =
+      /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale yellow|yellow|amber|straw)$/i;
     if (qual.test(refLower)) {
       const v = rawValue.trim().toLowerCase();
       if (!qual.test(v)) return null;
@@ -927,7 +1162,10 @@ export class ReportsService {
   }
 
   private tryParseNumeric(raw: string): number | null {
-    const cleaned = raw.replace(/^[<>]=?\s*/, '').replace(/,/g, '').trim();
+    const cleaned = raw
+      .replace(/^[<>]=?\s*/, '')
+      .replace(/,/g, '')
+      .trim();
     if (!/^-?\d+(?:\.\d+)?$/.test(cleaned)) return null;
     const n = Number(cleaned);
     return Number.isFinite(n) ? n : null;
@@ -942,6 +1180,156 @@ export class ReportsService {
     const v = value?.trim();
     if (!p || !v) return null;
     return `${p.toLowerCase()}::${v.toLowerCase()}::${(unit ?? '').trim().toLowerCase()}`;
+  }
+
+  private normalizeComparableValue(value: string): string {
+    const trimmed = value.trim();
+    const numeric = trimmed.replace(/,/g, '');
+    if (/^[<>]?\s*[-+]?\d+(?:\.\d+)?$/.test(numeric)) {
+      const num = Number(numeric.replace(/^[<>]\s*/, ''));
+      if (Number.isFinite(num)) return String(num);
+    }
+    return trimmed.toLowerCase();
+  }
+
+  private isLikelyNoiseLabRow(
+    parameterName: string,
+    value: string,
+    unit: string | null | undefined,
+  ): boolean {
+    const p = parameterName.toLowerCase().trim();
+    const u = (unit ?? '').toLowerCase().trim();
+    const v = value.toLowerCase().trim();
+    if (
+      p.includes('#/texts/') ||
+      p.includes('#/groups/') ||
+      p.includes('#/body') ||
+      p.includes('topleft') ||
+      p.includes('bottomleft') ||
+      p.includes('doclingdocument') ||
+      p.startsWith('body ') ||
+      p.startsWith('report.pdf')
+    ) {
+      return true;
+    }
+    if (
+      u === 'topleft' ||
+      u === 'bottomleft' ||
+      u.startsWith('#/') ||
+      u === '.' ||
+      u === '.0'
+    ) {
+      return true;
+    }
+    if (/^\d+\.$/.test(v)) return true;
+    return false;
+  }
+
+  private filterNoisyLabValues(
+    values: StructuredReportLabInput[],
+  ): StructuredReportLabInput[] {
+    return values.filter(
+      (row) =>
+        !this.isLikelyNoiseLabRow(row.parameterName, row.value, row.unit),
+    );
+  }
+
+  private deduplicateStructuredLabValues(
+    rows: StructuredReportLabInput[],
+  ): StructuredReportLabInput[] {
+    const bestByKey = new Map<string, StructuredReportLabInput>();
+    for (const row of rows) {
+      const name = row.parameterName?.trim().toLowerCase();
+      const unit = (row.unit ?? '').trim().toLowerCase();
+      const value = this.normalizeComparableValue(row.value ?? '');
+      if (!name || !value) continue;
+      const key = `${name}::${value}::${unit}`;
+      const current = bestByKey.get(key);
+      if (!current) {
+        bestByKey.set(key, row);
+        continue;
+      }
+      const currentScore =
+        (current.referenceRange ? 1 : 0) +
+        (current.sampleDate ? 1 : 0) +
+        (typeof current.isAbnormal === 'boolean' ? 1 : 0);
+      const nextScore =
+        (row.referenceRange ? 1 : 0) +
+        (row.sampleDate ? 1 : 0) +
+        (typeof row.isAbnormal === 'boolean' ? 1 : 0);
+      if (nextScore > currentScore) {
+        bestByKey.set(key, row);
+      }
+    }
+    return Array.from(bestByKey.values());
+  }
+
+  private selectBestLabValues(
+    parsedValues: StructuredReportLabInput[],
+    transcriptValues: StructuredReportLabInput[],
+  ): StructuredReportLabInput[] {
+    if (parsedValues.length === 0) return transcriptValues;
+    if (transcriptValues.length === 0) return parsedValues;
+
+    const parsedScore = this.scoreLabExtractionQuality(parsedValues);
+    const transcriptScore = this.scoreLabExtractionQuality(transcriptValues);
+    const preferred =
+      transcriptValues.length >= parsedValues.length + 3 ||
+      transcriptScore > parsedScore * 1.05
+        ? transcriptValues
+        : parsedValues;
+
+    // Merge both sets to avoid dropping valid rows when one source is partial.
+    const merged: StructuredReportLabInput[] = [];
+    const seen = new Set<string>();
+    for (const row of [...preferred, ...parsedValues, ...transcriptValues]) {
+      const key = this.labRowKey(row.parameterName, row.value, row.unit);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      merged.push(row);
+    }
+    return merged;
+  }
+
+  private withBestPatientDetails(
+    structuredReport: StructuredReportDto,
+    transcript: string | null,
+  ): StructuredReportDto {
+    const fromTranscript = this.extractPatientDetails(transcript);
+    const baseRaw = structuredReport.patientDetails ?? {};
+    const base: StructuredPatientDetailsDto = {
+      ...(baseRaw.name && !baseRaw.name.startsWith('#/')
+        ? { name: baseRaw.name }
+        : {}),
+      ...(baseRaw.age && !baseRaw.age.startsWith('#/')
+        ? { age: baseRaw.age }
+        : {}),
+      ...(baseRaw.gender && !baseRaw.gender.startsWith('#/')
+        ? { gender: baseRaw.gender }
+        : {}),
+      ...(baseRaw.bookingId && !baseRaw.bookingId.startsWith('#/')
+        ? { bookingId: baseRaw.bookingId }
+        : {}),
+      ...(baseRaw.sampleCollectionDate &&
+      !baseRaw.sampleCollectionDate.startsWith('#/')
+        ? { sampleCollectionDate: baseRaw.sampleCollectionDate }
+        : {}),
+    };
+    return {
+      ...structuredReport,
+      patientDetails: {
+        ...base,
+        ...(fromTranscript.name ? { name: fromTranscript.name } : {}),
+        ...(fromTranscript.age ? { age: fromTranscript.age } : {}),
+        ...(fromTranscript.gender ? { gender: fromTranscript.gender } : {}),
+        ...(fromTranscript.bookingId
+          ? { bookingId: fromTranscript.bookingId }
+          : {}),
+        ...(fromTranscript.sampleCollectionDate
+          ? { sampleCollectionDate: fromTranscript.sampleCollectionDate }
+          : {}),
+      },
+    };
   }
 
   private shouldUseAiFallbackResult(
@@ -1034,6 +1422,45 @@ export class ReportsService {
     return cleaned;
   }
 
+  private extractAiFallbackCandidatesFromTranscript(
+    transcript: string | null,
+  ): string[] {
+    if (!transcript) return [];
+    const lines = transcript
+      .split('\n')
+      .map((line) => line.replace(/\s+/g, ' ').trim())
+      .filter((line) => line.length >= 3 && line.length <= 140);
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const line of lines) {
+      const l = line.toLowerCase();
+      if (
+        /\b(patient|name|age\/gender|mobile|phone|address|email|booking id|order id|barcode|referred by|sample collected on|sample received on|report generated on|customer since|sin no|page \d+ of \d+)\b/.test(
+          l,
+        )
+      ) {
+        continue;
+      }
+      const looksLikeValueLine =
+        /^[A-Za-z][A-Za-z0-9\s(),/%._-]{1,80}\s+[<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?(?:\s+[A-Za-z/%._-]{1,24})?/i.test(
+          line,
+        ) ||
+        /^[A-Za-z][A-Za-z0-9\s(),/%._-]{1,80}\s+(Negative|Positive|Nil|Normal|Absent|Present|Clear|Cloudy|Turbid|Trace)\b/i.test(
+          line,
+        ) ||
+        /\b(reference range|test name|result|unit|hemoglobin|haemoglobin|wbc|rbc|platelet|creatinine|bilirubin|cholesterol|triglycerides|hdl|ldl|tsh|t3|t4)\b/i.test(
+          line,
+        );
+      if (!looksLikeValueLine) continue;
+      const key = line.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(line);
+      if (out.length >= 400) break;
+    }
+    return out;
+  }
+
   private logParseQuality(
     trigger: 'upload' | 'retry',
     reportId: string,
@@ -1043,6 +1470,7 @@ export class ReportsService {
     const text = transcript ?? '';
     const preview = text.slice(0, 180).replace(/\s+/g, ' ');
     const alphaCount = (text.match(/[A-Za-z]/g) ?? []).length;
+    const ocrText = text.slice(0, OCR_TEXT_LOG_CHAR_LIMIT);
     this.logger.log(
       JSON.stringify({
         action: 'REPORT_PARSE_RESULT',
@@ -1052,6 +1480,8 @@ export class ReportsService {
         transcriptChars: text.length,
         transcriptAlphaChars: alphaCount,
         preview,
+        ocrText,
+        ocrTextTruncated: text.length > OCR_TEXT_LOG_CHAR_LIMIT,
       }),
     );
   }
@@ -1194,7 +1624,9 @@ export class ReportsService {
       },
       order: { deletedAt: 'DESC', createdAt: 'DESC' },
     });
-    return entities.map((e) => this.withProfileInfo(this.toDto(e), profileInfoById));
+    return entities.map((e) =>
+      this.withProfileInfo(this.toDto(e), profileInfoById),
+    );
   }
 
   async restoreFromRecycleBin(
@@ -1263,14 +1695,13 @@ export class ReportsService {
       for (const section of structuredReport.sections) {
         for (const test of section.tests) {
           const key =
-            this.labRowKey(
-              test.parameterName,
-              test.value,
-              test.unit ?? null,
-            ) ?? null;
+            this.labRowKey(test.parameterName, test.value, test.unit ?? null) ??
+            null;
           if (!key) continue;
           const meta = {
-            ...(test.referenceRange ? { referenceRange: test.referenceRange } : {}),
+            ...(test.referenceRange
+              ? { referenceRange: test.referenceRange }
+              : {}),
             ...(typeof test.isAbnormal === 'boolean'
               ? { isAbnormal: test.isAbnormal }
               : {}),
@@ -1308,7 +1739,9 @@ export class ReportsService {
           value: lv.value,
           ...(lv.unit != null && lv.unit !== '' && { unit: lv.unit }),
           ...(lv.sampleDate != null && { sampleDate: lv.sampleDate }),
-          ...(meta?.referenceRange ? { referenceRange: meta.referenceRange } : {}),
+          ...(meta?.referenceRange
+            ? { referenceRange: meta.referenceRange }
+            : {}),
           ...(typeof meta?.isAbnormal === 'boolean'
             ? { isAbnormal: meta.isAbnormal }
             : {}),
@@ -1316,7 +1749,10 @@ export class ReportsService {
       }),
       ...(structuredReport &&
         (structuredReport.sections.length > 0 ||
-          this.hasLabDetails(structuredReport.labDetails)) && { structuredReport }),
+          this.hasLabDetails(structuredReport.labDetails) ||
+          this.hasPatientDetails(structuredReport.patientDetails)) && {
+          structuredReport,
+        }),
     };
   }
 
@@ -1362,7 +1798,8 @@ export class ReportsService {
     labValues: StructuredReportLabInput[],
   ): StructuredReportDto {
     const patientDetails = this.extractPatientDetails(transcript);
-    const labDetails = this.labDetailsExtractor.extractFromTranscript(transcript);
+    const labDetails =
+      this.labDetailsExtractor.extractFromTranscript(transcript);
     const sectionsMap = new Map<string, StructuredSectionItemDto[]>();
 
     for (const lv of labValues) {
@@ -1419,42 +1856,79 @@ export class ReportsService {
     transcript: string | null,
   ): StructuredPatientDetailsDto {
     if (!transcript) return {};
-    const compact = transcript.replace(/\s+/g, ' ').trim();
+    const lines = transcript
+      .replace(/\r\n/g, '\n')
+      .split('\n')
+      .map((line) => line.replace(/\s+/g, ' ').trim())
+      .filter(Boolean);
+    const compact = lines.join(' ');
     const read = (re: RegExp): string | undefined => {
       const m = compact.match(re);
       return m?.[1]?.trim();
     };
+    const readNextLineValue = (labelRe: RegExp): string | undefined => {
+      for (let i = 0; i < lines.length - 1; i++) {
+        if (!labelRe.test(lines[i])) continue;
+        for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+          const candidate = lines[j];
+          if (
+            /^(patient name|age\/gender|care location|patient location|lab accession id|specimen|collected date|authorized date|investigation|results|uom|reference range)$/i.test(
+              candidate,
+            )
+          ) {
+            continue;
+          }
+          return candidate;
+        }
+      }
+      return undefined;
+    };
     const name =
       read(
         /Patient Name\s*:\s*([^|]+?)(?:\s{2,}|Age\/Gender|Barcode|Order Id|$)/i,
-      ) ?? read(/\bDear\s+([A-Za-z][A-Za-z ]{1,60})[,!]/i);
-    const ageGender = read(/Age\/Gender\s*:\s*([^|]+?)(?:\s{2,}|Order Id|$)/i);
+      ) ??
+      readNextLineValue(/^patient name$/i) ??
+      read(/\bDear\s+([A-Za-z][A-Za-z ]{1,60})[,!]/i);
+    const ageGender =
+      read(/Age\/Gender\s*:\s*([^|]+?)(?:\s{2,}|Order Id|$)/i) ??
+      readNextLineValue(/^age\/gender$/i) ??
+      read(/\b(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?\s+(?:Male|Female|Other))\b/i);
     const age = ageGender?.match(
       /(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?|\d+\s*Yrs?)/i,
     )?.[1];
     const gender = ageGender?.match(/\b(Male|Female|Other)\b/i)?.[1];
+    const bookingId =
+      read(/Booking ID\s*:\s*([A-Za-z0-9-]+)/i) ??
+      readNextLineValue(/^booking id$/i) ??
+      readNextLineValue(/^lab accession id$/i);
+    const sampleCollectionDate =
+      read(/Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i) ??
+      read(/Collected Date&Time\s*[:\-]?\s*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i);
     return {
       ...(name ? { name } : {}),
       ...(age ? { age } : {}),
       ...(gender ? { gender } : {}),
-      ...(read(/Booking ID\s*:\s*([A-Za-z0-9-]+)/i)
-        ? { bookingId: read(/Booking ID\s*:\s*([A-Za-z0-9-]+)/i) }
-        : {}),
-      ...(read(
-        /Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i,
-      )
-        ? {
-            sampleCollectionDate: read(
-              /Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i,
-            ),
-          }
-        : {}),
+      ...(bookingId ? { bookingId } : {}),
+      ...(sampleCollectionDate ? { sampleCollectionDate } : {}),
     };
   }
 
   private hasLabDetails(details: StructuredLabDetailsDto | undefined): boolean {
     if (!details) return false;
     return Boolean(details.name && details.name.trim().length > 0);
+  }
+
+  private hasPatientDetails(
+    details: StructuredPatientDetailsDto | undefined,
+  ): boolean {
+    if (!details) return false;
+    return Boolean(
+      details.name ||
+        details.age ||
+        details.gender ||
+        details.bookingId ||
+        details.sampleCollectionDate,
+    );
   }
 
   private logLabDetailsExtraction(input: {

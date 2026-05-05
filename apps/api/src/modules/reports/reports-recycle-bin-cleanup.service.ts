@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { redactSecrets } from '../../common/redact-secrets';
 import { ReportsService } from './reports.service';
 
@@ -27,9 +32,12 @@ export class ReportsRecycleBinCleanupService
 
   private async runOnce(): Promise<void> {
     try {
-      const deletedCount = await this.reportsService.purgeExpiredRecycleBinReports();
+      const deletedCount =
+        await this.reportsService.purgeExpiredRecycleBinReports();
       if (deletedCount > 0) {
-        this.logger.log(`Recycle bin purge removed ${deletedCount} expired report(s).`);
+        this.logger.log(
+          `Recycle bin purge removed ${deletedCount} expired report(s).`,
+        );
       }
     } catch (err) {
       this.logger.warn(

@@ -143,7 +143,9 @@ export class ReportLabAiFallbackService {
       required: ['rows'],
     };
 
-    const prompt = JSON.stringify(this.buildProviderPayload(input, sanitizedRows));
+    const prompt = JSON.stringify(
+      this.buildProviderPayload(input, sanitizedRows),
+    );
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {

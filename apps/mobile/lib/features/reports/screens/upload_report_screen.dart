@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/api_client.dart';
 import '../../../core/feedback/incident_banner.dart';
@@ -50,6 +51,14 @@ class UploadReportScreen extends StatefulWidget {
 }
 
 class _UploadReportScreenState extends State<UploadReportScreen> {
+  static const List<String> _allowedUploadExtensions = <String>[
+    'pdf',
+    'jpg',
+    'jpeg',
+    'png',
+  ];
+
+  final ImagePicker _imagePicker = ImagePicker();
   _UploadState _state = _UploadState.idle;
   String? _errorMessage;
   UploadedReport? _result;
@@ -79,16 +88,29 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   Future<void> _pickAndUpload() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf'],
+      allowedExtensions: _allowedUploadExtensions,
     );
     if (result == null || result.files.isEmpty || !mounted) return;
 
     final path = result.files.single.path;
+    await _uploadFromPath(path);
+  }
+
+  Future<void> _captureAndUpload() async {
+    final captured = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 95,
+    );
+    if (captured == null || !mounted) return;
+    await _uploadFromPath(captured.path);
+  }
+
+  Future<void> _uploadFromPath(String? path) async {
     if (path == null || path.isEmpty) {
       if (mounted) {
         setState(() {
           _state = _UploadState.error;
-          _errorMessage = 'Could not access file';
+          _errorMessage = 'Could not access selected file';
         });
       }
       return;
@@ -328,12 +350,28 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
 
   Widget _buildIdle() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FilledButton.icon(
           key: const Key('upload-report-pick'),
           onPressed: _pickAndUpload,
           icon: const Icon(Icons.upload_file),
-          label: const Text('Pick PDF'),
+          label: const Text('Pick PDF or Image'),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          key: const Key('upload-report-camera'),
+          onPressed: _captureAndUpload,
+          icon: const Icon(Icons.photo_camera_outlined),
+          label: const Text('Take Photo'),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Accepted formats: PDF, JPG, PNG',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
         ),
       ],
     );

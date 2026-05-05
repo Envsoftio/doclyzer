@@ -1,6 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { extname, join } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -38,6 +45,7 @@ export class OpenDataLoaderClient {
 
     try {
       await writeFile(inputPath, buffer);
+      await mkdir(outputDir, { recursive: true });
 
       const args = [
         inputPath,
@@ -50,8 +58,19 @@ export class OpenDataLoaderClient {
         ...extraArgs,
       ];
 
-      await this.runCommand(command, args, timeoutMs);
-      const json = await this.readLargestFileByExtension(outputDir, '.json');
+      let commandResult = await this.runCommand(command, args, timeoutMs);
+      let json = await this.readLargestFileByExtension(outputDir, '.json');
+      let markdown = await this.readLargestMarkdown(outputDir);
+      if (!commandResult.ok && !json && !markdown) {
+        this.logger.warn(
+          redactSecrets(
+            `OpenDataLoader first attempt failed without outputs, retrying once: ${commandResult.message}`,
+          ),
+        );
+        commandResult = await this.runCommand(command, args, timeoutMs);
+        json = await this.readLargestFileByExtension(outputDir, '.json');
+        markdown = await this.readLargestMarkdown(outputDir);
+      }
       let parsedJson: unknown;
       if (json) {
         try {
@@ -59,16 +78,48 @@ export class OpenDataLoaderClient {
         } catch {
           parsedJson = undefined;
         }
-        // Disabled for now: full parser JSON is too large/noisy in logs.
-        // this.logger.log(
-        //   JSON.stringify({
-        //     action: 'OPENDATALOADER_PARSED_JSON',
-        //     parsedJson: parsedJson ?? json,
-        //   }),
-        // );
+        this.logger.log(
+          JSON.stringify({
+            action: 'OPENDATALOADER_PARSED_JSON',
+            parsedJson: parsedJson ?? json,
+          }),
+        );
+        if (parsedJson && typeof parsedJson === 'object') {
+          const root = parsedJson as Record<string, unknown>;
+          this.logger.log(
+            JSON.stringify({
+              action: 'OPENDATALOADER_JSON_SHAPE',
+              rootKeys: Object.keys(root).slice(0, 24),
+              hasKids: Array.isArray(root.kids),
+              kidsCount: Array.isArray(root.kids) ? root.kids.length : 0,
+              hasListItems: Array.isArray(root['list items']),
+              listItemsCount: Array.isArray(root['list items'])
+                ? root['list items'].length
+                : 0,
+            }),
+          );
+        }
       }
-      const markdown = await this.readLargestMarkdown(outputDir);
+      if (!commandResult.ok) {
+        if (!markdown && !parsedJson) {
+          this.logger.warn(
+            redactSecrets(
+              `OpenDataLoader failed and produced no usable output: ${commandResult.message}`,
+            ),
+          );
+          return null;
+        }
+        this.logger.warn(
+          redactSecrets(
+            `OpenDataLoader exited non-zero but partial outputs were recovered: ${commandResult.message}`,
+          ),
+        );
+      }
       if (!markdown) {
+        if (parsedJson) {
+          // Keep JSON-only result path alive for image-heavy reports where markdown may be empty.
+          return { text: '', parsedJson };
+        }
         this.logger.warn(
           'OpenDataLoader completed but no markdown output file was found',
         );
@@ -93,7 +144,7 @@ export class OpenDataLoaderClient {
     command: string,
     args: string[],
     timeoutMs: number,
-  ): Promise<void> {
+  ): Promise<{ ok: true } | { ok: false; message: string }> {
     return new Promise((resolve, reject) => {
       const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
       let stderr = '';
@@ -120,14 +171,13 @@ export class OpenDataLoaderClient {
       child.on('close', (code) => {
         clearTimeout(timer);
         if (code === 0) {
-          resolve();
+          resolve({ ok: true });
           return;
         }
-        reject(
-          new Error(
-            `OpenDataLoader exited with code ${code}. stdout=${stdout.slice(0, 300)} stderr=${stderr.slice(0, 500)}`,
-          ),
-        );
+        resolve({
+          ok: false,
+          message: `OpenDataLoader exited with code ${code}. command=${command} args=${args.join(' ')} stdout=${stdout.slice(0, 1200)} stderr=${stderr.slice(0, 6000)}`,
+        });
       });
     });
   }
@@ -161,7 +211,19 @@ export class OpenDataLoaderClient {
     const stack = [root];
     while (stack.length > 0) {
       const current = stack.pop()!;
-      const entries = await readdir(current, { withFileTypes: true });
+      let entries;
+      try {
+        entries = await readdir(current, { withFileTypes: true });
+      } catch (err) {
+        const code =
+          err && typeof err === 'object' && 'code' in err
+            ? String((err as { code?: unknown }).code)
+            : '';
+        if (code === 'ENOENT') {
+          continue;
+        }
+        throw err;
+      }
       for (const entry of entries) {
         const full = join(current, entry.name);
         if (entry.isDirectory()) {

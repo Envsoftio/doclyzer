@@ -22,3 +22,8 @@ export interface DuplicateReportInfo {
 
 export const MAX_REPORT_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 export const ALLOWED_CONTENT_TYPES = ['application/pdf'] as const;
+export const ALLOWED_IMAGE_CONTENT_TYPES = ['image/jpeg', 'image/png'] as const;
+export const ALLOWED_UPLOAD_CONTENT_TYPES = [
+  ...ALLOWED_CONTENT_TYPES,
+  ...ALLOWED_IMAGE_CONTENT_TYPES,
+] as const;

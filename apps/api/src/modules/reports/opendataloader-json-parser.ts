@@ -68,7 +68,25 @@ export class OpenDataLoaderJsonParser {
     const labDetailLines = nodes.map((n) => this.normalizeSpace(n.content));
     const labDetails =
       this.labDetailsExtractor.extractFromLines(labDetailLines);
-    const { sections, stats } = this.extractSections(nodes);
+    const tableExtraction = this.extractSectionsFromExplicitTables(input);
+    const heuristicExtraction = this.extractSections(nodes);
+    const useTableAsPrimary = tableExtraction.stats.parsedRows >= 6;
+    const sections = useTableAsPrimary
+      ? tableExtraction.sections
+      : this.mergeSections(tableExtraction.sections, heuristicExtraction.sections);
+    const stats: ExtractionStats = useTableAsPrimary
+      ? tableExtraction.stats
+      : {
+          candidateRows:
+            tableExtraction.stats.candidateRows +
+            heuristicExtraction.stats.candidateRows,
+          parsedRows:
+            tableExtraction.stats.parsedRows + heuristicExtraction.stats.parsedRows,
+          aiCandidateRows: this.uniqueTrimmed([
+            ...tableExtraction.stats.aiCandidateRows,
+            ...heuristicExtraction.stats.aiCandidateRows,
+          ]).slice(0, 400),
+        };
 
     const extractedLabValues: ExtractedLabValue[] = [];
     for (const section of sections) {
@@ -88,7 +106,7 @@ export class OpenDataLoaderJsonParser {
       }
     }
 
-    const deduped = this.deduplicate(extractedLabValues);
+    const deduped = this.compactLabValues(this.deduplicate(extractedLabValues));
     const diagnostics = this.buildDiagnostics({
       stats,
       extractedRows: deduped.length,
@@ -144,41 +162,133 @@ export class OpenDataLoaderJsonParser {
   private extractPatientDetails(
     nodes: FlatNode[],
   ): StructuredPatientDetailsDto {
-    const full = nodes.map((n) => n.content).join(' ');
+    const lines = nodes
+      .map((n) => this.normalizeSpace(n.content))
+      .filter((line) => line.length > 0);
+    const full = lines.join(' ');
     const read = (re: RegExp): string | undefined => {
       const m = full.match(re);
       return m?.[1]?.trim();
     };
+    const readNextLineValue = (labelRe: RegExp): string | undefined => {
+      for (let i = 0; i < lines.length - 1; i++) {
+        if (!labelRe.test(lines[i])) continue;
+        for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+          const candidate = lines[j];
+          if (
+            /^(patient name|age\/gender|care location|patient location|lab accession id|specimen|collected date|authorized date|investigation|results|uom|reference range)$/i.test(
+              candidate,
+            )
+          ) {
+            continue;
+          }
+          return candidate;
+        }
+      }
+      return undefined;
+    };
+
+    const fieldMap = this.extractPatientFieldMap(nodes);
+    const spatialName = fieldMap.patientName;
+    const spatialAgeGender = fieldMap.ageGender;
+    const spatialAccession = fieldMap.labAccessionId;
+    const spatialCollected = fieldMap.collectedDateTime;
 
     const name =
       read(
         /Patient Name\s*:\s*([^|]+?)(?:\s{2,}|Age\/Gender|Barcode|Order Id|$)/i,
       ) ??
-      read(/\bDear\s+([A-Za-z][A-Za-z ]{1,80})[,!]/i) ??
-      read(/^\s*([A-Za-z][A-Za-z ]{2,80})\s*$/m);
+      spatialName ??
+      readNextLineValue(/^patient name$/i) ??
+      read(/\bDear\s+([A-Za-z][A-Za-z ]{1,80})[,!]/i);
 
-    const ageGender = read(/Age\/Gender\s*:\s*([^|]+?)(?:\s{2,}|Order Id|$)/i);
+    const ageGender =
+      read(/Age\/Gender\s*:\s*([^|]+?)(?:\s{2,}|Order Id|$)/i) ??
+      spatialAgeGender ??
+      readNextLineValue(/^age\/gender$/i) ??
+      read(/\b(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?\s+(?:Male|Female|Other))\b/i);
     const age = ageGender?.match(
       /(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?|\d+\s*Yrs?)/i,
     )?.[1];
     const gender = ageGender?.match(/\b(Male|Female|Other)\b/i)?.[1];
+    const bookingId =
+      read(/Booking ID\s*:\s*([A-Za-z0-9-]+)/i) ??
+      spatialAccession ??
+      readNextLineValue(/^booking id$/i) ??
+      readNextLineValue(/^lab accession id$/i);
+    const sampleCollectionDate =
+      read(/Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i) ??
+      (spatialCollected?.match(/[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4}/)?.[0] ??
+        undefined) ??
+      read(/Collected Date&Time\s*[:\-]?\s*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i);
 
     return {
       ...(name ? { name } : {}),
       ...(age ? { age } : {}),
       ...(gender ? { gender } : {}),
-      ...(read(/Booking ID\s*:\s*([A-Za-z0-9-]+)/i)
-        ? { bookingId: read(/Booking ID\s*:\s*([A-Za-z0-9-]+)/i) }
-        : {}),
-      ...(read(
-        /Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i,
-      )
-        ? {
-            sampleCollectionDate: read(
-              /Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i,
-            ),
-          }
-        : {}),
+      ...(bookingId ? { bookingId } : {}),
+      ...(sampleCollectionDate ? { sampleCollectionDate } : {}),
+    };
+  }
+
+  private findSpatialFieldValue(
+    nodes: FlatNode[],
+    labelRe: RegExp,
+  ): string | undefined {
+    const labels = nodes.filter(
+      (n) =>
+        n.pageNumber != null &&
+        n.bbox != null &&
+        labelRe.test(this.normalizeSpace(n.content)),
+    );
+    if (labels.length === 0) return undefined;
+
+    for (const label of labels) {
+      const [lx1, ly1, lx2, ly2] = label.bbox!;
+      const lcy = (ly1 + ly2) / 2;
+      let best: { score: number; text: string } | null = null;
+      for (const n of nodes) {
+        if (n === label || n.pageNumber !== label.pageNumber || n.bbox == null) {
+          continue;
+        }
+        const text = this.normalizeSpace(n.content);
+        if (!text) continue;
+        if (
+          /^(patient name|age\/gender|care location|patient location|lab accession id|specimen|collected date|authorized date|investigation|results|uom|reference range)$/i.test(
+            text,
+          )
+        ) {
+          continue;
+        }
+        const [x1, y1, x2, y2] = n.bbox;
+        const cy = (y1 + y2) / 2;
+        const dy = Math.abs(cy - lcy);
+        const dx = x1 - lx2;
+        if (dx < -20 || dx > 900) continue;
+        if (dy > 110) continue;
+        const score = dy * 3 + Math.max(0, dx);
+        if (!best || score < best.score) {
+          best = { score, text };
+        }
+      }
+      if (best?.text) return best.text;
+    }
+    return undefined;
+  }
+
+  private extractPatientFieldMap(nodes: FlatNode[]): {
+    patientName?: string;
+    ageGender?: string;
+    labAccessionId?: string;
+    collectedDateTime?: string;
+  } {
+    const read = (label: RegExp): string | undefined =>
+      this.findSpatialFieldValue(nodes, label);
+    return {
+      patientName: read(/^patient name$/i),
+      ageGender: read(/^age\/gender$/i),
+      labAccessionId: read(/^lab accession id$/i),
+      collectedDateTime: read(/^collected date&time$/i),
     };
   }
 
@@ -244,6 +354,131 @@ export class OpenDataLoaderJsonParser {
         ),
       },
     };
+  }
+
+  private extractSectionsFromExplicitTables(input: unknown): {
+    sections: StructuredSectionDto[];
+    stats: ExtractionStats;
+  } {
+    const tables: Record<string, unknown>[] = [];
+    this.collectTables(input, tables);
+    const sections = new Map<string, StructuredSectionItemDto[]>();
+    const stats: ExtractionStats = {
+      candidateRows: 0,
+      parsedRows: 0,
+      aiCandidateRows: [],
+    };
+
+    for (const table of tables) {
+      const rows = Array.isArray(table.rows)
+        ? (table.rows as Record<string, unknown>[])
+        : [];
+      if (rows.length === 0) continue;
+      let currentSection = 'Other Tests';
+      for (const row of rows) {
+        const cells = Array.isArray(row.cells)
+          ? (row.cells as Record<string, unknown>[])
+          : [];
+        if (cells.length < 2) continue;
+        const c1 = this.readCellText(cells[0]);
+        const c2 = this.readCellText(cells[1]);
+        const c3 = cells.length > 2 ? this.readCellText(cells[2]) : '';
+        const c4 = cells.length > 3 ? this.readCellText(cells[3]) : '';
+
+        if (this.isTableHeader(`${c1} ${c2} ${c3} ${c4}`)) continue;
+        if (!c1) continue;
+
+        const normalizedName = this.normalizeParameterName(this.cleanName(c1));
+        if (!this.isLikelyTestName(normalizedName)) continue;
+
+        const hasValue = Boolean(c2 && this.parseValueLedRow(c2));
+        const hasUnit = Boolean(c3);
+        const hasRef = Boolean(c4);
+
+        if (!hasValue && !hasUnit && !hasRef) {
+          currentSection = this.cleanHeading(normalizedName);
+          continue;
+        }
+
+        const parsedValue = this.parseValueLedRow(c2);
+        if (!parsedValue) continue;
+
+        stats.candidateRows += 1;
+        const candidateText =
+          `${normalizedName} ${c2} ${c3} ${c4}`.trim();
+        if (this.isSafeAiCandidate(candidateText)) {
+          stats.aiCandidateRows.push(candidateText);
+        }
+        if (!sections.has(currentSection)) sections.set(currentSection, []);
+        sections.get(currentSection)!.push({
+          parameterName: normalizedName,
+          value: parsedValue.value,
+          ...(c3 ? { unit: this.cleanValuePhrase(c3) } : {}),
+          ...(c4 ? { referenceRange: this.cleanValuePhrase(c4) } : {}),
+          ...(typeof parsedValue.isAbnormal === 'boolean'
+            ? { isAbnormal: parsedValue.isAbnormal }
+            : {}),
+        });
+        stats.parsedRows += 1;
+      }
+    }
+
+    return {
+      sections: Array.from(sections.entries())
+        .map(([heading, tests]) => ({
+          heading,
+          tests: this.deduplicateRows(tests),
+        }))
+        .filter((s) => s.tests.length > 0),
+      stats,
+    };
+  }
+
+  private collectTables(node: unknown, out: Record<string, unknown>[]): void {
+    if (!node || typeof node !== 'object') return;
+    const obj = node as Record<string, unknown>;
+    if (obj.type === 'table' && Array.isArray(obj.rows)) {
+      out.push(obj);
+    }
+    if (Array.isArray(obj.kids)) {
+      for (const kid of obj.kids) this.collectTables(kid, out);
+    }
+    if (Array.isArray(obj['list items'])) {
+      for (const item of obj['list items']) this.collectTables(item, out);
+    }
+  }
+
+  private readCellText(cell: Record<string, unknown>): string {
+    const direct = typeof cell.content === 'string' ? cell.content : '';
+    if (direct.trim()) return this.normalizeSpace(direct);
+    const kids = Array.isArray(cell.kids)
+      ? (cell.kids as Record<string, unknown>[])
+      : [];
+    const chunks: string[] = [];
+    for (const kid of kids) {
+      if (typeof kid.content === 'string' && kid.content.trim()) {
+        chunks.push(kid.content);
+      }
+    }
+    return this.normalizeSpace(chunks.join(' '));
+  }
+
+  private mergeSections(
+    primary: StructuredSectionDto[],
+    secondary: StructuredSectionDto[],
+  ): StructuredSectionDto[] {
+    const sections = new Map<string, StructuredSectionItemDto[]>();
+    for (const section of [...primary, ...secondary]) {
+      const heading = this.cleanHeading(section.heading || 'Other Tests');
+      if (!sections.has(heading)) sections.set(heading, []);
+      sections.get(heading)!.push(...section.tests);
+    }
+    return Array.from(sections.entries())
+      .map(([heading, tests]) => ({
+        heading,
+        tests: this.deduplicateRows(tests),
+      }))
+      .filter((s) => s.tests.length > 0);
   }
 
   private hasLabDetails(details: StructuredLabDetailsDto): boolean {
@@ -804,6 +1039,25 @@ export class OpenDataLoaderJsonParser {
       out.push(v);
     }
     return out;
+  }
+
+  private compactLabValues(values: ExtractedLabValue[]): ExtractedLabValue[] {
+    const bestByParamValue = new Map<string, ExtractedLabValue>();
+    for (const row of values) {
+      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}`;
+      const current = bestByParamValue.get(key);
+      if (!current) {
+        bestByParamValue.set(key, row);
+        continue;
+      }
+      const currentScore =
+        (current.unit ? 1 : 0) + (current.referenceRange ? 1 : 0);
+      const nextScore = (row.unit ? 1 : 0) + (row.referenceRange ? 1 : 0);
+      if (nextScore > currentScore) {
+        bestByParamValue.set(key, row);
+      }
+    }
+    return Array.from(bestByParamValue.values());
   }
 
   private deduplicateRows(

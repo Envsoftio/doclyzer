@@ -17,6 +17,14 @@ export interface ReportsConfig {
   opendataloaderTimeoutMs: number;
   /** Extra CLI arguments passed to OpenDataLoader command. */
   opendataloaderExtraArgs: string;
+  /** Enable/disable Docling OCR service for image-origin uploads. */
+  doclingOcrEnabled: boolean;
+  /** Base URL of docling-serve API (without trailing slash). */
+  doclingOcrBaseUrl: string;
+  /** Timeout in ms for docling OCR HTTP request. */
+  doclingOcrTimeoutMs: number;
+  /** OCR engine to request from docling-serve (e.g. rapidocr, easyocr). */
+  doclingOcrEngine: string;
   /** Enable/disable low-confidence AI fallback for lab extraction. */
   labAiFallbackEnabled: boolean;
   /** OpenAI API key for low-confidence lab extraction fallback. */
@@ -49,6 +57,14 @@ export const reportsConfig = registerAs(
       10,
     ),
     opendataloaderExtraArgs: process.env.OPENDATALOADER_EXTRA_ARGS ?? '',
+    doclingOcrEnabled: process.env.DOCLING_OCR_ENABLED !== 'false',
+    doclingOcrBaseUrl:
+      process.env.DOCLING_OCR_BASE_URL ?? 'http://127.0.0.1:5002',
+    doclingOcrTimeoutMs: parseInt(
+      process.env.DOCLING_OCR_TIMEOUT_MS ?? '180000',
+      10,
+    ),
+    doclingOcrEngine: process.env.DOCLING_OCR_ENGINE ?? 'rapidocr',
     labAiFallbackEnabled: process.env.REPORT_LAB_AI_FALLBACK_ENABLED === 'true',
     labAiFallbackOpenaiApiKey:
       process.env.REPORT_LAB_AI_FALLBACK_OPENAI_API_KEY ?? '',
