@@ -64,6 +64,27 @@ class ApiReportsRepository implements ReportsRepository {
     return m?.group(0)?.replaceAll(' ', '');
   }
 
+  double? _toNumber(String? s) {
+    if (s == null) return null;
+    final m = RegExp(r'[-+]?\d+(?:\.\d+)?').firstMatch(s);
+    if (m == null) return null;
+    return double.tryParse(m.group(0)!);
+  }
+
+  bool? _isOutOfRange(String? value, String? referenceRange) {
+    final v = _toNumber(value);
+    if (v == null) return null;
+    if (referenceRange == null || referenceRange.trim().isEmpty) return null;
+    final rm = RegExp(
+      r'([-+]?\d+(?:\.\d+)?)\s*-\s*([-+]?\d+(?:\.\d+)?)',
+    ).firstMatch(referenceRange);
+    if (rm == null) return null;
+    final min = double.tryParse(rm.group(1)!);
+    final max = double.tryParse(rm.group(2)!);
+    if (min == null || max == null) return null;
+    return v < min || v > max;
+  }
+
   String? _firstNumberAfter(String text, int startIndex) {
     final tail = text.substring(startIndex);
     final m = _numToken.firstMatch(tail);
@@ -107,7 +128,9 @@ class ApiReportsRepository implements ReportsRepository {
           unit: unit?.trim().isEmpty == true ? null : unit?.trim(),
           sampleDate: row.sampleDate,
           referenceRange: range?.trim().isEmpty == true ? null : range?.trim(),
-          isAbnormal: row.isAbnormal,
+          isAbnormal:
+              row.isAbnormal ??
+              _isOutOfRange(row.value, range?.trim()),
         ),
       );
     }
@@ -128,7 +151,7 @@ class ApiReportsRepository implements ReportsRepository {
             unit: null,
             sampleDate: null,
             referenceRange: range,
-            isAbnormal: null,
+            isAbnormal: _isOutOfRange(value, range),
           ),
         );
       }
@@ -165,7 +188,9 @@ class ApiReportsRepository implements ReportsRepository {
         unit: unit?.trim().isEmpty == true ? null : unit?.trim(),
         sampleDate: item.sampleDate,
         referenceRange: range?.trim().isEmpty == true ? null : range?.trim(),
-        isAbnormal: item.isAbnormal,
+        isAbnormal:
+            item.isAbnormal ??
+            _isOutOfRange(item.value, range?.trim()),
       );
     }
 
@@ -220,7 +245,7 @@ class ApiReportsRepository implements ReportsRepository {
               unit: null,
               sampleDate: null,
               referenceRange: range,
-              isAbnormal: null,
+              isAbnormal: _isOutOfRange(value, range),
             ),
           );
         }
