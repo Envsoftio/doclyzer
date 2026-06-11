@@ -21,6 +21,12 @@ export default defineNuxtConfig({
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4002/v1',
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL ?? 'https://doclyzer.com',
+      fcmApiKey: process.env.NUXT_PUBLIC_FCM_API_KEY ?? '',
+      fcmAuthDomain: process.env.NUXT_PUBLIC_FCM_AUTH_DOMAIN ?? '',
+      fcmProjectId: process.env.NUXT_PUBLIC_FCM_PROJECT_ID ?? '',
+      fcmMessagingSenderId: process.env.NUXT_PUBLIC_FCM_MESSAGING_SENDER_ID ?? '',
+      fcmAppId: process.env.NUXT_PUBLIC_FCM_APP_ID ?? '',
+      fcmVapidKey: process.env.NUXT_PUBLIC_FCM_VAPID_KEY ?? '',
     },
   },
   routeRules: {

@@ -29,8 +29,8 @@ export class OrderEntity {
 
   @Column({ type: 'varchar', length: 10 }) currency!: string;
 
-  @Column({ type: 'varchar', length: 32, default: 'pending' })
-  status!: string; // pending | paid | reconciled | failed
+  @Column({ type: 'varchar', length: 32, default: 'payment_pending' })
+  status!: string;
 
   @Column({
     type: 'varchar',

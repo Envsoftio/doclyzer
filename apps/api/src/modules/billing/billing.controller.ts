@@ -24,14 +24,69 @@ import {
   AdminPromoAnalyticsQueryDto,
   AdminCreatePromoCodeDto,
   AdminUpdatePromoCodeDto,
+  ConfirmClientPurchaseDto,
   CreateOrderDto,
   CreateSubscriptionDto,
   ListOrdersQueryDto,
   PromoValidationDto,
   VerifyPaymentDto,
   VerifySubscriptionDto,
+  BILLING_WEBHOOK_INVALID_AUTHORIZATION,
   BILLING_WEBHOOK_INVALID_SIGNATURE,
 } from './billing.types';
+import { RevenueCatService } from './revenuecat.service';
+
+interface RazorpayPaymentWebhookEntity extends Record<string, unknown> {
+  order_id?: string;
+  id?: string;
+  amount?: number;
+  currency?: string;
+  error_description?: string;
+  error_reason?: string;
+  error_source?: string;
+  error_step?: string;
+  error_code?: string;
+}
+
+interface RazorpayWebhookPayload {
+  event?: string;
+  payload?: {
+    payment?: {
+      entity?: RazorpayPaymentWebhookEntity;
+    };
+    order?: {
+      entity?: { id?: string };
+    };
+    subscription?: {
+      entity?: { id?: string };
+    };
+  };
+}
+
+interface RevenueCatSubscriberAttribute {
+  value?: string | null;
+}
+
+interface RevenueCatWebhookEvent extends Record<string, unknown> {
+  id?: string;
+  type?: string;
+  transaction_id?: string;
+  app_user_id?: string;
+  product_id?: string;
+  currency?: string | null;
+  price?: number | null;
+  price_in_purchased_currency?: number | null;
+  cancel_reason?: string | null;
+  expiration_reason?: string | null;
+  subscriber_attributes?: Record<
+    string,
+    RevenueCatSubscriberAttribute | string | null
+  >;
+}
+
+interface RevenueCatWebhookPayload {
+  event?: RevenueCatWebhookEvent;
+}
 
 @Controller('billing')
 export class BillingController {
@@ -40,6 +95,7 @@ export class BillingController {
   constructor(
     private readonly billingService: BillingService,
     private readonly razorpayService: RazorpayService,
+    private readonly revenueCatService: RevenueCatService,
   ) {}
 
   @Get('credit-packs')
@@ -63,6 +119,17 @@ export class BillingController {
     return successResponse(data, getCorrelationId(req));
   }
 
+  @Get('orders/:orderId/status')
+  @UseGuards(AuthGuard)
+  async getOrderStatus(
+    @Req() req: Request,
+    @Param('orderId') orderId: string,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.billingService.getOrderStatus(userId, orderId);
+    return successResponse(data, getCorrelationId(req));
+  }
+
   @Post('orders')
   @UseGuards(AuthGuard)
   async createOrder(
@@ -74,6 +141,8 @@ export class BillingController {
       userId,
       dto.creditPackId,
       dto.promoCode,
+      getCorrelationId(req),
+      dto.idempotencyKey,
     );
     return successResponse(data, getCorrelationId(req));
   }
@@ -215,6 +284,22 @@ export class BillingController {
     return successResponse(data, getCorrelationId(req));
   }
 
+  @Post('orders/:orderId/client-confirmation')
+  @UseGuards(AuthGuard)
+  async confirmClientPurchase(
+    @Req() req: Request,
+    @Param('orderId') orderId: string,
+    @Body() dto: ConfirmClientPurchaseDto,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.billingService.confirmClientPurchase(
+      userId,
+      orderId,
+      dto,
+    );
+    return successResponse(data, getCorrelationId(req));
+  }
+
   @Get('plans')
   @UseGuards(AuthGuard)
   async getPlans(@Req() req: Request): Promise<object> {
@@ -257,75 +342,137 @@ export class BillingController {
 
   @Post('webhook/razorpay')
   async handleRazorpayWebhook(@Req() req: Request): Promise<object> {
-    const signature = req.headers['x-razorpay-signature'] as string;
+    const signature = this.firstHeader(req.headers['x-razorpay-signature']);
+    const providerEventId = this.firstHeader(
+      req.headers['x-razorpay-event-id'],
+    );
     const rawBody =
       typeof (req as { rawBody?: Buffer }).rawBody !== 'undefined'
         ? (req as { rawBody?: Buffer }).rawBody!.toString()
         : JSON.stringify(req.body);
+    const payload = req.body as RazorpayWebhookPayload;
+    const event = payload.event ?? 'unknown';
+    const webhookContext = this.billingService.buildRazorpayWebhookContext({
+      providerEventId,
+      rawBody,
+      eventType: event,
+      correlationId: getCorrelationId(req),
+    });
 
     if (
       !signature ||
       !this.razorpayService.verifyWebhookSignature(rawBody, signature)
     ) {
+      await this.billingService.recordInvalidWebhookSignature({
+        context: webhookContext,
+      });
       throw new BadRequestException({
         code: BILLING_WEBHOOK_INVALID_SIGNATURE,
         message: 'Invalid webhook signature',
       });
     }
 
-    const payload = req.body as {
-      event: string;
-      payload: {
-        payment?: {
-          entity?: { order_id?: string; id?: string };
-        };
-        order?: {
-          entity?: { id?: string };
-        };
-        subscription?: {
-          entity?: { id?: string };
-        };
-      };
-    };
-
-    const event = payload.event;
     this.logger.log(`Webhook event received: ${event}`);
 
     if (event === 'payment.captured') {
-      const razorpayOrderId = payload.payload.payment?.entity?.order_id ?? '';
-      const razorpayPaymentId = payload.payload.payment?.entity?.id ?? '';
-      await this.billingService.handleWebhookPaymentCaptured(
+      const payment = payload.payload?.payment?.entity;
+      const razorpayOrderId = payment?.order_id ?? '';
+      const razorpayPaymentId = payment?.id ?? '';
+      await this.billingService.handleWebhookPaymentCaptured({
+        ...webhookContext,
         razorpayOrderId,
         razorpayPaymentId,
-        getCorrelationId(req),
-      );
+        amount: typeof payment?.amount === 'number' ? payment.amount : null,
+        currency:
+          typeof payment?.currency === 'string' ? payment.currency : null,
+      });
     } else if (event === 'payment.failed') {
-      const razorpayOrderId = payload.payload.payment?.entity?.order_id ?? '';
-      const reason = this.extractPaymentFailureReason(
-        payload.payload.payment?.entity ?? {},
-      );
-      await this.billingService.handleWebhookPaymentFailed(
+      const payment = payload.payload?.payment?.entity;
+      const razorpayOrderId = payment?.order_id ?? '';
+      const reason = this.extractPaymentFailureReason(payment ?? {});
+      await this.billingService.handleWebhookPaymentFailed({
+        ...webhookContext,
         razorpayOrderId,
+        razorpayPaymentId: payment?.id ?? null,
         reason,
-        getCorrelationId(req),
-      );
+      });
     } else if (event === 'subscription.activated') {
-      const subId = payload.payload.subscription?.entity?.id ?? '';
-      const paymentId = payload.payload.payment?.entity?.id ?? '';
+      const subId = payload.payload?.subscription?.entity?.id ?? '';
+      const paymentId = payload.payload?.payment?.entity?.id ?? '';
       await this.billingService.handleWebhookSubscriptionActivated(
         subId,
         paymentId,
         getCorrelationId(req),
       );
     } else if (event === 'subscription.halted') {
-      const subId = payload.payload.subscription?.entity?.id ?? '';
+      const subId = payload.payload?.subscription?.entity?.id ?? '';
       await this.billingService.handleWebhookSubscriptionHalted(subId);
     } else if (event === 'subscription.cancelled') {
-      const subId = payload.payload.subscription?.entity?.id ?? '';
+      const subId = payload.payload?.subscription?.entity?.id ?? '';
       await this.billingService.handleWebhookSubscriptionCancelled(
         subId,
         getCorrelationId(req),
       );
+    }
+
+    return { status: 'ok' };
+  }
+
+  @Post('webhook/revenuecat')
+  async handleRevenueCatWebhook(@Req() req: Request): Promise<object> {
+    const authorization = this.firstHeader(req.headers.authorization);
+    const rawBody =
+      typeof (req as { rawBody?: Buffer }).rawBody !== 'undefined'
+        ? (req as { rawBody?: Buffer }).rawBody!.toString()
+        : JSON.stringify(req.body);
+    const payload = req.body as RevenueCatWebhookPayload;
+    const event = payload.event ?? {};
+    const eventType = event.type ?? 'unknown';
+    const webhookContext = this.billingService.buildRevenueCatWebhookContext({
+      providerEventId: event.id ?? null,
+      rawBody,
+      eventType,
+      correlationId: getCorrelationId(req),
+    });
+
+    if (!this.revenueCatService.verifyWebhookAuthorization(authorization)) {
+      await this.billingService.recordInvalidRevenueCatWebhookAuthorization({
+        context: webhookContext,
+      });
+      throw new BadRequestException({
+        code: BILLING_WEBHOOK_INVALID_AUTHORIZATION,
+        message: 'Invalid RevenueCat webhook authorization',
+      });
+    }
+
+    this.logger.log(`RevenueCat webhook event received: ${eventType}`);
+
+    if (this.isRevenueCatSuccessfulPurchase(eventType)) {
+      await this.billingService.handleRevenueCatPurchaseReconciled({
+        ...webhookContext,
+        orderId: this.extractRevenueCatOrderId(event),
+        transactionId: event.transaction_id ?? null,
+        appUserId: event.app_user_id ?? null,
+        productId: event.product_id ?? null,
+        amount: this.revenueCatAmountInSmallestUnit(event),
+        currency: event.currency ?? null,
+      });
+    } else if (this.isRevenueCatFailedPurchase(eventType)) {
+      await this.billingService.handleRevenueCatPurchaseFailed({
+        ...webhookContext,
+        orderId: this.extractRevenueCatOrderId(event),
+        transactionId: event.transaction_id ?? null,
+        appUserId: event.app_user_id ?? null,
+        productId: event.product_id ?? null,
+        reason: this.extractRevenueCatFailureReason(event),
+      });
+    } else {
+      await this.billingService.recordIgnoredRevenueCatWebhook({
+        ...webhookContext,
+        transactionId: event.transaction_id ?? null,
+        appUserId: event.app_user_id ?? null,
+        productId: event.product_id ?? null,
+      });
     }
 
     return { status: 'ok' };
@@ -340,6 +487,79 @@ export class BillingController {
       payment['error_source'],
       payment['error_step'],
       payment['error_code'],
+    ];
+
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string' && candidate.trim().length > 0) {
+        return candidate.trim();
+      }
+    }
+
+    return undefined;
+  }
+
+  private firstHeader(value: string | string[] | undefined): string | null {
+    if (Array.isArray(value)) {
+      return value[0] ?? null;
+    }
+
+    return value ?? null;
+  }
+
+  private isRevenueCatSuccessfulPurchase(eventType: string): boolean {
+    return eventType === 'NON_RENEWING_PURCHASE';
+  }
+
+  private isRevenueCatFailedPurchase(eventType: string): boolean {
+    return (
+      eventType === 'CANCELLATION' ||
+      eventType === 'EXPIRATION' ||
+      eventType === 'BILLING_ISSUE'
+    );
+  }
+
+  private extractRevenueCatOrderId(
+    event: RevenueCatWebhookEvent,
+  ): string | null {
+    const attrs = event.subscriber_attributes ?? {};
+    const candidates = [
+      attrs['doclyzer_order_id'],
+      attrs['order_id'],
+      attrs['$doclyzerOrderId'],
+    ];
+
+    for (const candidate of candidates) {
+      const value =
+        typeof candidate === 'string' ? candidate : candidate?.value;
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value.trim();
+      }
+    }
+
+    return null;
+  }
+
+  private revenueCatAmountInSmallestUnit(
+    event: RevenueCatWebhookEvent,
+  ): number | null {
+    const amount =
+      typeof event.price_in_purchased_currency === 'number'
+        ? event.price_in_purchased_currency
+        : event.price;
+    if (typeof amount !== 'number' || !Number.isFinite(amount)) {
+      return null;
+    }
+
+    return Math.round(amount * 100);
+  }
+
+  private extractRevenueCatFailureReason(
+    event: RevenueCatWebhookEvent,
+  ): string | undefined {
+    const candidates = [
+      event.cancel_reason,
+      event.expiration_reason,
+      event.type,
     ];
 
     for (const candidate of candidates) {

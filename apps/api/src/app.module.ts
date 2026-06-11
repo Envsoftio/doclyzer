@@ -2,9 +2,11 @@ import { join, resolve } from 'path';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { razorpayConfig } from './config/razorpay.config';
+import { revenueCatConfig } from './config/revenuecat.config';
 import { reportsConfig } from './config/reports.config';
 import { storageConfig } from './config/storage.config';
 import { emailConfig } from './config/email.config';
+import { pushConfig } from './config/push.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataType, newDb } from 'pg-mem';
 import { DataSource, type DataSourceOptions } from 'typeorm';
@@ -13,15 +15,21 @@ import { ClosureRequestEntity } from './database/entities/closure-request.entity
 import { ConsentRecordEntity } from './database/entities/consent-record.entity';
 import { DataExportRequestEntity } from './database/entities/data-export-request.entity';
 import { ProfileEntity } from './database/entities/profile.entity';
+import { PushDeliveryEventEntity } from './database/entities/push-delivery-event.entity';
+import { PushOpenEventEntity } from './database/entities/push-open-event.entity';
+import { PushSendAuditEntity } from './database/entities/push-send-audit.entity';
 import { ReportEntity } from './database/entities/report.entity';
 import { RestrictionEntity } from './database/entities/restriction.entity';
 import { ShareLinkEntity } from './database/entities/share-link.entity';
 import { UserSharePolicyEntity } from './database/entities/user-share-policy.entity';
+import { UserDeviceTokenEntity } from './database/entities/user-device-token.entity';
+import { BillingProviderEventEntity } from './database/entities/billing-provider-event.entity';
 import { CreditPackEntity } from './database/entities/credit-pack.entity';
 import { OrderEntity } from './database/entities/order.entity';
 import { PlanEntity } from './database/entities/plan.entity';
 import { PlanConfigAuditEventEntity } from './database/entities/plan-config-audit-event.entity';
 import { PromoCodeEntity } from './database/entities/promo-code.entity';
+import { PromoLifecycleEventEntity } from './database/entities/promo-lifecycle-event.entity';
 import { PromoRedemptionEntity } from './database/entities/promo-redemption.entity';
 import { SubscriptionEntity } from './database/entities/subscription.entity';
 import { UserEntitlementEntity } from './database/entities/user-entitlement.entity';
@@ -47,12 +55,17 @@ import { SharingModule } from './modules/sharing/sharing.module';
 import { AnalyticsAdminModule } from './modules/analytics-admin/analytics-admin.module';
 import { AuditIncidentModule } from './modules/audit-incident/audit-incident.module';
 import { EmailAdminModule } from './modules/email-admin/email-admin.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { randomUUID } from 'node:crypto';
 
 const typeOrmEntities = [
   UserEntity,
   SessionEntity,
   ProfileEntity,
+  UserDeviceTokenEntity,
+  PushSendAuditEntity,
+  PushDeliveryEventEntity,
+  PushOpenEventEntity,
   AccountPreferenceEntity,
   RestrictionEntity,
   DataExportRequestEntity,
@@ -64,9 +77,11 @@ const typeOrmEntities = [
   PlanEntity,
   PlanConfigAuditEventEntity,
   UserEntitlementEntity,
+  BillingProviderEventEntity,
   CreditPackEntity,
   OrderEntity,
   PromoCodeEntity,
+  PromoLifecycleEventEntity,
   PromoRedemptionEntity,
   SubscriptionEntity,
   SuperadminActionAuditEventEntity,
@@ -86,7 +101,14 @@ const typeOrmEntities = [
         resolve(process.cwd(), '.env'),
         '.env',
       ],
-      load: [storageConfig, reportsConfig, razorpayConfig, emailConfig],
+      load: [
+        storageConfig,
+        reportsConfig,
+        razorpayConfig,
+        revenueCatConfig,
+        emailConfig,
+        pushConfig,
+      ],
     }),
     TypeOrmModule.forRootAsync({
       useFactory: (config: ConfigService) => {
@@ -158,6 +180,12 @@ const typeOrmEntities = [
           returns: DataType.text,
           implementation: () => 'public',
         });
+        db.public.registerFunction({
+          name: 'pg_advisory_xact_lock',
+          args: [DataType.integer],
+          returns: DataType.integer,
+          implementation: () => 0,
+        });
 
         const dataSource = (await db.adapters.createTypeormDataSource({
           ...(options as unknown as DataSourceOptions),
@@ -180,6 +208,7 @@ const typeOrmEntities = [
     AnalyticsAdminModule,
     AuditIncidentModule,
     EmailAdminModule,
+    NotificationsModule,
     NotificationPipelineModule,
     EmailDeliveryModule,
   ],

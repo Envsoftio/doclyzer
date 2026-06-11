@@ -30,6 +30,7 @@ export class NotificationPipelineService {
     profileId?: string;
     metadata?: Record<string, string | number | boolean | null>;
     correlationId: string;
+    idempotencyKey?: string | null;
   }): Promise<void> {
     const routing = EVENT_CATEGORY_MAP[event.eventType];
     if (!routing) {
@@ -60,24 +61,42 @@ export class NotificationPipelineService {
       return;
     }
 
+    if (event.idempotencyKey) {
+      const existing = await this.queueRepo.findOne({
+        where: { idempotencyKey: event.idempotencyKey },
+      });
+      if (existing) return;
+    }
+
     const now = new Date();
-    const queueItem = await this.queueRepo.save(
-      this.queueRepo.create({
-        emailType: routing.emailType,
-        recipientScope: 'single',
-        status: 'pending',
-        scheduledAt: now,
-        processedAt: null,
-        idempotencyKey: null,
-        metadata: {
-          userId: event.userId,
-          profileId: event.profileId ?? null,
-          correlationId: event.correlationId,
-          eventType: event.eventType,
-          ...(event.metadata ?? {}),
-        },
-      }),
-    );
+    let queueItem: EmailQueueItemEntity;
+    try {
+      queueItem = await this.queueRepo.save(
+        this.queueRepo.create({
+          emailType: routing.emailType,
+          recipientScope: 'single',
+          status: 'pending',
+          scheduledAt: now,
+          processedAt: null,
+          idempotencyKey: event.idempotencyKey ?? null,
+          metadata: {
+            userId: event.userId,
+            profileId: event.profileId ?? null,
+            correlationId: event.correlationId,
+            eventType: event.eventType,
+            ...(event.metadata ?? {}),
+          },
+        }),
+      );
+    } catch (err) {
+      if (event.idempotencyKey) {
+        const duplicate = await this.queueRepo.findOne({
+          where: { idempotencyKey: event.idempotencyKey },
+        });
+        if (duplicate) return;
+      }
+      throw err;
+    }
 
     await this.deliveryRepo.save(
       this.deliveryRepo.create({
@@ -101,6 +120,74 @@ export class NotificationPipelineService {
         eventType: event.eventType,
         emailType: routing.emailType,
         outcome: 'queued',
+        correlationId: event.correlationId,
+      }),
+    );
+  }
+
+  async dispatchOpsAlert(event: {
+    alertType: string;
+    severity: 'warning' | 'critical';
+    idempotencyKey: string;
+    correlationId: string;
+    metadata?: Record<string, string | number | boolean | null>;
+  }): Promise<void> {
+    const existing = await this.queueRepo.findOne({
+      where: { idempotencyKey: event.idempotencyKey },
+    });
+    if (existing) return;
+
+    const now = new Date();
+    let queueItem: EmailQueueItemEntity;
+    try {
+      queueItem = await this.queueRepo.save(
+        this.queueRepo.create({
+          emailType: 'billing.ops_alert',
+          recipientScope: 'segment',
+          status: 'pending',
+          scheduledAt: now,
+          processedAt: null,
+          idempotencyKey: event.idempotencyKey,
+          metadata: {
+            recipientSegment: 'ops',
+            templateKey: 'billing-ops-alert',
+            correlationId: event.correlationId,
+            alertType: event.alertType,
+            severity: event.severity,
+            ...(event.metadata ?? {}),
+          },
+        }),
+      );
+    } catch (err) {
+      const duplicate = await this.queueRepo.findOne({
+        where: { idempotencyKey: event.idempotencyKey },
+      });
+      if (duplicate) return;
+      throw err;
+    }
+
+    await this.deliveryRepo.save(
+      this.deliveryRepo.create({
+        emailType: 'billing.ops_alert',
+        recipientScope: 'segment',
+        outcome: 'pending',
+        provider: 'notification-pipeline',
+        providerMessageId: null,
+        occurredAt: now,
+        metadata: {
+          queueItemId: queueItem.id,
+          source: 'notification-pipeline',
+          alertType: event.alertType,
+          severity: event.severity,
+        },
+      }),
+    );
+
+    this.logger.log(
+      JSON.stringify({
+        action: 'OPS_ALERT_QUEUED',
+        alertType: event.alertType,
+        severity: event.severity,
         correlationId: event.correlationId,
       }),
     );

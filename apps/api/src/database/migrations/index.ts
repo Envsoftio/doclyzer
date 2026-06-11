@@ -37,6 +37,9 @@ import { CreateServiceIncidentsTable1730816300000 } from './1730816300000-Create
 import { CreateSupportRequestsTable1730816400000 } from './1730816400000-CreateSupportRequestsTable';
 import { AddStructuredReportToReports1730816500000 } from './1730816500000-AddStructuredReportToReports';
 import { AddRecycleBinColumnsToReports1730816600000 } from './1730816600000-AddRecycleBinColumnsToReports';
+import { CreateBillingProviderEventsAndOrderStates1730816700000 } from './1730816700000-CreateBillingProviderEventsAndOrderStates';
+import { CreatePushNotificationTables1730816800000 } from './1730816800000-CreatePushNotificationTables';
+import { AddPromoParityFieldsAndLifecycleEvents1730816900000 } from './1730816900000-AddPromoParityFieldsAndLifecycleEvents';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -78,4 +81,7 @@ export const migrations = [
   CreateSupportRequestsTable1730816400000,
   AddStructuredReportToReports1730816500000,
   AddRecycleBinColumnsToReports1730816600000,
+  CreateBillingProviderEventsAndOrderStates1730816700000,
+  CreatePushNotificationTables1730816800000,
+  AddPromoParityFieldsAndLifecycleEvents1730816900000,
 ];

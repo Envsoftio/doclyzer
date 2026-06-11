@@ -182,7 +182,7 @@ Total NFRs: 28
 
 - Domain-specific compliance/regulatory controls (HIPAA/GDPR/DPDP): consent gates, configurable policy text, audit-ready logs, and regional retention defaults.
 - Technical constraints include PHI-safe telemetry, encryption in transit/at-rest, share-link security guards, and deterministic reliability/retry guardrails for parse/payment.
-- Integration requirements span parser/LLM isolation, Razorpay payment boundaries, strong identity/admin controls, and defined extensibility for future FHIR/partner integrations.
+- Integration requirements span parser/LLM isolation, RevenueCat and Google Pay/platform billing boundaries, strong identity/admin controls, and defined extensibility for future FHIR/partner integrations.
 - Risk mitigations cover parse failure recovery (retry, keep-file-anyway), informational-only AI disclaimers, share access protections, and compliance/operational runbooks before launch.
 - Implementation priorities frame PHI observability, share security, consent baseline, and parse recovery as MVP gates, with region toggles and security automation as the next-level work.
 

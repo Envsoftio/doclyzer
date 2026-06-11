@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'core/api_client.dart';
@@ -42,6 +44,9 @@ import 'features/billing/api_billing_repository.dart';
 import 'features/billing/screens/credit_pack_list_screen.dart';
 import 'features/billing/screens/entitlement_summary_screen.dart';
 import 'features/billing/screens/plan_selection_screen.dart';
+import 'features/notifications/api_notifications_repository.dart';
+import 'features/notifications/notifications_repository.dart';
+import 'features/notifications/push_notification_service.dart';
 import 'features/sharing/sharing_repository.dart';
 import 'features/sharing/api_sharing_repository.dart';
 import 'features/support/api_support_repository.dart';
@@ -87,6 +92,8 @@ class DoclyzerApp extends StatefulWidget {
     this.billingRepository,
     this.incidentRepository,
     this.supportRepository,
+    this.notificationsRepository,
+    this.pushNotificationService,
   });
 
   final AuthRepository? authRepository;
@@ -101,6 +108,8 @@ class DoclyzerApp extends StatefulWidget {
   final BillingRepository? billingRepository;
   final IncidentRepository? incidentRepository;
   final SupportRepository? supportRepository;
+  final NotificationsRepository? notificationsRepository;
+  final PushNotificationService? pushNotificationService;
 
   @override
   State<DoclyzerApp> createState() => _DoclyzerAppState();
@@ -124,6 +133,8 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   late final BillingRepository _billingRepository;
   late final IncidentRepository _incidentRepository;
   late final SupportRepository _supportRepository;
+  late final NotificationsRepository _notificationsRepository;
+  late final PushNotificationService _pushNotificationService;
 
   _AuthView _authView = _AuthView.login;
   String? _prefillEmail;
@@ -143,6 +154,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     if (widget.authRepository != null) {
+      final tokenStorage = TokenStorage();
       _apiClient = ApiClient(
         baseUrl: apiBaseUrl,
         onRefreshToken: () async => null,
@@ -162,6 +174,15 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           widget.incidentRepository ?? ApiIncidentRepository(_apiClient!);
       _supportRepository =
           widget.supportRepository ?? ApiSupportRepository(_apiClient!);
+      _notificationsRepository =
+          widget.notificationsRepository ??
+          ApiNotificationsRepository(_apiClient!);
+      _pushNotificationService =
+          widget.pushNotificationService ??
+          PushNotificationService(
+            notificationsRepository: _notificationsRepository,
+            tokenStorage: tokenStorage,
+          );
       setState(() => _initialized = true);
       _refreshIncidentStatus(force: true);
     } else {
@@ -188,6 +209,15 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           widget.incidentRepository ?? ApiIncidentRepository(_apiClient!);
       _supportRepository =
           widget.supportRepository ?? ApiSupportRepository(_apiClient!);
+      _notificationsRepository =
+          widget.notificationsRepository ??
+          ApiNotificationsRepository(_apiClient!);
+      _pushNotificationService =
+          widget.pushNotificationService ??
+          PushNotificationService(
+            notificationsRepository: _notificationsRepository,
+            tokenStorage: tokenStorage,
+          );
       _initAuth();
       _refreshIncidentStatus(force: true);
     }
@@ -196,6 +226,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_pushNotificationService.dispose());
     super.dispose();
   }
 
@@ -231,6 +262,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   Future<void> _initAuth() async {
     final restored = await _authRepository!.restoreSession();
     if (restored && mounted) {
+      unawaited(_pushNotificationService.start());
       setState(() {
         _authView = _AuthView.home;
         _initialized = true;
@@ -263,12 +295,14 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
 
   Future<void> _login(String email, String password) async {
     await _auth.login(email: email, password: password);
+    unawaited(_pushNotificationService.start());
     if (mounted) {
       setState(() => _authView = _AuthView.home);
     }
   }
 
   Future<void> _logout() async {
+    await _pushNotificationService.deactivateCurrentToken();
     await _auth.logout();
     if (mounted) {
       setState(() => _authView = _AuthView.login);
@@ -279,6 +313,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     if (_isHandlingUnauthorized) return;
     _isHandlingUnauthorized = true;
     try {
+      await _pushNotificationService.deactivateCurrentToken();
       await _auth.logout();
       if (mounted) {
         setState(() {

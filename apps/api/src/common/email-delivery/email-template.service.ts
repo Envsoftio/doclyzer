@@ -17,8 +17,14 @@ export class EmailTemplateService {
     templateKey: string,
     data: Record<string, string | number | boolean | null> = {},
   ): Promise<string> {
-    const template = await this.loadTemplate(`${templateKey}.html`);
-    return this.interpolate(template, data, true);
+    const renderData = this.withDefaultTemplateData(data);
+    const template = await this.loadTemplate(`${templateKey}.hbs`);
+    const content = await this.renderHbs(template, renderData);
+    const layout = await this.loadTemplate('layouts/default.hbs');
+    return this.renderHbs(layout, {
+      ...renderData,
+      content,
+    });
   }
 
   async renderText(
@@ -34,19 +40,67 @@ export class EmailTemplateService {
     return fs.readFile(path, 'utf8');
   }
 
+  private async renderHbs(
+    template: string,
+    data: Record<string, string | number | boolean | null>,
+  ): Promise<string> {
+    const withPartials = await this.expandPartials(template, data);
+    return this.interpolate(withPartials, data);
+  }
+
+  private async expandPartials(
+    template: string,
+    data: Record<string, string | number | boolean | null>,
+  ): Promise<string> {
+    const partialPattern = /{{>\s*([a-zA-Z0-9_-]+)\s*}}/g;
+    let rendered = '';
+    let lastIndex = 0;
+
+    for (const match of template.matchAll(partialPattern)) {
+      rendered += template.slice(lastIndex, match.index);
+      const partialName = match[1];
+      const partial = await this.loadTemplate(`partials/${partialName}.hbs`);
+      rendered += this.interpolate(partial, data);
+      lastIndex = (match.index ?? 0) + match[0].length;
+    }
+
+    rendered += template.slice(lastIndex);
+    return rendered;
+  }
+
+  private withDefaultTemplateData(
+    data: Record<string, string | number | boolean | null>,
+  ): Record<string, string | number | boolean | null> {
+    return {
+      brandName: 'Doclyzer',
+      previewText: 'A secure update from Doclyzer',
+      supportUrl: 'https://doclyzer.com/support',
+      currentYear: new Date().getUTCFullYear(),
+      ...data,
+    };
+  }
+
   private interpolate(
     template: string,
     data: Record<string, string | number | boolean | null>,
-    escapeHtml: boolean,
   ): string {
-    return template.replace(
-      /{{\s*([a-zA-Z0-9_]+)\s*}}/g,
-      (_m: string, key: string) => {
-        const raw = data[key];
-        const value = raw === null || raw === undefined ? '' : String(raw);
-        return escapeHtml ? this.escapeHtml(value) : value;
-      },
+    const withRawBlocks = template.replace(
+      /{{{\s*([a-zA-Z0-9_]+)\s*}}}/g,
+      (_m: string, key: string) => this.valueFor(data, key),
     );
+
+    return withRawBlocks.replace(
+      /{{\s*([a-zA-Z0-9_]+)\s*}}/g,
+      (_m: string, key: string) => this.escapeHtml(this.valueFor(data, key)),
+    );
+  }
+
+  private valueFor(
+    data: Record<string, string | number | boolean | null>,
+    key: string,
+  ): string {
+    const raw = data[key];
+    return raw === null || raw === undefined ? '' : String(raw);
   }
 
   private escapeHtml(value: string): string {

@@ -18,6 +18,15 @@ export class PromoCodeEntity {
   @Column({ type: 'numeric', precision: 10, scale: 2, name: 'discount_value' })
   discountValue!: string; // numeric columns return as string in TypeORM
 
+  @Column({
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    name: 'max_discount_amount',
+    nullable: true,
+  })
+  maxDiscountAmount!: string | null; // numeric columns return as string in TypeORM
+
   @Column({ type: 'varchar', length: 16, name: 'applies_to' })
   appliesTo!: 'credit_pack' | 'subscription' | 'both';
 

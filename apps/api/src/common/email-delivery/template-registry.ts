@@ -37,6 +37,10 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> =
       templateKey: 'billing-payment-failed',
       subject: 'Payment failed',
     },
+    'billing.ops_alert': {
+      templateKey: 'billing-ops-alert',
+      subject: 'Billing reconciliation alert',
+    },
     'billing.subscription_activated': {
       templateKey: 'billing-subscription-activated',
       subject: 'Subscription activated',

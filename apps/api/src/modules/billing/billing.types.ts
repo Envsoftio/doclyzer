@@ -23,6 +23,14 @@ export const BILLING_ORDER_ALREADY_PROCESSED =
   'BILLING_ORDER_ALREADY_PROCESSED';
 export const BILLING_WEBHOOK_INVALID_SIGNATURE =
   'BILLING_WEBHOOK_INVALID_SIGNATURE';
+export const BILLING_WEBHOOK_INVALID_AUTHORIZATION =
+  'BILLING_WEBHOOK_INVALID_AUTHORIZATION';
+export const BILLING_RECONCILIATION_AMOUNT_MISMATCH =
+  'BILLING_RECONCILIATION_AMOUNT_MISMATCH';
+export const BILLING_RECONCILIATION_CURRENCY_MISMATCH =
+  'BILLING_RECONCILIATION_CURRENCY_MISMATCH';
+export const BILLING_RECONCILIATION_PAYLOAD_INCOMPLETE =
+  'BILLING_RECONCILIATION_PAYLOAD_INCOMPLETE';
 export const BILLING_PLAN_NOT_FOUND = 'BILLING_PLAN_NOT_FOUND';
 export const BILLING_PLAN_INACTIVE = 'BILLING_PLAN_INACTIVE';
 export const BILLING_ALREADY_SUBSCRIBED = 'BILLING_ALREADY_SUBSCRIBED';
@@ -43,7 +51,15 @@ export const BILLING_ANALYTICS_DATE_RANGE_INVALID =
 
 export type PromoProductType = 'credit_pack' | 'subscription';
 
-export type OrderStatus = 'pending' | 'paid' | 'reconciled' | 'failed';
+export type OrderStatus =
+  | 'created'
+  | 'payment_pending'
+  | 'client_purchase_confirmed'
+  | 'signature_verified'
+  | 'webhook_pending'
+  | 'reconciled'
+  | 'failed'
+  | 'pending_review';
 
 export class CreateOrderDto {
   @IsUUID()
@@ -53,6 +69,11 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   promoCode?: string;
+
+  @IsString()
+  @MaxLength(128)
+  @IsOptional()
+  idempotencyKey?: string;
 }
 
 export class VerifyPaymentDto {
@@ -69,6 +90,20 @@ export class VerifyPaymentDto {
   razorpaySignature!: string;
 }
 
+export class ConfirmClientPurchaseDto {
+  @IsString()
+  @IsOptional()
+  revenueCatTransactionId?: string;
+
+  @IsString()
+  @IsOptional()
+  revenueCatProductId?: string;
+
+  @IsString()
+  @IsOptional()
+  revenueCatAppUserId?: string;
+}
+
 export interface CreditPackResponseDto {
   id: string;
   name: string;
@@ -79,10 +114,14 @@ export interface CreditPackResponseDto {
 
 export interface CreateOrderResponseDto {
   orderId: string;
-  razorpayOrderId: string;
+  razorpayOrderId: string | null;
   amount: number;
   currency: string;
-  razorpayKeyId: string;
+  razorpayKeyId: string | null;
+  paymentRequired: boolean;
+  checkoutProvider: 'razorpay' | 'internal';
+  orderStatus: OrderStatus;
+  entitlementSummary?: object;
 }
 
 export interface VerifyPaymentResponseDto {
@@ -160,10 +199,20 @@ export class PromoValidationDto {
 }
 
 export interface PromoValidationResponseDto {
+  valid: boolean;
+  originalAmount: number;
   discountAmount: number;
   finalAmount: number;
   currency: string;
-  promoCodeId: string;
+  promoCodeId: string | null;
+  promoLabel: string | null;
+  promoDescription: string | null;
+  invalidReason: PromoInvalidReasonDto | null;
+}
+
+export interface PromoInvalidReasonDto {
+  code: string;
+  message: string;
 }
 
 export type PromoLifecycleState =
@@ -184,6 +233,11 @@ export class AdminCreatePromoCodeDto {
   @Type(() => Number)
   @IsPositive()
   discountValue!: number;
+
+  @Type(() => Number)
+  @IsPositive()
+  @IsOptional()
+  maxDiscountAmount?: number;
 
   @IsIn(['credit_pack', 'subscription', 'both'])
   appliesTo!: 'credit_pack' | 'subscription' | 'both';
@@ -224,6 +278,11 @@ export class AdminUpdatePromoCodeDto {
   @IsOptional()
   discountValue?: number;
 
+  @Type(() => Number)
+  @IsPositive()
+  @IsOptional()
+  maxDiscountAmount?: number | null;
+
   @IsIn(['credit_pack', 'subscription', 'both'])
   @IsOptional()
   appliesTo?: 'credit_pack' | 'subscription' | 'both';
@@ -257,6 +316,7 @@ export interface PromoCodeAdminDto {
   code: string;
   discountType: 'percentage' | 'fixed';
   discountValue: number;
+  maxDiscountAmount: number | null;
   appliesTo: 'credit_pack' | 'subscription' | 'both';
   validFrom: string | null;
   validUntil: string | null;
@@ -332,6 +392,11 @@ export class AdminPromoAnalyticsExportDto {
 export interface PromoAnalyticsRowDto {
   promoCodeId: string;
   promoCode: string;
+  validationCount: number;
+  reservationCount: number;
+  redeemedCount: number;
+  failedCount: number;
+  voidedCount: number;
   reconciledCheckoutCount: number;
   failedCheckoutCount: number;
   attributedDiscountTotal: number;
@@ -339,6 +404,11 @@ export interface PromoAnalyticsRowDto {
 }
 
 export interface PromoAnalyticsSummaryDto {
+  totalValidationCount: number;
+  totalReservationCount: number;
+  totalRedeemedCount: number;
+  totalFailedCount: number;
+  totalVoidedCount: number;
   totalReconciledCheckouts: number;
   totalFailedCheckouts: number;
   totalAttributedDiscount: number;
@@ -385,6 +455,7 @@ export interface OrderStatusDto {
   razorpayOrderId: string;
   updatedAt: string;
   failureReason: string | null;
+  reviewReason: string | null;
 }
 
 export function toOrderStatusDto(order: OrderEntity): OrderStatusDto {
@@ -400,31 +471,56 @@ export function toOrderStatusDto(order: OrderEntity): OrderStatusDto {
     razorpayOrderId: order.razorpayOrderId,
     updatedAt: order.updatedAt.toISOString(),
     failureReason: orderFailureReason(order.metadata),
+    reviewReason: orderReviewReason(order.metadata),
   };
 }
 
 function normalizeOrderStatus(status: string): OrderStatus {
   if (
-    status === 'pending' ||
-    status === 'paid' ||
+    status === 'created' ||
+    status === 'payment_pending' ||
+    status === 'client_purchase_confirmed' ||
+    status === 'webhook_pending' ||
     status === 'reconciled' ||
-    status === 'failed'
+    status === 'failed' ||
+    status === 'pending_review'
   ) {
     return status;
   }
-  return 'pending';
+
+  if (status === 'pending') {
+    return 'payment_pending';
+  }
+
+  if (status === 'paid') {
+    return 'client_purchase_confirmed';
+  }
+
+  if (status === 'signature_verified') {
+    return 'client_purchase_confirmed';
+  }
+
+  return 'payment_pending';
 }
 
 function orderStatusLabel(status: OrderStatus): string {
   switch (status) {
-    case 'pending':
+    case 'created':
+      return 'Order created';
+    case 'payment_pending':
       return 'Pending payment';
-    case 'paid':
-      return 'Payment pending - awaiting Razorpay capture';
+    case 'client_purchase_confirmed':
+      return 'Purchase confirmed - awaiting payment webhook';
+    case 'signature_verified':
+      return 'Purchase confirmed - awaiting payment webhook';
+    case 'webhook_pending':
+      return 'Payment webhook received - reconciling';
     case 'reconciled':
       return 'Reconciled';
     case 'failed':
       return 'Payment failed';
+    case 'pending_review':
+      return 'Pending review';
   }
 }
 
@@ -436,6 +532,19 @@ function orderFailureReason(
   }
 
   const reason = metadata['reason'];
+  return typeof reason === 'string' && reason.trim().length > 0
+    ? reason.trim()
+    : null;
+}
+
+function orderReviewReason(
+  metadata: Record<string, unknown> | null,
+): string | null {
+  if (!metadata) {
+    return null;
+  }
+
+  const reason = metadata['reviewReason'];
   return typeof reason === 'string' && reason.trim().length > 0
     ? reason.trim()
     : null;

@@ -6,6 +6,7 @@ const navItems = [
   { label: 'Users', icon: '🧑‍💼', href: '/admin/users' },
   { label: 'Files', icon: '📁', href: '/admin/files' },
   { label: 'Risk', icon: '🚨', href: '/admin/risk' },
+  { label: 'Notifications', icon: '🔔', href: '/admin/notifications' },
 ]
 </script>
 

@@ -118,6 +118,28 @@ export class EntitlementsService {
       .execute();
   }
 
+  async addCreditsInTransaction(
+    manager: EntityManager,
+    userId: string,
+    amount: number,
+    reason: EntitlementChangeReason = 'credit_pack_purchase',
+  ): Promise<void> {
+    await this.findOrProvision(userId, manager);
+
+    const now = new Date();
+    await manager
+      .getRepository(UserEntitlementEntity)
+      .createQueryBuilder()
+      .update(UserEntitlementEntity)
+      .set({
+        creditBalance: () => `credit_balance + ${amount}`,
+        lastChangeReason: reason,
+        lastChangeAt: now,
+      })
+      .where('user_id = :userId', { userId })
+      .execute();
+  }
+
   /**
    * Returns all active plans (for billing plan listing).
    */
@@ -351,8 +373,12 @@ export class EntitlementsService {
    */
   private async findOrProvision(
     userId: string,
+    manager?: EntityManager,
   ): Promise<UserEntitlementEntity> {
-    const existing = await this.entitlementRepo.findOne({
+    const entitlementRepo = manager
+      ? manager.getRepository(UserEntitlementEntity)
+      : this.entitlementRepo;
+    const existing = await entitlementRepo.findOne({
       where: { userId },
       relations: ['plan'],
     });
@@ -360,20 +386,20 @@ export class EntitlementsService {
       if (existing.plan) return existing;
 
       // Self-heal legacy/broken records where plan relation is missing.
-      const freePlan = await this.findActiveFreePlanOrThrow();
+      const freePlan = await this.findActiveFreePlanOrThrow(manager);
       existing.planId = freePlan.id;
-      await this.entitlementRepo.save(existing);
+      await entitlementRepo.save(existing);
 
-      return this.entitlementRepo.findOneOrFail({
+      return entitlementRepo.findOneOrFail({
         where: { id: existing.id },
         relations: ['plan'],
       });
     }
 
     // Auto-provision: find the free-tier plan and create an entitlement
-    const freePlan = await this.findActiveFreePlanOrThrow();
+    const freePlan = await this.findActiveFreePlanOrThrow(manager);
 
-    const entitlement = this.entitlementRepo.create({
+    const entitlement = entitlementRepo.create({
       userId,
       planId: freePlan.id,
       creditBalance: '0',
@@ -381,18 +407,23 @@ export class EntitlementsService {
       lastChangeReason: 'initial_provision',
       lastChangeAt: new Date(),
     });
-    const saved = await this.entitlementRepo.save(entitlement);
+    const saved = await entitlementRepo.save(entitlement);
 
     // Reload with explicit plan relation (belt-and-suspenders over eager: true).
-    const reloaded = await this.entitlementRepo.findOneOrFail({
+    const reloaded = await entitlementRepo.findOneOrFail({
       where: { id: saved.id },
       relations: ['plan'],
     });
     return reloaded;
   }
 
-  private async findActiveFreePlanOrThrow(): Promise<PlanEntity> {
-    const freePlan = await this.planRepo.findOne({
+  private async findActiveFreePlanOrThrow(
+    manager?: EntityManager,
+  ): Promise<PlanEntity> {
+    const planRepo = manager
+      ? manager.getRepository(PlanEntity)
+      : this.planRepo;
+    const freePlan = await planRepo.findOne({
       where: { tier: 'free', isActive: true },
     });
     if (freePlan) return freePlan;

@@ -107,7 +107,7 @@ Leading indicators: reports uploaded per user, share links created per MAU, AI s
 - Per-profile timeline; lab as chartable time series; imaging as dated list with findings.
 - Basic per-report summary (no chat/lifestyle in Free).
 - One share link per account (Free); share page (web) with reports, summaries, charts; expiry and revoke.
-- Credits and recharge (credit packs + subscription from day one); Razorpay (India + international); promo codes at checkout.
+- Credits and recharge (credit packs + subscription from day one); RevenueCat-managed checkout with Google Pay/platform billing where available; promo codes at checkout.
 - Plan table and promo CRUD in superadmin; analytics (signups, active users, credit/subscription revenue, promo impact).
 - **Object storage:** Backblaze B2 (S3-compatible) for report PDFs, profile avatars, and other user-uploaded files; private buckets with signed or scoped URLs for access.
 - Flutter app (mobile); NestJS backend; separate share web app.
@@ -219,7 +219,7 @@ Leading indicators: reports uploaded per user, share links created per MAU, AI s
 ### Integration Requirements
 
 - Parser/LLM isolation: run in controlled network zones with explicit ingress/egress rules; no outbound PHI leakage paths.
-- Payments boundary: Razorpay integration must never carry report-level health content; use minimal metadata and separate audit trail.
+- Payments boundary: RevenueCat, Google Pay/platform billing, and related webhook metadata must never carry report-level health content; use minimal metadata and a separate audit trail.
 - Identity and admin controls: strong auth (MFA for superadmin), session hardening, and privileged action approvals where necessary.
 - Future interoperability path: define extension points for FHIR/EHR integrations without constraining MVP delivery.
 

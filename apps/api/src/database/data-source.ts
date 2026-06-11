@@ -9,17 +9,23 @@ import { ClosureRequestEntity } from './entities/closure-request.entity';
 import { ConsentRecordEntity } from './entities/consent-record.entity';
 import { DataExportRequestEntity } from './entities/data-export-request.entity';
 import { ProfileEntity } from './entities/profile.entity';
+import { PushDeliveryEventEntity } from './entities/push-delivery-event.entity';
+import { PushOpenEventEntity } from './entities/push-open-event.entity';
+import { PushSendAuditEntity } from './entities/push-send-audit.entity';
 import { ReportEntity } from './entities/report.entity';
 import { ReportLabValueEntity } from './entities/report-lab-value.entity';
+import { BillingProviderEventEntity } from './entities/billing-provider-event.entity';
 import { CreditPackEntity } from './entities/credit-pack.entity';
 import { OrderEntity } from './entities/order.entity';
 import { PlanEntity } from './entities/plan.entity';
 import { PromoCodeEntity } from './entities/promo-code.entity';
+import { PromoLifecycleEventEntity } from './entities/promo-lifecycle-event.entity';
 import { PromoRedemptionEntity } from './entities/promo-redemption.entity';
 import { SubscriptionEntity } from './entities/subscription.entity';
 import { UserEntitlementEntity } from './entities/user-entitlement.entity';
 import { RestrictionEntity } from './entities/restriction.entity';
 import { SessionEntity } from './entities/session.entity';
+import { UserDeviceTokenEntity } from './entities/user-device-token.entity';
 import { UserEntity } from './entities/user.entity';
 import { AnalyticsTaxonomyFieldEntity } from './entities/analytics-taxonomy-field.entity';
 import { AnalyticsGovernanceReviewEntity } from './entities/analytics-governance-review.entity';
@@ -37,6 +43,10 @@ export const AppDataSource = new DataSource({
     UserEntity,
     SessionEntity,
     ProfileEntity,
+    UserDeviceTokenEntity,
+    PushSendAuditEntity,
+    PushDeliveryEventEntity,
+    PushOpenEventEntity,
     AccountPreferenceEntity,
     RestrictionEntity,
     DataExportRequestEntity,
@@ -46,9 +56,11 @@ export const AppDataSource = new DataSource({
     ReportLabValueEntity,
     PlanEntity,
     UserEntitlementEntity,
+    BillingProviderEventEntity,
     CreditPackEntity,
     OrderEntity,
     PromoCodeEntity,
+    PromoLifecycleEventEntity,
     PromoRedemptionEntity,
     SubscriptionEntity,
     AnalyticsTaxonomyFieldEntity,
