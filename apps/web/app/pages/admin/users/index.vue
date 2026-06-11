@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 
 definePageMeta({ layout: 'admin' })
 useSeoMeta({ robots: 'noindex, nofollow', title: 'Users — Doclyzer Admin' })
@@ -60,6 +60,7 @@ watch(search, () => {
 })
 
 onMounted(loadUsers)
+onUnmounted(() => clearTimeout(debounceTimer))
 
 const totalPages = computed(() => Math.ceil(total.value / limit))
 
@@ -74,7 +75,8 @@ function formatDate(iso: string | null): string {
     <h2 class="page-title">Users</h2>
 
     <div class="toolbar">
-      <input v-model="search" type="search" class="search-input" placeholder="Search by email…" />
+      <label class="sr-only" for="admin-user-search">Search users</label>
+      <input id="admin-user-search" v-model="search" type="search" class="search-input" placeholder="Search by email…" />
       <span class="total-label">{{ total }} users</span>
     </div>
 
@@ -91,35 +93,34 @@ function formatDate(iso: string | null): string {
         No users found{{ search ? ` for "${search}"` : '' }}.
       </div>
 
-      <table v-else class="table">
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Signed up</th>
-            <th>Profiles</th>
-            <th>Reports</th>
-            <th>Last login</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="user in users"
-            :key="user.id"
-            class="table-row"
-            @click="navigateTo(`/admin/users/${user.id}`)"
-          >
-            <td class="td-email">{{ user.email }}</td>
-            <td>{{ user.displayName || '—' }}</td>
-            <td><span class="role-badge" :class="`role-badge--${user.role}`">{{ user.role }}</span></td>
-            <td>{{ formatDate(user.createdAt) }}</td>
-            <td>{{ user.profileCount }}</td>
-            <td>{{ user.reportCount }}</td>
-            <td>{{ formatDate(user.lastLoginAt) }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div v-else class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Signed up</th>
+              <th>Profiles</th>
+              <th>Reports</th>
+              <th>Last login</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="user in users" :key="user.id" class="table-row">
+              <td class="td-email">{{ user.email }}</td>
+              <td>{{ user.displayName || '—' }}</td>
+              <td><span class="role-badge" :class="`role-badge--${user.role}`">{{ user.role }}</span></td>
+              <td>{{ formatDate(user.createdAt) }}</td>
+              <td>{{ user.profileCount }}</td>
+              <td>{{ user.reportCount }}</td>
+              <td>{{ formatDate(user.lastLoginAt) }}</td>
+              <td><NuxtLink class="row-link" :to="`/admin/users/${user.id}`">View</NuxtLink></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <div v-if="totalPages > 1" class="pagination">
         <button class="page-btn" :disabled="page <= 1" @click="page--; loadUsers()">← Prev</button>
@@ -132,6 +133,7 @@ function formatDate(iso: string | null): string {
 
 <style scoped>
 .users-page { max-width: 1100px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .page-title { font-size: 22px; font-weight: 700; margin: 0 0 24px; color: #0f172a; }
 
 .toolbar { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
@@ -151,12 +153,14 @@ function formatDate(iso: string | null): string {
 
 .empty-state { text-align: center; color: #6b7280; padding: 48px; font-size: 14px; }
 
-.table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; }
+.table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; }
+.table { width: 100%; min-width: 900px; border-collapse: collapse; font-size: 13px; background: #fff; }
 .table th { background: #f8fafc; padding: 10px 14px; text-align: left; font-weight: 600; color: #374151; white-space: nowrap; }
 .table td { padding: 10px 14px; border-top: 1px solid #f1f5f9; color: #374151; }
-.table-row { cursor: pointer; }
 .table-row:hover td { background: #f8fafc; }
 .td-email { font-weight: 500; color: #1e293b; }
+.row-link { color: #1d4ed8; font-weight: 600; text-decoration: none; }
+.row-link:hover { text-decoration: underline; }
 
 .role-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #f1f5f9; color: #475569; }
 .role-badge--superadmin { background: #ede9fe; color: #6d28d9; }

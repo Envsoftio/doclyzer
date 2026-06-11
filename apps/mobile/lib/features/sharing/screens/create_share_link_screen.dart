@@ -53,9 +53,6 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
   int? _limitCurrent;
   int? _limitMax;
 
-  // Policy
-  SharePolicy? _policy;
-
   @override
   void initState() {
     super.initState();
@@ -68,9 +65,10 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
       final policy = await widget.sharingRepository.getSharePolicy();
       if (mounted) {
         setState(() {
-          _policy = policy;
           if (policy.defaultExpiresInDays != null && _selectedExpiry == null) {
-            _selectedExpiry = DateTime.now().add(Duration(days: policy.defaultExpiresInDays!));
+            _selectedExpiry = DateTime.now().add(
+              Duration(days: policy.defaultExpiresInDays!),
+            );
           }
         });
       }
@@ -83,19 +81,35 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
     final updated = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => SharePolicyScreen(sharingRepository: widget.sharingRepository),
+        builder: (_) =>
+            SharePolicyScreen(sharingRepository: widget.sharingRepository),
       ),
     );
     if (updated == true) _loadPolicy();
   }
 
   Future<void> _loadExistingLinks() async {
-    setState(() { _loadingExistingLinks = true; _listError = null; });
+    setState(() {
+      _loadingExistingLinks = true;
+      _listError = null;
+    });
     try {
-      final links = await widget.sharingRepository.listShareLinks(widget.profileId);
-      if (mounted) setState(() { _existingLinks = links; _loadingExistingLinks = false; });
+      final links = await widget.sharingRepository.listShareLinks(
+        widget.profileId,
+      );
+      if (mounted) {
+        setState(() {
+          _existingLinks = links;
+          _loadingExistingLinks = false;
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() { _loadingExistingLinks = false; _listError = e.toString().replaceFirst('Exception: ', ''); });
+      if (mounted) {
+        setState(() {
+          _loadingExistingLinks = false;
+          _listError = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
     }
   }
 
@@ -113,7 +127,12 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
         widget.profileId,
         expiresAt: _selectedExpiry,
       );
-      if (mounted) setState(() { _newLink = link; _createState = _CreateState.created; });
+      if (mounted) {
+        setState(() {
+          _newLink = link;
+          _createState = _CreateState.created;
+        });
+      }
     } on ApiException catch (e) {
       if (mounted && e.code == 'SHARE_LINK_LIMIT_EXCEEDED') {
         final data = e.data?['data'] as Map<String, dynamic>?;
@@ -144,8 +163,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
             apiException: e,
             entityIds: {'profileId': widget.profileId},
           );
-          _supportErrorMessage =
-              e.toString().replaceFirst('Exception: ', '');
+          _supportErrorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
     } catch (e) {
@@ -157,8 +175,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
             actionType: SupportActionType.shareLinkCreate,
             entityIds: {'profileId': widget.profileId},
           );
-          _supportErrorMessage =
-              e.toString().replaceFirst('Exception: ', '');
+          _supportErrorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -180,9 +197,14 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Revoke share link?'),
-        content: const Text('This link will stop working. You can create a new one.'),
+        content: const Text(
+          'This link will stop working. You can create a new one.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             key: const Key('revoke-confirm-button'),
             onPressed: () => Navigator.pop(ctx, true),
@@ -196,9 +218,14 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
       await widget.sharingRepository.revokeShareLink(linkId);
       if (!mounted) return;
       if (isNewLink) {
-        setState(() { _newLink = null; _createState = _CreateState.idle; });
+        setState(() {
+          _newLink = null;
+          _createState = _CreateState.idle;
+        });
       } else {
-        setState(() { _existingLinks.removeWhere((l) => l.id == linkId); });
+        setState(() {
+          _existingLinks.removeWhere((l) => l.id == linkId);
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -207,8 +234,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
           apiException: e is ApiException ? e : null,
           entityIds: {'shareLinkId': linkId},
         );
-        _supportErrorMessage =
-            e.toString().replaceFirst('Exception: ', '');
+        _supportErrorMessage = e.toString().replaceFirst('Exception: ', '');
         StatusMessenger.showError(
           context,
           'Failed to revoke: ${e.toString().replaceFirst('Exception: ', '')}',
@@ -227,7 +253,9 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked != null && mounted) {
-      setState(() { _selectedExpiry = picked; });
+      setState(() {
+        _selectedExpiry = picked;
+      });
     }
   }
 
@@ -248,7 +276,8 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
   @override
   Widget build(BuildContext context) {
     final incident = widget.incidentStatus;
-    final showIncidentBanner = incident != null &&
+    final showIncidentBanner =
+        incident != null &&
         incident.isActive &&
         incident.affectsSurface('mobile_app');
 
@@ -275,9 +304,16 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
               ],
               // --- Existing links section ---
               if (_loadingExistingLinks)
-                const Center(child: CircularProgressIndicator(key: Key('existing-links-loading')))
+                const Center(
+                  child: CircularProgressIndicator(
+                    key: Key('existing-links-loading'),
+                  ),
+                )
               else if (_existingLinks.isNotEmpty) ...[
-                const Text('Active share links', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Active share links',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 ...List.generate(_existingLinks.length, (i) {
                   final link = _existingLinks[i];
@@ -287,8 +323,13 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
-                      title: Text(link.shareUrl, style: const TextStyle(fontSize: 12)),
-                      subtitle: Text('Created ${_formatDate(link.createdAt)} · $expiry'),
+                      title: Text(
+                        link.shareUrl,
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      subtitle: Text(
+                        'Created ${_formatDate(link.createdAt)} · $expiry',
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -331,19 +372,25 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                 const Divider(height: 24),
               ],
               if (_listError != null) ...[
-                Text(_listError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(
+                  _listError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
                 const SizedBox(height: 8),
               ],
 
               // --- Create new link section ---
-              if (_createState == _CreateState.idle || _createState == _CreateState.error) ...[
+              if (_createState == _CreateState.idle ||
+                  _createState == _CreateState.error) ...[
                 const Text('Create a new share link'),
                 const SizedBox(height: 12),
                 if (_limitMessage != null) ...[
                   Text(
                     _limitMessage!,
                     key: const Key('share-limit-warning'),
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                   if (_limitCurrent != null && _limitMax != null) ...[
                     const SizedBox(height: 4),
@@ -369,7 +416,11 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                     TextButton(
                       key: const Key('share-link-expiry-picker'),
                       onPressed: _pickExpiry,
-                      child: Text(_selectedExpiry != null ? _formatDate(_selectedExpiry!) : 'No expiry'),
+                      child: Text(
+                        _selectedExpiry != null
+                            ? _formatDate(_selectedExpiry!)
+                            : 'No expiry',
+                      ),
                     ),
                     if (_selectedExpiry != null)
                       IconButton(
@@ -382,7 +433,9 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                 const SizedBox(height: 12),
                 ElevatedButton(
                   key: const Key('create-share-link-button'),
-                  onPressed: _createState == _CreateState.loading ? null : _createLink,
+                  onPressed: _createState == _CreateState.loading
+                      ? null
+                      : _createLink,
                   child: const Text('Create Share Link'),
                 ),
                 if (_createState == _CreateState.error) ...[
@@ -390,9 +443,14 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                   Text(
                     _createError ?? 'Something went wrong',
                     key: const Key('share-link-error'),
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
-                  TextButton(onPressed: _createLink, child: const Text('Try Again')),
+                  TextButton(
+                    onPressed: _createLink,
+                    child: const Text('Try Again'),
+                  ),
                   if (_supportContext != null) ...[
                     const SizedBox(height: 4),
                     TextButton(
@@ -412,15 +470,24 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                 ],
               ],
               if (_createState == _CreateState.loading)
-                const Center(child: CircularProgressIndicator(key: Key('create-share-link-loading'))),
+                const Center(
+                  child: CircularProgressIndicator(
+                    key: Key('create-share-link-loading'),
+                  ),
+                ),
               if (_createState == _CreateState.created && _newLink != null) ...[
                 const Text('Share link created!'),
                 const SizedBox(height: 8),
-                SelectableText(_newLink!.shareUrl, key: const Key('share-url-text')),
+                SelectableText(
+                  _newLink!.shareUrl,
+                  key: const Key('share-url-text'),
+                ),
                 if (_newLink!.expiresAt != null) ...[
                   const SizedBox(height: 4),
-                  Text('Expires: ${_formatDate(_newLink!.expiresAt!)}',
-                      style: const TextStyle(fontSize: 12)),
+                  Text(
+                    'Expires: ${_formatDate(_newLink!.expiresAt!)}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ],
                 const SizedBox(height: 16),
                 ElevatedButton(
@@ -434,7 +501,11 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                   onPressed: () => _shareLink(_newLink!.shareUrl),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: [Icon(Icons.share_outlined, size: 16), SizedBox(width: 8), Text('Share Link')],
+                    children: [
+                      Icon(Icons.share_outlined, size: 16),
+                      SizedBox(width: 8),
+                      Text('Share Link'),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 8),

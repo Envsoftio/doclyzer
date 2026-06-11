@@ -181,7 +181,6 @@ export class ReportsController {
     this.logger.log(
       JSON.stringify({
         action: 'REPORT_UPLOAD_MIMETYPE_RESOLVED',
-        originalName: file.originalname ?? null,
         incomingMimetype: file.mimetype ?? null,
         resolvedMimetype: mimetype,
         sizeBytes: file.size ?? 0,

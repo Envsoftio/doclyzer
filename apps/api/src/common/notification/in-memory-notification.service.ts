@@ -8,9 +8,7 @@ export class InMemoryNotificationService extends NotificationService {
 
   sendPasswordResetToken(email: string, rawToken: string): Promise<void> {
     this.deliveries.set(email.trim().toLowerCase(), rawToken);
-    this.logger.log(
-      `[DEV-STUB] Password reset token queued for delivery to ${email}`,
-    );
+    this.logger.log('[DEV-STUB] Password reset token queued for delivery');
     // Production: replace this class with an implementation that calls an
     // email/SMS service (e.g., SendGrid, AWS SES, Twilio).
     return Promise.resolve();

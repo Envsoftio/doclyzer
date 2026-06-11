@@ -192,8 +192,8 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
                     Icon(
                       Icons.person_outline_rounded,
                       size: 64,
-                      color: theme.colorScheme.onSurfaceVariant.withOpacity(
-                        0.5,
+                      color: theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: 0.5,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),

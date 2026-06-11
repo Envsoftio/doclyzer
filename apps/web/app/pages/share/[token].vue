@@ -43,7 +43,7 @@ const loading = ref(true)
 onMounted(async () => {
   try {
     const res = await $fetch<ApiSuccessResponse>(
-      `${config.public.apiBaseUrl}/sharing/public/${token}`,
+      `${config.public.apiBaseUrl}/sharing/public/${encodeURIComponent(token)}`,
     )
     shareData.value = res.data
   } catch (err: unknown) {
@@ -68,18 +68,25 @@ interface TrendPoint {
   unit: string | null
 }
 
-function computeTrends(reports: PublicReportDto[]): [string, TrendPoint[]][] {
-  const paramMap = new Map<string, TrendPoint[]>()
+interface TrendRow {
+  parameterName: string
+  valuesByDate: Map<string, TrendPoint>
+}
+
+function computeTrendRows(reports: PublicReportDto[]): TrendRow[] {
+  const paramMap = new Map<string, Map<string, TrendPoint>>()
   const sorted = [...reports].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
   for (const report of sorted) {
+    const date = report.createdAt
     for (const lv of report.labValues) {
-      if (!paramMap.has(lv.parameterName)) paramMap.set(lv.parameterName, [])
-      paramMap.get(lv.parameterName)!.push({ date: report.createdAt, value: lv.value, unit: lv.unit })
+      if (!paramMap.has(lv.parameterName)) paramMap.set(lv.parameterName, new Map())
+      paramMap.get(lv.parameterName)!.set(date, { date, value: lv.value, unit: lv.unit })
     }
   }
   return [...paramMap.entries()]
-    .filter(([, points]) => points.length >= 2)
+    .filter(([, valuesByDate]) => valuesByDate.size >= 2)
     .sort(([a], [b]) => a.localeCompare(b))
+    .map(([parameterName, valuesByDate]) => ({ parameterName, valuesByDate }))
 }
 
 const sortedReports = computed(() => {
@@ -89,7 +96,7 @@ const sortedReports = computed(() => {
 
 const trends = computed(() => {
   if (!shareData.value) return []
-  return computeTrends(shareData.value.reports)
+  return computeTrendRows(shareData.value.reports)
 })
 
 function printPage() {
@@ -98,34 +105,35 @@ function printPage() {
 
 const trendDates = computed(() => {
   if (trends.value.length === 0) return []
-  return (trends.value[0]?.[1] ?? []).map((pt) => pt.date)
+  return [...new Set(trends.value.flatMap((row) => [...row.valuesByDate.keys()]))]
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
 })
 </script>
 
 <template>
-  <div class="page-wrap">
+  <div id="top" class="page-wrap">
     <div class="incident-slot">
       <IncidentBanner :incident="incidentStatus" surface="web_share" />
     </div>
     <!-- Loading -->
-    <div v-if="loading">
+    <div v-if="loading" class="state-box" role="status" aria-live="polite">
       <p>Loading…</p>
     </div>
 
     <!-- 404: Link not found -->
-    <div v-else-if="errorStatus === 404">
+    <div v-else-if="errorStatus === 404" class="state-box" role="alert">
       <h1>Link Not Found</h1>
       <p>The share link you followed does not exist.</p>
     </div>
 
     <!-- 410: Link expired or revoked -->
-    <div v-else-if="errorStatus === 410">
+    <div v-else-if="errorStatus === 410" class="state-box" role="alert">
       <h1>Link Expired or Revoked</h1>
       <p>This share link has expired or been revoked by the owner.</p>
     </div>
 
     <!-- Generic error -->
-    <div v-else-if="errorStatus !== null">
+    <div v-else-if="errorStatus !== null" class="state-box" role="alert">
       <h1>Something Went Wrong</h1>
       <p>Unable to load the shared content. Please try again later.</p>
     </div>
@@ -134,28 +142,33 @@ const trendDates = computed(() => {
     <div v-else-if="shareData">
       <div class="page-header">
         <h1>{{ shareData.profileName }}'s Health Reports</h1>
-        <button class="no-print print-btn" @click="printPage">Print / Save as PDF</button>
+        <button type="button" class="no-print print-btn" @click="printPage">Print / Save as PDF</button>
       </div>
 
       <!-- Trends at a Glance -->
       <section v-if="trends.length > 0" class="trends-section">
         <h2>Trends at a Glance</h2>
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Parameter</th>
-              <th v-for="date in trendDates" :key="date">{{ formatDate(date) }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="[param, points] in trends" :key="param">
-              <td class="param-name">{{ param }}</td>
-              <td v-for="(pt, i) in points" :key="i">
-                {{ pt.value }}<span v-if="pt.unit" class="unit"> {{ pt.unit }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-scroll">
+          <table class="data-table trend-table">
+            <thead>
+              <tr>
+                <th scope="col">Parameter</th>
+                <th v-for="date in trendDates" :key="date" scope="col">{{ formatDate(date) }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in trends" :key="row.parameterName">
+                <td class="param-name">{{ row.parameterName }}</td>
+                <td v-for="date in trendDates" :key="date">
+                  <template v-if="row.valuesByDate.has(date)">
+                    {{ row.valuesByDate.get(date)?.value }}<span v-if="row.valuesByDate.get(date)?.unit" class="unit"> {{ row.valuesByDate.get(date)?.unit }}</span>
+                  </template>
+                  <span v-else class="missing-value">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <!-- Empty state -->
@@ -180,22 +193,24 @@ const trendDates = computed(() => {
             <AiDisclaimerNote class="report-summary-disclaimer" />
           </div>
 
-          <table v-if="report.labValues.length > 0" class="data-table lab-table">
-            <thead>
-              <tr>
-                <th>Parameter</th>
-                <th>Value</th>
-                <th>Unit</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="lv in report.labValues" :key="lv.parameterName">
-                <td>{{ lv.parameterName }}</td>
-                <td>{{ lv.value }}</td>
-                <td>{{ lv.unit ?? '—' }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div v-if="report.labValues.length > 0" class="table-scroll">
+            <table class="data-table lab-table">
+              <thead>
+                <tr>
+                  <th scope="col">Parameter</th>
+                  <th scope="col">Value</th>
+                  <th scope="col">Unit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="lv in report.labValues" :key="lv.parameterName">
+                  <td>{{ lv.parameterName }}</td>
+                  <td>{{ lv.value }}</td>
+                  <td>{{ lv.unit ?? '—' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -230,6 +245,7 @@ const trendDates = computed(() => {
   margin: 0;
   font-size: 1.6rem;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .print-btn {
@@ -253,8 +269,15 @@ const trendDates = computed(() => {
   margin-bottom: 12px;
 }
 
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .data-table {
   width: 100%;
+  min-width: 520px;
   border-collapse: collapse;
   font-size: 0.9rem;
 }
@@ -281,6 +304,10 @@ const trendDates = computed(() => {
   font-size: 0.85em;
 }
 
+.missing-value {
+  color: #777;
+}
+
 .report-card {
   margin-bottom: 40px;
   padding-bottom: 32px;
@@ -298,6 +325,7 @@ const trendDates = computed(() => {
   color: #555;
   font-family: sans-serif;
   margin-bottom: 12px;
+  overflow-wrap: anywhere;
 }
 
 .report-summary-block {
@@ -326,6 +354,10 @@ const trendDates = computed(() => {
   color: #555;
 }
 
+.state-box {
+  padding: 24px 0;
+}
+
 .back-to-top {
   display: inline-block;
   margin-top: 32px;
@@ -339,8 +371,25 @@ const trendDates = computed(() => {
 @media print {
   .no-print { display: none !important; }
   body { color: #000 !important; background: #fff !important; }
+  .table-scroll { overflow: visible; }
+  .data-table { min-width: 0; }
   .report-card { break-inside: avoid; page-break-inside: avoid; }
   .report-summary { background: transparent; border-left: 2px solid #000; }
   .data-table th { background: transparent; }
+}
+
+@media (max-width: 640px) {
+  .page-wrap {
+    margin: 24px auto;
+    padding: 0 16px;
+  }
+
+  .page-header {
+    align-items: flex-start;
+  }
+
+  .page-header h1 {
+    font-size: 1.35rem;
+  }
 }
 </style>

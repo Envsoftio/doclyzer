@@ -13,7 +13,12 @@ class SharePolicyScreen extends StatefulWidget {
 
 class _SharePolicyScreenState extends State<SharePolicyScreen> {
   static const List<int?> _options = [null, 7, 30, 90];
-  static const List<String> _labels = ['No expiry', '7 days', '30 days', '90 days'];
+  static const List<String> _labels = [
+    'No expiry',
+    '7 days',
+    '30 days',
+    '90 days',
+  ];
 
   _PolicyState _state = _PolicyState.loading;
   int? _selected;
@@ -26,7 +31,10 @@ class _SharePolicyScreenState extends State<SharePolicyScreen> {
   }
 
   Future<void> _load() async {
-    setState(() { _state = _PolicyState.loading; _error = null; });
+    setState(() {
+      _state = _PolicyState.loading;
+      _error = null;
+    });
     try {
       final policy = await widget.sharingRepository.getSharePolicy();
       if (mounted) {
@@ -46,7 +54,9 @@ class _SharePolicyScreenState extends State<SharePolicyScreen> {
   }
 
   Future<void> _save() async {
-    setState(() { _state = _PolicyState.saving; });
+    setState(() {
+      _state = _PolicyState.saving;
+    });
     try {
       await widget.sharingRepository.setSharePolicy(_selected);
       if (mounted) Navigator.pop(context, true);
@@ -73,47 +83,60 @@ class _SharePolicyScreenState extends State<SharePolicyScreen> {
 
   Widget _buildBody(BuildContext context) {
     if (_state == _PolicyState.loading) {
-      return const Center(child: CircularProgressIndicator(key: Key('share-policy-loading')));
+      return const Center(
+        child: CircularProgressIndicator(key: Key('share-policy-loading')),
+      );
     }
 
     if (_state == _PolicyState.error) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_error ?? 'Failed to load policy', style: const TextStyle(color: Colors.red)),
+          Text(
+            _error ?? 'Failed to load policy',
+            style: const TextStyle(color: Colors.red),
+          ),
           const SizedBox(height: 8),
           TextButton(onPressed: _load, child: const Text('Retry')),
         ],
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ..._options.asMap().entries.map((entry) {
-          final idx = entry.key;
-          final option = entry.value;
-          final key = option == null ? const Key('share-policy-option-null') : Key('share-policy-option-$option');
-          return RadioListTile<int?>(
-            key: key,
-            title: Text(_labels[idx]),
-            value: option,
-            groupValue: _selected,
-            onChanged: _state == _PolicyState.saving
-                ? null
-                : (val) => setState(() => _selected = val),
-          );
-        }),
-        const SizedBox(height: 16),
-        if (_state == _PolicyState.saving)
-          const Center(child: CircularProgressIndicator())
-        else
-          FilledButton(
-            key: const Key('share-policy-save-button'),
-            onPressed: _save,
-            child: const Text('Save'),
-          ),
-      ],
+    return RadioGroup<int?>(
+      groupValue: _selected,
+      onChanged: (val) {
+        if (_state != _PolicyState.saving) {
+          setState(() => _selected = val);
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ..._options.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final option = entry.value;
+            final key = option == null
+                ? const Key('share-policy-option-null')
+                : Key('share-policy-option-$option');
+            return RadioListTile<int?>(
+              key: key,
+              title: Text(_labels[idx]),
+              value: option,
+              selected: option == _selected,
+              enabled: _state != _PolicyState.saving,
+            );
+          }),
+          const SizedBox(height: 16),
+          if (_state == _PolicyState.saving)
+            const Center(child: CircularProgressIndicator())
+          else
+            FilledButton(
+              key: const Key('share-policy-save-button'),
+              onPressed: _save,
+              child: const Text('Save'),
+            ),
+        ],
+      ),
     );
   }
 }

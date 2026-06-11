@@ -92,7 +92,7 @@ export class AuthService {
       }
 
       await this.createDefaultProfile(userId, displayName);
-      this.logger.log(`Auth registration success userId=${userId}`);
+      this.logger.log('Auth registration success');
       return {
         userId,
         requiresVerification: true,
@@ -117,7 +117,7 @@ export class AuthService {
       });
     } catch (error: unknown) {
       this.logger.error(
-        `Failed to create default profile for userId=${userId}`,
+        'Failed to create default profile',
         error instanceof Error ? error.stack : String(error),
       );
       throw new HttpException(
@@ -151,7 +151,6 @@ export class AuthService {
       });
 
       const token = result?.response?.token;
-      const userId = result?.response?.user?.id ?? 'unknown';
       if (!token) {
         throw new UnauthorizedException({
           code: 'AUTH_INVALID_CREDENTIALS',
@@ -159,7 +158,7 @@ export class AuthService {
         });
       }
 
-      this.logger.log(`Auth login success userId=${userId}`);
+      this.logger.log('Auth login success');
       return {
         data: {
           accessToken: token,
@@ -215,7 +214,7 @@ export class AuthService {
       }
 
       const token = session.token || refreshToken;
-      this.logger.log(`Auth token refresh userId=${user.id}`);
+      this.logger.log('Auth token refresh');
       return {
         data: {
           accessToken: token,
@@ -269,8 +268,6 @@ export class AuthService {
     this.logger.log(
       JSON.stringify({
         action: 'SESSION_REVOKED',
-        actorUserId: userId,
-        targetSessionId: sessionId,
         correlationId,
       }),
     );
@@ -298,7 +295,7 @@ export class AuthService {
 
   async revokeAllSessionsForUser(userId: string): Promise<void> {
     await this.sessionRepo.delete({ userId });
-    this.logger.log(`All sessions revoked for userId=${userId}`);
+    this.logger.log('All sessions revoked for user');
   }
 
   enforceRateLimit(

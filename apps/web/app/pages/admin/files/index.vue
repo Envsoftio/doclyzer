@@ -15,9 +15,12 @@ interface PipelineStatus {
 const data = ref<PipelineStatus | null>(null)
 const loading = ref(true)
 const error = ref('')
-let refreshTimer: ReturnType<typeof setInterval>
+let refreshTimer: ReturnType<typeof setInterval> | undefined
+let refreshInFlight = false
 
 async function loadData() {
+  if (refreshInFlight) return
+  refreshInFlight = true
   error.value = ''
   try {
     const res = await adminFetch<{ data: PipelineStatus }>('/admin/analytics/files/pipeline-status')
@@ -26,14 +29,19 @@ async function loadData() {
     error.value = (e instanceof Error ? e.message : String(e)) || 'Failed to load pipeline status'
   } finally {
     loading.value = false
+    refreshInFlight = false
   }
 }
 
 onMounted(() => {
-  loadData()
-  refreshTimer = setInterval(loadData, 30_000)
+  void loadData()
+  refreshTimer = setInterval(() => {
+    void loadData()
+  }, 30_000)
 })
-onUnmounted(() => clearInterval(refreshTimer))
+onUnmounted(() => {
+  if (refreshTimer) clearInterval(refreshTimer)
+})
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
   parsed: { label: 'Parsed', cls: 'card--green' },

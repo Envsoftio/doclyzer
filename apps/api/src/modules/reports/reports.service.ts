@@ -275,7 +275,6 @@ export class ReportsService {
         source: normalizedFile.source,
         inputMimetype: file.mimetype,
         normalizedMimetype: normalizedFile.mimetype,
-        originalName: file.originalname ?? null,
       }),
     );
     const contentHash = this.computeContentHash(normalizedFile.buffer);
@@ -374,8 +373,7 @@ export class ReportsService {
             action: 'REPORT_IMAGE_OCR_MAPPED_RESULT_DEBUG',
             reportId,
             extractedLabValuesCount: labValues.length,
-            extractedLabValues: labValues,
-            structuredReport,
+            structuredSectionsCount: structuredReport.sections.length,
           }),
         );
       }
@@ -400,9 +398,6 @@ export class ReportsService {
         action: 'REPORT_VALID_LAB_FILE_ACCEPTED',
         trigger: 'upload',
         reportId,
-        userId,
-        profileId: activeProfileId,
-        fileName: originalFileName,
         status: finalStatus,
         extractedLabValues: labValues.length,
       }),
@@ -772,9 +767,6 @@ export class ReportsService {
           action: 'REPORT_VALID_LAB_FILE_ACCEPTED',
           trigger: 'retry',
           reportId: entity.id,
-          userId,
-          profileId: entity.profileId,
-          fileName: entity.originalFileName,
           status: finalStatus,
           extractedLabValues: retryLabValues.length,
         }),
@@ -1468,9 +1460,7 @@ export class ReportsService {
     status: ReportStatus,
   ): void {
     const text = transcript ?? '';
-    const preview = text.slice(0, 180).replace(/\s+/g, ' ');
     const alphaCount = (text.match(/[A-Za-z]/g) ?? []).length;
-    const ocrText = text.slice(0, OCR_TEXT_LOG_CHAR_LIMIT);
     this.logger.log(
       JSON.stringify({
         action: 'REPORT_PARSE_RESULT',
@@ -1479,9 +1469,7 @@ export class ReportsService {
         status,
         transcriptChars: text.length,
         transcriptAlphaChars: alphaCount,
-        preview,
-        ocrText,
-        ocrTextTruncated: text.length > OCR_TEXT_LOG_CHAR_LIMIT,
+        transcriptTruncatedForTelemetry: text.length > OCR_TEXT_LOG_CHAR_LIMIT,
       }),
     );
   }
@@ -1946,7 +1934,13 @@ export class ReportsService {
         reportId: input.reportId,
         source: input.source,
         shouldExpose,
-        labDetails: input.labDetails ?? {},
+        labDetailsFields: {
+          name: Boolean(input.labDetails?.name),
+          address: Boolean(input.labDetails?.address),
+          phone: Boolean(input.labDetails?.phone),
+          email: Boolean(input.labDetails?.email),
+          location: Boolean(input.labDetails?.location),
+        },
       }),
     );
   }

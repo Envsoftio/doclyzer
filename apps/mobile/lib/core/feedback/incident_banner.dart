@@ -31,19 +31,20 @@ class IncidentBanner extends StatelessWidget {
         ? colorScheme.errorContainer
         : colorScheme.tertiaryContainer;
     final borderColor = isCritical
-        ? colorScheme.error.withOpacity(0.35)
-        : colorScheme.tertiary.withOpacity(0.35);
-    final titleColor = isCritical
-        ? colorScheme.error
-        : colorScheme.tertiary;
+        ? colorScheme.error.withValues(alpha: 0.35)
+        : colorScheme.tertiary.withValues(alpha: 0.35);
+    final titleColor = isCritical ? colorScheme.error : colorScheme.tertiary;
     final bodyColor = isCritical
         ? colorScheme.onErrorContainer
         : colorScheme.onTertiaryContainer;
 
     final updatedAt = activeIncident.updatedAt.toLocal();
-    final dateLabel = MaterialLocalizations.of(context).formatFullDate(updatedAt);
-    final timeLabel = MaterialLocalizations.of(context)
-        .formatTimeOfDay(TimeOfDay.fromDateTime(updatedAt));
+    final dateLabel = MaterialLocalizations.of(
+      context,
+    ).formatFullDate(updatedAt);
+    final timeLabel = MaterialLocalizations.of(
+      context,
+    ).formatTimeOfDay(TimeOfDay.fromDateTime(updatedAt));
 
     return Container(
       key: const Key('incident-banner'),
@@ -81,23 +82,17 @@ class IncidentBanner extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             activeIncident.message,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: bodyColor,
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(color: bodyColor),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'What\'s affected: ${activeIncident.whatsAffected}',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: bodyColor,
-            ),
+            style: theme.textTheme.bodySmall?.copyWith(color: bodyColor),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Last updated: $dateLabel at $timeLabel',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: bodyColor,
-            ),
+            style: theme.textTheme.labelSmall?.copyWith(color: bodyColor),
           ),
         ],
       ),

@@ -9,6 +9,7 @@ const { adminFetch } = useAdminApi()
 const startDate = ref(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10))
 const endDate = ref(new Date().toISOString().slice(0, 10))
 const productSlice = ref<'all' | 'free' | 'paid'>('all')
+const hasInvalidDateRange = computed(() => startDate.value > endDate.value)
 
 const dashboard = ref<Record<string, any> | null>(null)
 const loading = ref(true)
@@ -27,6 +28,11 @@ const productOptions: Array<{ label: string; value: 'all' | 'free' | 'paid' }> =
 async function loadData() {
   loading.value = true
   error.value = ''
+  if (hasInvalidDateRange.value) {
+    error.value = 'From date must be before To date.'
+    loading.value = false
+    return
+  }
   try {
     const response = await adminFetch<{ data: Record<string, any> }>(
       `/admin/analytics/system-dashboard?startDate=${startDate.value}T00:00:00Z&endDate=${endDate.value}T23:59:59Z&productSlice=${productSlice.value}`,
@@ -42,6 +48,11 @@ async function loadData() {
 async function exportDashboard(format: 'json' | 'csv') {
   exportLoading.value = true
   error.value = ''
+  if (hasInvalidDateRange.value) {
+    error.value = 'From date must be before To date.'
+    exportLoading.value = false
+    return
+  }
   try {
     const response = await adminFetch<{ data: Record<string, any> }>(
       '/admin/analytics/system-dashboard/export',
@@ -76,8 +87,11 @@ function downloadFile(filename: string, content: string, mime: string) {
   const link = document.createElement('a')
   link.href = url
   link.download = filename
+  link.style.display = 'none'
+  document.body.appendChild(link)
   link.click()
-  URL.revokeObjectURL(url)
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 function formatDelta(metric: Record<string, any>): string {
@@ -122,8 +136,8 @@ onMounted(loadData)
         <p class="page-subtitle">Operational, product, billing, and governance signals in one view.</p>
       </div>
       <div class="export-actions">
-        <button class="btn-secondary" :disabled="exportLoading" @click="exportDashboard('json')">Export JSON</button>
-        <button class="btn-secondary" :disabled="exportLoading" @click="exportDashboard('csv')">Export CSV</button>
+        <button type="button" class="btn-secondary" :disabled="exportLoading || hasInvalidDateRange" @click="exportDashboard('json')">Export JSON</button>
+        <button type="button" class="btn-secondary" :disabled="exportLoading || hasInvalidDateRange" @click="exportDashboard('csv')">Export CSV</button>
       </div>
     </div>
 
@@ -139,7 +153,7 @@ onMounted(loadData)
           <option v-for="option in productOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
         </select>
       </label>
-      <button class="btn-primary" @click="loadData">Refresh</button>
+      <button type="button" class="btn-primary" :disabled="hasInvalidDateRange" @click="loadData">Refresh</button>
     </div>
 
     <div v-if="error" class="error-box" role="alert" aria-live="assertive">
@@ -191,21 +205,23 @@ onMounted(loadData)
         <div class="split-grid">
           <div class="panel">
             <h4 class="panel-title">Funnel</h4>
-            <table class="table">
-              <thead>
-                <tr><th>Stage</th><th>Current</th><th>Baseline</th><th>Delta</th></tr>
-              </thead>
-              <tbody>
-                <tr v-for="row in dashboard.activity?.funnel ?? []" :key="row.stage">
-                  <td>{{ row.stage }}</td>
-                  <td>{{ row.currentValue }}</td>
-                  <td>{{ row.baselineValue }}</td>
-                  <td :class="{ 'td-green': row.delta > 0, 'td-red': row.delta < 0 }">
-                    {{ row.delta > 0 ? '+' : '' }}{{ row.delta }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr><th>Stage</th><th>Current</th><th>Baseline</th><th>Delta</th></tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in dashboard.activity?.funnel ?? []" :key="row.stage">
+                    <td>{{ row.stage }}</td>
+                    <td>{{ row.currentValue }}</td>
+                    <td>{{ row.baselineValue }}</td>
+                    <td :class="{ 'td-green': row.delta > 0, 'td-red': row.delta < 0 }">
+                      {{ row.delta > 0 ? '+' : '' }}{{ row.delta }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
           <div class="panel">
             <h4 class="panel-title">Retention</h4>
@@ -460,6 +476,13 @@ onMounted(loadData)
   cursor: not-allowed;
 }
 
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .error-box {
   background: #fef2f2;
   color: #b91c1c;
@@ -595,14 +618,20 @@ onMounted(loadData)
   font-family: var(--font-display);
 }
 
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(13, 27, 42, 0.12);
+  border-radius: 10px;
+}
+
 .table {
   width: 100%;
+  min-width: 520px;
   border-collapse: collapse;
   font-size: 13px;
   background: #fff;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid rgba(13, 27, 42, 0.12);
 }
 .table th {
   background: linear-gradient(180deg, #f8fafc, #eef2f7);

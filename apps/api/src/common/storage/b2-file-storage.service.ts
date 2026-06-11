@@ -7,6 +7,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { createHash } from 'node:crypto';
 import type { StorageConfig } from '../../config/storage.config';
 import type { FileStorageService } from './file-storage.interface';
 import {
@@ -49,6 +50,10 @@ export class B2FileStorageService implements FileStorageService {
     });
   }
 
+  private keyFingerprint(key: string): string {
+    return createHash('sha256').update(key).digest('hex').slice(0, 12);
+  }
+
   async upload(
     key: string,
     buffer: Buffer,
@@ -67,7 +72,7 @@ export class B2FileStorageService implements FileStorageService {
     } catch (err) {
       this.logger.warn(
         redactSecrets(
-          `Upload failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+          `Upload failed for keyFingerprint=${this.keyFingerprint(key)}: ${err instanceof Error ? err.message : String(err)}`,
         ),
       );
       throw new FileStorageException(
@@ -100,7 +105,7 @@ export class B2FileStorageService implements FileStorageService {
     } catch (err) {
       this.logger.warn(
         redactSecrets(
-          `Get failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+          `Get failed for keyFingerprint=${this.keyFingerprint(key)}: ${err instanceof Error ? err.message : String(err)}`,
         ),
       );
       throw new FileStorageException(
@@ -121,7 +126,7 @@ export class B2FileStorageService implements FileStorageService {
     } catch (err) {
       this.logger.warn(
         redactSecrets(
-          `Delete failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+          `Delete failed for keyFingerprint=${this.keyFingerprint(key)}: ${err instanceof Error ? err.message : String(err)}`,
         ),
       );
       throw new FileStorageException(
@@ -143,7 +148,7 @@ export class B2FileStorageService implements FileStorageService {
     } catch (err) {
       this.logger.warn(
         redactSecrets(
-          `getSignedUrl failed for key ${key}: ${err instanceof Error ? err.message : String(err)}`,
+          `getSignedUrl failed for keyFingerprint=${this.keyFingerprint(key)}: ${err instanceof Error ? err.message : String(err)}`,
         ),
       );
       throw new FileStorageException(

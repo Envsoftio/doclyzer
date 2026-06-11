@@ -66,7 +66,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final defaultMessage = fallbackMessage ?? _defaultBlockedMessage;
     final message = (nextSteps != null && nextSteps.isNotEmpty)
         ? nextSteps
-        : ((rationale != null && rationale.isNotEmpty) ? rationale : defaultMessage);
+        : ((rationale != null && rationale.isNotEmpty)
+              ? rationale
+              : defaultMessage);
     StatusMessenger.showWarning(context, message);
   }
 
@@ -96,7 +98,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     final isRestricted = _restrictionStatus?.isRestricted ?? false;
     final incident = widget.incidentStatus;
-    final showIncidentBanner = incident != null &&
+    final showIncidentBanner =
+        incident != null &&
         incident.isActive &&
         incident.affectsSurface('mobile_app');
 
@@ -162,7 +165,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   _HomeNavCard(
@@ -226,7 +231,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   _HomeNavCard(
@@ -278,7 +285,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: theme.colorScheme.error,
-                    side: BorderSide(color: theme.colorScheme.error.withOpacity(0.5)),
+                    side: BorderSide(
+                      color: theme.colorScheme.error.withValues(alpha: 0.5),
+                    ),
                   ),
                   child: const Text('Log out'),
                 ),
@@ -292,10 +301,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _RestrictionBanner extends StatelessWidget {
-  const _RestrictionBanner({
-    required this.rationale,
-    required this.nextSteps,
-  });
+  const _RestrictionBanner({required this.rationale, required this.nextSteps});
 
   final String rationale;
   final String nextSteps;
@@ -311,7 +317,7 @@ class _RestrictionBanner extends StatelessWidget {
         color: theme.colorScheme.errorContainer,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(
-          color: theme.colorScheme.error.withOpacity(0.3),
+          color: theme.colorScheme.error.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -319,7 +325,11 @@ class _RestrictionBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: theme.colorScheme.error, size: 20),
+              Icon(
+                Icons.warning_amber_rounded,
+                color: theme.colorScheme.error,
+                size: 20,
+              ),
               const SizedBox(width: AppSpacing.sm),
               Text(
                 'Account Restricted',
@@ -389,7 +399,9 @@ class _HomeNavCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withOpacity(0.6),
+                    color: theme.colorScheme.primaryContainer.withValues(
+                      alpha: 0.6,
+                    ),
                     borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
                   ),
                   child: Icon(icon, color: theme.colorScheme.primary, size: 24),
@@ -399,16 +411,10 @@ class _HomeNavCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title,
-                        style: theme.textTheme.titleMedium,
-                      ),
+                      Text(title, style: theme.textTheme.titleMedium),
                       if (subtitle != null) ...[
                         const SizedBox(height: 2),
-                        Text(
-                          subtitle!,
-                          style: theme.textTheme.bodySmall,
-                        ),
+                        Text(subtitle!, style: theme.textTheme.bodySmall),
                       ],
                     ],
                   ),

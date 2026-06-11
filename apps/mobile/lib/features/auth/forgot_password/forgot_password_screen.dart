@@ -21,7 +21,6 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailController = TextEditingController();
   String? _error;
-  bool _submitted = false;
 
   @override
   void dispose() {
@@ -44,9 +43,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     try {
       await widget.onSubmit(email);
-      setState(() {
-        _submitted = true;
-      });
       widget.onResetSent();
     } on AuthException catch (error) {
       setState(() {
@@ -82,10 +78,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: Colors.red),
-                ),
+                child: Text(_error!, style: const TextStyle(color: Colors.red)),
               ),
             const SizedBox(height: 16),
             FilledButton(
