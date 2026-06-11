@@ -28,8 +28,8 @@ cp .env.example .env
 # The .env file includes defaults for local development:
 # - PostgreSQL: localhost:5432
 # - Redis: localhost:6379
-# - API: http://localhost:4000
-# - Web: http://localhost:3001
+# - API: http://localhost:4002
+# - Web: http://localhost:3005
 ```
 
 ### 2. Start API + Database Stack with Docker Compose
@@ -57,7 +57,7 @@ npm run migration:run
 npm run start:dev
 ```
 
-Alternative: if `api` service is already started via compose in Step 2, API is available at **http://localhost:4000** without running these commands.
+Alternative: if `api` service is already started via compose in Step 2, API is available at **http://localhost:4002** without running these commands.
 
 ### 4. Run the Web App (Frontend)
 
@@ -71,7 +71,7 @@ npm install
 npm run dev
 ```
 
-The web app will be available at **http://localhost:3001**
+The web app will be available at **http://localhost:3005**
 
 ### 5. Run the Mobile App (Optional)
 
@@ -174,7 +174,7 @@ DATABASE_URL=postgresql://doclyzer:doclyzer_dev_password@localhost:5432/doclyzer
 
 # Better Auth
 BETTER_AUTH_SECRET=change-me-in-production
-BETTER_AUTH_URL=http://localhost:4000
+BETTER_AUTH_URL=http://localhost:4002
 BETTER_AUTH_BASE_PATH=/v1/auth
 
 # Backblaze B2 Storage (optional)

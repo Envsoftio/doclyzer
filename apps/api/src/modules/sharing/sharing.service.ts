@@ -92,7 +92,7 @@ export class SharingService {
   ) {
     this.shareBaseUrl = this.configService.get<string>(
       'SHARE_BASE_URL',
-      'http://localhost:3001',
+      'http://localhost:3005',
     );
   }
 
