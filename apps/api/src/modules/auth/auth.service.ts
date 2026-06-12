@@ -68,6 +68,9 @@ export class AuthService {
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
     this.validateEmail(payload.email);
     this.validatePassword(payload.password);
+    if (payload.referralCode?.trim()) {
+      await this.referralsService.prevalidateReferralCode(payload.referralCode);
+    }
 
     const email = payload.email.trim().toLowerCase();
     const displayName = this.deriveDisplayName(email);
@@ -95,6 +98,13 @@ export class AuthService {
 
       await this.createDefaultProfile(userId, displayName);
       await this.referralsService.ensureReferralProfileForUser(userId);
+      if (payload.referralCode?.trim()) {
+        await this.referralsService.applyReferralCode({
+          inviteeUserId: userId,
+          referralCode: payload.referralCode,
+          correlationId: `auth-register:${userId}`,
+        });
+      }
       this.logger.log('Auth registration success');
       return {
         userId,
@@ -154,10 +164,19 @@ export class AuthService {
       });
 
       const token = result?.response?.token;
+      const authenticatedUserId = result?.response?.user?.id ?? null;
       if (!token) {
         throw new UnauthorizedException({
           code: 'AUTH_INVALID_CREDENTIALS',
           message: 'Invalid credentials',
+        });
+      }
+
+      if (authenticatedUserId) {
+        await this.referralsService.releasePendingInviteeBonusForUser({
+          userId: authenticatedUserId,
+          correlationId: `auth-login:${authenticatedUserId}`,
+          trigger: 'login',
         });
       }
 
@@ -217,6 +236,11 @@ export class AuthService {
       }
 
       const token = session.token || refreshToken;
+      await this.referralsService.releasePendingInviteeBonusForUser({
+        userId: user.id,
+        correlationId: `auth-refresh:${user.id}`,
+        trigger: 'refresh',
+      });
       this.logger.log('Auth token refresh');
       return {
         data: {

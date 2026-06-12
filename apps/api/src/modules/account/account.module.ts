@@ -11,6 +11,7 @@ import { AuthModule } from '../auth/auth.module';
 import { AuditIncidentModule } from '../audit-incident/audit-incident.module';
 import { StorageModule } from '../../common/storage/storage.module';
 import { NotificationPipelineModule } from '../../common/notification-pipeline/notification-pipeline.module';
+import { ReferralsModule } from '../referrals/referrals.module';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 
@@ -29,6 +30,7 @@ import { AccountService } from './account.service';
     AuditIncidentModule,
     StorageModule,
     NotificationPipelineModule,
+    ReferralsModule,
   ],
   controllers: [AccountController],
   providers: [AccountService],

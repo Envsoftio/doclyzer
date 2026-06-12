@@ -11,6 +11,7 @@ export enum NotifiableEventType {
   BILLING_PAYMENT_FAILED = 'BILLING_PAYMENT_FAILED',
   SUBSCRIPTION_ACTIVATED = 'SUBSCRIPTION_ACTIVATED',
   SUBSCRIPTION_CANCELLED = 'SUBSCRIPTION_CANCELLED',
+  REFERRAL_INVITEE_BONUS_RELEASED = 'REFERRAL_INVITEE_BONUS_RELEASED',
 }
 
 export type NotificationCategory = 'security' | 'compliance' | 'product';
@@ -42,6 +43,10 @@ export const EVENT_CATEGORY_MAP: Record<
   [NotifiableEventType.SUBSCRIPTION_CANCELLED]: {
     category: 'product',
     emailType: 'billing.subscription_cancelled',
+  },
+  [NotifiableEventType.REFERRAL_INVITEE_BONUS_RELEASED]: {
+    category: 'product',
+    emailType: 'referral.invitee_bonus.released',
   },
   [NotifiableEventType.ACCOUNT_EMAIL_CHANGED]: {
     category: 'security',

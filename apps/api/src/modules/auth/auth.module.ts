@@ -18,7 +18,7 @@ import { ReferralsModule } from '../referrals/referrals.module';
 @Module({
   imports: [
     forwardRef(() => ProfilesModule),
-    ReferralsModule,
+    forwardRef(() => ReferralsModule),
     NotificationPipelineModule,
     TypeOrmModule.forFeature([UserEntity, SessionEntity, RestrictionEntity]),
   ],

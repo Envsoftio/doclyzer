@@ -15,6 +15,7 @@ import { NotificationPipelineService } from '../../common/notification-pipeline/
 import { NotifiableEventType } from '../../common/notification-pipeline/notification-event.types';
 import type { FileStorageService } from '../../common/storage/file-storage.interface';
 import { FILE_STORAGE } from '../../common/storage/storage.module';
+import { ReferralsService } from '../referrals/referrals.service';
 import type {
   UpdateAccountProfileDto,
   UpdateCommunicationPreferencesDto,
@@ -59,6 +60,7 @@ export class AccountService {
     private readonly accountOverrideService: AccountOverrideService,
     @Inject(FILE_STORAGE) private readonly fileStorage: FileStorageService,
     private readonly notificationPipeline: NotificationPipelineService,
+    private readonly referralsService: ReferralsService,
   ) {}
 
   async getRestrictionStatus(userId: string): Promise<RestrictionStatus> {
@@ -141,6 +143,12 @@ export class AccountService {
   }
 
   async getProfile(userId: string): Promise<AccountProfile> {
+    await this.referralsService.releasePendingInviteeBonusForUser({
+      userId,
+      correlationId: `account-profile:${userId}`,
+      trigger: 'account_profile',
+    });
+
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException({

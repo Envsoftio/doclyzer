@@ -1,6 +1,7 @@
 export interface RegisterRequest {
   email: string;
   password: string;
+  referralCode?: string;
 }
 
 export interface RegisterResponse {
