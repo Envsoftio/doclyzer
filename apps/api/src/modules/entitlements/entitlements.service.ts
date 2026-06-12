@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -138,6 +139,39 @@ export class EntitlementsService {
       })
       .where('user_id = :userId', { userId })
       .execute();
+  }
+
+  async adjustCreditsInTransaction(
+    manager: EntityManager,
+    userId: string,
+    delta: number,
+    reason: EntitlementChangeReason = 'admin_adjustment',
+  ): Promise<number> {
+    const entitlement = await this.findOrProvision(userId, manager);
+    const repo = manager.getRepository(UserEntitlementEntity);
+    const locked = await repo
+      .createQueryBuilder('entitlement')
+      .setLock('pessimistic_write')
+      .leftJoinAndSelect('entitlement.plan', 'plan')
+      .where('entitlement.id = :id', { id: entitlement.id })
+      .getOneOrFail();
+
+    const currentBalance = parseFloat(locked.creditBalance);
+    const nextBalance = currentBalance + delta;
+    if (nextBalance < 0) {
+      throw new BadRequestException({
+        code: 'ENTITLEMENTS_INSUFFICIENT_CREDITS_FOR_ADJUSTMENT',
+        message: 'Credit adjustment would result in a negative balance.',
+      });
+    }
+
+    const now = new Date();
+    locked.creditBalance = nextBalance.toFixed(2);
+    locked.lastChangeReason = reason;
+    locked.lastChangeAt = now;
+    await repo.save(locked);
+
+    return nextBalance;
   }
 
   /**

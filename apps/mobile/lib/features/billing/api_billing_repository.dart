@@ -44,10 +44,13 @@ class ApiBillingRepository implements BillingRepository {
     final d = data['data'] as Map<String, dynamic>;
     return CreateOrderResult(
       orderId: d['orderId'] as String,
-      razorpayOrderId: d['razorpayOrderId'] as String,
+      razorpayOrderId: d['razorpayOrderId'] as String?,
       amount: d['amount'] as int,
       currency: d['currency'] as String,
-      razorpayKeyId: d['razorpayKeyId'] as String,
+      razorpayKeyId: d['razorpayKeyId'] as String?,
+      paymentRequired: d['paymentRequired'] as bool? ?? true,
+      checkoutProvider: d['checkoutProvider'] as String? ?? 'razorpay',
+      orderStatus: _orderStatusFromString(d['orderStatus'] as String),
     );
   }
 
@@ -88,11 +91,30 @@ class ApiBillingRepository implements BillingRepository {
         finalAmount: (json['finalAmount'] as num).toDouble(),
         currency: json['currency'] as String,
         credited: json['credited'] as bool,
-        razorpayOrderId: json['razorpayOrderId'] as String,
+        razorpayOrderId: json['razorpayOrderId'] as String?,
         updatedAt: DateTime.parse(json['updatedAt'] as String),
         failureReason: json['failureReason'] as String?,
+        reviewReason: json['reviewReason'] as String?,
       );
     }).toList();
+  }
+
+  @override
+  Future<BillingOrderStatusItem> getOrderStatus(String orderId) async {
+    final data = await _client.get('v1/billing/orders/$orderId/status');
+    final json = data['data'] as Map<String, dynamic>;
+    return BillingOrderStatusItem(
+      id: json['id'] as String,
+      status: _orderStatusFromString(json['status'] as String),
+      statusLabel: json['statusLabel'] as String,
+      finalAmount: (json['finalAmount'] as num).toDouble(),
+      currency: json['currency'] as String,
+      credited: json['credited'] as bool,
+      razorpayOrderId: json['razorpayOrderId'] as String?,
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      failureReason: json['failureReason'] as String?,
+      reviewReason: json['reviewReason'] as String?,
+    );
   }
 
   @override
@@ -206,16 +228,25 @@ class ApiBillingRepository implements BillingRepository {
 
   BillingOrderStatus _orderStatusFromString(String status) {
     switch (status) {
+      case 'created':
+        return BillingOrderStatus.created;
+      case 'payment_pending':
       case 'pending':
-        return BillingOrderStatus.pending;
+        return BillingOrderStatus.paymentPending;
+      case 'client_purchase_confirmed':
       case 'paid':
-        return BillingOrderStatus.paid;
+      case 'signature_verified':
+        return BillingOrderStatus.clientPurchaseConfirmed;
+      case 'webhook_pending':
+        return BillingOrderStatus.webhookPending;
       case 'reconciled':
         return BillingOrderStatus.reconciled;
       case 'failed':
         return BillingOrderStatus.failed;
+      case 'pending_review':
+        return BillingOrderStatus.pendingReview;
       default:
-        return BillingOrderStatus.pending;
+        return BillingOrderStatus.paymentPending;
     }
   }
 }

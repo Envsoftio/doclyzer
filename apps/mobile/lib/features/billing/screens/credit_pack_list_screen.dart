@@ -42,6 +42,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
   String? _statusBannerMessage;
   SupportRequestContext? _supportContext;
   String? _supportErrorMessage;
+  String? _activeOrderId;
   late final Razorpay _razorpay;
 
   @override
@@ -104,6 +105,24 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
         pack.id,
         promoCode: promoCode,
       );
+      _activeOrderId = order.orderId;
+
+      if (!order.paymentRequired) {
+        await _refreshOrderStatuses();
+        if (mounted) {
+          setState(() {
+            _purchasingPackId = null;
+            _statusBannerMessage = 'Credits were applied successfully.';
+          });
+          StatusMessenger.showSuccess(context, 'Credits added!');
+          widget.onPurchaseComplete();
+        }
+        return;
+      }
+
+      if (order.razorpayKeyId == null || order.razorpayOrderId == null) {
+        throw StateError('Checkout requires provider order details.');
+      }
 
       _razorpay.open({
         'key': order.razorpayKeyId,
@@ -154,6 +173,35 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
         });
       }
     }
+  }
+
+  Future<BillingOrderStatusItem?> _pollOrderStatus(String orderId) async {
+    const maxAttempts = 8;
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      final order = await widget.billingRepository.getOrderStatus(orderId);
+      if (!mounted) return order;
+
+      final knownOrderIndex = _recentOrders.indexWhere((item) => item.id == order.id);
+      setState(() {
+        if (knownOrderIndex >= 0) {
+          _recentOrders = [
+            ..._recentOrders.sublist(0, knownOrderIndex),
+            order,
+            ..._recentOrders.sublist(knownOrderIndex + 1),
+          ];
+        } else {
+          _recentOrders = [order, ..._recentOrders].take(5).toList();
+        }
+      });
+
+      if (!order.isAwaitingCapture) {
+        return order;
+      }
+
+      await Future<void>.delayed(const Duration(seconds: 2));
+    }
+
+    return null;
   }
 
   Future<void> _openCheckoutSheet(CreditPack pack) async {
@@ -419,19 +467,59 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
         response.paymentId ?? '',
         response.signature ?? '',
       );
+      final orderId = _activeOrderId;
       await _refreshOrderStatuses();
       if (mounted) {
         if (verification.orderStatus == BillingOrderStatus.reconciled) {
           StatusMessenger.showSuccess(context, 'Credits added!');
           widget.onPurchaseComplete();
+        } else if (orderId != null) {
+          final polled = await _pollOrderStatus(orderId);
+          await _refreshOrderStatuses();
+          if (!mounted) return;
+          if (polled?.isReconciled ?? false) {
+            StatusMessenger.showSuccess(context, 'Credits added!');
+            widget.onPurchaseComplete();
+          } else if (polled?.needsReview ?? false) {
+            setState(() {
+              _statusBannerMessage =
+                  polled?.reviewReason ??
+                  'This order was flagged for review before credits could be added.';
+            });
+            StatusMessenger.showWarning(
+              context,
+              'Payment received, but this order is pending review.',
+              duration: const Duration(seconds: 5),
+            );
+          } else if (polled?.canRetry ?? false) {
+            setState(() {
+              _statusBannerMessage =
+                  polled?.failureReason ??
+                  'Payment failed during reconciliation. You can retry safely.';
+            });
+            StatusMessenger.showWarning(
+              context,
+              'Payment failed during reconciliation.',
+            );
+          } else {
+            setState(() {
+              _statusBannerMessage =
+                  'Payment received. Awaiting server reconciliation before credits are added.';
+            });
+            StatusMessenger.showWarning(
+              context,
+              'Payment confirmed. Server reconciliation is still pending.',
+              duration: const Duration(seconds: 5),
+            );
+          }
         } else {
           setState(() {
             _statusBannerMessage =
-                'Payment received. Awaiting Razorpay capture before credits are added.';
+                'Payment received. Awaiting server reconciliation before credits are added.';
           });
           StatusMessenger.showWarning(
             context,
-            'Payment verified. Capture is pending, please refresh status shortly.',
+            'Payment verified. Reconciliation is pending, please refresh shortly.',
           );
         }
       }
@@ -445,6 +533,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
         );
       }
     } finally {
+      _activeOrderId = null;
       if (mounted) setState(() => _purchasingPackId = null);
     }
   }
@@ -649,7 +738,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
     final description =
         _statusBannerMessage ??
         (isPending
-            ? 'Order ${_shortOrderId(pending.razorpayOrderId)} is waiting for Razorpay capture. Buying is paused until reconciliation.'
+            ? 'Order ${_shortOrderId(pending.razorpayOrderId ?? pending.id)} is waiting for reconciliation. Buying is paused until status is clear.'
             : failed?.failureReason ?? 'You can retry checkout safely.');
 
     return Card(

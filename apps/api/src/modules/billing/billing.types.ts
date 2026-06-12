@@ -4,6 +4,7 @@ import {
   IsIn,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsPositive,
   IsUUID,
@@ -48,6 +49,8 @@ export const BILLING_PROMO_DATE_RANGE_INVALID =
   'BILLING_PROMO_DATE_RANGE_INVALID';
 export const BILLING_ANALYTICS_DATE_RANGE_INVALID =
   'BILLING_ANALYTICS_DATE_RANGE_INVALID';
+export const BILLING_MANUAL_ADJUSTMENT_NEGATIVE_BALANCE =
+  'BILLING_MANUAL_ADJUSTMENT_NEGATIVE_BALANCE';
 
 export type PromoProductType = 'credit_pack' | 'subscription';
 
@@ -139,6 +142,51 @@ export class ListOrdersQueryDto {
   limit?: number;
 }
 
+export class AdminBillingOrdersQueryDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  search?: string;
+
+  @IsOptional()
+  @IsIn([
+    'created',
+    'payment_pending',
+    'client_purchase_confirmed',
+    'signature_verified',
+    'webhook_pending',
+    'reconciled',
+    'failed',
+    'pending_review',
+  ])
+  status?: OrderStatus;
+
+  @IsOptional()
+  @IsIn(['all', 'needs_review', 'clear'])
+  reviewState?: 'all' | 'needs_review' | 'clear';
+
+  @IsOptional()
+  @IsDateString()
+  dateFrom?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateTo?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  pageSize?: number;
+}
+
 export class CreateSubscriptionDto {
   @IsUUID()
   @IsNotEmpty()
@@ -182,6 +230,74 @@ export interface CreateSubscriptionResponseDto {
 export interface VerifySubscriptionResponseDto {
   planName: string;
   entitlementSummary: object;
+}
+
+export interface AdminBillingOrderRowDto {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userDisplayName: string | null;
+  creditPackId: string;
+  creditPackName: string;
+  credits: number;
+  amount: number;
+  finalAmount: number;
+  currency: string;
+  status: OrderStatus;
+  statusLabel: string;
+  credited: boolean;
+  provider: 'revenuecat' | 'razorpay' | 'internal';
+  checkoutProvider: 'revenuecat' | 'razorpay' | 'internal';
+  orderReference: string;
+  paymentReference: string | null;
+  failureReason: string | null;
+  reviewReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminBillingOrdersResponseDto {
+  state: 'success';
+  filters: {
+    search: string | null;
+    status: OrderStatus | 'all';
+    reviewState: 'all' | 'needs_review' | 'clear';
+    dateFrom: string | null;
+    dateTo: string | null;
+  };
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+  items: AdminBillingOrderRowDto[];
+}
+
+export class AdminManualCreditAdjustmentDto {
+  @IsUUID()
+  @IsNotEmpty()
+  userId!: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  adjustment!: number;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(240)
+  reason!: string;
+}
+
+export interface AdminManualCreditAdjustmentResponseDto {
+  state: 'success';
+  adjustment: {
+    userId: string;
+    delta: number;
+    newCreditBalance: number;
+    reason: string;
+    performedAt: string;
+  };
 }
 
 export class PromoValidationDto {

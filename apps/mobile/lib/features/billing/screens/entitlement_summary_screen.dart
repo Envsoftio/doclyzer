@@ -413,7 +413,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
           children: [
             Expanded(
               child: Text(
-                _shortOrderId(order.razorpayOrderId),
+                _shortOrderId(order.razorpayOrderId ?? order.id),
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -450,6 +450,14 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
               color: theme.colorScheme.error,
             ),
           ),
+        ] else if (order.reviewReason != null && order.reviewReason!.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            order.reviewReason!,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.tertiary,
+            ),
+          ),
         ],
         const SizedBox(height: 4),
         Align(
@@ -478,11 +486,18 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
 
   (Color, Color) _orderChipColors(ThemeData theme, BillingOrderStatus status) {
     switch (status) {
-      case BillingOrderStatus.pending:
-      case BillingOrderStatus.paid:
+      case BillingOrderStatus.created:
+      case BillingOrderStatus.paymentPending:
+      case BillingOrderStatus.clientPurchaseConfirmed:
+      case BillingOrderStatus.webhookPending:
         return (
           theme.colorScheme.secondaryContainer,
           theme.colorScheme.onSecondaryContainer,
+        );
+      case BillingOrderStatus.pendingReview:
+        return (
+          theme.colorScheme.tertiaryContainer,
+          theme.colorScheme.onTertiaryContainer,
         );
       case BillingOrderStatus.failed:
         return (

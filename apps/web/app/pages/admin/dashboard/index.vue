@@ -237,7 +237,10 @@ onMounted(loadData)
       </div>
 
       <div class="section">
-        <h3 class="section-title">Payments & Refunds</h3>
+        <div class="section-title">
+          Payments & Refunds
+          <NuxtLink to="/admin/billing" class="section-link">Open billing operations</NuxtLink>
+        </div>
         <div class="card-row">
           <div class="stat-chip">
             <span class="stat-chip__label">Credit Pack Revenue</span>

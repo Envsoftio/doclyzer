@@ -21,8 +21,10 @@ import { BillingService } from './billing.service';
 import { RazorpayService } from './razorpay.service';
 import {
   AdminPromoAnalyticsExportDto,
+  AdminBillingOrdersQueryDto,
   AdminPromoAnalyticsQueryDto,
   AdminCreatePromoCodeDto,
+  AdminManualCreditAdjustmentDto,
   AdminUpdatePromoCodeDto,
   ConfirmClientPurchaseDto,
   CreateOrderDto,
@@ -160,6 +162,36 @@ export class BillingController {
       dto.productType,
       dto.productId,
     );
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Get('admin/orders')
+  @UseGuards(AuthGuard, SuperadminGuard)
+  async listAdminOrders(
+    @Req() req: Request,
+    @Query() query: AdminBillingOrdersQueryDto,
+  ): Promise<object> {
+    const { id: actorUserId } = req.user as RequestUser;
+    const data = await this.billingService.listAdminBillingOrders({
+      actorUserId,
+      query,
+      correlationId: getCorrelationId(req),
+    });
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Post('admin/manual-credit-adjustments')
+  @UseGuards(AuthGuard, SuperadminGuard)
+  async applyManualCreditAdjustment(
+    @Req() req: Request,
+    @Body() dto: AdminManualCreditAdjustmentDto,
+  ): Promise<object> {
+    const { id: actorUserId } = req.user as RequestUser;
+    const data = await this.billingService.applyManualCreditAdjustment({
+      actorUserId,
+      dto,
+      correlationId: getCorrelationId(req),
+    });
     return successResponse(data, getCorrelationId(req));
   }
 

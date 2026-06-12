@@ -5,6 +5,7 @@ const navItems = [
   { label: 'Dashboard', icon: '📊', href: '/admin/dashboard' },
   { label: 'Users', icon: '🧑‍💼', href: '/admin/users' },
   { label: 'Files', icon: '📁', href: '/admin/files' },
+  { label: 'Billing', icon: '💳', href: '/admin/billing' },
   { label: 'Risk', icon: '🚨', href: '/admin/risk' },
   { label: 'Notifications', icon: '🔔', href: '/admin/notifications' },
 ]

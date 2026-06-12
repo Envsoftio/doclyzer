@@ -82,13 +82,19 @@ class CreateOrderResult {
     required this.amount,
     required this.currency,
     required this.razorpayKeyId,
+    required this.paymentRequired,
+    required this.checkoutProvider,
+    required this.orderStatus,
   });
 
   final String orderId;
-  final String razorpayOrderId;
+  final String? razorpayOrderId;
   final int amount;
   final String currency;
-  final String razorpayKeyId;
+  final String? razorpayKeyId;
+  final bool paymentRequired;
+  final String checkoutProvider;
+  final BillingOrderStatus orderStatus;
 }
 
 class PromoValidationResult {
@@ -117,7 +123,15 @@ class VerifyPaymentResult {
   final EntitlementSummary entitlementSummary;
 }
 
-enum BillingOrderStatus { pending, paid, reconciled, failed }
+enum BillingOrderStatus {
+  created,
+  paymentPending,
+  clientPurchaseConfirmed,
+  webhookPending,
+  reconciled,
+  failed,
+  pendingReview,
+}
 
 class BillingOrderStatusItem {
   const BillingOrderStatusItem({
@@ -130,6 +144,7 @@ class BillingOrderStatusItem {
     required this.razorpayOrderId,
     required this.updatedAt,
     this.failureReason,
+    this.reviewReason,
   });
 
   final String id;
@@ -138,14 +153,19 @@ class BillingOrderStatusItem {
   final double finalAmount;
   final String currency;
   final bool credited;
-  final String razorpayOrderId;
+  final String? razorpayOrderId;
   final DateTime updatedAt;
   final String? failureReason;
+  final String? reviewReason;
 
   bool get isAwaitingCapture =>
-      status == BillingOrderStatus.pending || status == BillingOrderStatus.paid;
+      status == BillingOrderStatus.created ||
+      status == BillingOrderStatus.paymentPending ||
+      status == BillingOrderStatus.clientPurchaseConfirmed ||
+      status == BillingOrderStatus.webhookPending;
   bool get canRetry => status == BillingOrderStatus.failed;
   bool get isReconciled => status == BillingOrderStatus.reconciled;
+  bool get needsReview => status == BillingOrderStatus.pendingReview;
 }
 
 class Plan {
@@ -203,6 +223,7 @@ abstract class BillingRepository {
     String razorpaySignature,
   );
   Future<List<BillingOrderStatusItem>> listRecentOrders({int limit = 5});
+  Future<BillingOrderStatusItem> getOrderStatus(String orderId);
   Future<PromoValidationResult> validatePromoCode({
     required String promoCode,
     required String productType,

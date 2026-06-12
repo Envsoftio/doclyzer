@@ -47,6 +47,7 @@ import {
   BILLING_PROMO_USER_CAP_REACHED,
   BILLING_RECONCILIATION_AMOUNT_MISMATCH,
   BILLING_RECONCILIATION_CURRENCY_MISMATCH,
+  BILLING_MANUAL_ADJUSTMENT_NEGATIVE_BALANCE,
   BILLING_RECONCILIATION_PAYLOAD_INCOMPLETE,
   BILLING_SUBSCRIPTION_INVALID_SIGNATURE,
   BILLING_SUBSCRIPTION_NOT_FOUND,
@@ -58,6 +59,9 @@ import type {
   CreateOrderResponseDto,
   ConfirmClientPurchaseDto,
   CreateSubscriptionResponseDto,
+  AdminBillingOrderRowDto,
+  AdminBillingOrdersResponseDto,
+  AdminManualCreditAdjustmentResponseDto,
   OrderStatusDto,
   PlanResponseDto,
   PromoProductType,
@@ -74,6 +78,8 @@ import type {
 } from './billing.types';
 import type {
   AdminCreatePromoCodeDto,
+  AdminBillingOrdersQueryDto,
+  AdminManualCreditAdjustmentDto,
   AdminPromoAnalyticsExportDto,
   AdminPromoAnalyticsQueryDto,
   AdminUpdatePromoCodeDto,
@@ -191,6 +197,8 @@ type PromoFinancialAnalyticsSummary = Pick<
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
   private readonly EXPORT_ROW_CAP = 1000;
+  private readonly PROMO_RESERVATION_TIMEOUT_MINUTES =
+    this.resolvePromoReservationTimeoutMinutes();
 
   constructor(
     @InjectRepository(BillingProviderEventEntity)
@@ -256,6 +264,188 @@ export class BillingService {
     }
 
     return toOrderStatusDto(order);
+  }
+
+  async listAdminBillingOrders(input: {
+    actorUserId: string;
+    query: AdminBillingOrdersQueryDto;
+    correlationId: string;
+  }): Promise<AdminBillingOrdersResponseDto> {
+    const page = Math.max(1, input.query.page ?? 1);
+    const pageSize = Math.max(1, Math.min(input.query.pageSize ?? 25, 100));
+    const reviewState = input.query.reviewState ?? 'all';
+    const qb = this.orderRepo
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.user', 'user')
+      .leftJoinAndSelect('order.creditPack', 'creditPack')
+      .orderBy('order.updatedAt', 'DESC');
+
+    if (input.query.search?.trim()) {
+      const search = `%${input.query.search.trim().toLowerCase()}%`;
+      qb.andWhere(
+        `(
+          LOWER(user.email) LIKE :search
+          OR LOWER(COALESCE(user.displayName, '')) LIKE :search
+          OR LOWER(order.id::text) LIKE :search
+          OR LOWER(order.razorpayOrderId) LIKE :search
+          OR LOWER(COALESCE(order.razorpayPaymentId, '')) LIKE :search
+        )`,
+        { search },
+      );
+    }
+
+    if (input.query.status) {
+      qb.andWhere('order.status = :status', { status: input.query.status });
+    }
+
+    if (reviewState === 'needs_review') {
+      qb.andWhere('order.status = :pendingReview', {
+        pendingReview: 'pending_review',
+      });
+    } else if (reviewState === 'clear') {
+      qb.andWhere('order.status != :pendingReview', {
+        pendingReview: 'pending_review',
+      });
+    }
+
+    if (input.query.dateFrom) {
+      qb.andWhere('order.createdAt >= :dateFrom', {
+        dateFrom: new Date(input.query.dateFrom),
+      });
+    }
+
+    if (input.query.dateTo) {
+      const end = new Date(input.query.dateTo);
+      end.setUTCHours(23, 59, 59, 999);
+      qb.andWhere('order.createdAt <= :dateTo', {
+        dateTo: end,
+      });
+    }
+
+    qb.skip((page - 1) * pageSize).take(pageSize);
+
+    const [orders, totalItems] = await qb.getManyAndCount();
+    const items = orders.map((order) => this.toAdminBillingOrderRow(order));
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+    try {
+      await this.recordSuperadminAudit({
+        actorUserId: input.actorUserId,
+        action: 'BILLING_ORDERS_VIEW',
+        target: 'billing_orders',
+        outcome: 'success',
+        correlationId: input.correlationId,
+        metadata: {
+          page,
+          pageSize,
+          rowCount: items.length,
+          hasSearch: input.query.search?.trim().length ? true : false,
+          hasStatusFilter: input.query.status ? true : false,
+          needsReviewOnly: reviewState === 'needs_review',
+        },
+      });
+    } catch (err) {
+      this.logger.error('Failed to persist billing order view audit event', err);
+    }
+
+    return {
+      state: 'success',
+      filters: {
+        search: input.query.search?.trim() || null,
+        status: input.query.status ?? 'all',
+        reviewState,
+        dateFrom: input.query.dateFrom ?? null,
+        dateTo: input.query.dateTo ?? null,
+      },
+      pagination: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages,
+      },
+      items,
+    };
+  }
+
+  async applyManualCreditAdjustment(input: {
+    actorUserId: string;
+    dto: AdminManualCreditAdjustmentDto;
+    correlationId: string;
+  }): Promise<AdminManualCreditAdjustmentResponseDto> {
+    const delta = Math.round(input.dto.adjustment * 100) / 100;
+    if (!Number.isFinite(delta) || delta === 0) {
+      throw new BadRequestException({
+        code: 'BILLING_MANUAL_ADJUSTMENT_INVALID',
+        message: 'Adjustment must be a non-zero number.',
+      });
+    }
+
+    const performedAt = new Date();
+    let newCreditBalance = 0;
+
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        try {
+          newCreditBalance =
+            await this.entitlementsService.adjustCreditsInTransaction(
+              manager,
+              input.dto.userId,
+              delta,
+              'admin_adjustment',
+            );
+        } catch (err) {
+          if (err instanceof HttpException) {
+            throw err;
+          }
+          throw new BadRequestException({
+            code: BILLING_MANUAL_ADJUSTMENT_NEGATIVE_BALANCE,
+            message: 'Credit adjustment would result in a negative balance.',
+          });
+        }
+
+        await this.recordSuperadminAudit({
+          actorUserId: input.actorUserId,
+          action: 'BILLING_MANUAL_CREDIT_ADJUSTMENT',
+          target: `user:${input.dto.userId}`,
+          outcome: 'success',
+          correlationId: input.correlationId,
+          metadata: {
+            delta,
+            newCreditBalance,
+            reason: input.dto.reason.trim(),
+          },
+        });
+      });
+    } catch (err) {
+      if (err instanceof HttpException) {
+        throw err;
+      }
+      throw err;
+    }
+
+    await this.dispatchBillingOpsAlert({
+      alertType: 'billing.manual_credit_adjustment',
+      severity: 'warning',
+      idempotencyKey: `billing-ops:manual-credit-adjustment:${input.correlationId}`,
+      correlationId: input.correlationId,
+      metadata: {
+        actorUserId: input.actorUserId,
+        userId: input.dto.userId,
+        delta,
+        newCreditBalance,
+      },
+    });
+
+    return {
+      state: 'success',
+      adjustment: {
+        userId: input.dto.userId,
+        delta,
+        newCreditBalance,
+        reason: input.dto.reason.trim(),
+        performedAt: performedAt.toISOString(),
+      },
+    };
   }
 
   async createOrder(
@@ -2176,6 +2366,8 @@ export class BillingService {
         });
       }
 
+      await this.expireAbandonedPromoReservations(promo.id, tx);
+
       const now = new Date();
       if (
         (promo.validFrom && now < promo.validFrom) ||
@@ -2388,6 +2580,72 @@ export class BillingService {
       amount: pack ? parseFloat(pack.priceInr) : 0,
       currency: 'INR',
     };
+  }
+
+  private resolvePromoReservationTimeoutMinutes(): number {
+    const raw = process.env.BILLING_PROMO_RESERVATION_TIMEOUT_MINUTES;
+    const parsed = raw ? parseInt(raw, 10) : NaN;
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+    return 30;
+  }
+
+  private async expireAbandonedPromoReservations(
+    promoCodeId: string,
+    manager: EntityManager,
+  ): Promise<number> {
+    const cutoff = new Date(
+      Date.now() - this.PROMO_RESERVATION_TIMEOUT_MINUTES * 60 * 1000,
+    );
+    const rows = await manager
+      .getRepository(PromoRedemptionEntity)
+      .createQueryBuilder('redemption')
+      .innerJoin(OrderEntity, 'checkout_order', 'checkout_order.id = redemption.order_id')
+      .select('DISTINCT checkout_order.id', 'orderId')
+      .where('redemption.promo_code_id = :promoCodeId', { promoCodeId })
+      .andWhere("redemption.status = 'reserved'")
+      .andWhere("checkout_order.status IN ('created', 'payment_pending')")
+      .andWhere('checkout_order.updated_at <= :cutoff', {
+        cutoff: cutoff.toISOString(),
+      })
+      .getRawMany<{ orderId: string }>();
+
+    if (rows.length === 0) {
+      return 0;
+    }
+
+    let expiredCount = 0;
+    for (const row of rows) {
+      const order = await manager
+        .getRepository(OrderEntity)
+        .createQueryBuilder('order')
+        .setLock('pessimistic_write')
+        .where('order.id = :orderId', { orderId: row.orderId })
+        .getOne();
+      if (!order) continue;
+      if (order.status !== 'created' && order.status !== 'payment_pending') {
+        continue;
+      }
+      if (order.updatedAt > cutoff) continue;
+
+      order.status = 'failed';
+      order.credited = false;
+      order.metadata = {
+        ...(order.metadata ?? {}),
+        promoReservationExpiredAt: new Date().toISOString(),
+        promoReservationTimeoutMinutes: this.PROMO_RESERVATION_TIMEOUT_MINUTES,
+      };
+      order.metadata = this.withFailureReason(
+        order.metadata,
+        'Checkout expired before payment was completed.',
+      );
+      await manager.save(OrderEntity, order);
+      await this.voidPromoReservation(order.id, manager);
+      expiredCount += 1;
+    }
+
+    return expiredCount;
   }
 
   private normalizeOptionalIdempotencyKey(value?: string): string | null {
@@ -3724,6 +3982,49 @@ export class BillingService {
         void: 0,
       },
       updatedAt: promo.updatedAt.toISOString(),
+    };
+  }
+
+  private toAdminBillingOrderRow(order: OrderEntity): AdminBillingOrderRowDto {
+    const status = toOrderStatusDto(order);
+    const metadata = order.metadata ?? {};
+    const provider =
+      (typeof metadata['provider'] === 'string' && metadata['provider']) ||
+      (status.finalAmount <= 0 ? 'internal' : 'razorpay');
+    const paymentReference =
+      (typeof metadata['revenueCatTransactionId'] === 'string' &&
+        metadata['revenueCatTransactionId']) ||
+      order.razorpayPaymentId ||
+      null;
+
+    return {
+      id: order.id,
+      userId: order.userId,
+      userEmail: order.user.email,
+      userDisplayName: order.user.displayName,
+      creditPackId: order.creditPackId,
+      creditPackName: order.creditPack.name,
+      credits: order.creditPack.credits,
+      amount: parseFloat(order.amount),
+      finalAmount: status.finalAmount,
+      currency: order.currency,
+      status: status.status,
+      statusLabel: status.statusLabel,
+      credited: order.credited,
+      provider:
+        provider === 'revenuecat' || provider === 'internal'
+          ? provider
+          : 'razorpay',
+      checkoutProvider:
+        provider === 'revenuecat' || provider === 'internal'
+          ? provider
+          : 'razorpay',
+      orderReference: order.razorpayOrderId,
+      paymentReference,
+      failureReason: status.failureReason,
+      reviewReason: status.reviewReason,
+      createdAt: order.createdAt.toISOString(),
+      updatedAt: order.updatedAt.toISOString(),
     };
   }
 
