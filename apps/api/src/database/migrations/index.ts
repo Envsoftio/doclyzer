@@ -40,6 +40,7 @@ import { AddRecycleBinColumnsToReports1730816600000 } from './1730816600000-AddR
 import { CreateBillingProviderEventsAndOrderStates1730816700000 } from './1730816700000-CreateBillingProviderEventsAndOrderStates';
 import { CreatePushNotificationTables1730816800000 } from './1730816800000-CreatePushNotificationTables';
 import { AddPromoParityFieldsAndLifecycleEvents1730816900000 } from './1730816900000-AddPromoParityFieldsAndLifecycleEvents';
+import { CreateReferralFoundation1730817000000 } from './1730817000000-CreateReferralFoundation';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -84,4 +85,5 @@ export const migrations = [
   CreateBillingProviderEventsAndOrderStates1730816700000,
   CreatePushNotificationTables1730816800000,
   AddPromoParityFieldsAndLifecycleEvents1730816900000,
+  CreateReferralFoundation1730817000000,
 ];

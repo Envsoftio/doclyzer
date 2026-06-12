@@ -31,6 +31,10 @@ const ENTITLEMENT_CHANGE_REASONS: EntitlementChangeReason[] = [
   'plan_downgrade',
   'admin_adjustment',
   'system_reconciliation',
+  'referral_invitee_bonus',
+  'referral_milestone_a',
+  'referral_milestone_b',
+  'promo_free_credit_pack',
 ];
 
 @Injectable()

@@ -1,4 +1,4 @@
-import { join, resolve } from 'path';
+import { resolve } from 'path';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { razorpayConfig } from './config/razorpay.config';
@@ -31,12 +31,17 @@ import { PlanConfigAuditEventEntity } from './database/entities/plan-config-audi
 import { PromoCodeEntity } from './database/entities/promo-code.entity';
 import { PromoLifecycleEventEntity } from './database/entities/promo-lifecycle-event.entity';
 import { PromoRedemptionEntity } from './database/entities/promo-redemption.entity';
+import { ReferralAuditEventEntity } from './database/entities/referral-audit-event.entity';
+import { ReferralLogEntity } from './database/entities/referral-log.entity';
+import { ReferralPolicyConfigEntity } from './database/entities/referral-policy-config.entity';
+import { ReferralRewardEventEntity } from './database/entities/referral-reward-event.entity';
 import { SubscriptionEntity } from './database/entities/subscription.entity';
 import { UserEntitlementEntity } from './database/entities/user-entitlement.entity';
 import { SessionEntity } from './database/entities/session.entity';
 import { SuperadminActionAuditEventEntity } from './database/entities/superadmin-action-audit-event.entity';
 import { SuperadminAuthAuditEventEntity } from './database/entities/superadmin-auth-audit-event.entity';
 import { SuperadminMfaChallengeEntity } from './database/entities/superadmin-mfa-challenge.entity';
+import { UserReferralProfileEntity } from './database/entities/user-referral-profile.entity';
 import { UserEntity } from './database/entities/user.entity';
 import { EmailDeliveryEventEntity } from './database/entities/email-delivery-event.entity';
 import { EmailQueueItemEntity } from './database/entities/email-queue-item.entity';
@@ -51,6 +56,7 @@ import { ConsentModule } from './modules/consent/consent.module';
 import { EntitlementsModule } from './modules/entitlements/entitlements.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { ReferralsModule } from './modules/referrals/referrals.module';
 import { SharingModule } from './modules/sharing/sharing.module';
 import { AnalyticsAdminModule } from './modules/analytics-admin/analytics-admin.module';
 import { AuditIncidentModule } from './modules/audit-incident/audit-incident.module';
@@ -83,6 +89,11 @@ const typeOrmEntities = [
   PromoCodeEntity,
   PromoLifecycleEventEntity,
   PromoRedemptionEntity,
+  UserReferralProfileEntity,
+  ReferralLogEntity,
+  ReferralRewardEventEntity,
+  ReferralAuditEventEntity,
+  ReferralPolicyConfigEntity,
   SubscriptionEntity,
   SuperadminActionAuditEventEntity,
   SuperadminMfaChallengeEntity,
@@ -204,6 +215,7 @@ const typeOrmEntities = [
     EntitlementsModule,
     ProfilesModule,
     ReportsModule,
+    ReferralsModule,
     SharingModule,
     AnalyticsAdminModule,
     AuditIncidentModule,

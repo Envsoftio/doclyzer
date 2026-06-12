@@ -13,10 +13,12 @@ import { AuthService } from './auth.service';
 import { PasswordRecoveryService } from './password-recovery.service';
 import { SuperadminGuard } from './superadmin.guard';
 import { ProfilesModule } from '../profiles/profiles.module';
+import { ReferralsModule } from '../referrals/referrals.module';
 
 @Module({
   imports: [
     forwardRef(() => ProfilesModule),
+    ReferralsModule,
     NotificationPipelineModule,
     TypeOrmModule.forFeature([UserEntity, SessionEntity, RestrictionEntity]),
   ],

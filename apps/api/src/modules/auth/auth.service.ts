@@ -23,6 +23,7 @@ import {
 import { SessionNotFoundException } from './exceptions/session-not-found.exception';
 import { BetterAuthService } from './better-auth.service';
 import { ProfilesService } from '../profiles/profiles.service';
+import { ReferralsService } from '../referrals/referrals.service';
 
 interface RateLimitState {
   count: number;
@@ -59,6 +60,7 @@ export class AuthService {
     private readonly sessionRepo: Repository<SessionEntity>,
     private readonly betterAuthService: BetterAuthService,
     private readonly profilesService: ProfilesService,
+    private readonly referralsService: ReferralsService,
   ) {
     this.accessTtlSec = this.betterAuthService.getSessionExpiresInSeconds();
   }
@@ -92,6 +94,7 @@ export class AuthService {
       }
 
       await this.createDefaultProfile(userId, displayName);
+      await this.referralsService.ensureReferralProfileForUser(userId);
       this.logger.log('Auth registration success');
       return {
         userId,

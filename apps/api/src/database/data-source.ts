@@ -21,11 +21,16 @@ import { PlanEntity } from './entities/plan.entity';
 import { PromoCodeEntity } from './entities/promo-code.entity';
 import { PromoLifecycleEventEntity } from './entities/promo-lifecycle-event.entity';
 import { PromoRedemptionEntity } from './entities/promo-redemption.entity';
+import { ReferralAuditEventEntity } from './entities/referral-audit-event.entity';
+import { ReferralLogEntity } from './entities/referral-log.entity';
+import { ReferralPolicyConfigEntity } from './entities/referral-policy-config.entity';
+import { ReferralRewardEventEntity } from './entities/referral-reward-event.entity';
 import { SubscriptionEntity } from './entities/subscription.entity';
 import { UserEntitlementEntity } from './entities/user-entitlement.entity';
 import { RestrictionEntity } from './entities/restriction.entity';
 import { SessionEntity } from './entities/session.entity';
 import { UserDeviceTokenEntity } from './entities/user-device-token.entity';
+import { UserReferralProfileEntity } from './entities/user-referral-profile.entity';
 import { UserEntity } from './entities/user.entity';
 import { AnalyticsTaxonomyFieldEntity } from './entities/analytics-taxonomy-field.entity';
 import { AnalyticsGovernanceReviewEntity } from './entities/analytics-governance-review.entity';
@@ -62,6 +67,11 @@ export const AppDataSource = new DataSource({
     PromoCodeEntity,
     PromoLifecycleEventEntity,
     PromoRedemptionEntity,
+    UserReferralProfileEntity,
+    ReferralLogEntity,
+    ReferralRewardEventEntity,
+    ReferralAuditEventEntity,
+    ReferralPolicyConfigEntity,
     SubscriptionEntity,
     AnalyticsTaxonomyFieldEntity,
     AnalyticsGovernanceReviewEntity,

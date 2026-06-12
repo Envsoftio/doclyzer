@@ -13,7 +13,11 @@ export type EntitlementChangeReason =
   | 'subscription_upgrade'
   | 'plan_downgrade'
   | 'admin_adjustment'
-  | 'system_reconciliation';
+  | 'system_reconciliation'
+  | 'referral_invitee_bonus'
+  | 'referral_milestone_a'
+  | 'referral_milestone_b'
+  | 'promo_free_credit_pack';
 
 export interface EntitlementSummaryDto {
   planName: string;
