@@ -27,6 +27,7 @@ import { SuperadminAuthAuditEventEntity } from '../../database/entities/superadm
 import { NotificationPipelineService } from '../../common/notification-pipeline/notification-pipeline.service';
 import { NotifiableEventType } from '../../common/notification-pipeline/notification-event.types';
 import { EntitlementsService } from '../entitlements/entitlements.service';
+import { ReferralsService } from '../referrals/referrals.service';
 import { RazorpayService } from './razorpay.service';
 import {
   BILLING_ALREADY_SUBSCRIBED,
@@ -167,14 +168,12 @@ interface PromoValidationFailureContext {
 
 interface PromoCheckoutTransactionResult {
   response: CreateOrderResponseDto;
-  receiptNotification:
-    | {
-        userId: string;
-        correlationId: string;
-        idempotencyKey: string;
-        metadata: Record<string, string | number | boolean | null>;
-      }
-    | null;
+  receiptNotification: {
+    userId: string;
+    correlationId: string;
+    idempotencyKey: string;
+    metadata: Record<string, string | number | boolean | null>;
+  } | null;
 }
 
 interface PromoLifecycleCounts {
@@ -220,6 +219,7 @@ export class BillingService {
     private readonly dataSource: DataSource,
     private readonly razorpayService: RazorpayService,
     private readonly entitlementsService: EntitlementsService,
+    private readonly referralsService: ReferralsService,
     private readonly notificationPipeline: NotificationPipelineService,
   ) {}
 
@@ -345,7 +345,10 @@ export class BillingService {
         },
       });
     } catch (err) {
-      this.logger.error('Failed to persist billing order view audit event', err);
+      this.logger.error(
+        'Failed to persist billing order view audit event',
+        err,
+      );
     }
 
     return {
@@ -841,12 +844,14 @@ export class BillingService {
 
     const effects: {
       reconciledUserId: string | null;
+      reconciledOrderId: string | null;
       pendingReviewAlert: {
         orderId: string;
         mismatch: PaymentExpectationMismatch;
       } | null;
     } = {
       reconciledUserId: null,
+      reconciledOrderId: null,
       pendingReviewAlert: null,
     };
 
@@ -962,6 +967,7 @@ export class BillingService {
       );
 
       effects.reconciledUserId = order.userId;
+      effects.reconciledOrderId = order.id;
     });
 
     if (effects.pendingReviewAlert) {
@@ -1006,6 +1012,14 @@ export class BillingService {
           }),
         );
       });
+
+    await this.triggerReferralMilestoneB({
+      userId: effects.reconciledUserId,
+      orderId: effects.reconciledOrderId,
+      correlationId: input.correlationId,
+      provider: 'razorpay',
+      transactionId: input.razorpayPaymentId,
+    });
   }
 
   async handleWebhookPaymentFailed(
@@ -1148,12 +1162,14 @@ export class BillingService {
 
     const effects: {
       reconciledUserId: string | null;
+      reconciledOrderId: string | null;
       pendingReviewAlert: {
         orderId: string;
         mismatch: PaymentExpectationMismatch;
       } | null;
     } = {
       reconciledUserId: null,
+      reconciledOrderId: null,
       pendingReviewAlert: null,
     };
 
@@ -1277,6 +1293,7 @@ export class BillingService {
       );
 
       effects.reconciledUserId = order.userId;
+      effects.reconciledOrderId = order.id;
     });
 
     if (effects.pendingReviewAlert) {
@@ -1322,6 +1339,14 @@ export class BillingService {
           }),
         );
       });
+
+    await this.triggerReferralMilestoneB({
+      userId: effects.reconciledUserId,
+      orderId: effects.reconciledOrderId,
+      correlationId: input.correlationId,
+      provider: 'revenuecat',
+      transactionId: input.transactionId,
+    });
   }
 
   async handleRevenueCatPurchaseFailed(
@@ -2529,10 +2554,7 @@ export class BillingService {
       'message' in response
     ) {
       const typed = response as Record<string, unknown>;
-      if (
-        typeof typed.code === 'string' &&
-        typeof typed.message === 'string'
-      ) {
+      if (typeof typed.code === 'string' && typeof typed.message === 'string') {
         return {
           code: typed.code,
           message: typed.message,
@@ -2575,7 +2597,9 @@ export class BillingService {
       return { amount: 0, currency: 'INR' };
     }
 
-    const pack = await this.creditPackRepo.findOne({ where: { id: productId } });
+    const pack = await this.creditPackRepo.findOne({
+      where: { id: productId },
+    });
     return {
       amount: pack ? parseFloat(pack.priceInr) : 0,
       currency: 'INR',
@@ -2601,7 +2625,11 @@ export class BillingService {
     const rows = await manager
       .getRepository(PromoRedemptionEntity)
       .createQueryBuilder('redemption')
-      .innerJoin(OrderEntity, 'checkout_order', 'checkout_order.id = redemption.order_id')
+      .innerJoin(
+        OrderEntity,
+        'checkout_order',
+        'checkout_order.id = redemption.order_id',
+      )
       .select('DISTINCT checkout_order.id', 'orderId')
       .where('redemption.promo_code_id = :promoCodeId', { promoCodeId })
       .andWhere("redemption.status = 'reserved'")
@@ -2659,7 +2687,9 @@ export class BillingService {
     promoCode: string;
     idempotencyKey?: string;
   }): string {
-    const clientKey = this.normalizeOptionalIdempotencyKey(input.idempotencyKey);
+    const clientKey = this.normalizeOptionalIdempotencyKey(
+      input.idempotencyKey,
+    );
     const normalizedCode = this.normalizePromoCode(input.promoCode);
     const source = [
       'zero-checkout',
@@ -2870,6 +2900,39 @@ export class BillingService {
 
   private isReconciled(status: string, credited: boolean): boolean {
     return status === 'reconciled' || credited;
+  }
+
+  private async triggerReferralMilestoneB(input: {
+    userId: string | null;
+    orderId: string | null;
+    correlationId: string;
+    provider: 'razorpay' | 'revenuecat';
+    transactionId?: string | null;
+  }): Promise<void> {
+    if (!input.userId || !input.orderId) {
+      return;
+    }
+
+    try {
+      await this.referralsService.triggerMilestoneBForReconciledOrder({
+        inviteeUserId: input.userId,
+        orderId: input.orderId,
+        correlationId: input.correlationId,
+        provider: input.provider,
+        transactionId: input.transactionId ?? null,
+      });
+    } catch (err) {
+      this.logger.warn(
+        JSON.stringify({
+          action: 'REFERRAL_MILESTONE_B_TRIGGER_FAILED',
+          userId: input.userId,
+          orderId: input.orderId,
+          provider: input.provider,
+          correlationId: input.correlationId,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
+    }
   }
 
   private async lockOrderByRazorpayOrderId(
@@ -3908,8 +3971,7 @@ export class BillingService {
         redeemedCount: lifecycle.redeemed,
         failedCount: lifecycle.failed,
         voidedCount: lifecycle.voided,
-        reconciledCheckoutCount:
-          parseInt(row.reconciledCheckoutCount, 10) || 0,
+        reconciledCheckoutCount: parseInt(row.reconciledCheckoutCount, 10) || 0,
         failedCheckoutCount: parseInt(row.failedCheckoutCount, 10) || 0,
         attributedDiscountTotal: parseFloat(row.attributedDiscountTotal) || 0,
         finalizedRevenueTotal: parseFloat(row.finalizedRevenueTotal) || 0,

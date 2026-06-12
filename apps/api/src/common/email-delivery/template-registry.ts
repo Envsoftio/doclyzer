@@ -49,6 +49,18 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> =
       templateKey: 'billing-subscription-cancelled',
       subject: 'Subscription cancelled',
     },
+    'referral.invitee_bonus.released': {
+      templateKey: 'referral-invitee-bonus-released',
+      subject: 'Your referral bonus is ready',
+    },
+    'referral.milestone_a.released': {
+      templateKey: 'referral-milestone-a-released',
+      subject: 'Your referral earned milestone A rewards',
+    },
+    'referral.milestone_b.released': {
+      templateKey: 'referral-milestone-b-released',
+      subject: 'Your referral earned a purchase reward',
+    },
     announcement: {
       templateKey: 'admin-announcement',
       subject: 'Important update from Doclyzer',

@@ -8,6 +8,7 @@ import { EntitlementsModule } from '../entitlements/entitlements.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { StorageModule } from '../../common/storage/storage.module';
 import { NotificationPipelineModule } from '../../common/notification-pipeline/notification-pipeline.module';
+import { ReferralsModule } from '../referrals/referrals.module';
 import { ReportsController } from './reports.controller';
 import { ReportsRecycleBinCleanupService } from './reports-recycle-bin-cleanup.service';
 import { ReportsService } from './reports.service';
@@ -29,6 +30,7 @@ import { DoclingOcrClient } from './docling-ocr.client';
     ProfilesModule,
     StorageModule,
     NotificationPipelineModule,
+    ReferralsModule,
   ],
   controllers: [ReportsController],
   providers: [

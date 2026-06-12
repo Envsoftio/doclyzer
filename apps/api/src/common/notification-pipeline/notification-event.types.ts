@@ -12,6 +12,8 @@ export enum NotifiableEventType {
   SUBSCRIPTION_ACTIVATED = 'SUBSCRIPTION_ACTIVATED',
   SUBSCRIPTION_CANCELLED = 'SUBSCRIPTION_CANCELLED',
   REFERRAL_INVITEE_BONUS_RELEASED = 'REFERRAL_INVITEE_BONUS_RELEASED',
+  REFERRAL_MILESTONE_A_RELEASED = 'REFERRAL_MILESTONE_A_RELEASED',
+  REFERRAL_MILESTONE_B_RELEASED = 'REFERRAL_MILESTONE_B_RELEASED',
 }
 
 export type NotificationCategory = 'security' | 'compliance' | 'product';
@@ -47,6 +49,14 @@ export const EVENT_CATEGORY_MAP: Record<
   [NotifiableEventType.REFERRAL_INVITEE_BONUS_RELEASED]: {
     category: 'product',
     emailType: 'referral.invitee_bonus.released',
+  },
+  [NotifiableEventType.REFERRAL_MILESTONE_A_RELEASED]: {
+    category: 'product',
+    emailType: 'referral.milestone_a.released',
+  },
+  [NotifiableEventType.REFERRAL_MILESTONE_B_RELEASED]: {
+    category: 'product',
+    emailType: 'referral.milestone_b.released',
   },
   [NotifiableEventType.ACCOUNT_EMAIL_CHANGED]: {
     category: 'security',

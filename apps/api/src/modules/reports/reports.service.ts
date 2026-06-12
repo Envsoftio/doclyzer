@@ -36,6 +36,7 @@ import { ReportUploadException } from './exceptions/report-upload.exception';
 import { UsageLimitsService } from '../entitlements/usage-limits.service';
 import { NotificationPipelineService } from '../../common/notification-pipeline/notification-pipeline.service';
 import { NotifiableEventType } from '../../common/notification-pipeline/notification-event.types';
+import { ReferralsService } from '../referrals/referrals.service';
 import {
   ALLOWED_CONTENT_TYPES,
   ALLOWED_IMAGE_CONTENT_TYPES,
@@ -190,6 +191,7 @@ export class ReportsService {
     private readonly reportLabAiFallbackService: ReportLabAiFallbackService,
     private readonly notificationPipeline: NotificationPipelineService,
     private readonly imageToPdfService: ImageToPdfService,
+    private readonly referralsService: ReferralsService,
   ) {
     this.labExtractor = new LabValueExtractor();
   }
@@ -330,7 +332,9 @@ export class ReportsService {
     const transcriptLabValuesRaw = transcript
       ? this.toStructuredLabInputs(this.labExtractor.extract(transcript))
       : [];
-    const transcriptLabValues = this.filterNoisyLabValues(transcriptLabValuesRaw);
+    const transcriptLabValues = this.filterNoisyLabValues(
+      transcriptLabValuesRaw,
+    );
     const jsonLabValues = this.filterNoisyLabValues(
       parsedFromJson?.extractedLabValues ?? [],
     );
@@ -351,7 +355,10 @@ export class ReportsService {
           this.buildStructuredReport(transcript, labValues))
         : null;
     if (finalStatus === 'parsed' && structuredReport) {
-      structuredReport = this.withBestPatientDetails(structuredReport, transcript);
+      structuredReport = this.withBestPatientDetails(
+        structuredReport,
+        transcript,
+      );
       structuredReport.sections = this.buildStructuredReport(
         null,
         labValues,
@@ -464,6 +471,7 @@ export class ReportsService {
       profileId: activeProfileId,
       correlationId,
     });
+    await this.triggerReferralMilestoneA(entity, correlationId, 'upload');
 
     if (forceUploadAnyway && existing) {
       this.logger.log(
@@ -832,6 +840,7 @@ export class ReportsService {
       profileId: entity.profileId,
       correlationId,
     });
+    await this.triggerReferralMilestoneA(entity, correlationId, 'retry');
 
     const refreshedLabValues = await this.reportLabValueRepo.find({
       where: { reportId: entity.id },
@@ -1526,6 +1535,35 @@ export class ReportsService {
     await this.attemptRepo.save(attempt);
   }
 
+  private async triggerReferralMilestoneA(
+    report: ReportEntity,
+    correlationId: string | undefined,
+    trigger: 'upload' | 'retry',
+  ): Promise<void> {
+    if (report.status !== 'parsed') {
+      return;
+    }
+
+    const resolvedCorrelationId = correlationId ?? randomUUID();
+    try {
+      await this.referralsService.triggerMilestoneAForSuccessfulAnalysis({
+        inviteeUserId: report.userId,
+        reportId: report.id,
+        correlationId: resolvedCorrelationId,
+        trigger,
+      });
+    } catch (err) {
+      this.logger.warn(
+        JSON.stringify({
+          action: 'REFERRAL_MILESTONE_A_TRIGGER_FAILED',
+          reportId: report.id,
+          correlationId: resolvedCorrelationId,
+          error: err instanceof Error ? err.message : String(err),
+        }),
+      );
+    }
+  }
+
   async getProcessingAttempts(
     userId: string,
     reportId: string,
@@ -1880,7 +1918,9 @@ export class ReportsService {
     const ageGender =
       read(/Age\/Gender\s*:\s*([^|]+?)(?:\s{2,}|Order Id|$)/i) ??
       readNextLineValue(/^age\/gender$/i) ??
-      read(/\b(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?\s+(?:Male|Female|Other))\b/i);
+      read(
+        /\b(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?\s+(?:Male|Female|Other))\b/i,
+      );
     const age = ageGender?.match(
       /(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?|\d+\s*Yrs?)/i,
     )?.[1];
@@ -1890,8 +1930,12 @@ export class ReportsService {
       readNextLineValue(/^booking id$/i) ??
       readNextLineValue(/^lab accession id$/i);
     const sampleCollectionDate =
-      read(/Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i) ??
-      read(/Collected Date&Time\s*[:\-]?\s*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i);
+      read(
+        /Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i,
+      ) ??
+      read(
+        /Collected Date&Time\s*[:\-]?\s*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i,
+      );
     return {
       ...(name ? { name } : {}),
       ...(age ? { age } : {}),
@@ -1912,10 +1956,10 @@ export class ReportsService {
     if (!details) return false;
     return Boolean(
       details.name ||
-        details.age ||
-        details.gender ||
-        details.bookingId ||
-        details.sampleCollectionDate,
+      details.age ||
+      details.gender ||
+      details.bookingId ||
+      details.sampleCollectionDate,
     );
   }
 

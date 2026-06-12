@@ -9,6 +9,8 @@ import { ReferralPolicyConfigEntity } from '../../database/entities/referral-pol
 import { ReferralRewardEventEntity } from '../../database/entities/referral-reward-event.entity';
 import { UserReferralProfileEntity } from '../../database/entities/user-referral-profile.entity';
 import { UserEntity } from '../../database/entities/user.entity';
+import { OrderEntity } from '../../database/entities/order.entity';
+import { ReportEntity } from '../../database/entities/report.entity';
 import { ReferralsController } from './referrals.controller';
 import { ReferralsService } from './referrals.service';
 
@@ -24,6 +26,8 @@ import { ReferralsService } from './referrals.service';
       ReferralRewardEventEntity,
       ReferralAuditEventEntity,
       ReferralPolicyConfigEntity,
+      ReportEntity,
+      OrderEntity,
     ]),
   ],
   controllers: [ReferralsController],

@@ -12,6 +12,7 @@ import { SuperadminAuthAuditEventEntity } from '../../database/entities/superadm
 import { NotificationPipelineModule } from '../../common/notification-pipeline/notification-pipeline.module';
 import { AuthModule } from '../auth/auth.module';
 import { EntitlementsModule } from '../entitlements/entitlements.module';
+import { ReferralsModule } from '../referrals/referrals.module';
 import { BillingController } from './billing.controller';
 import { BillingService } from './billing.service';
 import { RazorpayService } from './razorpay.service';
@@ -33,6 +34,7 @@ import { RevenueCatService } from './revenuecat.service';
     NotificationPipelineModule,
     AuthModule,
     EntitlementsModule,
+    ReferralsModule,
   ],
   controllers: [BillingController],
   providers: [BillingService, RazorpayService, RevenueCatService],
