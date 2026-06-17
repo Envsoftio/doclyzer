@@ -10,7 +10,12 @@ class SignupScreen extends StatefulWidget {
     required this.onGoToLogin,
   });
 
-  final Future<void> Function(String email, String password) onSignup;
+  final Future<void> Function(
+    String email,
+    String password,
+    String? referralCode,
+  )
+  onSignup;
   final VoidCallback onGoToLogin;
 
   @override
@@ -20,7 +25,9 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _referralController = TextEditingController();
   final FocusNode _passwordFocus = FocusNode();
+  final FocusNode _referralFocus = FocusNode();
   String? _error;
   bool _isLoading = false;
 
@@ -28,7 +35,9 @@ class _SignupScreenState extends State<SignupScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _referralController.dispose();
     _passwordFocus.dispose();
+    _referralFocus.dispose();
     super.dispose();
   }
 
@@ -40,6 +49,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;
+    final referralCode = _referralController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
       setState(() {
@@ -50,7 +60,11 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     try {
-      await widget.onSignup(email, password);
+      await widget.onSignup(
+        email,
+        password,
+        referralCode.isEmpty ? null : referralCode,
+      );
       if (!mounted) return;
       setState(() => _isLoading = false);
     } on AuthException catch (error) {
@@ -81,7 +95,9 @@ class _SignupScreenState extends State<SignupScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
               child: Column(
@@ -127,11 +143,25 @@ class _SignupScreenState extends State<SignupScreen> {
                     controller: _passwordController,
                     focusNode: _passwordFocus,
                     obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _submit(),
+                    textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => _referralFocus.requestFocus(),
                     decoration: const InputDecoration(
                       labelText: 'Password',
                       prefixIcon: Icon(Icons.lock_outline_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextField(
+                    key: const Key('signup-referral-code'),
+                    controller: _referralController,
+                    focusNode: _referralFocus,
+                    textCapitalization: TextCapitalization.characters,
+                    autocorrect: false,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _submit(),
+                    decoration: const InputDecoration(
+                      labelText: 'Referral code (optional)',
+                      prefixIcon: Icon(Icons.card_giftcard_rounded),
                     ),
                   ),
                   if (_error != null) ...[
@@ -168,7 +198,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       TextButton(
                         onPressed: widget.onGoToLogin,
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xs,
+                          ),
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),

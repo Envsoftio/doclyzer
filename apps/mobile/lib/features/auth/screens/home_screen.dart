@@ -19,6 +19,7 @@ class HomeScreen extends StatefulWidget {
     required this.onGoToUploadReport,
     required this.onGoToTimeline,
     required this.onGoToBilling,
+    required this.onGoToReferrals,
     required this.restrictionRepository,
     this.incidentStatus,
   });
@@ -32,6 +33,7 @@ class HomeScreen extends StatefulWidget {
   final Future<void> Function() onGoToUploadReport;
   final Future<void> Function() onGoToTimeline;
   final VoidCallback onGoToBilling;
+  final VoidCallback onGoToReferrals;
   final RestrictionRepository restrictionRepository;
   final PublicIncidentStatus? incidentStatus;
 
@@ -242,6 +244,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     title: 'Plan & Credits',
                     subtitle: 'View your plan and credit balance',
                     onTap: widget.onGoToBilling,
+                  ),
+                  _HomeNavCard(
+                    key: const Key('go-to-referrals'),
+                    icon: Icons.group_add_rounded,
+                    title: 'Referrals',
+                    subtitle: 'Share your code and track rewards',
+                    onTap: widget.onGoToReferrals,
                   ),
                   _HomeNavCard(
                     key: const Key('go-to-account'),

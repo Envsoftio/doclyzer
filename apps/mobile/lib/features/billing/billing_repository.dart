@@ -53,6 +53,16 @@ class EntitlementSummary {
         return 'Admin adjustment';
       case 'system_reconciliation':
         return 'System reconciliation';
+      case 'referral_invitee_bonus':
+        return 'Referral invite bonus';
+      case 'referral_milestone_a':
+        return 'Referral analysis milestone';
+      case 'referral_milestone_b':
+        return 'Referral purchase milestone';
+      case 'promo_free_credit_pack':
+        return 'Free promo credit pack';
+      case 'gift_voucher_redeem':
+        return 'Gift voucher redeemed';
       default:
         return 'Not yet changed';
     }
@@ -120,6 +130,20 @@ class VerifyPaymentResult {
 
   final int creditsAdded;
   final BillingOrderStatus orderStatus;
+  final EntitlementSummary entitlementSummary;
+}
+
+class RedeemGiftVoucherResult {
+  const RedeemGiftVoucherResult({
+    required this.voucherId,
+    required this.codeMask,
+    required this.creditsAdded,
+    required this.entitlementSummary,
+  });
+
+  final String voucherId;
+  final String codeMask;
+  final double creditsAdded;
   final EntitlementSummary entitlementSummary;
 }
 
@@ -229,6 +253,7 @@ abstract class BillingRepository {
     required String productType,
     required String productId,
   });
+  Future<RedeemGiftVoucherResult> redeemGiftVoucher(String code);
   Future<List<Plan>> listPlans();
   Future<CreateSubscriptionResult> createSubscription(String planId);
   Future<VerifySubscriptionResult> verifySubscription(

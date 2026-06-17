@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../../../core/api_client.dart';
+import '../../../core/feedback/confetti_burst.dart';
 import '../../../core/feedback/incident_banner.dart';
 import '../../../core/feedback/status_messenger.dart';
 import '../../incidents/incident_repository.dart';
@@ -114,6 +115,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
             _purchasingPackId = null;
             _statusBannerMessage = 'Credits were applied successfully.';
           });
+          ConfettiBurst.show(context);
           StatusMessenger.showSuccess(context, 'Credits added!');
           widget.onPurchaseComplete();
         }
@@ -181,7 +183,9 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
       final order = await widget.billingRepository.getOrderStatus(orderId);
       if (!mounted) return order;
 
-      final knownOrderIndex = _recentOrders.indexWhere((item) => item.id == order.id);
+      final knownOrderIndex = _recentOrders.indexWhere(
+        (item) => item.id == order.id,
+      );
       setState(() {
         if (knownOrderIndex >= 0) {
           _recentOrders = [
@@ -261,6 +265,13 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
                       appliedPromoCode = code;
                       promoError = null;
                     });
+                    if (context.mounted) {
+                      ConfettiBurst.show(context);
+                      StatusMessenger.showSuccess(
+                        context,
+                        'Promo code applied.',
+                      );
+                    }
                   } catch (e) {
                     setModalState(() {
                       promoResult = null;
@@ -471,6 +482,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
       await _refreshOrderStatuses();
       if (mounted) {
         if (verification.orderStatus == BillingOrderStatus.reconciled) {
+          ConfettiBurst.show(context);
           StatusMessenger.showSuccess(context, 'Credits added!');
           widget.onPurchaseComplete();
         } else if (orderId != null) {
@@ -478,6 +490,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
           await _refreshOrderStatuses();
           if (!mounted) return;
           if (polled?.isReconciled ?? false) {
+            ConfettiBurst.show(context);
             StatusMessenger.showSuccess(context, 'Credits added!');
             widget.onPurchaseComplete();
           } else if (polled?.needsReview ?? false) {
@@ -653,7 +666,8 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
     }
 
     final incident = widget.incidentStatus;
-    final showIncidentBanner = incident != null &&
+    final showIncidentBanner =
+        incident != null &&
         incident.isActive &&
         incident.affectsSurface('mobile_app');
 

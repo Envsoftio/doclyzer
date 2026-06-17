@@ -17,7 +17,8 @@ export type EntitlementChangeReason =
   | 'referral_invitee_bonus'
   | 'referral_milestone_a'
   | 'referral_milestone_b'
-  | 'promo_free_credit_pack';
+  | 'promo_free_credit_pack'
+  | 'gift_voucher_redeem';
 
 export interface EntitlementSummaryDto {
   planName: string;

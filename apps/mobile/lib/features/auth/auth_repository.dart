@@ -11,10 +11,7 @@ class RegisterResult {
 }
 
 class LoginResult {
-  const LoginResult({
-    required this.accessToken,
-    required this.tokenType,
-  });
+  const LoginResult({required this.accessToken, required this.tokenType});
 
   final String accessToken;
   final String tokenType;
@@ -33,12 +30,10 @@ abstract class AuthRepository {
   Future<RegisterResult> register({
     required String email,
     required String password,
+    String? referralCode,
   });
 
-  Future<LoginResult> login({
-    required String email,
-    required String password,
-  });
+  Future<LoginResult> login({required String email, required String password});
 
   Future<void> logout();
 

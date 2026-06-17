@@ -39,6 +39,9 @@ import 'features/reports/reports_repository.dart';
 import 'features/reports/api_reports_repository.dart';
 import 'features/reports/screens/timeline_screen.dart';
 import 'features/reports/screens/upload_report_screen.dart';
+import 'features/referrals/api_referrals_repository.dart';
+import 'features/referrals/referrals_repository.dart';
+import 'features/referrals/screens/referral_dashboard_screen.dart';
 import 'features/billing/billing_repository.dart';
 import 'features/billing/api_billing_repository.dart';
 import 'features/billing/screens/credit_pack_list_screen.dart';
@@ -73,6 +76,7 @@ enum _AuthView {
   uploadReport,
   timeline,
   billing,
+  referrals,
   creditPackList,
   planSelection,
 }
@@ -90,6 +94,7 @@ class DoclyzerApp extends StatefulWidget {
     this.reportsRepository,
     this.sharingRepository,
     this.billingRepository,
+    this.referralsRepository,
     this.incidentRepository,
     this.supportRepository,
     this.notificationsRepository,
@@ -106,6 +111,7 @@ class DoclyzerApp extends StatefulWidget {
   final ReportsRepository? reportsRepository;
   final SharingRepository? sharingRepository;
   final BillingRepository? billingRepository;
+  final ReferralsRepository? referralsRepository;
   final IncidentRepository? incidentRepository;
   final SupportRepository? supportRepository;
   final NotificationsRepository? notificationsRepository;
@@ -131,6 +137,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   late final ReportsRepository _reportsRepository;
   late final SharingRepository _sharingRepository;
   late final BillingRepository _billingRepository;
+  late final ReferralsRepository _referralsRepository;
   late final IncidentRepository _incidentRepository;
   late final SupportRepository _supportRepository;
   late final NotificationsRepository _notificationsRepository;
@@ -170,6 +177,8 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       _reportsRepository = widget.reportsRepository!;
       _sharingRepository = widget.sharingRepository!;
       _billingRepository = widget.billingRepository!;
+      _referralsRepository =
+          widget.referralsRepository ?? ApiReferralsRepository(_apiClient!);
       _incidentRepository =
           widget.incidentRepository ?? ApiIncidentRepository(_apiClient!);
       _supportRepository =
@@ -205,6 +214,8 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           widget.sharingRepository ?? ApiSharingRepository(_apiClient!);
       _billingRepository =
           widget.billingRepository ?? ApiBillingRepository(_apiClient!);
+      _referralsRepository =
+          widget.referralsRepository ?? ApiReferralsRepository(_apiClient!);
       _incidentRepository =
           widget.incidentRepository ?? ApiIncidentRepository(_apiClient!);
       _supportRepository =
@@ -274,8 +285,16 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
 
   AuthRepository get _auth => _authRepository ?? widget.authRepository!;
 
-  Future<void> _register(String email, String password) async {
-    final result = await _auth.register(email: email, password: password);
+  Future<void> _register(
+    String email,
+    String password,
+    String? referralCode,
+  ) async {
+    final result = await _auth.register(
+      email: email,
+      password: password,
+      referralCode: referralCode,
+    );
 
     if (result.requiresVerification && mounted) {
       setState(() {
@@ -467,6 +486,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           onGoToBilling: () {
             setState(() => _authView = _AuthView.billing);
           },
+          onGoToReferrals: () {
+            setState(() => _authView = _AuthView.referrals);
+          },
           onGoToTimeline: () async {
             final active = await _getActiveProfileOrNotify(forUpload: false);
             if (active == null) {
@@ -633,6 +655,12 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           },
           onUpgrade: () {
             setState(() => _authView = _AuthView.planSelection);
+          },
+        ),
+        _AuthView.referrals => ReferralDashboardScreen(
+          referralsRepository: _referralsRepository,
+          onBack: () {
+            setState(() => _authView = _AuthView.home);
           },
         ),
         _AuthView.creditPackList => CreditPackListScreen(

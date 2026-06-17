@@ -14,6 +14,8 @@ import { PushOpenEventEntity } from './entities/push-open-event.entity';
 import { PushSendAuditEntity } from './entities/push-send-audit.entity';
 import { ReportEntity } from './entities/report.entity';
 import { ReportLabValueEntity } from './entities/report-lab-value.entity';
+import { GiftVoucherEntity } from './entities/gift-voucher.entity';
+import { GiftVoucherEventEntity } from './entities/gift-voucher-event.entity';
 import { BillingProviderEventEntity } from './entities/billing-provider-event.entity';
 import { CreditPackEntity } from './entities/credit-pack.entity';
 import { OrderEntity } from './entities/order.entity';
@@ -57,6 +59,8 @@ export const AppDataSource = new DataSource({
     DataExportRequestEntity,
     ClosureRequestEntity,
     ConsentRecordEntity,
+    GiftVoucherEntity,
+    GiftVoucherEventEntity,
     ReportEntity,
     ReportLabValueEntity,
     PlanEntity,

@@ -35,6 +35,7 @@ const ENTITLEMENT_CHANGE_REASONS: EntitlementChangeReason[] = [
   'referral_milestone_a',
   'referral_milestone_b',
   'promo_free_credit_pack',
+  'gift_voucher_redeem',
 ];
 
 @Injectable()

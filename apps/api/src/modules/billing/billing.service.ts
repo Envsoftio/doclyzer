@@ -2757,7 +2757,7 @@ export class BillingService {
       input.manager,
       saved.userId,
       input.pack.credits,
-      'credit_pack_purchase',
+      'promo_free_credit_pack',
     );
 
     saved.status = 'reconciled';

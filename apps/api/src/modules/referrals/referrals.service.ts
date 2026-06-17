@@ -11,9 +11,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
   DataSource,
   EntityManager,
+  In,
   QueryFailedError,
   Repository,
 } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { NotificationPipelineService } from '../../common/notification-pipeline/notification-pipeline.service';
 import { NotifiableEventType } from '../../common/notification-pipeline/notification-event.types';
 import { OrderEntity } from '../../database/entities/order.entity';
@@ -27,7 +29,10 @@ import { UserEntity } from '../../database/entities/user.entity';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import {
   DEFAULT_REFERRAL_POLICY,
+  type ReferralDashboardDto,
+  type ReferralFriendProgressDto,
   type ReferralPolicySnapshot,
+  type ReferralProgressTimelineItemDto,
 } from './referrals.types';
 
 interface PostgresDriverError {
@@ -101,6 +106,7 @@ export class ReferralsService implements OnModuleInit {
 
   constructor(
     private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
     @InjectRepository(UserReferralProfileEntity)
@@ -193,6 +199,81 @@ export class ReferralsService implements OnModuleInit {
       milestoneBTiers: config.milestoneBTiers,
       monthlyRewardCap: parseFloat(config.monthlyRewardCap),
       zeroAmountOrderEligible: config.zeroAmountOrderEligible,
+    };
+  }
+
+  async getReferralDashboard(userId: string): Promise<ReferralDashboardDto> {
+    const [profile, policy, logs, rewardEvents] = await Promise.all([
+      this.ensureReferralProfileForUser(userId),
+      this.getReferralPolicy(),
+      this.referralLogRepo.find({
+        where: { referrerUserId: userId },
+        order: { createdAt: 'DESC' },
+      }),
+      this.referralRewardEventRepo.find({
+        where: { beneficiaryUserId: userId },
+      }),
+    ]);
+
+    const inviteeIds = logs.map((log) => log.inviteeUserId);
+    const invitees = inviteeIds.length
+      ? await this.userRepo.find({ where: { id: In(inviteeIds) } })
+      : [];
+    const inviteeById = new Map(
+      invitees.map((invitee) => [invitee.id, invitee]),
+    );
+
+    const logIds = logs.map((log) => log.id);
+    const allLogRewardEvents = logIds.length
+      ? await this.referralRewardEventRepo.find({
+          where: { referralLogId: In(logIds) },
+          order: { createdAt: 'ASC' },
+        })
+      : [];
+    const rewardsByLogId = new Map<string, ReferralRewardEventEntity[]>();
+    for (const rewardEvent of allLogRewardEvents) {
+      const current = rewardsByLogId.get(rewardEvent.referralLogId) ?? [];
+      current.push(rewardEvent);
+      rewardsByLogId.set(rewardEvent.referralLogId, current);
+    }
+
+    const milestoneRewardEvents = rewardEvents.filter((rewardEvent) =>
+      ['milestone_a', 'milestone_b'].includes(rewardEvent.rewardType),
+    );
+    const creditsEarned = milestoneRewardEvents
+      .filter((rewardEvent) => rewardEvent.status === 'released')
+      .reduce(
+        (sum, rewardEvent) => sum + parseFloat(rewardEvent.creditAmount),
+        0,
+      );
+    const pendingRewards = milestoneRewardEvents.filter(
+      (rewardEvent) => rewardEvent.status === 'pending',
+    ).length;
+    const blockedRewards = milestoneRewardEvents.filter((rewardEvent) =>
+      ['blocked', 'capped', 'under_review'].includes(rewardEvent.status),
+    ).length;
+
+    return {
+      referralCode: profile.referralCode,
+      referralLink: this.buildReferralLink(profile.referralCode),
+      totalReferredCount: logs.length,
+      creditsEarned,
+      pendingRewards,
+      blockedRewards,
+      policySummary: {
+        inviteeBonusCredits: policy.inviteeBonusCredits,
+        milestoneACredits: policy.milestoneACredits,
+        milestoneBTiers: policy.milestoneBTiers,
+        monthlyRewardCap: policy.monthlyRewardCap,
+        zeroAmountOrderEligible: policy.zeroAmountOrderEligible,
+      },
+      referredFriends: logs.map((log) =>
+        this.toReferralFriendProgressDto(
+          log,
+          inviteeById.get(log.inviteeUserId) ?? null,
+          rewardsByLogId.get(log.id) ?? [],
+        ),
+      ),
     };
   }
 
@@ -723,6 +804,137 @@ export class ReferralsService implements OnModuleInit {
     }
 
     return createdCount;
+  }
+
+  private toReferralFriendProgressDto(
+    log: ReferralLogEntity,
+    invitee: UserEntity | null,
+    rewardEvents: ReferralRewardEventEntity[],
+  ): ReferralFriendProgressDto {
+    const inviteeBonus = rewardEvents.find(
+      (event) => event.rewardType === 'invitee_bonus',
+    );
+    const milestoneA = rewardEvents.find(
+      (event) => event.rewardType === 'milestone_a',
+    );
+    const milestoneB = rewardEvents.find(
+      (event) => event.rewardType === 'milestone_b',
+    );
+
+    return {
+      referralLogId: log.id,
+      inviteeDisplayName:
+        invitee?.displayName?.trim() ||
+        this.maskEmail(invitee?.email ?? null) ||
+        'Referred user',
+      inviteeEmailMasked: this.maskEmail(invitee?.email ?? null),
+      reviewStatus: log.reviewStatus,
+      inviteeBonusStatus: inviteeBonus?.status ?? log.inviteeBonusStatus,
+      milestoneAStatus: milestoneA?.status ?? log.milestoneAStatus,
+      milestoneBStatus: milestoneB?.status ?? log.milestoneBStatus,
+      blockedReasonCode: log.blockedReasonCode,
+      createdAt: log.createdAt.toISOString(),
+      timeline: this.buildReferralTimeline(log, invitee, {
+        inviteeBonus,
+        milestoneA,
+        milestoneB,
+      }),
+    };
+  }
+
+  private buildReferralTimeline(
+    log: ReferralLogEntity,
+    invitee: UserEntity | null,
+    rewards: {
+      inviteeBonus?: ReferralRewardEventEntity;
+      milestoneA?: ReferralRewardEventEntity;
+      milestoneB?: ReferralRewardEventEntity;
+    },
+  ): ReferralProgressTimelineItemDto[] {
+    return [
+      {
+        key: 'signed_up',
+        label: 'Signed up',
+        status: 'completed',
+        occurredAt: log.createdAt.toISOString(),
+      },
+      {
+        key: 'email_verified',
+        label: 'Email verified',
+        status: invitee?.emailVerified ? 'completed' : 'pending',
+        occurredAt: invitee?.emailVerified ? log.updatedAt.toISOString() : null,
+      },
+      {
+        key: 'invitee_bonus',
+        label: 'Invitee bonus',
+        status: this.toTimelineStatus(
+          rewards.inviteeBonus?.status ?? log.inviteeBonusStatus,
+        ),
+        occurredAt:
+          rewards.inviteeBonus?.resolvedAt?.toISOString() ??
+          log.inviteeBonusReleasedAt?.toISOString() ??
+          null,
+      },
+      {
+        key: 'first_analysis',
+        label: 'First analysis',
+        status: this.toTimelineStatus(
+          rewards.milestoneA?.status ?? log.milestoneAStatus,
+        ),
+        occurredAt:
+          rewards.milestoneA?.resolvedAt?.toISOString() ??
+          log.milestoneAReleasedAt?.toISOString() ??
+          null,
+      },
+      {
+        key: 'first_paid_purchase',
+        label: 'First paid purchase',
+        status: this.toTimelineStatus(
+          rewards.milestoneB?.status ?? log.milestoneBStatus,
+        ),
+        occurredAt:
+          rewards.milestoneB?.resolvedAt?.toISOString() ??
+          log.milestoneBReleasedAt?.toISOString() ??
+          null,
+      },
+    ];
+  }
+
+  private toTimelineStatus(
+    status:
+      | ReferralRewardEventEntity['status']
+      | ReferralLogEntity['milestoneAStatus'],
+  ): ReferralProgressTimelineItemDto['status'] {
+    if (status === 'released') {
+      return 'completed';
+    }
+    if (status === 'blocked' || status === 'under_review') {
+      return 'blocked';
+    }
+    if (status === 'capped') {
+      return 'capped';
+    }
+    return 'pending';
+  }
+
+  private maskEmail(email: string | null): string | null {
+    if (!email) return null;
+    const [localPart, domain] = email.split('@');
+    if (!localPart || !domain) return null;
+    if (localPart.length <= 2) {
+      return `${localPart[0] ?? '*'}***@${domain}`;
+    }
+    return `${localPart.slice(0, 2)}***@${domain}`;
+  }
+
+  private buildReferralLink(referralCode: string): string | null {
+    const configuredBase =
+      this.configService.get<string>('PUBLIC_WEB_BASE_URL') ??
+      this.configService.get<string>('APP_PUBLIC_URL') ??
+      '';
+    const base = configuredBase.trim().replace(/\/+$/, '');
+    if (!base) return null;
+    return `${base}/register?ref=${encodeURIComponent(referralCode)}`;
   }
 
   private isRetryableReferralCodeConflict(error: unknown): boolean {

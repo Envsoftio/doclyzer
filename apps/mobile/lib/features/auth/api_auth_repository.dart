@@ -24,10 +24,14 @@ String _loginErrorMessage(Object error) {
       case 'AUTH_EMAIL_EXISTS':
         return 'An account with this email already exists. Try signing in or use a different email.';
       default:
-        return error.message.isNotEmpty ? error.message : 'Sign-in failed. Please try again.';
+        return error.message.isNotEmpty
+            ? error.message
+            : 'Sign-in failed. Please try again.';
     }
   }
-  if (error is SocketException || error is TimeoutException || error is HandshakeException) {
+  if (error is SocketException ||
+      error is TimeoutException ||
+      error is HandshakeException) {
     return 'Unable to reach the server. Check your internet connection and try again.';
   }
   if (error is FormatException) {
@@ -46,20 +50,28 @@ class ApiAuthRepository implements AuthRepository {
   Future<RegisterResult> register({
     required String email,
     required String password,
+    String? referralCode,
   }) async {
     try {
-      return await _registerImpl(email, password);
+      return await _registerImpl(email, password, referralCode);
     } on ApiException catch (e) {
       throw AuthException(e.message);
     }
   }
 
-  Future<RegisterResult> _registerImpl(String email, String password) async {
+  Future<RegisterResult> _registerImpl(
+    String email,
+    String password,
+    String? referralCode,
+  ) async {
+    final normalizedReferralCode = referralCode?.trim().toUpperCase();
     final data = await _client.post(
       'v1/auth/register',
       body: {
         'email': email.trim().toLowerCase(),
         'password': password,
+        if (normalizedReferralCode != null && normalizedReferralCode.isNotEmpty)
+          'referralCode': normalizedReferralCode,
       },
       auth: false,
     );
@@ -88,10 +100,7 @@ class ApiAuthRepository implements AuthRepository {
   Future<LoginResult> _loginImpl(String email, String password) async {
     final data = await _client.post(
       'v1/auth/login',
-      body: {
-        'email': email.trim().toLowerCase(),
-        'password': password,
-      },
+      body: {'email': email.trim().toLowerCase(), 'password': password},
       auth: false,
     );
     final d = data['data'] as Map<String, dynamic>;

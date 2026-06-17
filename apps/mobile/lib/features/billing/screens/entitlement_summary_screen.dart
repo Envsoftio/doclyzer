@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/api_client.dart';
+import '../../../core/feedback/confetti_burst.dart';
 import '../../../core/feedback/incident_banner.dart';
 import '../../../core/feedback/status_messenger.dart';
 import '../../incidents/incident_repository.dart';
@@ -27,16 +29,25 @@ class EntitlementSummaryScreen extends StatefulWidget {
 }
 
 class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
+  final TextEditingController _voucherController = TextEditingController();
   EntitlementSummary? _summary;
   List<BillingOrderStatusItem> _recentOrders = const [];
   bool _loading = true;
   bool _refreshingOrders = false;
+  bool _redeemingVoucher = false;
   String? _error;
+  String? _voucherError;
 
   @override
   void initState() {
     super.initState();
     _loadSummary();
+  }
+
+  @override
+  void dispose() {
+    _voucherController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSummary() async {
@@ -93,6 +104,46 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
     }
   }
 
+  Future<void> _redeemGiftVoucher() async {
+    final code = _voucherController.text.trim();
+    if (code.isEmpty) {
+      setState(() {
+        _voucherError = 'Enter a gift voucher code.';
+      });
+      return;
+    }
+
+    setState(() {
+      _redeemingVoucher = true;
+      _voucherError = null;
+    });
+
+    try {
+      final result = await widget.billingRepository.redeemGiftVoucher(code);
+      if (!mounted) return;
+      setState(() {
+        _summary = result.entitlementSummary;
+        _voucherController.clear();
+      });
+      ConfettiBurst.show(context);
+      StatusMessenger.showSuccess(
+        context,
+        'Gift voucher applied. ${result.creditsAdded.toStringAsFixed(2)} credits added.',
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _voucherError = _giftVoucherErrorMessage(error);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _redeemingVoucher = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -141,7 +192,8 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
   Widget _buildContent(ThemeData theme) {
     final summary = _summary!;
     final incident = widget.incidentStatus;
-    final showIncidentBanner = incident != null &&
+    final showIncidentBanner =
+        incident != null &&
         incident.isActive &&
         incident.affectsSurface('mobile_app');
 
@@ -160,12 +212,72 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
           const SizedBox(height: 16),
           _buildLimitsCard(theme, summary),
           const SizedBox(height: 16),
+          _buildGiftVoucherCard(theme),
+          const SizedBox(height: 16),
           _buildRecentOrdersCard(theme),
           if (summary.showUpgradeCta) ...[
             const SizedBox(height: 24),
             _buildUpgradeCta(theme, summary),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildGiftVoucherCard(ThemeData theme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Gift Voucher', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Redeem a gift voucher and add credits directly to your balance.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('gift-voucher-code'),
+              controller: _voucherController,
+              textCapitalization: TextCapitalization.characters,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _redeemGiftVoucher(),
+              decoration: const InputDecoration(
+                labelText: 'Voucher code',
+                prefixIcon: Icon(Icons.card_giftcard_rounded),
+              ),
+            ),
+            if (_voucherError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _voucherError!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                key: const Key('gift-voucher-redeem'),
+                onPressed: _redeemingVoucher ? null : _redeemGiftVoucher,
+                icon: _redeemingVoucher
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.redeem_rounded),
+                label: Text(_redeemingVoucher ? 'Applying' : 'Apply Voucher'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -450,7 +562,8 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
               color: theme.colorScheme.error,
             ),
           ),
-        ] else if (order.reviewReason != null && order.reviewReason!.isNotEmpty) ...[
+        ] else if (order.reviewReason != null &&
+            order.reviewReason!.isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(
             order.reviewReason!,
@@ -543,5 +656,26 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
     final hour = local.hour.toString().padLeft(2, '0');
     final minute = local.minute.toString().padLeft(2, '0');
     return '$year-$month-$day $hour:$minute';
+  }
+
+  String _giftVoucherErrorMessage(Object error) {
+    if (error is ApiException) {
+      switch (error.code) {
+        case 'GIFT_VOUCHER_INVALID':
+          return 'Gift voucher is invalid or already redeemed.';
+        case 'GIFT_VOUCHER_ALREADY_REDEEMED':
+          return 'Gift voucher has already been redeemed.';
+        case 'GIFT_VOUCHER_VOIDED':
+          return 'Gift voucher has been voided.';
+        case 'GIFT_VOUCHER_EXPIRED':
+          return 'Gift voucher has expired.';
+        case 'GIFT_VOUCHER_CODE_REQUIRED':
+          return 'Enter a gift voucher code.';
+      }
+      return error.message.isNotEmpty
+          ? error.message
+          : 'Unable to redeem this gift voucher.';
+    }
+    return 'Unable to redeem this gift voucher. Please try again.';
   }
 }

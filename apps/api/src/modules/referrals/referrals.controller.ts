@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -19,6 +20,13 @@ import { ReferralsService } from './referrals.service';
 @UseGuards(AuthGuard)
 export class ReferralsController {
   constructor(private readonly referralsService: ReferralsService) {}
+
+  @Get('me')
+  async getReferralDashboard(@Req() req: Request): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.referralsService.getReferralDashboard(userId);
+    return successResponse(data, getCorrelationId(req));
+  }
 
   @Post('apply')
   @HttpCode(HttpStatus.OK)

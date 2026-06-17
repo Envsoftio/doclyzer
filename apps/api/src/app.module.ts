@@ -20,6 +20,8 @@ import { PushOpenEventEntity } from './database/entities/push-open-event.entity'
 import { PushSendAuditEntity } from './database/entities/push-send-audit.entity';
 import { ReportEntity } from './database/entities/report.entity';
 import { RestrictionEntity } from './database/entities/restriction.entity';
+import { GiftVoucherEntity } from './database/entities/gift-voucher.entity';
+import { GiftVoucherEventEntity } from './database/entities/gift-voucher-event.entity';
 import { ShareLinkEntity } from './database/entities/share-link.entity';
 import { UserSharePolicyEntity } from './database/entities/user-share-policy.entity';
 import { UserDeviceTokenEntity } from './database/entities/user-device-token.entity';
@@ -62,6 +64,7 @@ import { AnalyticsAdminModule } from './modules/analytics-admin/analytics-admin.
 import { AuditIncidentModule } from './modules/audit-incident/audit-incident.module';
 import { EmailAdminModule } from './modules/email-admin/email-admin.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { GiftVouchersModule } from './modules/gift-vouchers/gift-vouchers.module';
 import { randomUUID } from 'node:crypto';
 
 const typeOrmEntities = [
@@ -77,6 +80,8 @@ const typeOrmEntities = [
   DataExportRequestEntity,
   ClosureRequestEntity,
   ConsentRecordEntity,
+  GiftVoucherEntity,
+  GiftVoucherEventEntity,
   ReportEntity,
   ShareLinkEntity,
   UserSharePolicyEntity,
@@ -221,6 +226,7 @@ const typeOrmEntities = [
     AuditIncidentModule,
     EmailAdminModule,
     NotificationsModule,
+    GiftVouchersModule,
     NotificationPipelineModule,
     EmailDeliveryModule,
   ],

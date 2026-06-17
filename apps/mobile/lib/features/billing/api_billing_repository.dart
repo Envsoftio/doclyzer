@@ -141,6 +141,22 @@ class ApiBillingRepository implements BillingRepository {
   }
 
   @override
+  Future<RedeemGiftVoucherResult> redeemGiftVoucher(String code) async {
+    final data = await _client.post(
+      'v1/gift-vouchers/redeem',
+      body: {'code': code.trim().toUpperCase()},
+    );
+    final d = data['data'] as Map<String, dynamic>;
+    final summaryJson = d['entitlementSummary'] as Map<String, dynamic>;
+    return RedeemGiftVoucherResult(
+      voucherId: d['voucherId'] as String,
+      codeMask: d['codeMask'] as String,
+      creditsAdded: (d['creditsAdded'] as num).toDouble(),
+      entitlementSummary: _summaryFromJson(summaryJson),
+    );
+  }
+
+  @override
   Future<List<Plan>> listPlans() async {
     final data = await _client.get('v1/billing/plans');
     final list = data['data'] as List<dynamic>;
