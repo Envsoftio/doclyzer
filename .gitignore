@@ -17,7 +17,6 @@ apps/web/.output/
 apps/mobile/.dart_tool/
 apps/mobile/node_modules/
 apps/mobile/build/
-_bmad/
 .agents/
 .cursor/
 .claude/
