@@ -19,6 +19,7 @@ import { ReportLabValueEntity } from '../../database/entities/report-lab-value.e
 import { ProfilesService } from '../profiles/profiles.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
+import { SuryaOcrClient } from './surya-ocr.client';
 import { DoclingOcrClient } from './docling-ocr.client';
 import { ImageToPdfService } from './image-to-pdf.service';
 import {
@@ -133,6 +134,7 @@ interface StructuredReportLabInput {
 }
 
 interface SelectedOdlLabOutput {
+  hasMappedLabTables?: boolean;
   extractedLabValues: StructuredReportLabInput[];
   structuredReport: StructuredReportDto;
 }
@@ -188,6 +190,7 @@ export class ReportsService {
     private readonly usageLimitsService: UsageLimitsService,
     private readonly openDataLoaderClient: OpenDataLoaderClient,
     private readonly doclingOcrClient: DoclingOcrClient,
+    private readonly suryaOcrClient: SuryaOcrClient,
     private readonly reportLabAiFallbackService: ReportLabAiFallbackService,
     private readonly notificationPipeline: NotificationPipelineService,
     private readonly imageToPdfService: ImageToPdfService,
@@ -313,7 +316,7 @@ export class ReportsService {
       normalizedFile.mimetype,
     );
 
-    let { status, transcript, opendataloaderJson } =
+    const { status, transcript, opendataloaderJson } =
       await this.parseReportBuffer(
         normalizedFile.buffer,
         'upload',
@@ -321,7 +324,7 @@ export class ReportsService {
         normalizedFile.source,
       );
 
-    let parsedFromJson = opendataloaderJson
+    const parsedFromJson = opendataloaderJson
       ? await this.extractLabValuesFromOdlJsonWithFallback({
           opendataloaderJson,
           reportId,
@@ -339,7 +342,8 @@ export class ReportsService {
       parsedFromJson?.extractedLabValues ?? [],
     );
     let labValues =
-      normalizedFile.source === 'image' && jsonLabValues.length > 0
+      parsedFromJson?.hasMappedLabTables ||
+      (normalizedFile.source === 'image' && jsonLabValues.length > 0)
         ? jsonLabValues
         : this.selectBestLabValues(jsonLabValues, transcriptLabValues);
     labValues = this.deduplicateStructuredLabValues(labValues);
@@ -758,7 +762,9 @@ export class ReportsService {
     );
     const retryLabValues =
       status === 'parsed'
-        ? this.selectBestLabValues(retryJsonValues, retryTranscriptValues)
+        ? retryFromJson?.hasMappedLabTables
+          ? retryJsonValues
+          : this.selectBestLabValues(retryJsonValues, retryTranscriptValues)
         : [];
     const dedupedRetryLabValues =
       status === 'parsed'
@@ -906,6 +912,26 @@ export class ReportsService {
     return { ok: true, text: cleaned };
   }
 
+  private async parseWithPreferredOcr(buffer: Buffer) {
+    const surya = await this.suryaOcrClient.parsePdf(buffer);
+    if (surya) {
+      const parsed = this.odlJsonParser.parseWithDiagnostics(surya.parsedJson);
+      if (
+        parsed.diagnostics.hasMappedLabTables &&
+        !parsed.diagnostics.hasAmbiguousHeaders &&
+        parsed.extractedLabValues.length > 0 &&
+        parsed.diagnostics.coverage >= 0.9
+      )
+        return surya;
+    }
+    const fallback = await this.doclingOcrClient.parsePdf(buffer, {
+      doOcr: true,
+      forceOcr: true,
+    });
+    // A backend failure should not erase Surya's readable transcript.
+    return fallback?.text?.trim() || fallback?.parsedJson ? fallback : surya;
+  }
+
   private async parseReportBuffer(
     buffer: Buffer,
     trigger: 'upload' | 'retry',
@@ -913,9 +939,7 @@ export class ReportsService {
     source: ReportInputSource = 'pdf',
   ): Promise<ParsedBufferResult> {
     if (source === 'image') {
-      const doclingAttempt = await this.doclingOcrClient.parsePdf(buffer, {
-        forceOcr: true,
-      });
+      const doclingAttempt = await this.parseWithPreferredOcr(buffer);
       const bestEval = this.evaluateParsedTranscript(doclingAttempt?.text);
       const status = bestEval.ok ? 'parsed' : 'failed_transient';
       this.logParseQuality(trigger, reportId, bestEval.text, status);
@@ -930,7 +954,17 @@ export class ReportsService {
 
     const firstAttempt = await this.openDataLoaderClient.parsePdf(buffer);
     const firstEval = this.evaluateParsedTranscript(firstAttempt?.text);
-    if (firstEval.ok) {
+    const firstStructure = firstAttempt?.parsedJson
+      ? this.odlJsonParser.parseWithDiagnostics(firstAttempt.parsedJson)
+      : null;
+    // Readable prose is not evidence of usable lab-table extraction.
+    if (
+      firstEval.ok &&
+      firstStructure?.diagnostics.hasMappedLabTables &&
+      !firstStructure.diagnostics.hasAmbiguousHeaders &&
+      firstStructure.extractedLabValues.length > 0 &&
+      firstStructure.diagnostics.coverage >= 0.9
+    ) {
       const status = 'parsed';
       this.logParseQuality(trigger, reportId, firstEval.text, status);
       return {
@@ -942,22 +976,48 @@ export class ReportsService {
       };
     }
 
-    // Fallback for scanned/image-only PDFs:
-    // when ODL text is too weak, run Docling OCR to recover transcript + JSON.
-    const doclingAttempt = await this.doclingOcrClient.parsePdf(buffer, {
-      forceOcr: true,
+    // Native extraction preserves exact embedded text and avoids OCR on logos.
+    // Only pay the OCR cost when native lab extraction is insufficient.
+    let doclingAttempt = await this.doclingOcrClient.parsePdf(buffer, {
+      doOcr: false,
+      forceOcr: false,
     });
-    const doclingEval = this.evaluateParsedTranscript(doclingAttempt?.text);
+    let doclingEval = this.evaluateParsedTranscript(doclingAttempt?.text);
+    const nativeStructure = doclingAttempt?.parsedJson
+      ? this.odlJsonParser.parseWithDiagnostics(doclingAttempt.parsedJson)
+      : null;
+    if (
+      !doclingEval.ok ||
+      !nativeStructure?.diagnostics.hasMappedLabTables ||
+      nativeStructure.diagnostics.hasAmbiguousHeaders ||
+      nativeStructure.extractedLabValues.length === 0 ||
+      nativeStructure.diagnostics.coverage < 0.9
+    ) {
+      const ocrAttempt = await this.parseWithPreferredOcr(buffer);
+      const ocrEval = this.evaluateParsedTranscript(ocrAttempt?.text);
+      // An unavailable OCR backend must not discard usable native output.
+      const ocrRows = ocrAttempt?.parsedJson
+        ? this.odlJsonParser.parseWithDiagnostics(ocrAttempt.parsedJson)
+            .extractedLabValues.length
+        : 0;
+      if (
+        (ocrEval.ok || ocrAttempt?.parsedJson) &&
+        ocrRows >= (nativeStructure?.extractedLabValues.length ?? 0)
+      ) {
+        doclingAttempt = ocrAttempt;
+        doclingEval = ocrEval;
+      }
+    }
     if (doclingAttempt) {
       this.logger.log(
         JSON.stringify({
-          action: 'REPORT_DOCLING_PDF_FALLBACK_ATTEMPT',
+          action: 'REPORT_PDF_FALLBACK_ATTEMPT',
           trigger,
           reportId,
           odlTranscriptChars: firstEval.text?.length ?? 0,
           doclingTranscriptChars: doclingEval.text?.length ?? 0,
           doclingHasJson: Boolean(doclingAttempt.parsedJson),
-          selected: doclingEval.ok ? 'docling' : 'odl',
+          selected: doclingEval.ok ? 'native_or_ocr' : 'odl',
         }),
       );
     }
@@ -997,7 +1057,10 @@ export class ReportsService {
       deterministic.extractedLabValues,
     );
     let structuredReport = deterministic.structuredReport;
-    if (extractedLabValues.length >= 10) {
+    if (
+      deterministic.diagnostics.hasMappedLabTables &&
+      !deterministic.diagnostics.hasAmbiguousHeaders
+    ) {
       this.logger.log(
         JSON.stringify({
           action: 'REPORT_LAB_AI_FALLBACK_DECISION',
@@ -1008,10 +1071,14 @@ export class ReportsService {
           aiRows: 0,
           aiFallbackUsed: false,
           selectedSource: 'deterministic_json',
-          reason: 'sufficient_deterministic_rows',
+          reason: 'header_mapped_table_cells',
         }),
       );
-      return { extractedLabValues, structuredReport };
+      return {
+        extractedLabValues,
+        structuredReport,
+        hasMappedLabTables: deterministic.diagnostics.hasMappedLabTables,
+      };
     }
     const transcriptCandidates = this.extractAiFallbackCandidatesFromTranscript(
       input.transcript,
@@ -1044,7 +1111,11 @@ export class ReportsService {
           selectedSource: 'deterministic_json',
         }),
       );
-      return { extractedLabValues, structuredReport };
+      return {
+        extractedLabValues,
+        structuredReport,
+        hasMappedLabTables: deterministic.diagnostics.hasMappedLabTables,
+      };
     }
 
     const aiValues = this.toStructuredLabInputs(aiFallback.extractedLabValues);
@@ -1068,7 +1139,11 @@ export class ReportsService {
     );
 
     if (!shouldUseAi) {
-      return { extractedLabValues, structuredReport };
+      return {
+        extractedLabValues,
+        structuredReport,
+        hasMappedLabTables: deterministic.diagnostics.hasMappedLabTables,
+      };
     }
 
     extractedLabValues = aiValues;
@@ -1079,7 +1154,11 @@ export class ReportsService {
         : {}),
       sections: this.buildStructuredReport(null, aiValues).sections,
     };
-    return { extractedLabValues, structuredReport };
+    return {
+      extractedLabValues,
+      structuredReport,
+      hasMappedLabTables: deterministic.diagnostics.hasMappedLabTables,
+    };
   }
 
   private toStructuredLabInputs(
@@ -1124,7 +1203,7 @@ export class ReportsService {
     rawValue: string,
     referenceRange: string | null,
   ): boolean | null {
-    if (!referenceRange) return null;
+    if (!referenceRange || /^[<>≤≥]/.test(rawValue.trim())) return null;
 
     const valueNum = this.tryParseNumeric(rawValue);
     const ref = referenceRange.trim();
@@ -1186,9 +1265,10 @@ export class ReportsService {
   private normalizeComparableValue(value: string): string {
     const trimmed = value.trim();
     const numeric = trimmed.replace(/,/g, '');
-    if (/^[<>]?\s*[-+]?\d+(?:\.\d+)?$/.test(numeric)) {
-      const num = Number(numeric.replace(/^[<>]\s*/, ''));
-      if (Number.isFinite(num)) return String(num);
+    const match = numeric.match(/^([<>]=?|[≤≥])?\s*([-+]?\d+(?:\.\d+)?)$/);
+    if (match) {
+      const num = Number(match[2]);
+      if (Number.isFinite(num)) return `${match[1] ?? ''}${num}`;
     }
     return trimmed.toLowerCase();
   }
@@ -1568,7 +1648,7 @@ export class ReportsService {
     userId: string,
     reportId: string,
   ): Promise<ProcessingAttemptDto[]> {
-    const report = await this.getActiveReportOrThrow(userId, reportId);
+    await this.getActiveReportOrThrow(userId, reportId);
     const attempts = await this.attemptRepo.find({
       where: { reportId },
       order: { attemptedAt: 'DESC' },
@@ -1933,9 +2013,7 @@ export class ReportsService {
       read(
         /Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i,
       ) ??
-      read(
-        /Collected Date&Time\s*[:\-]?\s*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i,
-      );
+      read(/Collected Date&Time\s*[:-]?\s*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i);
     return {
       ...(name ? { name } : {}),
       ...(age ? { age } : {}),

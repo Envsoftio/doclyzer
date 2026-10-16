@@ -11,9 +11,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libxrender1 \
     curl \
+    tesseract-ocr \
+    tesseract-ocr-eng \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python -m pip install --upgrade pip && \
-    pip install "docling-serve"
+    pip install "docling-serve==1.37.0" "onnxruntime==1.31.0"
 
 EXPOSE 5002

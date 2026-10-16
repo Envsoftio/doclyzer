@@ -1,0 +1,6 @@
+**
+!docker/
+!docker/surya/
+!docker/surya/*.py
+!docker/surya/requirements.txt
+!docker/surya/Dockerfile

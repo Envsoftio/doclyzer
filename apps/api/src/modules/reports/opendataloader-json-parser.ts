@@ -6,6 +6,7 @@ import type {
   StructuredSectionDto,
   StructuredSectionItemDto,
 } from './reports.service';
+import { adaptDoclingDocument } from './docling-document-adapter';
 import { LabDetailsExtractor } from './lab-details-extractor';
 
 interface FlatNode {
@@ -27,6 +28,8 @@ interface ExtractionStats {
   candidateRows: number;
   parsedRows: number;
   aiCandidateRows: string[];
+  mappedTables?: number;
+  ambiguousHeaders?: number;
 }
 
 export interface OpenDataLoaderParsedOutput {
@@ -35,6 +38,8 @@ export interface OpenDataLoaderParsedOutput {
 }
 
 export interface OpenDataLoaderParseDiagnostics {
+  hasMappedLabTables: boolean;
+  hasAmbiguousHeaders: boolean;
   confidence: number;
   coverage: number;
   candidateRows: number;
@@ -63,6 +68,7 @@ export class OpenDataLoaderJsonParser {
   parseWithDiagnostics(
     input: unknown,
   ): OpenDataLoaderParsedWithDiagnosticsOutput {
+    input = adaptDoclingDocument(input);
     const nodes = this.flattenNodes(input);
     const patientDetails = this.extractPatientDetails(nodes);
     const labDetailLines = nodes.map((n) => this.normalizeSpace(n.content));
@@ -70,10 +76,13 @@ export class OpenDataLoaderJsonParser {
       this.labDetailsExtractor.extractFromLines(labDetailLines);
     const tableExtraction = this.extractSectionsFromExplicitTables(input);
     const heuristicExtraction = this.extractSections(nodes);
-    const useTableAsPrimary = tableExtraction.stats.parsedRows >= 6;
+    const useTableAsPrimary = (tableExtraction.stats.mappedTables ?? 0) > 0;
     const sections = useTableAsPrimary
       ? tableExtraction.sections
-      : this.mergeSections(tableExtraction.sections, heuristicExtraction.sections);
+      : this.mergeSections(
+          tableExtraction.sections,
+          heuristicExtraction.sections,
+        );
     const stats: ExtractionStats = useTableAsPrimary
       ? tableExtraction.stats
       : {
@@ -81,7 +90,9 @@ export class OpenDataLoaderJsonParser {
             tableExtraction.stats.candidateRows +
             heuristicExtraction.stats.candidateRows,
           parsedRows:
-            tableExtraction.stats.parsedRows + heuristicExtraction.stats.parsedRows,
+            tableExtraction.stats.parsedRows +
+            heuristicExtraction.stats.parsedRows,
+          ambiguousHeaders: tableExtraction.stats.ambiguousHeaders,
           aiCandidateRows: this.uniqueTrimmed([
             ...tableExtraction.stats.aiCandidateRows,
             ...heuristicExtraction.stats.aiCandidateRows,
@@ -206,7 +217,9 @@ export class OpenDataLoaderJsonParser {
       read(/Age\/Gender\s*:\s*([^|]+?)(?:\s{2,}|Order Id|$)/i) ??
       spatialAgeGender ??
       readNextLineValue(/^age\/gender$/i) ??
-      read(/\b(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?\s+(?:Male|Female|Other))\b/i);
+      read(
+        /\b(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?\s+(?:Male|Female|Other))\b/i,
+      );
     const age = ageGender?.match(
       /(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?|\d+\s*Yrs?)/i,
     )?.[1];
@@ -217,10 +230,11 @@ export class OpenDataLoaderJsonParser {
       readNextLineValue(/^booking id$/i) ??
       readNextLineValue(/^lab accession id$/i);
     const sampleCollectionDate =
-      read(/Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i) ??
-      (spatialCollected?.match(/[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4}/)?.[0] ??
-        undefined) ??
-      read(/Collected Date&Time\s*[:\-]?\s*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i);
+      read(
+        /Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i,
+      ) ??
+      spatialCollected?.match(/[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4}/)?.[0] ??
+      read(/Collected Date&Time\s*[:-]?\s*([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{4})/i);
 
     return {
       ...(name ? { name } : {}),
@@ -244,11 +258,15 @@ export class OpenDataLoaderJsonParser {
     if (labels.length === 0) return undefined;
 
     for (const label of labels) {
-      const [lx1, ly1, lx2, ly2] = label.bbox!;
+      const [, ly1, lx2, ly2] = label.bbox!;
       const lcy = (ly1 + ly2) / 2;
       let best: { score: number; text: string } | null = null;
       for (const n of nodes) {
-        if (n === label || n.pageNumber !== label.pageNumber || n.bbox == null) {
+        if (
+          n === label ||
+          n.pageNumber !== label.pageNumber ||
+          n.bbox == null
+        ) {
           continue;
         }
         const text = this.normalizeSpace(n.content);
@@ -260,7 +278,7 @@ export class OpenDataLoaderJsonParser {
         ) {
           continue;
         }
-        const [x1, y1, x2, y2] = n.bbox;
+        const [x1, y1, , y2] = n.bbox;
         const cy = (y1 + y2) / 2;
         const dy = Math.abs(cy - lcy);
         const dx = x1 - lx2;
@@ -375,49 +393,135 @@ export class OpenDataLoaderJsonParser {
         : [];
       if (rows.length === 0) continue;
       let currentSection = 'Other Tests';
+      let columns: Partial<
+        Record<'name' | 'value' | 'unit' | 'range', number>
+      > = {};
       for (const row of rows) {
         const cells = Array.isArray(row.cells)
           ? (row.cells as Record<string, unknown>[])
           : [];
-        if (cells.length < 2) continue;
-        const c1 = this.readCellText(cells[0]);
-        const c2 = this.readCellText(cells[1]);
-        const c3 = cells.length > 2 ? this.readCellText(cells[2]) : '';
-        const c4 = cells.length > 3 ? this.readCellText(cells[3]) : '';
-
-        if (this.isTableHeader(`${c1} ${c2} ${c3} ${c4}`)) continue;
-        if (!c1) continue;
-
-        const normalizedName = this.normalizeParameterName(this.cleanName(c1));
-        if (!this.isLikelyTestName(normalizedName)) continue;
-
-        const hasValue = Boolean(c2 && this.parseValueLedRow(c2));
-        const hasUnit = Boolean(c3);
-        const hasRef = Boolean(c4);
-
-        if (!hasValue && !hasUnit && !hasRef) {
+        const texts = cells.map((cell) => this.readCellText(cell));
+        const detected: typeof columns = {};
+        let ambiguousHeader = false;
+        texts.forEach((text, index) => {
+          const label = text
+            .toLowerCase()
+            .replace(/[.():]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          const key =
+            /^(test(?: name| description)?|investigation(?:s| name)?|parameter(?:s| name)?|analyte(?: name)?|component|examination|assay)$/.test(
+              label,
+            )
+              ? 'name'
+              : /^(result(?:s)?|value(?:s)?|observed values?|test result|observed result|observation|patient result)$/.test(
+                    label,
+                  )
+                ? 'value'
+                : /^(unit(?:s)?|uom|units of measurement)$/.test(label)
+                  ? 'unit'
+                  : /^(ref(?:erence)?(?: range| interval| values?)?|normal (?:range|interval|value(?:s)?)|bio(?:logical)? ref(?:erence)? (?:range|interval)|biological reference interval|reference limits)$/.test(
+                        label,
+                      )
+                    ? 'range'
+                    : null;
+          if (key) {
+            if (detected[key] !== undefined) ambiguousHeader = true;
+            detected[key] = index;
+          }
+        });
+        if (detected.name !== undefined && detected.value !== undefined) {
+          ambiguousHeader ||= texts.some((text) =>
+            /previous|prior|historical|\b20\d{2}\b/i.test(text),
+          );
+          if (ambiguousHeader)
+            stats.ambiguousHeaders = (stats.ambiguousHeaders ?? 0) + 1;
+          columns = ambiguousHeader ? {} : detected;
+          stats.mappedTables = (stats.mappedTables ?? 0) + 1;
+          continue;
+        }
+        // Do not guess column order on headerless or ambiguous tables.
+        if (columns.name === undefined || columns.value === undefined) continue;
+        let c1 = texts[columns.name] ?? '';
+        const methodFragments = texts.filter(
+          (text, index) =>
+            !Object.values(columns).includes(index) && /\bmethod\b/i.test(text),
+        );
+        // Some table models place the Method label in a spurious final column.
+        // Rejoin only that explicit label; never infer a test from method prose.
+        if (methodFragments.length === 1) {
+          const fragment = methodFragments[0];
+          if (/^Method$/i.test(fragment) && c1.includes(' : '))
+            c1 = c1.split(' : ')[0];
+          else if (/^\s*:/.test(c1) && /\s+Method$/i.test(fragment))
+            c1 = fragment.replace(/\s+Method$/i, '');
+          else {
+            stats.candidateRows += 1;
+            continue;
+          }
+        }
+        const c2 = texts[columns.value] ?? '';
+        const c3 =
+          columns.unit === undefined ? '' : (texts[columns.unit] ?? '');
+        const c4 =
+          columns.range === undefined ? '' : (texts[columns.range] ?? '');
+        // Do not reinterpret a method description as a test name.
+        if (/^\s*:/.test(c1)) {
+          stats.candidateRows += 1;
+          continue;
+        }
+        const normalizedName = this.normalizeParameterName(
+          this.cleanName(c1.split(/\bMethod\s*:/i)[0]),
+        );
+        if (!this.isLikelyTestName(normalizedName)) {
+          if (c2) stats.candidateRows += 1;
+          continue;
+        }
+        if (!c2 && !c3 && !c4) {
           currentSection = this.cleanHeading(normalizedName);
           continue;
         }
-
-        const parsedValue = this.parseValueLedRow(c2);
-        if (!parsedValue) continue;
-
         stats.candidateRows += 1;
-        const candidateText =
-          `${normalizedName} ${c2} ${c3} ${c4}`.trim();
-        if (this.isSafeAiCandidate(candidateText)) {
+        const candidateText = `${normalizedName} ${c2} ${c3} ${c4}`.trim();
+        if (this.isSafeAiCandidate(candidateText))
           stats.aiCandidateRows.push(candidateText);
-        }
+        if (
+          Object.values(columns).some(
+            (index) => cells[index]?.ambiguous === true,
+          )
+        )
+          continue;
+        // A cell is one observation, not a free-form line with trailing numbers.
+        const cleanedValue = c2.replace(/(?<=\d)\s*[HL*]$/i, '').trim();
+        const numeric =
+          /^(?:[<>]=?|[≤≥])?\s*[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?$/.test(
+            cleanedValue,
+          );
+        const qualitative =
+          /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale yellow|yellow|amber|straw|non[- ]?reactive|reactive|detected|not detected|no growth|sterile)$/i.test(
+            cleanedValue,
+          );
+        // Microscopy intervals, titers and graded positives are observed values,
+        // not scalar numbers; preserve their notation and do not infer abnormality.
+        const nonScalar =
+          /^(?:\d+(?:\.\d+)?\s*[-–]\s*\d+(?:\.\d+)?|\d+:\d+|[+]{1,4})$/.test(
+            cleanedValue,
+          );
+        if (!numeric && !qualitative && !nonScalar) continue;
+        const value = numeric
+          ? this.normalizeNumericValue(cleanedValue)
+          : cleanedValue;
+        const isAbnormal =
+          !numeric || /^[<>≤≥]/.test(value)
+            ? undefined
+            : this.evaluateAbnormal(value, c4);
         if (!sections.has(currentSection)) sections.set(currentSection, []);
         sections.get(currentSection)!.push({
           parameterName: normalizedName,
-          value: parsedValue.value,
-          ...(c3 ? { unit: this.cleanValuePhrase(c3) } : {}),
-          ...(c4 ? { referenceRange: this.cleanValuePhrase(c4) } : {}),
-          ...(typeof parsedValue.isAbnormal === 'boolean'
-            ? { isAbnormal: parsedValue.isAbnormal }
-            : {}),
+          value,
+          ...(c3 ? { unit: c3 } : {}),
+          ...(c4 ? { referenceRange: c4 } : {}),
+          ...(typeof isAbnormal === 'boolean' ? { isAbnormal } : {}),
         });
         stats.parsedRows += 1;
       }
@@ -607,6 +711,9 @@ export class OpenDataLoaderJsonParser {
       );
     }
 
+    if (stats.ambiguousHeaders)
+      lowConfidenceReasons.push('Ambiguous result columns require review.');
+
     let confidence =
       coverage * 0.6 +
       Math.min(1, extractedRows / 40) * 0.25 +
@@ -615,6 +722,8 @@ export class OpenDataLoaderJsonParser {
     if (stats.candidateRows === 0) confidence = 0;
 
     return {
+      hasMappedLabTables: (stats.mappedTables ?? 0) > 0,
+      hasAmbiguousHeaders: (stats.ambiguousHeaders ?? 0) > 0,
       confidence: Number(confidence.toFixed(3)),
       coverage: Number(coverage.toFixed(3)),
       candidateRows: stats.candidateRows,
@@ -964,7 +1073,7 @@ export class OpenDataLoaderJsonParser {
     if (!/[A-Za-z]/.test(n)) return false;
     if ((n.match(/[A-Za-z]/g) ?? []).length < 2) return false;
     if ((n.match(/\s+/g) ?? []).length > 10) return false;
-    if (/[:|]/.test(n)) return false;
+    if (/\|/.test(n)) return false;
     if (/^[<>]?\s*[-+]?\d/.test(n)) return false;
     if (
       /\b(department|test name|smart report|summary|suggestions|report generated|sample|customer|barcode|booking|order id|page \d|sin no|method|interpretation|reference|desirable|borderline|optimal|risk|first trimester|second trimester|third trimester|healthians|american diabetes association|end of report)\b/.test(

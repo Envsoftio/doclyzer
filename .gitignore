@@ -21,3 +21,5 @@ apps/mobile/build/
 .cursor/
 .claude/
 .cline/
+apps/mobile/pubspec.lock
+docker/surya/__pycache__

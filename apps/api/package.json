@@ -22,7 +22,9 @@
     "telemetry:phi-check": "ts-node scripts/phi-telemetry-check.ts",
     "migration:check-pending": "ts-node scripts/migration-check.ts",
     "security:policy-check": "ts-node scripts/security-policy-check.ts",
-    "credits:reset": "ts-node scripts/reset-user-credits.ts"
+    "credits:reset": "ts-node scripts/reset-user-credits.ts",
+    "reports:test": "ts-node scripts/report-parser-regression-test.ts && ts-node scripts/surya-integration-test.ts",
+    "reports:benchmark": "ts-node scripts/report-parser-benchmark.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1007.0",
@@ -42,7 +44,8 @@
     "razorpay": "^2.9.6",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "typeorm": "^0.3.28"
+    "typeorm": "^0.3.28",
+    "undici": "7.29.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

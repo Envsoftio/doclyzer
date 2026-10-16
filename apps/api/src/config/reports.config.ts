@@ -1,6 +1,9 @@
 import { registerAs } from '@nestjs/config';
 
 export interface ReportsConfig {
+  suryaOcrEnabled: boolean;
+  suryaOcrBaseUrl: string;
+  suryaOcrTimeoutMs: number;
   /** Enable/disable AI report summarisation. */
   reportSummaryEnabled: boolean;
   /** Provider type for summarisation (currently only 'http' supported). */
@@ -25,6 +28,8 @@ export interface ReportsConfig {
   doclingOcrTimeoutMs: number;
   /** OCR engine to request from docling-serve (e.g. rapidocr, easyocr). */
   doclingOcrEngine: string;
+  /** Comma-separated OCR language codes; blank uses engine defaults. */
+  doclingOcrLanguages: string;
   /** Enable/disable low-confidence AI fallback for lab extraction. */
   labAiFallbackEnabled: boolean;
   /** OpenAI API key for low-confidence lab extraction fallback. */
@@ -42,6 +47,12 @@ export interface ReportsConfig {
 export const reportsConfig = registerAs(
   'reports',
   (): ReportsConfig => ({
+    suryaOcrEnabled: process.env.SURYA_OCR_ENABLED !== 'false',
+    suryaOcrBaseUrl: process.env.SURYA_OCR_BASE_URL ?? 'http://127.0.0.1:5003',
+    suryaOcrTimeoutMs: parseInt(
+      process.env.SURYA_OCR_TIMEOUT_MS ?? '610000',
+      10,
+    ),
     reportSummaryEnabled: process.env.REPORT_SUMMARY_ENABLED === 'true',
     reportSummaryProvider: process.env.REPORT_SUMMARY_PROVIDER ?? 'http',
     reportSummaryHttpUrl: process.env.REPORT_SUMMARY_HTTP_URL ?? '',
@@ -65,6 +76,9 @@ export const reportsConfig = registerAs(
       10,
     ),
     doclingOcrEngine: process.env.DOCLING_OCR_ENGINE ?? 'rapidocr',
+    doclingOcrLanguages:
+      process.env.DOCLING_OCR_LANGUAGES?.trim() ||
+      (process.env.DOCLING_OCR_ENGINE?.startsWith('tesser') ? 'eng' : ''),
     labAiFallbackEnabled: process.env.REPORT_LAB_AI_FALLBACK_ENABLED === 'true',
     labAiFallbackOpenaiApiKey:
       process.env.REPORT_LAB_AI_FALLBACK_OPENAI_API_KEY ?? '',

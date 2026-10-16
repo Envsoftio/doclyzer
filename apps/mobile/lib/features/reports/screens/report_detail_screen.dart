@@ -115,7 +115,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   }
 
   Future<void> _onRetryParse() async {
-    if (_report == null) return;
+    if (_report == null || _state == _ReportDetailState.loading) return;
     setState(() {
       _state = _ReportDetailState.loading;
       _errorMessage = null;
@@ -263,7 +263,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       case 'unparsed':
         return 'Unparsed';
       case 'failed_transient':
-        return 'Processing delayed';
+        return 'Processing stopped — retry available';
       case 'failed_terminal':
         return 'Parsing failed';
       default:
@@ -386,6 +386,22 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               ],
             ),
           ),
+          if (report.status == 'uploading' ||
+              report.status == 'queued' ||
+              report.status == 'parsing') ...[
+            const SizedBox(height: 16),
+            Text(
+              'We are analyzing this report. Check again to see when results are ready.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              key: const Key('report-detail-check-status'),
+              onPressed: _loadReport,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Check status'),
+            ),
+          ],
           if (summary != null && summary.isNotEmpty) ...[
             const SizedBox(height: 16),
             Card(
@@ -480,7 +496,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             ),
             if (_errorMessage != null &&
                 report.status != 'unparsed' &&
-                report.status != 'content_not_recognized') ...[
+                report.status != 'content_not_recognized' &&
+                report.status != 'failed_transient' &&
+                report.status != 'failed_terminal') ...[
               const SizedBox(height: 8),
               Text(
                 _errorMessage!,
@@ -491,8 +509,16 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             ],
           ],
           if (report.status == 'unparsed' ||
-              report.status == 'content_not_recognized') ...[
+              report.status == 'content_not_recognized' ||
+              report.status == 'failed_transient' ||
+              report.status == 'failed_terminal') ...[
             const SizedBox(height: 12),
+            if (report.status == 'failed_transient') ...[
+              const Text(
+                'Processing stopped before it finished. Your file is saved. Tap Retry to try again.',
+              ),
+              const SizedBox(height: 8),
+            ],
             if (report.status == 'content_not_recognized') ...[
               Text(
                 'This file does not appear to be a valid lab report. You can still keep and view the PDF.',
@@ -668,39 +694,43 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                                             ),
                                       ),
                                     ),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          '${test.value}$unitSuffix',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.copyWith(
-                                                color: abnormal
-                                                    ? Colors.red.shade700
-                                                    : null,
-                                                fontWeight: abnormal
-                                                    ? FontWeight.w600
-                                                    : null,
-                                              ),
-                                        ),
-                                        if (referenceRange != null &&
-                                            referenceRange.isNotEmpty)
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
                                           Text(
-                                            'Normal: $referenceRange',
+                                            '${test.value}$unitSuffix',
+                                            textAlign: TextAlign.end,
                                             style: Theme.of(context)
                                                 .textTheme
-                                                .bodySmall
+                                                .bodyMedium
                                                 ?.copyWith(
-                                                  color: normalRangeColor,
+                                                  color: abnormal
+                                                      ? Colors.red.shade700
+                                                      : null,
                                                   fontWeight: abnormal
                                                       ? FontWeight.w600
                                                       : null,
                                                 ),
                                           ),
-                                      ],
+                                          if (referenceRange != null &&
+                                              referenceRange.isNotEmpty)
+                                            Text(
+                                              'Normal: $referenceRange',
+                                              textAlign: TextAlign.end,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: normalRangeColor,
+                                                    fontWeight: abnormal
+                                                        ? FontWeight.w600
+                                                        : null,
+                                                  ),
+                                            ),
+                                        ],
+                                      ),
                                     ),
                                     const SizedBox(width: 6),
                                     const Icon(Icons.chevron_right, size: 16),
@@ -754,19 +784,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            flex: 2,
-                            child: Text(
-                              lab.parameterName.isNotEmpty
-                                  ? lab.parameterName
-                                  : '—',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                Text(
+                                  lab.parameterName.isNotEmpty
+                                      ? lab.parameterName
+                                      : '—',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(fontWeight: FontWeight.w500),
+                                ),
+                                const SizedBox(height: 4),
                                 Text(
                                   lab.value.isNotEmpty ? lab.value : '—',
                                   style: Theme.of(context).textTheme.bodyMedium
@@ -791,23 +819,24 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                                               : null,
                                         ),
                                   ),
+                                if (lab.unit != null && lab.unit!.isNotEmpty)
+                                  Text(
+                                    lab.unit!,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                if (lab.sampleDate != null &&
+                                    lab.sampleDate!.isNotEmpty)
+                                  Text(
+                                    lab.sampleDate!,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
                               ],
                             ),
                           ),
-                          if (lab.unit != null && lab.unit!.isNotEmpty)
-                            Text(
-                              lab.unit!,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          if (lab.sampleDate != null &&
-                              lab.sampleDate!.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8),
-                              child: Text(
-                                lab.sampleDate!,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ),
                           const Icon(Icons.chevron_right, size: 16),
                         ],
                       ),
@@ -853,7 +882,9 @@ class _SectionTitle extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
         const SizedBox(width: 8),
-        Text(title, style: Theme.of(context).textTheme.titleSmall),
+        Expanded(
+          child: Text(title, style: Theme.of(context).textTheme.titleSmall),
+        ),
       ],
     );
   }

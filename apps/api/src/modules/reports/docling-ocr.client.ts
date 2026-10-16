@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { isDoclingDocument } from './docling-document-adapter';
 import { redactSecrets } from '../../common/redact-secrets';
 
 interface DoclingOptions {
+  doOcr?: boolean;
   forceOcr?: boolean;
 }
 
@@ -34,6 +36,13 @@ export class DoclingOcrClient {
       this.configService.get<number>('reports.doclingOcrTimeoutMs') ?? 180000;
     const ocrEngine =
       this.configService.get<string>('reports.doclingOcrEngine') ?? 'rapidocr';
+    const languages = (
+      this.configService.get<string>('reports.doclingOcrLanguages')?.trim() ||
+      (ocrEngine.startsWith('tesser') ? 'eng' : '')
+    )
+      .split(',')
+      .map((lang) => lang.trim())
+      .filter(Boolean);
     const baseUrls = this.getBaseUrlCandidates(configuredBaseUrl);
 
     const controller = new AbortController();
@@ -54,12 +63,15 @@ export class DoclingOcrClient {
             { name: 'to_formats', value: 'md' },
             { name: 'to_formats', value: 'json' },
             { name: 'from_formats', value: 'pdf' },
-            { name: 'do_ocr', value: 'true' },
+            { name: 'do_ocr', value: String(options?.doOcr !== false) },
+            { name: 'do_table_structure', value: 'true' },
+            { name: 'table_mode', value: 'accurate' },
             {
               name: 'force_ocr',
               value: options?.forceOcr ? 'true' : 'false',
             },
             { name: 'ocr_engine', value: ocrEngine },
+            ...languages.map((value) => ({ name: 'ocr_lang', value })),
             { name: 'return_as_file', value: 'false' },
           ]);
           return fetch(endpoint, {
@@ -85,9 +97,12 @@ export class DoclingOcrClient {
               value: JSON.stringify({
                 from_formats: ['pdf'],
                 to_formats: ['md', 'json'],
-                do_ocr: true,
+                do_ocr: options?.doOcr !== false,
+                do_table_structure: true,
+                table_mode: 'accurate',
                 force_ocr: Boolean(options?.forceOcr),
                 ocr_engine: ocrEngine,
+                ...(languages.length ? { ocr_lang: languages } : {}),
                 return_as_file: false,
                 abort_on_error: false,
               }),
@@ -175,7 +190,9 @@ export class DoclingOcrClient {
         }
       }
       if (lastError) {
-        this.logger.warn(redactSecrets(`Docling OCR exhausted base URLs: ${lastError}`));
+        this.logger.warn(
+          redactSecrets(`Docling OCR exhausted base URLs: ${lastError}`),
+        );
       }
       return null;
     } catch (err) {
@@ -225,7 +242,9 @@ export class DoclingOcrClient {
           `Content-Type: ${part.contentType ?? 'application/octet-stream'}`,
         );
       } else {
-        headerLines.push(`Content-Disposition: form-data; name="${escapedName}"`);
+        headerLines.push(
+          `Content-Disposition: form-data; name="${escapedName}"`,
+        );
       }
       headerLines.push('');
       chunks.push(Buffer.from(`${headerLines.join('\r\n')}\r\n`, 'utf8'));
@@ -276,7 +295,10 @@ export class DoclingOcrClient {
     }
   }
 
-  private extractOutputs(data: unknown): { text: string; parsedJson?: unknown } {
+  private extractOutputs(data: unknown): {
+    text: string;
+    parsedJson?: unknown;
+  } {
     const readPath = (obj: unknown, path: string[]): unknown => {
       let cur = obj as Record<string, unknown> | undefined;
       for (const key of path) {
@@ -286,7 +308,11 @@ export class DoclingOcrClient {
       return cur;
     };
 
+    // HTTP 200 can still carry a failed or partially failed conversion.
+    const status = readPath(data, ['status']);
+    if (typeof status === 'string' && status !== 'success') return { text: '' };
     const mdCandidates: unknown[] = [
+      readPath(data, ['document', 'md_content']),
       readPath(data, ['document_result', 'output', 'md']),
       readPath(data, ['document_result', 'output', 'markdown']),
       readPath(data, ['output', 'md']),
@@ -299,6 +325,7 @@ export class DoclingOcrClient {
       readPath(data, ['document_result', 'markdown']),
     ];
     const jsonCandidates: unknown[] = [
+      readPath(data, ['document', 'json_content']),
       readPath(data, ['document']),
       readPath(data, ['document_result', 'output', 'json']),
       readPath(data, ['output', 'json']),
@@ -346,12 +373,15 @@ export class DoclingOcrClient {
     return this.extractTextFallback(data) ?? '';
   }
 
-  private findFirstDoclingJsonLike(
-    data: unknown,
-    seeded: unknown[],
-  ): unknown | undefined {
+  private findFirstDoclingJsonLike(data: unknown, seeded: unknown[]): unknown {
     for (const v of seeded) {
-      if (v && typeof v === 'object') return v;
+      if (isDoclingDocument(v)) return v;
+      if (
+        v &&
+        typeof v === 'object' &&
+        Array.isArray((v as Record<string, unknown>).kids)
+      )
+        return v;
     }
     const stack: unknown[] = [data];
     while (stack.length > 0) {
@@ -363,12 +393,13 @@ export class DoclingOcrClient {
       }
       if (typeof cur !== 'object') continue;
       const obj = cur as Record<string, unknown>;
+      if (isDoclingDocument(obj)) return obj;
       if (Array.isArray(obj.kids) || Array.isArray(obj['list items'])) {
         return obj;
       }
       for (const [k, v] of Object.entries(obj)) {
         if (
-          (k === 'json' || k === 'json_docling') &&
+          (k === 'json' || k === 'json_docling' || k === 'json_content') &&
           v &&
           typeof v === 'object'
         ) {
@@ -405,7 +436,9 @@ export class DoclingOcrClient {
     const merged = out
       .filter(Boolean)
       .filter((line) => !/^#\/(texts|groups|tables|pictures)\//i.test(line))
-      .filter((line) => !/^(TOPLEFT|BOTTOMLEFT|_root_|unspecified)$/i.test(line))
+      .filter(
+        (line) => !/^(TOPLEFT|BOTTOMLEFT|_root_|unspecified)$/i.test(line),
+      )
       .join('\n')
       .trim();
     return merged.length > 0 ? merged : null;
@@ -432,7 +465,9 @@ export class DoclingOcrClient {
     const root = data as Record<string, unknown>;
     const keys = Object.keys(root).slice(0, 40);
     const output = root.output as Record<string, unknown> | undefined;
-    const documentResult = root.document_result as Record<string, unknown> | undefined;
+    const documentResult = root.document_result as
+      | Record<string, unknown>
+      | undefined;
     return {
       rootKeys: keys,
       hasOutput: Boolean(output && typeof output === 'object'),

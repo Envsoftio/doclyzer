@@ -423,7 +423,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
       case 'unparsed':
         return 'Unparsed';
       case 'failed_transient':
-        return 'Processing delayed';
+        return 'Processing stopped — tap to retry';
       case 'failed_terminal':
         return 'Parsing failed';
       default:

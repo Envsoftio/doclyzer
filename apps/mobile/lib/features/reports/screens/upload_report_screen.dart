@@ -8,9 +8,10 @@ import '../../../features/incidents/incident_repository.dart';
 import '../../../features/support/support_models.dart';
 import '../../../features/support/support_repository.dart';
 import '../../../features/support/support_request_sheet.dart';
+import '../../profiles/profiles_repository.dart';
 import '../reports_repository.dart';
-import 'health_history_screen.dart';
 import 'pdf_viewer_screen.dart';
+import 'report_detail_screen.dart';
 
 enum _UploadState { idle, uploading, reading, success, error, duplicate, limit }
 
@@ -18,10 +19,10 @@ class UploadReportScreen extends StatefulWidget {
   const UploadReportScreen({
     super.key,
     required this.reportsRepository,
+    required this.profilesRepository,
     required this.activeProfileName,
     required this.onBack,
     required this.onComplete,
-    required this.onGoToTimeline,
     this.incidentStatus,
     this.onUpgrade,
     required this.supportRepository,
@@ -31,10 +32,10 @@ class UploadReportScreen extends StatefulWidget {
   });
 
   final ReportsRepository reportsRepository;
+  final ProfilesRepository profilesRepository;
   final String activeProfileName;
   final VoidCallback onBack;
   final VoidCallback onComplete;
-  final VoidCallback onGoToTimeline;
   final VoidCallback? onUpgrade;
   final PublicIncidentStatus? incidentStatus;
   final SupportRepository supportRepository;
@@ -318,31 +319,35 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           onPressed: widget.onBack,
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (showIncidentBanner) ...[
-              IncidentBanner(incident: incident),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (showIncidentBanner) ...[
+                IncidentBanner(incident: incident),
+                const SizedBox(height: 24),
+              ],
+              Text(
+                'Uploading to: ${widget.activeProfileName}',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
               const SizedBox(height: 24),
+              switch (_state) {
+                _UploadState.idle => _buildIdle(),
+                _UploadState.uploading => _buildProgress(
+                  'Uploading and analyzing report…',
+                ),
+                _UploadState.reading => _buildProgress('Reading report…'),
+                _UploadState.success =>
+                  _isParseFailure() ? _buildParseFailure() : _buildSuccess(),
+                _UploadState.duplicate => _buildDuplicateDialog(),
+                _UploadState.limit => _buildLimitWarning(),
+                _UploadState.error => _buildError(),
+              },
             ],
-            Text(
-              'Uploading to: ${widget.activeProfileName}',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 24),
-            switch (_state) {
-              _UploadState.idle => _buildIdle(),
-              _UploadState.uploading => _buildProgress('Uploading…'),
-              _UploadState.reading => _buildProgress('Reading report…'),
-              _UploadState.success =>
-                _isParseFailure() ? _buildParseFailure() : _buildSuccess(),
-              _UploadState.duplicate => _buildDuplicateDialog(),
-              _UploadState.limit => _buildLimitWarning(),
-              _UploadState.error => _buildError(),
-            },
-          ],
+          ),
         ),
       ),
     );
@@ -395,10 +400,14 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   bool _isParseFailureStatus(String status) {
     return status == 'unparsed' ||
         status == 'content_not_recognized' ||
-        status == 'failed_terminal';
+        status == 'failed_terminal' ||
+        status == 'failed_transient';
   }
 
   String _parseFailureMessage(String? status) {
+    if (status == 'failed_transient') {
+      return 'Processing stopped before it finished. Your file is saved. Tap Retry to try again.';
+    }
     if (status == 'content_not_recognized') {
       return 'This doesn\'t look like a valid lab report. Your file is saved.';
     }
@@ -475,6 +484,22 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           reportId: r.reportId,
           fileName: r.fileName,
           onBack: () => Navigator.of(ctx).pop(),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onViewReport() async {
+    final report = _result;
+    if (report == null) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (routeContext) => ReportDetailScreen(
+          reportsRepository: widget.reportsRepository,
+          profilesRepository: widget.profilesRepository,
+          reportId: report.reportId,
+          profileId: report.profileId,
+          onBack: () => Navigator.of(routeContext).pop(),
         ),
       ),
     );
@@ -557,16 +582,13 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     final r = _result;
     final status = r?.status ?? '';
     final processingInProgress =
-        status == 'uploading' ||
-        status == 'queued' ||
-        status == 'parsing' ||
-        status == 'failed_transient';
+        status == 'uploading' || status == 'queued' || status == 'parsing';
     final statusMessage = switch (status) {
       'parsed' => 'Report parsed successfully. Review results and trends.',
       'uploading' || 'queued' || 'parsing' =>
-        'We are still processing this report. You can check status in Timeline.',
+        'Your report is still being analyzed. Open it to check its status.',
       'failed_transient' =>
-        'Processing is taking longer than expected. Check Timeline for updates.',
+        'Processing stopped. Your file is saved. You can retry.',
       _ => null,
     };
     return Column(
@@ -593,40 +615,26 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           ),
         ],
         const SizedBox(height: 24),
-        FilledButton(
+        FilledButton.icon(
+          key: const Key('upload-view-results'),
+          onPressed: _onViewReport,
+          icon: Icon(
+            processingInProgress ? Icons.schedule : Icons.analytics_outlined,
+          ),
+          label: Text(
+            processingInProgress ? 'View report status' : 'View results',
+          ),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
           key: const Key('view-pdf-button'),
           onPressed: _onViewPdf,
-          child: const Text('View PDF'),
+          child: const Text('View original file'),
         ),
         const SizedBox(height: 8),
-        FilledButton.icon(
-          key: const Key('upload-go-to-timeline'),
-          onPressed: widget.onGoToTimeline,
-          icon: const Icon(Icons.timeline),
-          label: const Text('Open Timeline'),
-        ),
-        if (r != null) ...[
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            key: const Key('upload-go-to-history'),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => HealthHistoryScreen(
-                  profileId: r.profileId,
-                  reportsRepository: widget.reportsRepository,
-                ),
-              ),
-            ),
-            icon: const Icon(Icons.show_chart),
-            label: const Text('View Health History'),
-          ),
-        ],
-        const SizedBox(height: 8),
-        FilledButton(
+        TextButton(
           key: const Key('upload-report-done'),
-          onPressed: () {
-            widget.onComplete();
-          },
+          onPressed: widget.onComplete,
           child: const Text('Done'),
         ),
       ],

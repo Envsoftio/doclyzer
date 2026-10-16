@@ -455,6 +455,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           },
         ),
         _AuthView.home => HomeScreen(
+          reportsRepository: _reportsRepository,
+          profilesRepository: _profilesRepository,
+          billingRepository: _billingRepository,
           onLogout: _logout,
           onGoToAccount: () {
             setState(() => _authView = _AuthView.accountProfile);
@@ -604,6 +607,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         ),
         _AuthView.uploadReport => UploadReportScreen(
           reportsRepository: _reportsRepository,
+          profilesRepository: _profilesRepository,
           activeProfileName: _activeProfileNameForUpload,
           incidentStatus: _incidentStatus,
           onBack: () {
@@ -611,15 +615,6 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           },
           onComplete: () {
             setState(() => _authView = _AuthView.home);
-          },
-          onGoToTimeline: () async {
-            final active = await _getActiveProfileOrNotify(forUpload: false);
-            if (active == null || !mounted) return;
-            setState(() {
-              _authView = _AuthView.timeline;
-              _timelineProfileId = active.id;
-              _timelineProfileName = active.name;
-            });
           },
           onUpgrade: () {
             setState(() => _authView = _AuthView.billing);

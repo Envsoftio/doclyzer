@@ -16,6 +16,7 @@ import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
 import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
 import { ImageToPdfService } from './image-to-pdf.service';
+import { SuryaOcrClient } from './surya-ocr.client';
 import { DoclingOcrClient } from './docling-ocr.client';
 
 @Module({
@@ -39,6 +40,7 @@ import { DoclingOcrClient } from './docling-ocr.client';
     ReportSummaryService,
     OpenDataLoaderClient,
     DoclingOcrClient,
+    SuryaOcrClient,
     ReportLabAiFallbackService,
     ImageToPdfService,
   ],
