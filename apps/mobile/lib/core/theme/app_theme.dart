@@ -106,6 +106,8 @@ class AppTheme {
         ),
       ),
       listTileTheme: ListTileThemeData(
+        textColor: colorScheme.onSurface,
+        iconColor: colorScheme.onSurfaceVariant,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.screenPadding,
           vertical: AppSpacing.xs,
@@ -113,9 +115,10 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
         ),
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
+          color: colorScheme.onSurface,
         ),
         subtitleTextStyle: TextStyle(
           fontSize: 14,

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDisplayDate } from '../../../utils/formatDisplayDate'
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 
 definePageMeta({ layout: 'admin' })
@@ -66,7 +67,7 @@ const totalPages = computed(() => Math.ceil(total.value / limit))
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+  return formatDisplayDate(iso)
 }
 </script>
 

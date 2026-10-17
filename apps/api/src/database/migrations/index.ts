@@ -42,6 +42,8 @@ import { CreatePushNotificationTables1730816800000 } from './1730816800000-Creat
 import { AddPromoParityFieldsAndLifecycleEvents1730816900000 } from './1730816900000-AddPromoParityFieldsAndLifecycleEvents';
 import { CreateReferralFoundation1730817000000 } from './1730817000000-CreateReferralFoundation';
 import { CreateGiftVouchers1730817100000 } from './1730817100000-CreateGiftVouchers';
+import { CreateReportResultInsights1730817200000 } from './1730817200000-CreateReportResultInsights';
+import { CreateReportResultInsightUsage1730817300000 } from './1730817300000-CreateReportResultInsightUsage';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -88,4 +90,6 @@ export const migrations = [
   AddPromoParityFieldsAndLifecycleEvents1730816900000,
   CreateReferralFoundation1730817000000,
   CreateGiftVouchers1730817100000,
+  CreateReportResultInsights1730817200000,
+  CreateReportResultInsightUsage1730817300000,
 ];

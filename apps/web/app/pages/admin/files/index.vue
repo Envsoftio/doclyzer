@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDisplayDate } from '../../../utils/formatDisplayDate'
 import { ref, onMounted, onUnmounted } from 'vue'
 
 definePageMeta({ layout: 'admin' })
@@ -61,7 +62,7 @@ function statusClass(s: string): string {
   return STATUS_CONFIG[s]?.cls ?? 'card--grey'
 }
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+  return formatDisplayDate(iso, true)
 }
 </script>
 

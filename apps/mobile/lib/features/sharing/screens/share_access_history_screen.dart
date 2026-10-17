@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/app_date_format.dart';
 import '../sharing_repository.dart';
 
 class ShareAccessHistoryScreen extends StatefulWidget {
@@ -11,7 +12,8 @@ class ShareAccessHistoryScreen extends StatefulWidget {
   final SharingRepository sharingRepository;
 
   @override
-  State<ShareAccessHistoryScreen> createState() => _ShareAccessHistoryScreenState();
+  State<ShareAccessHistoryScreen> createState() =>
+      _ShareAccessHistoryScreenState();
 }
 
 class _ShareAccessHistoryScreenState extends State<ShareAccessHistoryScreen> {
@@ -26,18 +28,31 @@ class _ShareAccessHistoryScreenState extends State<ShareAccessHistoryScreen> {
   }
 
   Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      final events = await widget.sharingRepository.listAccessEvents(widget.linkId);
-      if (mounted) setState(() { _events = events; _loading = false; });
+      final events = await widget.sharingRepository.listAccessEvents(
+        widget.linkId,
+      );
+      if (mounted) {
+        setState(() {
+          _events = events;
+          _loading = false;
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() { _loading = false; _error = e.toString().replaceFirst('Exception: ', ''); });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = e.toString().replaceFirst('Exception: ', '');
+        });
+      }
     }
   }
 
-  String _formatDateTime(DateTime dt) =>
-      '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
-      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  String _formatDateTime(DateTime dt) => AppDateFormat.dateTimeWithRelative(dt);
 
   String _outcomeLabel(String outcome) => switch (outcome) {
     'accessed' => 'Viewed',
@@ -52,35 +67,51 @@ class _ShareAccessHistoryScreenState extends State<ShareAccessHistoryScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: _loading
-          ? const Center(child: CircularProgressIndicator(key: Key('access-history-loading')))
-          : _error != null
+            ? const Center(
+                child: CircularProgressIndicator(
+                  key: Key('access-history-loading'),
+                ),
+              )
+            : _error != null
             ? Column(
                 children: [
-                  Text(_error!, key: const Key('access-history-error'),
-                      style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  Text(
+                    _error!,
+                    key: const Key('access-history-error'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   TextButton(onPressed: _load, child: const Text('Retry')),
                 ],
               )
             : _events.isEmpty
-              ? const Center(child: Text('No access events yet.', key: Key('access-history-empty')))
-              : ListView.builder(
-                  itemCount: _events.length,
-                  itemBuilder: (_, i) {
-                    final ev = _events[i];
-                    return ListTile(
-                      key: Key('access-event-${ev.id}'),
-                      leading: Icon(
-                        ev.outcome == 'accessed' ? Icons.check_circle_outline : Icons.block_outlined,
-                        color: ev.outcome == 'accessed'
+            ? const Center(
+                child: Text(
+                  'No access events yet.',
+                  key: Key('access-history-empty'),
+                ),
+              )
+            : ListView.builder(
+                itemCount: _events.length,
+                itemBuilder: (_, i) {
+                  final ev = _events[i];
+                  return ListTile(
+                    key: Key('access-event-${ev.id}'),
+                    leading: Icon(
+                      ev.outcome == 'accessed'
+                          ? Icons.check_circle_outline
+                          : Icons.block_outlined,
+                      color: ev.outcome == 'accessed'
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.error,
-                      ),
-                      title: Text(_outcomeLabel(ev.outcome)),
-                      subtitle: Text(_formatDateTime(ev.accessedAt.toLocal())),
-                    );
-                  },
-                ),
+                    ),
+                    title: Text(_outcomeLabel(ev.outcome)),
+                    subtitle: Text(_formatDateTime(ev.accessedAt.toLocal())),
+                  );
+                },
+              ),
       ),
     );
   }

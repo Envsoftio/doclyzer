@@ -6,6 +6,19 @@ import 'package:mobile/features/reports/screens/report_detail_screen.dart';
 
 class _Reports extends Fake implements ReportsRepository {
   @override
+  Future<ResultInsight> getResultInsight(
+    String reportId,
+    ExtractedLabValue result,
+  ) async => const ResultInsight(
+    testExplanation: 'A measured lab value.',
+    resultExplanation: 'Compare with the listed lab range.',
+    possibleSignificance: 'This requires clinical context.',
+    lifestyleConsiderations: [],
+    suggestedFollowup: 'Review this with a clinician.',
+    dataUncertainties: ['The result needs context.'],
+  );
+
+  @override
   Future<Report> getReport(String reportId) async => Report(
     id: reportId,
     profileId: 'profile',
@@ -73,6 +86,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(tester.takeException(), isNull);
+    expect(find.text('Range unclear'), findsOneWidget);
+    await tester.tap(find.text('Range unclear'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('result-insight-hero')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

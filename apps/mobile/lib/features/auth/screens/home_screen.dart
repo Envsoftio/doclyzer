@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/app_date_format.dart';
 
 import '../../reports/reports_repository.dart';
 import '../../reports/screens/report_detail_screen.dart';
@@ -152,10 +153,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showSettings() {
+    final colors = Theme.of(context).colorScheme;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
+      backgroundColor: colors.surface,
       builder: (sheetContext) => SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -165,7 +168,9 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   'Account & settings',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(color: colors.onSurface),
                 ),
                 const SizedBox(height: 16),
                 for (final item in [
@@ -202,9 +207,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ])
                   ListTile(
                     key: Key(item.$3),
-                    leading: Icon(item.$1),
-                    title: Text(item.$2),
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                    leading: Icon(item.$1, color: colors.primary),
+                    title: Text(
+                      item.$2,
+                      style: TextStyle(color: colors.onSurface),
+                    ),
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      color: colors.onSurfaceVariant,
+                    ),
                     onTap: () {
                       Navigator.pop(sheetContext);
                       item.$4();
@@ -217,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icons.logout_rounded,
                     color: Theme.of(context).colorScheme.error,
                   ),
-                  title: const Text('Log out'),
+                  title: Text('Log out', style: TextStyle(color: colors.error)),
                   onTap: () {
                     Navigator.pop(sheetContext);
                     widget.onLogout();
@@ -602,9 +613,7 @@ class _RecentReport extends StatelessWidget {
       'unparsed' => ('Saved without analysis', Icons.description_outlined),
       _ => ('Uploaded', Icons.description_outlined),
     };
-    final date = MaterialLocalizations.of(
-      context,
-    ).formatShortDate(report.createdAt.toLocal());
+    final date = AppDateFormat.dateWithRelative(report.createdAt);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),

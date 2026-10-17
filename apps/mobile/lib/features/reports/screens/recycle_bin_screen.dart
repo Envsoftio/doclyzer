@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/app_date_format.dart';
 
 import '../reports_repository.dart';
 
@@ -73,8 +74,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   }
 
   String _formatDate(DateTime d) {
-    final local = d.toLocal();
-    return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
+    return AppDateFormat.dateWithRelative(d);
   }
 
   int? _daysLeft(DateTime? purgeAfterAt) {
@@ -88,10 +88,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Recycle Bin')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: _buildBody(),
-      ),
+      body: Padding(padding: const EdgeInsets.all(16), child: _buildBody()),
     );
   }
 

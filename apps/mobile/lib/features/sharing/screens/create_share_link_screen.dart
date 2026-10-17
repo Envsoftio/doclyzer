@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/app_date_format.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/feedback/incident_banner.dart';
@@ -259,8 +260,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
     }
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  String _formatDate(DateTime dt) => AppDateFormat.dateWithRelative(dt);
 
   void _openSupportSheet() {
     final supportContext = _supportContext;

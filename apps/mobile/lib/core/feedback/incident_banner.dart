@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../shared/app_date_format.dart';
 
 import '../theme/app_theme.dart';
 import '../../features/incidents/incident_repository.dart';
@@ -39,9 +40,7 @@ class IncidentBanner extends StatelessWidget {
         : colorScheme.onTertiaryContainer;
 
     final updatedAt = activeIncident.updatedAt.toLocal();
-    final dateLabel = MaterialLocalizations.of(
-      context,
-    ).formatFullDate(updatedAt);
+    final dateLabel = AppDateFormat.dateWithRelative(updatedAt);
     final timeLabel = MaterialLocalizations.of(
       context,
     ).formatTimeOfDay(TimeOfDay.fromDateTime(updatedAt));

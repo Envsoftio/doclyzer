@@ -149,6 +149,12 @@ export class AnalyticsAdminController {
     return successResponse(data, correlationId);
   }
 
+  @Get('result-insight-usage')
+  async getResultInsightUsage(@Query() query: CoreProductAnalyticsQueryDto, @Req() req: Request): Promise<object> {
+    const data = await this.analyticsAdminService.getResultInsightUsage(query);
+    return successResponse(data, getCorrelationId(req));
+  }
+
   @Get('users')
   async getUserDirectory(
     @Query() query: UserDirectoryQueryDto,

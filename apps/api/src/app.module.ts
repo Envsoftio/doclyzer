@@ -19,6 +19,8 @@ import { PushDeliveryEventEntity } from './database/entities/push-delivery-event
 import { PushOpenEventEntity } from './database/entities/push-open-event.entity';
 import { PushSendAuditEntity } from './database/entities/push-send-audit.entity';
 import { ReportEntity } from './database/entities/report.entity';
+import { ReportResultInsightEntity } from './database/entities/report-result-insight.entity';
+import { ReportResultInsightUsageEntity } from './database/entities/report-result-insight-usage.entity';
 import { RestrictionEntity } from './database/entities/restriction.entity';
 import { GiftVoucherEntity } from './database/entities/gift-voucher.entity';
 import { GiftVoucherEventEntity } from './database/entities/gift-voucher-event.entity';
@@ -83,6 +85,8 @@ const typeOrmEntities = [
   GiftVoucherEntity,
   GiftVoucherEventEntity,
   ReportEntity,
+  ReportResultInsightEntity,
+  ReportResultInsightUsageEntity,
   ShareLinkEntity,
   UserSharePolicyEntity,
   PlanEntity,

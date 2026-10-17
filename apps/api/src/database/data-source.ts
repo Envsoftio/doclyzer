@@ -14,6 +14,8 @@ import { PushOpenEventEntity } from './entities/push-open-event.entity';
 import { PushSendAuditEntity } from './entities/push-send-audit.entity';
 import { ReportEntity } from './entities/report.entity';
 import { ReportLabValueEntity } from './entities/report-lab-value.entity';
+import { ReportResultInsightEntity } from './entities/report-result-insight.entity';
+import { ReportResultInsightUsageEntity } from './entities/report-result-insight-usage.entity';
 import { GiftVoucherEntity } from './entities/gift-voucher.entity';
 import { GiftVoucherEventEntity } from './entities/gift-voucher-event.entity';
 import { BillingProviderEventEntity } from './entities/billing-provider-event.entity';
@@ -63,6 +65,8 @@ export const AppDataSource = new DataSource({
     GiftVoucherEventEntity,
     ReportEntity,
     ReportLabValueEntity,
+    ReportResultInsightEntity,
+    ReportResultInsightUsageEntity,
     PlanEntity,
     UserEntitlementEntity,
     BillingProviderEventEntity,

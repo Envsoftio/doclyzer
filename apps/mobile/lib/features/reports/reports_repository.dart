@@ -36,6 +36,24 @@ class ExtractedLabValue {
   final bool? isAbnormal;
 }
 
+class ResultInsight {
+  const ResultInsight({
+    required this.testExplanation,
+    required this.resultExplanation,
+    required this.possibleSignificance,
+    required this.lifestyleConsiderations,
+    required this.suggestedFollowup,
+    required this.dataUncertainties,
+  });
+
+  final String testExplanation;
+  final String resultExplanation;
+  final String possibleSignificance;
+  final List<String> lifestyleConsiderations;
+  final String suggestedFollowup;
+  final List<String> dataUncertainties;
+}
+
 /// Report for display (from GET /reports/:id).
 class Report {
   const Report({
@@ -203,6 +221,12 @@ abstract class ReportsRepository {
 
   /// Fetch a report by id.
   Future<Report> getReport(String reportId);
+
+  /// Generate an explanation for a saved result. The API selects the value.
+  Future<ResultInsight> getResultInsight(
+    String reportId,
+    ExtractedLabValue result,
+  );
 
   /// Retry parsing for a report that failed. Returns updated report.
   Future<Report> retryParse(String reportId, {bool force = false});

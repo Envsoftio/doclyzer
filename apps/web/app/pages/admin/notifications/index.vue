@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDisplayDate } from '../../../utils/formatDisplayDate'
 import { computed, onMounted, ref } from 'vue'
 
 definePageMeta({ layout: 'admin' })
@@ -140,12 +141,7 @@ async function enableCurrentBrowserPush() {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatDisplayDate(iso, true)
 }
 
 function platformSummary(value: Record<string, number> | undefined): string {

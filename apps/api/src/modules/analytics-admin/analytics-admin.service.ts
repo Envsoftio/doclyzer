@@ -29,6 +29,7 @@ import { AnalyticsGovernanceService } from './analytics-governance.service';
 import { EntitlementsService } from '../entitlements/entitlements.service';
 import { AuditIncidentService } from '../audit-incident/audit-incident.service';
 import { SuspiciousActivityService } from '../audit-incident/suspicious-activity.service';
+import { ReportResultInsightUsageEntity } from '../../database/entities/report-result-insight-usage.entity';
 
 const PIPELINE_STATUSES: ReportStatus[] = ['uploading', 'queued', 'parsing'];
 const PARSED_STATUS: ReportStatus[] = ['parsed'];
@@ -93,7 +94,20 @@ export class AnalyticsAdminService {
     private readonly entitlementsService: EntitlementsService,
     private readonly auditIncidentService: AuditIncidentService,
     private readonly suspiciousActivityService: SuspiciousActivityService,
+    @InjectRepository(ReportResultInsightUsageEntity)
+    private readonly insightUsageRepo: Repository<ReportResultInsightUsageEntity>,
   ) {}
+
+  async getResultInsightUsage(query: { startDate: string; endDate: string }) {
+    const rows = await this.insightUsageRepo.createQueryBuilder('u')
+      .select('u.user_id', 'userId').addSelect('usr.email', 'email').addSelect('usr.display_name', 'displayName')
+      .addSelect('COUNT(*)', 'requests').addSelect('COUNT(*) FILTER (WHERE u.cache_hit = false)', 'providerCalls')
+      .addSelect('COALESCE(SUM(u.input_tokens), 0)', 'inputTokens').addSelect('COALESCE(SUM(u.output_tokens), 0)', 'outputTokens')
+      .addSelect('COALESCE(SUM(u.total_tokens), 0)', 'totalTokens').addSelect('COALESCE(SUM(u.estimated_cost_usd), 0)', 'estimatedCostUsd')
+      .leftJoin(UserEntity, 'usr', 'usr.id = u.user_id').where('u.created_at >= :start AND u.created_at <= :end', { start: new Date(query.startDate), end: new Date(query.endDate) })
+      .groupBy('u.user_id').addGroupBy('usr.email').addGroupBy('usr.display_name').orderBy('"estimatedCostUsd"', 'DESC').getRawMany();
+    return { users: rows.map((r) => ({ ...r, requests: Number(r.requests), providerCalls: Number(r.providerCalls), inputTokens: Number(r.inputTokens), outputTokens: Number(r.outputTokens), totalTokens: Number(r.totalTokens), estimatedCostUsd: Number(r.estimatedCostUsd) })), totals: rows.reduce((a, r) => ({ requests: a.requests + Number(r.requests), providerCalls: a.providerCalls + Number(r.providerCalls), totalTokens: a.totalTokens + Number(r.totalTokens), estimatedCostUsd: a.estimatedCostUsd + Number(r.estimatedCostUsd) }), { requests: 0, providerCalls: 0, totalTokens: 0, estimatedCostUsd: 0 }) };
+  }
 
   async getCoreProductAnalytics(input: {
     actorUserId: string;

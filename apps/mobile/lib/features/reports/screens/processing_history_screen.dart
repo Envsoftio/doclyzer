@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/app_date_format.dart';
 
 import '../reports_repository.dart';
 
@@ -84,9 +85,7 @@ class _ProcessingHistoryScreenState extends State<ProcessingHistoryScreen> {
   }
 
   static String _formatDateTime(DateTime dt) {
-    final d = dt.toLocal();
-    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')} '
-        '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    return AppDateFormat.dateTimeWithRelative(dt);
   }
 
   Color _outcomeColor(BuildContext context, String outcome) {

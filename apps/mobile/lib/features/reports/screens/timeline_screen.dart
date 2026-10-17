@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/app_date_format.dart';
 
 import '../../../core/feedback/incident_banner.dart';
 import '../../incidents/incident_repository.dart';
@@ -389,8 +390,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   String _formatDate(DateTime d) {
-    final local = d.toLocal();
-    return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
+    return AppDateFormat.dateWithRelative(d);
   }
 
   Color _statusColor(BuildContext context, String status) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/app_date_format.dart';
 
 import '../../../core/api_client.dart';
 import '../profiles_repository.dart';
@@ -41,11 +42,13 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController =
-        TextEditingController(text: widget.existingProfile?.name ?? '');
+    _nameController = TextEditingController(
+      text: widget.existingProfile?.name ?? '',
+    );
     _selectedDob = _parseDob(widget.existingProfile?.dateOfBirth);
-    _relationController =
-        TextEditingController(text: widget.existingProfile?.relation ?? '');
+    _relationController = TextEditingController(
+      text: widget.existingProfile?.relation ?? '',
+    );
   }
 
   @override
@@ -81,9 +84,7 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
       return;
     }
     if (relation.length > 50) {
-      setState(
-        () => _error = 'Relation must be 50 characters or fewer.',
-      );
+      setState(() => _error = 'Relation must be 50 characters or fewer.');
       return;
     }
 
@@ -166,7 +167,7 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
                 ),
                 child: Text(
                   _selectedDob != null
-                      ? _formatDob(_selectedDob!)
+                      ? AppDateFormat.date(_selectedDob!, local: false)
                       : 'Tap to select date',
                   style: TextStyle(
                     color: _selectedDob != null
@@ -180,8 +181,9 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
             TextField(
               key: const Key('profile-relation-field'),
               controller: _relationController,
-              decoration:
-                  const InputDecoration(labelText: 'Relation (optional)'),
+              decoration: const InputDecoration(
+                labelText: 'Relation (optional)',
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton(

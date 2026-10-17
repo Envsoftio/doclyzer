@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/app_date_format.dart';
 
 import '../reports_repository.dart';
 import '../../../shared/ai_disclaimer_note.dart';
@@ -73,8 +74,7 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
   }
 
   String _formatDate(DateTime d) {
-    final local = d.toLocal();
-    return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')}';
+    return AppDateFormat.dateWithRelative(d, hasTime: false);
   }
 
   @override

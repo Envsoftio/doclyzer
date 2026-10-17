@@ -21,14 +21,22 @@ async function seedSuperadmin() {
   // Check if user already exists
   const existingUser = await userRepo.findOne({ where: { email } });
   if (existingUser) {
-    if (existingUser.role !== 'superadmin') {
-      await userRepo.update(existingUser.id, { role: 'superadmin' });
-      console.log(`✓ Updated existing user role to superadmin.`);
-    } else {
-      console.log(
-        `Superadmin user with email ${email} already exists with correct role.`,
-      );
-    }
+    const passwordHash = await hash(password, 10);
+    await userRepo.update(existingUser.id, {
+      role: 'superadmin',
+      emailVerified: true,
+      passwordHash,
+    });
+    await dataSource.query(
+      `INSERT INTO "accounts" (
+        "user_id", "provider_id", "account_id", "password_hash"
+      ) VALUES ($1::uuid, 'credential', $1::text, $2)
+      ON CONFLICT ("provider_id", "account_id")
+      DO UPDATE SET "password_hash" = EXCLUDED."password_hash",
+                    "updated_at" = now()`,
+      [existingUser.id, passwordHash],
+    );
+    console.log(`✓ Updated existing superadmin credentials and role.`);
     await dataSource.destroy();
     return;
   }
@@ -45,7 +53,13 @@ async function seedSuperadmin() {
     role: 'superadmin',
   });
 
-  await userRepo.save(user);
+  const savedUser = await userRepo.save(user);
+  await dataSource.query(
+    `INSERT INTO "accounts" (
+      "user_id", "provider_id", "account_id", "password_hash"
+    ) VALUES ($1::uuid, 'credential', $1::text, $2)`,
+    [savedUser.id, passwordHash],
+  );
   console.log(`✓ Superadmin user created successfully!`);
   console.log(`  Email: ${email}`);
   console.log(`  Password: ${password}`);

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDisplayDate } from '../../utils/formatDisplayDate'
 import type { PublicIncidentStatus } from '~/composables/useIncidentStatus'
 
 const props = withDefaults(defineProps<{ incident: PublicIncidentStatus | null; surface: 'web_share' | 'web_landing' }>(), {
@@ -18,14 +19,7 @@ const ariaLive = computed(() => (isCritical.value ? 'assertive' : 'polite'))
 
 const updatedLabel = computed(() => {
   if (!props.incident) return ''
-  const date = new Date(props.incident.updatedAt)
-  return date.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
+  return formatDisplayDate(props.incident.updatedAt, true)
 })
 </script>
 

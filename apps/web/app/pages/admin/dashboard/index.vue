@@ -12,6 +12,7 @@ const productSlice = ref<'all' | 'free' | 'paid'>('all')
 const hasInvalidDateRange = computed(() => startDate.value > endDate.value)
 
 const dashboard = ref<Record<string, any> | null>(null)
+const insightUsage = ref<Record<string, any> | null>(null)
 const loading = ref(true)
 const exportLoading = ref(false)
 const error = ref('')
@@ -38,6 +39,10 @@ async function loadData() {
       `/admin/analytics/system-dashboard?startDate=${startDate.value}T00:00:00Z&endDate=${endDate.value}T23:59:59Z&productSlice=${productSlice.value}`,
     )
     dashboard.value = (response as Record<string, any>).data as Record<string, any>
+    const usageResponse = await adminFetch<{ data: Record<string, any> }>(
+      `/admin/analytics/result-insight-usage?startDate=${startDate.value}T00:00:00Z&endDate=${endDate.value}T23:59:59Z`,
+    )
+    insightUsage.value = (usageResponse as Record<string, any>).data as Record<string, any>
   } catch (e: unknown) {
     error.value = (e instanceof Error ? e.message : String(e)) || 'Failed to load data'
   } finally {
@@ -111,6 +116,10 @@ function formatPercent(value: unknown): string {
 
 function formatCount(value: unknown): string {
   return typeof value === 'number' ? String(value) : '-'
+}
+
+function formatUsd(value: unknown): string {
+  return typeof value === 'number' ? `$${value.toFixed(4)}` : '-'
 }
 
 function resolveAccountWorkbenchLink(): string {
@@ -233,6 +242,23 @@ onMounted(loadData)
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div class="section insight-usage-section">
+        <div class="section-title">
+          Result explanation spend
+          <span class="section-link">Usage is event-level; cost is estimated from configured model rates</span>
+        </div>
+        <div class="card-row">
+          <div class="metric-card metric-card--accent"><div class="metric-label">Requests</div><div class="metric-value">{{ formatCount(insightUsage?.totals?.requests) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.providerCalls) }} provider calls</div></div>
+          <div class="metric-card"><div class="metric-label">Estimated OpenAI cost</div><div class="metric-value">{{ formatUsd(insightUsage?.totals?.estimatedCostUsd) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.totalTokens) }} tokens</div></div>
+        </div>
+        <div class="table-wrap">
+          <table class="table"><thead><tr><th>User</th><th>Requests</th><th>Provider calls</th><th>Tokens</th><th>Est. cost</th></tr></thead><tbody>
+            <tr v-for="row in insightUsage?.users ?? []" :key="row.userId"><td><strong>{{ row.displayName || 'Unnamed' }}</strong><br><span class="list-meta">{{ row.email }}</span></td><td>{{ row.requests }}</td><td>{{ row.providerCalls }}</td><td>{{ row.totalTokens }}</td><td>{{ formatUsd(row.estimatedCostUsd) }}</td></tr>
+            <tr v-if="!(insightUsage?.users?.length)"><td colspan="5" class="empty-cell">No result explanations in this period.</td></tr>
+          </tbody></table>
         </div>
       </div>
 

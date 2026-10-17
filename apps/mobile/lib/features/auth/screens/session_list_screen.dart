@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/app_date_format.dart';
 
 import '../sessions_repository.dart';
 
@@ -35,8 +36,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       _error = null;
     });
     try {
-      final sessions =
-          await widget.sessionsRepository.getSessions();
+      final sessions = await widget.sessionsRepository.getSessions();
       setState(() {
         _sessions = sessions;
         _loading = false;
@@ -56,9 +56,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       builder: (ctx) => AlertDialog(
         key: const Key('session-revoke-dialog'),
         title: const Text('Revoke session?'),
-        content: Text(
-          '${session.ip}\n${session.userAgent}',
-        ),
+        content: Text('${session.ip}\n${session.userAgent}'),
         actions: [
           TextButton(
             key: const Key('session-revoke-cancel'),
@@ -133,13 +131,15 @@ class _SessionListScreenState extends State<SessionListScreen> {
                                     child: Chip(
                                       label: const Text('Current'),
                                       key: Key(
-                                          'session-current-${session.sessionId}'),
+                                        'session-current-${session.sessionId}',
+                                      ),
                                     ),
                                   ),
                                 Text(
                                   session.userAgent,
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.w500),
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -148,22 +148,27 @@ class _SessionListScreenState extends State<SessionListScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  session.createdAt,
+                                  AppDateFormat.dateTimeFromRawWithRelative(
+                                    session.createdAt,
+                                  ),
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                                 const SizedBox(height: 8),
                                 TextButton(
                                   key: Key(
-                                      'session-revoke-${session.sessionId}'),
-                                  onPressed: () =>
-                                      _showRevokeConfirm(session),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor:
-                                        Theme.of(context).colorScheme.error,
+                                    'session-revoke-${session.sessionId}',
                                   ),
-                                  child: Text(session.isCurrent
-                                      ? 'Revoke (Logout)'
-                                      : 'Revoke'),
+                                  onPressed: () => _showRevokeConfirm(session),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.error,
+                                  ),
+                                  child: Text(
+                                    session.isCurrent
+                                        ? 'Revoke (Logout)'
+                                        : 'Revoke',
+                                  ),
                                 ),
                               ],
                             ),

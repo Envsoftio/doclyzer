@@ -42,6 +42,10 @@ export interface ReportsConfig {
   labAiFallbackTimeoutMs: number;
   /** Minimum deterministic confidence required to skip AI fallback. */
   labAiFallbackMinConfidence: number;
+  /** Timeout and cost estimate for educational explanations of a saved result. */
+  resultInsightTimeoutMs: number;
+  resultInsightOpenaiInputPricePerMillion: number;
+  resultInsightOpenaiOutputPricePerMillion: number;
 }
 
 export const reportsConfig = registerAs(
@@ -94,5 +98,11 @@ export const reportsConfig = registerAs(
     labAiFallbackMinConfidence: parseFloat(
       process.env.REPORT_LAB_AI_FALLBACK_MIN_CONFIDENCE ?? '0.72',
     ),
+    resultInsightTimeoutMs: parseInt(
+      process.env.REPORT_RESULT_INSIGHT_TIMEOUT_MS ?? '30000',
+      10,
+    ),
+    resultInsightOpenaiInputPricePerMillion: parseFloat(process.env.REPORT_RESULT_INSIGHT_INPUT_PRICE_PER_MILLION ?? '0'),
+    resultInsightOpenaiOutputPricePerMillion: parseFloat(process.env.REPORT_RESULT_INSIGHT_OUTPUT_PRICE_PER_MILLION ?? '0'),
   }),
 );

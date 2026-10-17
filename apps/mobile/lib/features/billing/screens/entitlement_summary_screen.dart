@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../shared/app_date_format.dart';
 
 import '../../../core/api_client.dart';
 import '../../../core/feedback/confetti_burst.dart';
@@ -631,12 +632,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
   }
 
   String _formatTime(DateTime time) {
-    final local = time.toLocal();
-    final month = local.month.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
-    final hour = local.hour.toString().padLeft(2, '0');
-    final minute = local.minute.toString().padLeft(2, '0');
-    return '$month/$day $hour:$minute';
+    return AppDateFormat.dateTimeWithRelative(time);
   }
 
   String _buildLastChangeLine(EntitlementSummary summary) {
@@ -649,13 +645,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
   }
 
   String _formatLongDateTime(DateTime time) {
-    final local = time.toLocal();
-    final year = local.year.toString().padLeft(4, '0');
-    final month = local.month.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
-    final hour = local.hour.toString().padLeft(2, '0');
-    final minute = local.minute.toString().padLeft(2, '0');
-    return '$year-$month-$day $hour:$minute';
+    return AppDateFormat.dateTimeWithRelative(time);
   }
 
   String _giftVoucherErrorMessage(Object error) {

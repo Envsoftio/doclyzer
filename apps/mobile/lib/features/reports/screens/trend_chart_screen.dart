@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../../shared/app_date_format.dart';
 
 import '../reports_repository.dart';
 
@@ -75,10 +78,7 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
           onPressed: widget.onBack,
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: _buildBody(),
-      ),
+      body: Padding(padding: const EdgeInsets.all(16), child: _buildBody()),
     );
   }
 
@@ -102,17 +102,14 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _loadTrend,
-              child: const Text('Retry'),
-            ),
+            FilledButton(onPressed: _loadTrend, child: const Text('Retry')),
           ],
         ),
       );
     }
 
     final param = _parameter;
-    if (param == null || param.dataPoints.length < 2) {
+    if (param == null || param.dataPoints.isEmpty) {
       return Center(
         key: const Key('trend-chart-empty'),
         child: Column(
@@ -124,128 +121,357 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              param != null && param.dataPoints.length == 1
-                  ? '${param.dataPoints[0].value}${param.unit != null ? ' ${param.unit}' : ''}\n\nAdd more reports to see trend'
-                  : 'Add more reports to see trend',
+              'No numeric saved results are available for this test yet.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
       );
     }
 
-    return _buildChart(param);
+    final points =
+        param.dataPoints.where((point) => point.value.isFinite).toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
+    if (points.isEmpty) {
+      return const Center(
+        child: Text('No numeric results are available to plot.'),
+      );
+    }
+    return _buildChart(param, points);
   }
 
-  Widget _buildChart(TrendParameter param) {
-    final spots = param.dataPoints.asMap().entries.map((e) {
+  Widget _buildChart(TrendParameter param, List<TrendDataPoint> points) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final latest = points.last;
+    final unit = param.unit?.trim().isNotEmpty == true
+        ? param.unit!.trim()
+        : null;
+    final spots = points.asMap().entries.map((e) {
       return FlSpot(e.key.toDouble(), e.value.value);
     }).toList();
-
-    final minY = param.dataPoints.map((d) => d.value).reduce((a, b) => a < b ? a : b);
-    final maxY = param.dataPoints.map((d) => d.value).reduce((a, b) => a > b ? a : b);
-    final rawPadding = (maxY - minY) * 0.1;
-    final padding = rawPadding == 0 ? (minY.abs() * 0.1).clamp(0.5, double.maxFinite) : rawPadding;
-    final chartMinY = minY - padding;
-    final chartMaxY = maxY + padding;
+    final scale = _ChartScale.fromPoints(points);
 
     return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Semantics(
-            label: '${widget.parameterName} trend chart',
-            child: SizedBox(
-              key: const Key('trend-chart-content'),
-              height: 280,
-              child: LineChart(
-                LineChartData(
-                  minY: chartMinY.isFinite ? chartMinY : minY - 1,
-                  maxY: chartMaxY.isFinite ? chartMaxY : maxY + 1,
-                  gridData: const FlGridData(show: true),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      axisNameWidget: Text(
-                        param.unit ?? 'Value',
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                      sideTitles: const SideTitles(showTitles: true, reservedSize: 44),
-                    ),
-                    bottomTitles: AxisTitles(
-                      axisNameWidget: const Text('Date'),
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        getTitlesWidget: (value, meta) {
-                          final idx = value.round();
-                          if (idx < 0 || idx >= param.dataPoints.length) {
-                            return const SizedBox.shrink();
-                          }
-                          final date = param.dataPoints[idx].date;
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              '${date.month}/${date.day}',
-                              style: Theme.of(context).textTheme.labelSmall,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
+          Container(
+            key: const Key('trend-latest-summary'),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: colors.primaryContainer,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Latest result',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colors.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${_formatNumber(latest.value)}${unit == null ? '' : ' $unit'}',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: colors.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  AppDateFormat.dateWithRelative(latest.date, hasTime: false),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colors.onPrimaryContainer,
+                  ),
+                ),
+                if (points.length > 1) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Previous: ${_formatNumber(points[points.length - 2].value)}${unit == null ? '' : ' $unit'}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colors.onPrimaryContainer,
                     ),
                   ),
-                  borderData: FlBorderData(show: true),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: spots,
-                      isCurved: false,
-                      color: Theme.of(context).colorScheme.primary,
-                      barWidth: 2,
-                      dotData: const FlDotData(show: true),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text('Result history', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 4),
+          Text(
+            points.length == 1
+                ? 'One saved result. Add another report to see a trend.'
+                : '${points.length} saved results · Swipe the graph to see more dates. Tap a point for its value.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
+          ),
+          if (points.length > 1) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.fromLTRB(8, 18, 8, 8),
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final chartWidth = math.max(
+                    constraints.maxWidth,
+                    points.length * 100.0,
+                  );
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      key: const Key('trend-chart-content'),
+                      width: chartWidth,
+                      height: 300,
+                      child: Semantics(
+                        label:
+                            '${widget.parameterName} trend chart with ${points.length} results',
+                        child: LineChart(
+                          LineChartData(
+                            minX: -0.18,
+                            maxX: points.length - 0.82,
+                            minY: scale.min,
+                            maxY: scale.max,
+                            gridData: FlGridData(
+                              show: true,
+                              drawVerticalLine: false,
+                              horizontalInterval: scale.interval,
+                              getDrawingHorizontalLine: (_) => FlLine(
+                                color: colors.outlineVariant.withValues(
+                                  alpha: 0.7,
+                                ),
+                                strokeWidth: 1,
+                                dashArray: [4, 4],
+                              ),
+                            ),
+                            titlesData: FlTitlesData(
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  interval: scale.interval,
+                                  reservedSize: scale.labelWidth,
+                                  getTitlesWidget: (value, meta) =>
+                                      SideTitleWidget(
+                                        meta: meta,
+                                        space: 5,
+                                        child: Text(
+                                          scale.label(value),
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                                color: colors.onSurfaceVariant,
+                                              ),
+                                        ),
+                                      ),
+                                ),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  interval: 1,
+                                  reservedSize: 42,
+                                  getTitlesWidget: (value, meta) {
+                                    final index = value.round();
+                                    if ((value - index).abs() > 0.001 ||
+                                        index < 0 ||
+                                        index >= points.length) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    return SideTitleWidget(
+                                      meta: meta,
+                                      space: 7,
+                                      fitInside:
+                                          SideTitleFitInsideData.fromTitleMeta(
+                                            meta,
+                                            distanceFromEdge: 2,
+                                          ),
+                                      child: Text(
+                                        AppDateFormat.date(points[index].date),
+                                        key: Key('trend-date-$index'),
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                              color: colors.onSurfaceVariant,
+                                              fontSize: 10,
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              rightTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              topTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                            ),
+                            borderData: FlBorderData(
+                              show: true,
+                              border: Border(
+                                left: BorderSide(color: colors.outlineVariant),
+                                bottom: BorderSide(
+                                  color: colors.outlineVariant,
+                                ),
+                              ),
+                            ),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: spots,
+                                isCurved: false,
+                                color: colors.primary,
+                                barWidth: 3,
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      colors.primary.withValues(alpha: 0.18),
+                                      colors.primary.withValues(alpha: 0.01),
+                                    ],
+                                  ),
+                                ),
+                                dotData: FlDotData(
+                                  show: true,
+                                  getDotPainter: (_, _, _, _) =>
+                                      FlDotCirclePainter(
+                                        radius: 4,
+                                        color: colors.primary,
+                                        strokeWidth: 2,
+                                        strokeColor: colors.surface,
+                                      ),
+                                ),
+                              ),
+                            ],
+                            lineTouchData: LineTouchData(
+                              touchTooltipData: LineTouchTooltipData(
+                                fitInsideHorizontally: true,
+                                getTooltipItems: (touchedSpots) =>
+                                    touchedSpots.map((spot) {
+                                      final point = points[spot.x.round()];
+                                      return LineTooltipItem(
+                                        '${AppDateFormat.date(point.date)}\n${_formatNumber(point.value)}${unit == null ? '' : ' $unit'}',
+                                        const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      );
+                                    }).toList(),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+          Text('Recent readings', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          for (final point in points.reversed.take(5))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        AppDateFormat.dateWithRelative(
+                          point.date,
+                          hasTime: false,
+                        ),
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                    Flexible(
+                      child: Text(
+                        '${_formatNumber(point.value)}${unit == null ? '' : ' $unit'}',
+                        textAlign: TextAlign.end,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
-                  lineTouchData: LineTouchData(
-                    touchTooltipData: LineTouchTooltipData(
-                      getTooltipItems: (touchedSpots) {
-                        return touchedSpots.map((spot) {
-                          final idx = spot.x.round();
-                          if (idx < 0 || idx >= param.dataPoints.length) return null;
-                          final dp = param.dataPoints[idx];
-                          final dateStr =
-                              '${dp.date.year}-${dp.date.month.toString().padLeft(2, '0')}-${dp.date.day.toString().padLeft(2, '0')}';
-                          final valStr = param.unit != null
-                              ? '${dp.value} ${param.unit}'
-                              : '${dp.value}';
-                          return LineTooltipItem(
-                            '$dateStr\n$valStr',
-                            const TextStyle(color: Colors.white),
-                          );
-                        }).toList();
-                      },
-                    ),
-                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '${param.dataPoints.length} data points',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-            textAlign: TextAlign.center,
-          ),
         ],
       ),
     );
   }
+}
+
+String _formatNumber(double value) {
+  if (value == value.roundToDouble()) return value.toStringAsFixed(0);
+  return value
+      .toStringAsFixed(8)
+      .replaceFirst(RegExp(r'0+$'), '')
+      .replaceFirst(RegExp(r'\.$'), '');
+}
+
+class _ChartScale {
+  const _ChartScale(this.min, this.max, this.interval);
+
+  final double min;
+  final double max;
+  final double interval;
+
+  factory _ChartScale.fromPoints(List<TrendDataPoint> points) {
+    final minValue = points.map((point) => point.value).reduce(math.min);
+    final maxValue = points.map((point) => point.value).reduce(math.max);
+    final spread = maxValue - minValue;
+    final padding = spread == 0
+        ? math.max(minValue.abs() * 0.15, 0.01)
+        : spread * 0.15;
+    final interval = _niceInterval((spread + padding * 2) / 4);
+    var min = ((minValue - padding) / interval).floorToDouble() * interval;
+    final max = ((maxValue + padding) / interval).ceilToDouble() * interval;
+    if (minValue >= 0 && min < 0) min = 0;
+    return _ChartScale(min, max > min ? max : min + interval, interval);
+  }
+
+  static double _niceInterval(double raw) {
+    final exponent = math
+        .pow(10, (math.log(raw) / math.ln10).floor())
+        .toDouble();
+    final fraction = raw / exponent;
+    final nice = fraction <= 1
+        ? 1
+        : fraction <= 2
+        ? 2
+        : fraction <= 5
+        ? 5
+        : 10;
+    return nice * exponent;
+  }
+
+  String label(double value) =>
+      _formatNumber(double.parse(value.toStringAsFixed(8)));
+
+  double get labelWidth => math.max(
+    48,
+    math.min(82, math.max(label(min).length, label(max).length) * 8.0 + 10),
+  );
 }

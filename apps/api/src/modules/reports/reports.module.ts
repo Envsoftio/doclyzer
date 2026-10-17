@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ReportEntity } from '../../database/entities/report.entity';
 import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
 import { ReportProcessingAttemptEntity } from '../../database/entities/report-processing-attempt.entity';
+import { ReportResultInsightEntity } from '../../database/entities/report-result-insight.entity';
+import { ReportResultInsightUsageEntity } from '../../database/entities/report-result-insight-usage.entity';
 import { AuthModule } from '../auth/auth.module';
 import { EntitlementsModule } from '../entitlements/entitlements.module';
 import { ProfilesModule } from '../profiles/profiles.module';
@@ -15,6 +17,7 @@ import { ReportsService } from './reports.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
 import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
+import { ReportResultInsightService } from './report-result-insight.service';
 import { ImageToPdfService } from './image-to-pdf.service';
 import { SuryaOcrClient } from './surya-ocr.client';
 import { DoclingOcrClient } from './docling-ocr.client';
@@ -25,6 +28,8 @@ import { DoclingOcrClient } from './docling-ocr.client';
       ReportEntity,
       ReportLabValueEntity,
       ReportProcessingAttemptEntity,
+      ReportResultInsightEntity,
+      ReportResultInsightUsageEntity,
     ]),
     AuthModule,
     EntitlementsModule,
@@ -42,6 +47,7 @@ import { DoclingOcrClient } from './docling-ocr.client';
     DoclingOcrClient,
     SuryaOcrClient,
     ReportLabAiFallbackService,
+    ReportResultInsightService,
     ImageToPdfService,
   ],
 })

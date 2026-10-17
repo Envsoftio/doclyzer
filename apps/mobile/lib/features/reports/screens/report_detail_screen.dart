@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../profiles/profiles_repository.dart';
 import '../reports_repository.dart';
+import '../result_palette.dart';
+import '../result_range.dart';
 import '../../../shared/ai_disclaimer_note.dart';
+import '../../../shared/app_date_format.dart';
 import 'health_history_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'processing_history_screen.dart';
+import 'result_insight_screen.dart';
 import 'trend_chart_screen.dart';
 
 enum _ReportDetailState { loading, loaded, error }
@@ -88,6 +92,39 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ),
       ),
     );
+  }
+
+  void _openResult(ExtractedLabValue result) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (ctx) => ResultInsightScreen(
+          result: result,
+          loadInsight: () => widget.reportsRepository.getResultInsight(
+            widget.reportId,
+            result,
+          ),
+          onViewTrend: () => _openTrendChart(result.parameterName),
+          onViewOriginal: _openPdf,
+        ),
+      ),
+    );
+  }
+
+  List<ExtractedLabValue> _displayResults(Report report) {
+    if (report.extractedLabValues.isNotEmpty) return report.extractedLabValues;
+    return [
+      for (final section
+          in report.structuredReport?.sections ?? const <StructuredSection>[])
+        for (final test in section.tests)
+          ExtractedLabValue(
+            parameterName: test.parameterName,
+            value: test.value,
+            unit: test.unit,
+            sampleDate: test.sampleDate,
+            referenceRange: test.referenceRange,
+            isAbnormal: test.isAbnormal,
+          ),
+    ];
   }
 
   void _openPdf() {
@@ -245,7 +282,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   String _formatDate(DateTime? d) {
     if (d == null) return '—';
-    return '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    return AppDateFormat.dateWithRelative(d);
   }
 
   static String _statusLabel(String status) {
@@ -330,6 +367,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     final report = _report!;
     final summary = report.summary;
     final statusColor = _statusColor(context, report.status);
+    final results = _displayResults(report);
 
     return SingleChildScrollView(
       key: const Key('report-detail-content'),
@@ -400,6 +438,42 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               onPressed: _loadReport,
               icon: const Icon(Icons.refresh),
               label: const Text('Check status'),
+            ),
+          ],
+          if (results.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              'Your results',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Tap a result to understand what the test measures.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Column(
+              key: const Key('report-detail-lab-values'),
+              children: [
+                for (final result in results)
+                  _ResultCard(result: result, onTap: () => _openResult(result)),
+              ],
+            ),
+          ],
+          if (results.isEmpty && report.status == 'parsed') ...[
+            const SizedBox(height: 20),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'No test values were found in this report. Open the original file to check its contents.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
             ),
           ],
           if (summary != null && summary.isNotEmpty) ...[
@@ -590,10 +664,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       null)
                     _InfoPill(
                       label: 'Sample Collection',
-                      value: report
-                          .structuredReport!
-                          .patientDetails
-                          .sampleCollectionDate!,
+                      value: AppDateFormat.fromRawWithRelative(
+                        report
+                            .structuredReport!
+                            .patientDetails
+                            .sampleCollectionDate!,
+                      ),
                     ),
                 ],
               ),
@@ -641,218 +717,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 ),
               ),
             ],
-            if (report.structuredReport!.sections.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const _SectionTitle(
-                'Categorized test results',
-                icon: Icons.analytics_outlined,
-              ),
-              const SizedBox(height: 8),
-              ...report.structuredReport!.sections.map((section) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            section.heading,
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 8),
-                          ...section.tests.map((test) {
-                            final unitSuffix =
-                                (test.unit != null && test.unit!.isNotEmpty)
-                                ? ' ${test.unit}'
-                                : '';
-                            final referenceRange = test.referenceRange;
-                            final abnormal = test.isAbnormal == true;
-                            final normalRangeColor = abnormal
-                                ? Colors.red.shade700
-                                : Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant;
-                            return InkWell(
-                              onTap: () => _openTrendChart(test.parameterName),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 6,
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        test.parameterName,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            '${test.value}$unitSuffix',
-                                            textAlign: TextAlign.end,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium
-                                                ?.copyWith(
-                                                  color: abnormal
-                                                      ? Colors.red.shade700
-                                                      : null,
-                                                  fontWeight: abnormal
-                                                      ? FontWeight.w600
-                                                      : null,
-                                                ),
-                                          ),
-                                          if (referenceRange != null &&
-                                              referenceRange.isNotEmpty)
-                                            Text(
-                                              'Normal: $referenceRange',
-                                              textAlign: TextAlign.end,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: normalRangeColor,
-                                                    fontWeight: abnormal
-                                                        ? FontWeight.w600
-                                                        : null,
-                                                  ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    const Icon(Icons.chevron_right, size: 16),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ],
-          if (report.extractedLabValues.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            const _SectionTitle('Lab values', icon: Icons.biotech_outlined),
-            const SizedBox(height: 4),
-            Text(
-              'Tap any value to open its trend graph and compare with older reports.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              key: const Key('report-detail-lab-values'),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: report.extractedLabValues.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final lab = report.extractedLabValues[index];
-                  final abnormal = lab.isAbnormal == true;
-                  final referenceRange = lab.referenceRange;
-                  final normalRangeColor = abnormal
-                      ? Colors.red.shade700
-                      : Theme.of(context).colorScheme.onSurfaceVariant;
-                  return InkWell(
-                    key: Key('lab-row-${lab.parameterName}'),
-                    onTap: () => _openTrendChart(lab.parameterName),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  lab.parameterName.isNotEmpty
-                                      ? lab.parameterName
-                                      : '—',
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(fontWeight: FontWeight.w500),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  lab.value.isNotEmpty ? lab.value : '—',
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: abnormal
-                                            ? Colors.red.shade700
-                                            : null,
-                                        fontWeight: abnormal
-                                            ? FontWeight.w600
-                                            : null,
-                                      ),
-                                ),
-                                if (referenceRange != null &&
-                                    referenceRange.isNotEmpty)
-                                  Text(
-                                    'Normal: $referenceRange',
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(
-                                          color: normalRangeColor,
-                                          fontWeight: abnormal
-                                              ? FontWeight.w600
-                                              : null,
-                                        ),
-                                  ),
-                                if (lab.unit != null && lab.unit!.isNotEmpty)
-                                  Text(
-                                    lab.unit!,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall,
-                                  ),
-                                if (lab.sampleDate != null &&
-                                    lab.sampleDate!.isNotEmpty)
-                                  Text(
-                                    lab.sampleDate!,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall,
-                                  ),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.chevron_right, size: 16),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ] else ...[
-            const SizedBox(height: 24),
-            Text(
-              'No structured data',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
           ],
           if (report.parsedTranscript != null &&
               report.parsedTranscript!.trim().isNotEmpty) ...[
@@ -886,6 +750,128 @@ class _SectionTitle extends StatelessWidget {
           child: Text(title, style: Theme.of(context).textTheme.titleSmall),
         ),
       ],
+    );
+  }
+}
+
+class _ResultCard extends StatelessWidget {
+  const _ResultCard({required this.result, required this.onTap});
+
+  final ExtractedLabValue result;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final position = compareWithPrintedRange(result);
+    final palette = ResultPalette.forPosition(context, position);
+    final status = switch (position) {
+      RangePosition.below => 'Below range',
+      RangePosition.above => 'Above range',
+      RangePosition.within => 'In listed range',
+      RangePosition.unknown => 'Range unclear',
+    };
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Card(
+        elevation: 0,
+        color: palette.background,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: InkWell(
+          key: Key('lab-row-${result.parameterName}'),
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        result.parameterName,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 16,
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  result.unit?.trim().isNotEmpty == true
+                      ? '${result.value} ${result.unit}'
+                      : result.value,
+                  key: Key('lab-value-${result.parameterName}'),
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: palette.foreground,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: palette.foreground.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            palette.icon,
+                            size: 15,
+                            color: palette.foreground,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            status,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: palette.foreground,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (result.referenceRange?.trim().isNotEmpty == true)
+                      Text(
+                        'Lab range ${result.referenceRange}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Understand this result  →',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

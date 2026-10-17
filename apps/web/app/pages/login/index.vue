@@ -97,15 +97,18 @@ const submitForm = async () => {
       password: form.password,
     }
 
-    const data = await $fetch<{
-      accessToken: string
-      refreshToken: string
-      expiresIn: number
+    const response = await $fetch<{
+      data: {
+        accessToken: string
+        refreshToken: string
+        expiresIn: number
+      }
     }>(`${baseApiUrl}/auth/login`, {
       method: 'POST',
       body: payload,
     })
 
+    const data = response.data
     loginTokens.value = data
     persistTokens(data)
     successMessage.value = 'Logged in successfully. Tokens are stored in this browser session for API experimentation.'

@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../../shared/app_date_format.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/api_client.dart';
@@ -646,7 +647,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     final name = existing?['originalFileName'] as String? ?? 'existing report';
     final createdAt = existing?['createdAt'] as String?;
     final subtitle = createdAt != null
-        ? 'Added ${DateTime.tryParse(createdAt)?.toString().substring(0, 10) ?? createdAt}'
+        ? 'Added ${AppDateFormat.fromRawWithRelative(createdAt)}'
         : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

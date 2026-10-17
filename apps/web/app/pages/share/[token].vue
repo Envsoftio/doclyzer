@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDisplayDate } from '../../utils/formatDisplayDate'
 interface PublicLabValueDto {
   parameterName: string
   value: string
@@ -55,11 +56,7 @@ onMounted(async () => {
 })
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+  return formatDisplayDate(iso)
 }
 
 interface TrendPoint {

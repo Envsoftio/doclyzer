@@ -228,8 +228,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           CircleAvatar(
             radius: 48,
             backgroundColor: Colors.grey.shade200,
-            backgroundImage:
-                fullUrl != null ? NetworkImage(fullUrl) : null,
+            backgroundImage: fullUrl != null ? NetworkImage(fullUrl) : null,
             child: fullUrl == null
                 ? const Icon(Icons.person, size: 48, color: Colors.grey)
                 : null,
@@ -318,14 +317,21 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                     key: const Key('account-profile-email'),
                     readOnly: true,
                     controller: _emailController,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                     decoration: const InputDecoration(labelText: 'Email'),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     key: const Key('account-profile-display-name'),
                     controller: _displayNameController,
-                    decoration:
-                        const InputDecoration(labelText: 'Display Name'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Display Name',
+                    ),
                     maxLength: 100,
                   ),
                   const SizedBox(height: 16),
