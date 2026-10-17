@@ -44,6 +44,7 @@ import { CreateReferralFoundation1730817000000 } from './1730817000000-CreateRef
 import { CreateGiftVouchers1730817100000 } from './1730817100000-CreateGiftVouchers';
 import { CreateReportResultInsights1730817200000 } from './1730817200000-CreateReportResultInsights';
 import { CreateReportResultInsightUsage1730817300000 } from './1730817300000-CreateReportResultInsightUsage';
+import { AddReportResultCorrections1730817400000 } from './1730817400000-AddReportResultCorrections';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -92,4 +93,5 @@ export const migrations = [
   CreateGiftVouchers1730817100000,
   CreateReportResultInsights1730817200000,
   CreateReportResultInsightUsage1730817300000,
+  AddReportResultCorrections1730817400000,
 ];

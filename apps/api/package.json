@@ -26,7 +26,8 @@
     "reports:test": "ts-node scripts/report-parser-regression-test.ts && ts-node scripts/surya-integration-test.ts",
     "reports:benchmark": "ts-node scripts/report-parser-benchmark.ts",
     "reports:insight-test": "ts-node scripts/report-result-insight-test.ts",
-    "reports:trends-test": "ts-node scripts/lab-trend-builder-test.ts"
+    "reports:trends-test": "ts-node scripts/lab-trend-builder-test.ts",
+    "reports:correction-test": "ts-node scripts/report-correction-test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1007.0",

@@ -31,6 +31,15 @@ export class ReportLabValueEntity {
   @Column({ type: 'date', name: 'sample_date', nullable: true })
   sampleDate!: string | null;
 
+  @Column({ type: 'varchar', name: 'reference_range', length: 256, nullable: true })
+  referenceRange!: string | null;
+
+  @Column({ type: 'integer', name: 'review_version', default: 0 })
+  reviewVersion!: number;
+
+  @Column({ type: 'jsonb', name: 'source_snapshot', nullable: true })
+  sourceSnapshot!: Record<string, unknown> | null;
+
   @Column({ type: 'integer', name: 'sort_order', default: 0 })
   sortOrder!: number;
 }

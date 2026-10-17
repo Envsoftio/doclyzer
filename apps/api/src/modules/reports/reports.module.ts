@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ReportEntity } from '../../database/entities/report.entity';
 import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
+import { ReportLabValueCorrectionEntity } from '../../database/entities/report-lab-value-correction.entity';
 import { ReportProcessingAttemptEntity } from '../../database/entities/report-processing-attempt.entity';
 import { ReportResultInsightEntity } from '../../database/entities/report-result-insight.entity';
 import { ReportResultInsightUsageEntity } from '../../database/entities/report-result-insight-usage.entity';
@@ -27,6 +28,7 @@ import { DoclingOcrClient } from './docling-ocr.client';
     TypeOrmModule.forFeature([
       ReportEntity,
       ReportLabValueEntity,
+      ReportLabValueCorrectionEntity,
       ReportProcessingAttemptEntity,
       ReportResultInsightEntity,
       ReportResultInsightUsageEntity,

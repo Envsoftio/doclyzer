@@ -1,12 +1,13 @@
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createHash, randomUUID } from 'node:crypto';
-import { IsNull, LessThanOrEqual, Repository } from 'typeorm';
+import { IsNull, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { redactSecrets } from '../../common/redact-secrets';
 import type { FileStorageService } from '../../common/storage/file-storage.interface';
@@ -16,6 +17,8 @@ import { ReportEntity } from '../../database/entities/report.entity';
 import type { AttemptTrigger } from '../../database/entities/report-processing-attempt.entity';
 import { ReportProcessingAttemptEntity } from '../../database/entities/report-processing-attempt.entity';
 import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
+import { ReportLabValueCorrectionEntity } from '../../database/entities/report-lab-value-correction.entity';
+import { ReportResultInsightEntity } from '../../database/entities/report-result-insight.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
@@ -63,12 +66,24 @@ export interface UploadReportResult {
 }
 
 export interface ExtractedLabValueDto {
+  id?: string;
   parameterName: string;
   value: string;
   unit?: string;
   sampleDate?: string;
   referenceRange?: string;
   isAbnormal?: boolean;
+  reviewVersion?: number;
+  sourceSnapshot?: Record<string, unknown>;
+}
+
+export interface CorrectLabValueInput {
+  expectedVersion: number;
+  parameterName: string;
+  value: string;
+  unit: string | null;
+  sampleDate: string | null;
+  referenceRange: string | null;
 }
 
 export interface ReportDto {
@@ -575,6 +590,105 @@ export class ReportsService {
     );
   }
 
+  async correctLabValue(
+    userId: string,
+    reportId: string,
+    labValueId: string,
+    input: CorrectLabValueInput,
+  ): Promise<ReportDto> {
+    if (!isUUID(reportId) || !isUUID(labValueId)) throw new ReportNotFoundException();
+    const name = this.requiredCorrectionText(input.parameterName, 'parameterName', 256);
+    const value = this.requiredCorrectionText(input.value, 'value', 512);
+    const unit = this.optionalCorrectionText(input.unit, 'unit', 64);
+    const sampleDate = this.optionalCorrectionText(input.sampleDate, 'sampleDate', 10);
+    const referenceRange = this.optionalCorrectionText(input.referenceRange, 'referenceRange', 256);
+    if (!Number.isSafeInteger(input.expectedVersion) || input.expectedVersion < 0) {
+      throw new BadRequestException({ code: 'REVIEW_VERSION_INVALID', message: 'A valid review version is required.' });
+    }
+    if (sampleDate && !this.validCollectionDate(sampleDate)) {
+      throw new BadRequestException({ code: 'COLLECTION_DATE_INVALID', message: 'Use a valid collection date in YYYY-MM-DD format.' });
+    }
+
+    await this.reportRepo.manager.transaction(async (manager) => {
+      const report = await manager.getRepository(ReportEntity).findOne({
+        where: { id: reportId, userId, deletedAt: IsNull() },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!report || report.status !== 'parsed') throw new ReportNotFoundException();
+      const labRepo = manager.getRepository(ReportLabValueEntity);
+      const row = await labRepo.findOne({
+        where: { id: labValueId, reportId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!row) throw new ReportNotFoundException();
+      if (row.reviewVersion !== input.expectedVersion) {
+        throw new ConflictException({
+          code: 'REPORT_RESULT_VERSION_CONFLICT',
+          message: 'This result changed. Reload the report before saving your correction.',
+        });
+      }
+      const source = this.toDto(report, [row], false, true).extractedLabValues[0];
+      const previous = {
+        parameterName: row.parameterName,
+        value: row.value,
+        unit: row.unit,
+        sampleDate: row.sampleDate,
+        referenceRange: row.reviewVersion > 0 ? row.referenceRange : source.referenceRange ?? null,
+      };
+      const next = { parameterName: name, value, unit, sampleDate, referenceRange };
+      if (JSON.stringify(previous) === JSON.stringify(next)) return;
+      row.sourceSnapshot ??= {
+        parameterName: source.parameterName,
+        value: source.value,
+        unit: source.unit ?? null,
+        sampleDate: source.sampleDate ?? null,
+        referenceRange: source.referenceRange ?? null,
+      };
+      row.parameterName = name;
+      row.value = value;
+      row.unit = unit;
+      row.sampleDate = sampleDate;
+      row.referenceRange = referenceRange;
+      row.reviewVersion += 1;
+      await labRepo.save(row);
+      await manager.getRepository(ReportLabValueCorrectionEntity).save({
+        reportId,
+        labValueId,
+        userId,
+        version: row.reviewVersion,
+        previousValue: previous,
+        correctedValue: next,
+      });
+      report.summary = null;
+      await manager.getRepository(ReportEntity).save(report);
+      await manager.delete(ReportResultInsightEntity, { reportId });
+    });
+    return this.getReport(userId, reportId);
+  }
+
+  private requiredCorrectionText(value: unknown, field: string, max: number): string {
+    if (typeof value !== 'string' || !value.trim() || value.trim().length > max) {
+      throw new BadRequestException({ code: 'REPORT_RESULT_FIELD_INVALID', message: `${field} must contain 1–${max} characters.` });
+    }
+    return value.trim();
+  }
+
+  private optionalCorrectionText(value: unknown, field: string, max: number): string | null {
+    if (value !== null && typeof value !== 'string') {
+      throw new BadRequestException({ code: 'REPORT_RESULT_FIELD_INVALID', message: `${field} must be text or null.` });
+    }
+    if (typeof value === 'string' && value.trim().length > max) {
+      throw new BadRequestException({ code: 'REPORT_RESULT_FIELD_INVALID', message: `${field} is too long.` });
+    }
+    return typeof value === 'string' ? value.trim() || null : null;
+  }
+
+  private validCollectionDate(value: string): boolean {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  }
+
   /** List reports for a profile. Validates user owns the profile (throws if not). */
   async listReportsByProfile(
     userId: string,
@@ -743,25 +857,42 @@ export class ReportsService {
         JSON.stringify(retryStructuredReport),
       ) as unknown as Record<string, unknown>;
     }
-    await this.reportRepo.save(entity);
-
-    // Replace previous extracted values on successful parse to avoid duplicated rows
-    // when users intentionally reprocess the same report.
-    await this.reportLabValueRepo.delete({ reportId: entity.id });
-
-    if (persistedRetryLabValues.length > 0) {
-      const labEntities = persistedRetryLabValues.map((lv, i) =>
-        this.reportLabValueRepo.create({
+    // Serialize replacement with corrections. A correction made during parsing
+    // must win; reprocessing must never silently remove it.
+    await this.reportRepo.manager.transaction(async (manager) => {
+      const locked = await manager.getRepository(ReportEntity).findOne({
+        where: { id: entity.id, userId, deletedAt: IsNull() },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!locked) throw new ReportNotFoundException();
+      const corrected = await manager.getRepository(ReportLabValueEntity).count({
+        where: { reportId: entity.id, reviewVersion: MoreThan(0) },
+      });
+      if (corrected > 0) {
+        throw new ConflictException({
+          code: 'REPORT_HAS_CORRECTIONS',
+          message: 'This report has reviewed results. Reprocessing would replace them.',
+        });
+      }
+      locked.status = entity.status;
+      locked.summary = entity.summary;
+      locked.parsedTranscript = entity.parsedTranscript;
+      locked.structuredReport = entity.structuredReport;
+      await manager.getRepository(ReportEntity).save(locked);
+      await manager.getRepository(ReportLabValueEntity).delete({ reportId: entity.id });
+      if (persistedRetryLabValues.length > 0) {
+        const labRepo = manager.getRepository(ReportLabValueEntity);
+        await labRepo.save(persistedRetryLabValues.map((lv, i) => labRepo.create({
           reportId: entity.id,
           parameterName: lv.parameterName,
           value: lv.value,
           unit: lv.unit ?? null,
           sampleDate: lv.sampleDate ?? null,
           sortOrder: i,
-        }),
-      );
-      await this.reportLabValueRepo.save(labEntities);
-    }
+        })));
+      }
+      entity.profileId = locked.profileId;
+    });
 
     await this.recordAttempt(entity.id, 'retry', entity.status);
 
@@ -1167,12 +1298,11 @@ export class ReportsService {
   }
 
   private tryParseNumeric(raw: string): number | null {
-    const cleaned = raw
-      .replace(/^[<>]=?\s*/, '')
-      .replace(/,/g, '')
-      .trim();
-    if (!/^-?\d+(?:\.\d+)?$/.test(cleaned)) return null;
-    const n = Number(cleaned);
+    const cleaned = raw.trim();
+    const plain = /^-?(?:\d+(?:\.\d+)?|\.\d+)$/.test(cleaned);
+    const grouped = /^-?\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(cleaned);
+    if (!plain && !grouped) return null;
+    const n = Number(cleaned.replaceAll(',', ''));
     return Number.isFinite(n) ? n : null;
   }
 
@@ -1765,17 +1895,26 @@ export class ReportsService {
         const meta =
           rangeByKey.get(key) ??
           rangeByName.get(lv.parameterName.trim().toLowerCase());
+        const referenceRange = lv.reviewVersion > 0
+          ? lv.referenceRange
+          : lv.referenceRange ?? meta?.referenceRange;
+        const isAbnormal = lv.reviewVersion > 0
+          ? this.evaluateAbnormalFromReference(lv.value, referenceRange ?? null)
+          : meta?.isAbnormal;
         return {
+          id: lv.id,
           parameterName: lv.parameterName,
           value: lv.value,
           ...(lv.unit != null && lv.unit !== '' && { unit: lv.unit }),
           ...(lv.sampleDate != null && { sampleDate: lv.sampleDate }),
-          ...(meta?.referenceRange
-            ? { referenceRange: meta.referenceRange }
+          ...(referenceRange
+            ? { referenceRange }
             : {}),
-          ...(typeof meta?.isAbnormal === 'boolean'
-            ? { isAbnormal: meta.isAbnormal }
+          ...(typeof isAbnormal === 'boolean'
+            ? { isAbnormal }
             : {}),
+          reviewVersion: lv.reviewVersion ?? 0,
+          ...(lv.sourceSnapshot ? { sourceSnapshot: lv.sourceSnapshot } : {}),
         };
       }),
       ...(structuredReport &&

@@ -96,7 +96,7 @@ class ApiReportsRepository implements ReportsRepository {
       final name = v.parameterName.trim();
       final value = v.value.trim();
       if (name.isEmpty || value.isEmpty) return;
-      final k = '${_normalize(name)}|$value';
+      final k = v.id ?? '${_normalize(name)}|$value';
       if (seen.contains(k)) return;
       seen.add(k);
       cleaned.add(v);
@@ -104,10 +104,16 @@ class ApiReportsRepository implements ReportsRepository {
 
     for (final row in raw) {
       // Keep old-PDF behavior unless we actually detect OCR-style merged noise.
-      if (hasNoisyRows && _looksNoisyParameter(row.parameterName)) continue;
+      if (row.reviewVersion == 0 &&
+          hasNoisyRows &&
+          _looksNoisyParameter(row.parameterName)) {
+        continue;
+      }
       var range = row.referenceRange;
       var unit = row.unit;
-      if ((range == null || range.trim().isEmpty) && unit != null) {
+      if (row.reviewVersion == 0 &&
+          (range == null || range.trim().isEmpty) &&
+          unit != null) {
         final inferred = _firstRange(unit);
         if (inferred != null) {
           range = inferred;
@@ -116,12 +122,17 @@ class ApiReportsRepository implements ReportsRepository {
       }
       add(
         ExtractedLabValue(
+          id: row.id,
           parameterName: row.parameterName.trim(),
           value: row.value.trim(),
           unit: unit?.trim().isEmpty == true ? null : unit?.trim(),
           sampleDate: row.sampleDate,
           referenceRange: range?.trim().isEmpty == true ? null : range?.trim(),
-          isAbnormal: row.isAbnormal ?? _isOutOfRange(row.value, range?.trim()),
+          isAbnormal: row.reviewVersion > 0
+              ? row.isAbnormal
+              : row.isAbnormal ?? _isOutOfRange(row.value, range?.trim()),
+          reviewVersion: row.reviewVersion,
+          sourceSnapshot: row.sourceSnapshot,
         ),
       );
     }
@@ -346,12 +357,15 @@ class ApiReportsRepository implements ReportsRepository {
     final extractedLabValues = labList.map((e) {
       final m = e as Map<String, dynamic>;
       return ExtractedLabValue(
+        id: m['id'] as String?,
         parameterName: m['parameterName'] as String? ?? '',
         value: m['value'] as String? ?? '',
         unit: m['unit'] as String?,
         sampleDate: m['sampleDate'] as String?,
         referenceRange: m['referenceRange'] as String?,
         isAbnormal: m['isAbnormal'] as bool?,
+        reviewVersion: (m['reviewVersion'] as num?)?.toInt() ?? 0,
+        sourceSnapshot: m['sourceSnapshot'] as Map<String, dynamic>?,
       );
     }).toList();
     return _reportFromJson(
@@ -359,6 +373,33 @@ class ApiReportsRepository implements ReportsRepository {
       extractedLabValues: _cleanLabValues(extractedLabValues),
       structuredReport: _parseStructuredReport(d),
     );
+  }
+
+  @override
+  Future<Report> correctResult(
+    String reportId,
+    ExtractedLabValue result, {
+    required String parameterName,
+    required String value,
+    String? unit,
+    String? sampleDate,
+    String? referenceRange,
+  }) async {
+    if (result.id == null) {
+      throw StateError('This result cannot be edited yet.');
+    }
+    await _client.patch(
+      'v1/reports/${Uri.encodeComponent(reportId)}/results/${Uri.encodeComponent(result.id!)}',
+      body: {
+        'expectedVersion': result.reviewVersion,
+        'parameterName': parameterName,
+        'value': value,
+        'unit': unit,
+        'sampleDate': sampleDate,
+        'referenceRange': referenceRange,
+      },
+    );
+    return getReport(reportId);
   }
 
   @override

@@ -20,20 +20,26 @@ class UploadedReport {
 /// A single extracted lab value (parameter name, value, unit, date).
 class ExtractedLabValue {
   const ExtractedLabValue({
+    this.id,
     required this.parameterName,
     required this.value,
     this.unit,
     this.sampleDate,
     this.referenceRange,
     this.isAbnormal,
+    this.reviewVersion = 0,
+    this.sourceSnapshot,
   });
 
+  final String? id;
   final String parameterName;
   final String value;
   final String? unit;
   final String? sampleDate;
   final String? referenceRange;
   final bool? isAbnormal;
+  final int reviewVersion;
+  final Map<String, dynamic>? sourceSnapshot;
 }
 
 class ResultInsight {
@@ -230,6 +236,17 @@ abstract class ReportsRepository {
 
   /// Fetch a report by id.
   Future<Report> getReport(String reportId);
+
+  /// Save a reviewed result. The server rejects stale review versions.
+  Future<Report> correctResult(
+    String reportId,
+    ExtractedLabValue result, {
+    required String parameterName,
+    required String value,
+    String? unit,
+    String? sampleDate,
+    String? referenceRange,
+  });
 
   /// Generate an explanation for a saved result. The API selects the value.
   Future<ResultInsight> getResultInsight(

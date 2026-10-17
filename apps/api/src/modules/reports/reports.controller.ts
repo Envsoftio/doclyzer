@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -25,7 +26,7 @@ import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
 import { AuthService } from '../auth/auth.service';
-import { ReportsService } from './reports.service';
+import { ReportsService, type CorrectLabValueInput } from './reports.service';
 import { ReportResultInsightService } from './report-result-insight.service';
 import { selectStoredResult } from './report-result-selector';
 import { Logger } from '@nestjs/common';
@@ -269,6 +270,21 @@ export class ReportsController {
     return successResponse(data, getCorrelationId(req));
   }
 
+  @Patch(':id/results/:labValueId')
+  async correctLabValue(
+    @Param('id') reportId: string,
+    @Param('labValueId') labValueId: string,
+    @Body() body: CorrectLabValueInput,
+    @Req() req: Request,
+  ): Promise<object> {
+    if (!body || typeof body !== 'object') {
+      throw new BadRequestException({ code: 'REPORT_RESULT_BODY_REQUIRED', message: 'Correction fields are required.' });
+    }
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.reportsService.correctLabValue(userId, reportId, labValueId, body);
+    return successResponse(data, getCorrelationId(req));
+  }
+
   @Post(':id/results/insight')
   async getResultInsight(
     @Param('id') reportId: string,
@@ -278,12 +294,9 @@ export class ReportsController {
     const { id: userId } = req.user as RequestUser;
     this.authService.enforceRateLimit('result-insight', userId, 10);
     const report = await this.reportsService.getReport(userId, reportId);
-    const results = [
-      ...report.extractedLabValues,
-      ...(report.structuredReport?.sections ?? []).flatMap(
-        (section) => section.tests,
-      ),
-    ];
+    const results = report.extractedLabValues.length > 0
+      ? report.extractedLabValues
+      : (report.structuredReport?.sections ?? []).flatMap((section) => section.tests);
     const result = selectStoredResult(results, body);
     if (!result) {
       throw new BadRequestException({

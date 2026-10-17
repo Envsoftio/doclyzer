@@ -10,6 +10,7 @@ import 'health_history_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'processing_history_screen.dart';
 import 'result_insight_screen.dart';
+import 'result_correction_screen.dart';
 import 'trend_chart_screen.dart';
 
 enum _ReportDetailState { loading, loaded, error }
@@ -109,6 +110,20 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openReview(ExtractedLabValue result) async {
+    await Navigator.of(context).push<Report>(
+      MaterialPageRoute(
+        builder: (_) => ResultCorrectionScreen(
+          reportId: widget.reportId,
+          result: result,
+          reportsRepository: widget.reportsRepository,
+          onViewOriginal: _openPdf,
+        ),
+      ),
+    );
+    if (mounted) await _loadReport();
   }
 
   List<ExtractedLabValue> _displayResults(Report report) {
@@ -461,7 +476,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               key: const Key('report-detail-lab-values'),
               children: [
                 for (final result in results)
-                  _ResultCard(result: result, onTap: () => _openResult(result)),
+                  _ResultCard(
+                    result: result,
+                    onTap: () => _openResult(result),
+                    onReview: result.id == null
+                        ? null
+                        : () => _openReview(result),
+                  ),
               ],
             ),
           ],
@@ -756,10 +777,11 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _ResultCard extends StatelessWidget {
-  const _ResultCard({required this.result, required this.onTap});
+  const _ResultCard({required this.result, required this.onTap, this.onReview});
 
   final ExtractedLabValue result;
   final VoidCallback onTap;
+  final VoidCallback? onReview;
 
   @override
   Widget build(BuildContext context) {
@@ -868,6 +890,19 @@ class _ResultCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+                if (onReview != null) ...[
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    key: Key('review-result-${result.id}'),
+                    onPressed: onReview,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: Text(
+                      result.reviewVersion > 0
+                          ? 'Edit correction'
+                          : 'Review or correct',
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
