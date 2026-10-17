@@ -1,3 +1,6 @@
+import { canonicalTest, EMPTY_OBSERVATION_RULES, normalizeObservation,
+  type ObservationRules } from './observation-normalizer';
+
 export interface TrendObservationInput {
   id?: string;
   reportId: string;
@@ -6,14 +9,24 @@ export interface TrendObservationInput {
   unit: string | null;
   sampleDate: string | null;
   referenceRange?: string | null;
+  canonicalTestId?: string | null;
+  parsedNumericValue?: string | null;
+  normalizedNumericValue?: string | null;
+  comparisonQualifier?: string | null;
+  resultKind?: string;
+  normalizedUnit?: string | null;
+  collectionDateSource?: string;
+  reviewState?: string;
 }
 
 export interface TrendObservation {
   id?: string;
   reportId: string;
   originalValue: string;
+  originalUnit: string | null;
   date: string | null;
-  dateProvenance: 'collection' | 'unknown';
+  dateProvenance: string;
+  reviewState: string;
   value: number | null;
   referenceRange: string | null;
   notPlottedReason: 'collection_date_unknown' | 'non_numeric_value' | 'collection_date_and_numeric_value_unknown' | null;
@@ -24,7 +37,8 @@ export interface TrendDataPoint {
   value: number;
   reportId: string;
   originalValue: string;
-  dateProvenance: 'collection';
+  originalUnit: string | null;
+  dateProvenance: string;
   referenceRange: string | null;
 }
 
@@ -37,28 +51,9 @@ export interface TrendParameter {
   unplottedCount: number;
 }
 
-const APPROVED_ALIASES: Record<string, { id: string; name: string }> = {
-  hb: { id: 'hemoglobin', name: 'Hemoglobin' },
-  hgb: { id: 'hemoglobin', name: 'Hemoglobin' },
-  haemoglobin: { id: 'hemoglobin', name: 'Hemoglobin' },
-  hemoglobin: { id: 'hemoglobin', name: 'Hemoglobin' },
-  hba1c: { id: 'hba1c', name: 'HbA1c' },
-};
-
-function testIdentity(label: string): { id: string; name: string } {
+function testIdentity(label: string, rules: ObservationRules): { id: string; name: string } {
   const normalized = label.trim().replace(/\s+/g, ' ');
-  const key = normalized.toLowerCase();
-  return APPROVED_ALIASES[key] ?? { id: key, name: normalized };
-}
-
-function parseExactNumber(raw: string): number | null {
-  const text = raw.trim();
-  // Commas are accepted only as three-digit grouping, never as a decimal guess.
-  const grouped = /^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(text);
-  const plain = /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$/.test(text);
-  if (!grouped && !plain) return null;
-  const value = Number(text.replaceAll(',', ''));
-  return Number.isFinite(value) ? value : null;
+  return canonicalTest(normalized, rules) ?? { id: `unmapped:${normalized.toLowerCase()}`, name: normalized };
 }
 
 function validCollectionDate(raw: string | null): string | null {
@@ -72,16 +67,23 @@ function validCollectionDate(raw: string | null): string | null {
 export function buildLabTrends(
   observations: TrendObservationInput[],
   parameterName?: string,
+  rules: ObservationRules = EMPTY_OBSERVATION_RULES,
 ): { parameters: TrendParameter[] } {
-  const requestedId = parameterName ? testIdentity(parameterName).id : null;
+  const requestedId = parameterName ? testIdentity(parameterName, rules).id : null;
   const grouped = new Map<string, TrendParameter>();
 
   for (const observation of observations) {
-    const identity = testIdentity(observation.parameterName);
+    const identity = testIdentity(observation.parameterName, rules);
     if (!identity.id || (requestedId && identity.id !== requestedId)) continue;
 
-    // No conversion is assumed. Even an unknown unit is a distinct series.
-    const unit = observation.unit?.trim().replace(/\s+/g, ' ') || null;
+    const normalized = normalizeObservation({
+      parameterName: observation.parameterName,
+      value: observation.value,
+      unit: observation.unit,
+      corrected: observation.reviewState === 'corrected',
+    }, rules);
+    // Unknown labels and units stay as distinct exact-label and exact-unit series.
+    const unit = normalized.normalizedUnit ?? observation.unit?.trim().replace(/\s+/g, ' ') ?? null;
     const key = `${identity.id}\u0000${unit?.toLowerCase() ?? ''}`;
     let series = grouped.get(key);
     if (!series) {
@@ -96,8 +98,13 @@ export function buildLabTrends(
       grouped.set(key, series);
     }
 
-    const value = parseExactNumber(observation.value);
+    const qualifier = normalized.comparisonQualifier;
+    const decimal = normalized.normalizedNumericValue ?? normalized.parsedNumericValue;
+    const numeric = decimal === null ? null : Number(decimal);
+    const value = qualifier === 'exact' && numeric !== null && Number.isFinite(numeric)
+      && Math.abs(numeric) <= Number.MAX_SAFE_INTEGER ? numeric : null;
     const date = validCollectionDate(observation.sampleDate);
+    const dateProvenance = date === null ? 'unknown' : observation.collectionDateSource ?? 'extracted';
     const referenceRange = observation.referenceRange?.trim() || null;
     const notPlottedReason = date === null && value === null
       ? 'collection_date_and_numeric_value_unknown'
@@ -107,8 +114,10 @@ export function buildLabTrends(
       ...(observation.id ? { id: observation.id } : {}),
       reportId: observation.reportId,
       originalValue: observation.value,
+      originalUnit: observation.unit,
       date,
-      dateProvenance: date === null ? 'unknown' : 'collection',
+      dateProvenance,
+      reviewState: normalized.reviewState,
       value,
       referenceRange,
       notPlottedReason,
@@ -122,7 +131,8 @@ export function buildLabTrends(
       value,
       reportId: observation.reportId,
       originalValue: observation.value,
-      dateProvenance: 'collection',
+      originalUnit: observation.unit,
+      dateProvenance,
       referenceRange,
     });
   }

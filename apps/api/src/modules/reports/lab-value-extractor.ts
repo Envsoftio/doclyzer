@@ -7,25 +7,17 @@ export interface ExtractedLabValue {
   isAbnormal?: boolean | null;
 }
 
-function toTitleCase(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+function cleanName(s: string): string {
+  return s.replace(/\s+/g, ' ').trim();
 }
 
-function isValidNumber(s: string): boolean {
-  const cleaned = s.replace(/,/g, '').trim();
-  return !isNaN(parseFloat(cleaned)) && isFinite(Number(cleaned));
-}
-
-function normalizeNumberToken(raw: string): string | null {
-  const cleaned = raw.replace(/[<>,]/g, '').trim();
-  if (!isValidNumber(cleaned)) return null;
-  const n = Number(cleaned);
-  if (!Number.isFinite(n)) return null;
-  return Number.isInteger(n) ? String(n) : String(n);
+function observedNumber(raw: string): string | null {
+  const value = raw.trim().replace(/\s+/g, ' ');
+  // Keep the source notation. Decimal commas and comparison operators require
+  // review downstream; converting them here would invent a precise value.
+  return /^(?:[<>]=?|[≤≥])?\s*[-+]?\d[\d,]*(?:\.\d+)?$/.test(value)
+    ? value
+    : null;
 }
 
 function isLikelyNoiseName(name: string): boolean {
@@ -54,29 +46,29 @@ export class LabValueExtractor {
     const results: ExtractedLabValue[] = [];
     const normalized = transcript
       .replace(/\r\n/g, '\n')
-      .replace(/[ \t]+/g, ' ')
+      .replace(/ +/g, ' ')
       .trim();
 
-    // Pattern 1: "Name: value unit" — e.g. "Glucose: 95 mg/dL"
+    // Name comes from the row itself; no analyte vocabulary is required.
     const colonPattern =
-      /(^|\n)\s*([A-Za-z][A-Za-z0-9\s/(),._-]{1,50})\s*:\s*([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)\s*([A-Za-z/%^0-9._-]+)?(?=\n|$)/g;
+      /(^|\n)[ \t]*([A-Za-z][A-Za-z0-9 /(),._-]{1,80})[ \t]*:[ \t]*((?:[<>]=?|[≤≥])?\s*[-+]?\d[\d,]*(?:\.\d+)?)[ \t]*([A-Za-zµ/%^0-9._-]+)?(?=\n|$)/g;
     // Pattern 2: pipe-delimited tables (supports markdown rows with leading/trailing pipes)
     const pipePattern =
-      /^\s*\|?\s*([^|\n]{2,90})\s*\|\s*([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)\s*\|\s*([^|\n]{0,40})(?:\|[^|\n]*)?\|?\s*$/gm;
+      /^[ \t]*\|?[ \t]*([^|\n]{2,90})[ \t]*\|[ \t]*((?:[<>]=?|[≤≥])?\s*[-+]?\d[\d,]*(?:\.\d+)?)[ \t]*\|[ \t]*([^|\n]{0,40})(?:\|[^|\n]*)?\|?[ \t]*$/gm;
     // Pattern 3: tab-separated table rows — "Name\tvalue\tunit"
     const tabPattern =
-      /^([A-Za-z][A-Za-z0-9\s/(),._-]{1,50})\t([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)\t([A-Za-z/%^0-9._-]*)/gm;
+      /^([A-Za-z][A-Za-z0-9 /(),._-]{1,80})\t((?:[<>]=?|[≤≥])?\s*[-+]?\d[\d,]*(?:\.\d+)?)\t([A-Za-zµ/%^0-9._-]*)/gm;
 
     const linePattern =
-      /^([A-Za-z][A-Za-z0-9\s/(),._%-]{2,90})\s+([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)\s*([A-Za-z/%µ^0-9._-]{0,20})(?:\s|$)/gm;
+      /^([A-Za-z][A-Za-z0-9 /(),._%-]{2,90})[ \t]+((?:[<>]=?|[≤≥])?\s*[-+]?\d[\d,]*(?:\.\d+)?)[ \t]*([A-Za-z/%µ^0-9._-]{0,20})(?:[ \t]|$)/gm;
 
     const seen = new Set<string>();
 
     const add = (name: string, value: string, unit: string | null): void => {
-      const cleaned = toTitleCase(name);
+      const cleaned = cleanName(name);
       if (!cleaned || cleaned.length < 2) return;
       if (isLikelyNoiseName(cleaned)) return;
-      const normalizedValue = normalizeNumberToken(value);
+      const normalizedValue = observedNumber(value);
       if (!normalizedValue) return;
       const key = `${cleaned}:${normalizedValue}`;
       if (seen.has(key)) return;
@@ -128,7 +120,7 @@ export class LabValueExtractor {
         if (
           /^results$/i.test(lines[j]) &&
           lines[j + 1] &&
-          normalizeNumberToken(lines[j + 1]) !== null
+          observedNumber(lines[j + 1]) !== null
         ) {
           value = lines[j + 1];
         }

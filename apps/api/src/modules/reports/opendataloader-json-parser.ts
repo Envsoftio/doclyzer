@@ -494,7 +494,7 @@ export class OpenDataLoaderJsonParser {
         // A cell is one observation, not a free-form line with trailing numbers.
         const cleanedValue = c2.replace(/(?<=\d)\s*[HL*]$/i, '').trim();
         const numeric =
-          /^(?:[<>]=?|[≤≥])?\s*[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?$/.test(
+          /^(?:[<>]=?|[≤≥])?\s*[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\d+,\d+)$/.test(
             cleanedValue,
           );
         const qualitative =
@@ -508,11 +508,9 @@ export class OpenDataLoaderJsonParser {
             cleanedValue,
           );
         if (!numeric && !qualitative && !nonScalar) continue;
-        const value = numeric
-          ? this.normalizeNumericValue(cleanedValue)
-          : cleanedValue;
+        const value = cleanedValue;
         const isAbnormal =
-          !numeric || /^[<>≤≥]/.test(value)
+          !numeric || /^[<>≤≥]/.test(value) || /,/.test(value)
             ? undefined
             : this.evaluateAbnormal(value, c4);
         if (!sections.has(currentSection)) sections.set(currentSection, []);
@@ -838,9 +836,11 @@ export class OpenDataLoaderJsonParser {
     const c = this.normalizeSpace(content);
     if (!c) return null;
 
-    const numeric = c.match(/^([<>]?\s*[-+]?\d[\d,]*(?:\.\d+)?)(?:\s+(.+))?$/);
+    const numeric = c.match(
+      /^((?:[<>]=?|[≤≥])?\s*[-+]?\d[\d,]*(?:\.\d+)?)(?:\s+(.+))?$/,
+    );
     if (numeric) {
-      const value = this.normalizeNumericValue(numeric[1]);
+      const value = numeric[1].trim();
       let rest = numeric[2] ?? '';
       let unit: string | undefined;
       const tokens = rest.split(/\s+/).filter(Boolean);
@@ -850,10 +850,10 @@ export class OpenDataLoaderJsonParser {
       }
       const extractedRef = this.extractReferenceRange(rest);
       const nextTestName = this.extractTrailingTestName(extractedRef.remainder);
-      const isAbnormal = this.evaluateAbnormal(
-        value,
-        extractedRef.referenceRange,
-      );
+      const isAbnormal =
+        /^[<>≤≥]/.test(value) || /,/.test(value)
+          ? undefined
+          : this.evaluateAbnormal(value, extractedRef.referenceRange);
       return {
         value,
         ...(unit ? { unit } : {}),
@@ -1114,10 +1114,6 @@ export class OpenDataLoaderJsonParser {
 
   private cleanValuePhrase(value: string): string {
     return this.normalizeSpace(value).trim();
-  }
-
-  private normalizeNumericValue(value: string): string {
-    return value.replace(/[,\s]+/g, '').trim();
   }
 
   private normalizeSpace(value: string): string {

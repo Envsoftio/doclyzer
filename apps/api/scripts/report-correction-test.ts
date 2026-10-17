@@ -26,8 +26,11 @@ const row: ReportLabValueEntity = Object.assign(new ReportLabValueEntity(), {
   id: labValueId,
   reportId,
   parameterName: 'Hb',
+  originalParameterName: 'Hb',
   value: '10',
+  rawResult: '10',
   unit: 'g/dL',
+  originalUnit: 'g/dL',
   sampleDate: null,
   referenceRange: null,
   reviewVersion: 0,
@@ -55,7 +58,10 @@ const manager = {
   transaction: async (work: (transaction: unknown) => Promise<void>) => work(manager),
 };
 const service = Object.assign(Object.create(ReportsService.prototype) as object, {
-  reportRepo: { manager },
+  reportRepo: { manager: { ...manager, query: async (sql: string) =>
+    sql.includes('lab_test_aliases')
+      ? [{ alias_key: 'hemoglobin', canonical_test_id: 'hemoglobin', canonical_name: 'Hemoglobin' }]
+      : [{ canonical_test_id: 'hemoglobin', source_unit_key: 'g/dl', target_unit: 'g/dL', decimal_exponent: 0 }] } },
   getReport: async (): Promise<ReportDto> => ({
     id: reportId, profileId: report.profileId, originalFileName: 'report.pdf',
     contentType: 'application/pdf', sizeBytes: 1, status: 'parsed',
@@ -75,6 +81,11 @@ async function run() {
   assert.equal(row.reviewVersion, 1);
   assert.equal(row.value, '11');
   assert.equal(row.sampleDate, '2026-01-02');
+  assert.equal(row.collectionDateSource, 'corrected');
+  assert.equal(row.canonicalTestId, 'hemoglobin');
+  assert.equal(row.parsedNumericValue, '11');
+  assert.equal(row.normalizedNumericValue, '11');
+  assert.equal(row.reviewState, 'corrected');
   assert.deepEqual(row.sourceSnapshot, {
     parameterName: 'Hb', value: '10', unit: 'g/dL', sampleDate: null, referenceRange: '12-16',
   });
@@ -104,6 +115,8 @@ async function run() {
   assert.equal(row.reviewVersion, 2);
   assert.equal(audit.length, 2);
   assert.equal(row.sourceSnapshot?.value, '10');
+  assert.equal(row.rawResult, '10', 'correction must not rewrite the immutable source field');
+  assert.equal(row.originalParameterName, 'Hb');
   const dto = (service as unknown as {
     toDto(report: ReportEntity, values: ReportLabValueEntity[], transcript: boolean, structured: boolean): ReportDto;
   }).toDto(report, [row], false, true);

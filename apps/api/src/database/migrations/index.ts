@@ -45,6 +45,8 @@ import { CreateGiftVouchers1730817100000 } from './1730817100000-CreateGiftVouch
 import { CreateReportResultInsights1730817200000 } from './1730817200000-CreateReportResultInsights';
 import { CreateReportResultInsightUsage1730817300000 } from './1730817300000-CreateReportResultInsightUsage';
 import { AddReportResultCorrections1730817400000 } from './1730817400000-AddReportResultCorrections';
+import { CompleteObservationContract1730817500000 } from './1730817500000-CompleteObservationContract';
+import { CreateObservationRules1730817600000 } from './1730817600000-CreateObservationRules';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -94,4 +96,6 @@ export const migrations = [
   CreateReportResultInsights1730817200000,
   CreateReportResultInsightUsage1730817300000,
   AddReportResultCorrections1730817400000,
+  CompleteObservationContract1730817500000,
+  CreateObservationRules1730817600000,
 ];

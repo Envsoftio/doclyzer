@@ -29,6 +29,10 @@ class ExtractedLabValue {
     this.isAbnormal,
     this.reviewVersion = 0,
     this.sourceSnapshot,
+    this.canonicalTestId,
+    this.resultKind,
+    this.reviewState,
+    this.collectionDateSource,
   });
 
   final String? id;
@@ -40,6 +44,10 @@ class ExtractedLabValue {
   final bool? isAbnormal;
   final int reviewVersion;
   final Map<String, dynamic>? sourceSnapshot;
+  final String? canonicalTestId;
+  final String? resultKind;
+  final String? reviewState;
+  final String? collectionDateSource;
 }
 
 class ResultInsight {
@@ -176,6 +184,8 @@ class TrendDataPoint {
     this.reportId,
     this.originalValue,
     this.referenceRange,
+    this.originalUnit,
+    this.dateProvenance,
   });
 
   final DateTime date;
@@ -183,6 +193,8 @@ class TrendDataPoint {
   final String? reportId;
   final String? originalValue;
   final String? referenceRange;
+  final String? originalUnit;
+  final String? dateProvenance;
 }
 
 /// Every saved observation, including values that cannot be plotted.
@@ -195,6 +207,9 @@ class TrendObservation {
     this.value,
     this.referenceRange,
     this.notPlottedReason,
+    this.originalUnit,
+    this.dateProvenance,
+    this.reviewState,
   });
 
   final String? id;
@@ -204,6 +219,9 @@ class TrendObservation {
   final double? value;
   final String? referenceRange;
   final String? notPlottedReason;
+  final String? originalUnit;
+  final String? dateProvenance;
+  final String? reviewState;
 }
 
 /// Trend data for a single parameter across time.

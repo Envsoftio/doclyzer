@@ -133,6 +133,10 @@ class ApiReportsRepository implements ReportsRepository {
               : row.isAbnormal ?? _isOutOfRange(row.value, range?.trim()),
           reviewVersion: row.reviewVersion,
           sourceSnapshot: row.sourceSnapshot,
+          canonicalTestId: row.canonicalTestId,
+          resultKind: row.resultKind,
+          reviewState: row.reviewState,
+          collectionDateSource: row.collectionDateSource,
         ),
       );
     }
@@ -366,6 +370,10 @@ class ApiReportsRepository implements ReportsRepository {
         isAbnormal: m['isAbnormal'] as bool?,
         reviewVersion: (m['reviewVersion'] as num?)?.toInt() ?? 0,
         sourceSnapshot: m['sourceSnapshot'] as Map<String, dynamic>?,
+        canonicalTestId: m['canonicalTestId'] as String?,
+        resultKind: m['resultKind'] as String?,
+        reviewState: m['reviewState'] as String?,
+        collectionDateSource: m['collectionDateSource'] as String?,
       );
     }).toList();
     return _reportFromJson(
@@ -439,12 +447,19 @@ class ApiReportsRepository implements ReportsRepository {
     final extractedLabValues = labList.map((e) {
       final m = e as Map<String, dynamic>;
       return ExtractedLabValue(
+        id: m['id'] as String?,
         parameterName: m['parameterName'] as String? ?? '',
         value: m['value'] as String? ?? '',
         unit: m['unit'] as String?,
         sampleDate: m['sampleDate'] as String?,
         referenceRange: m['referenceRange'] as String?,
         isAbnormal: m['isAbnormal'] as bool?,
+        reviewVersion: (m['reviewVersion'] as num?)?.toInt() ?? 0,
+        sourceSnapshot: m['sourceSnapshot'] as Map<String, dynamic>?,
+        canonicalTestId: m['canonicalTestId'] as String?,
+        resultKind: m['resultKind'] as String?,
+        reviewState: m['reviewState'] as String?,
+        collectionDateSource: m['collectionDateSource'] as String?,
       );
     }).toList();
     return _reportFromJson(
@@ -480,6 +495,8 @@ class ApiReportsRepository implements ReportsRepository {
           reportId: dpm['reportId'] as String?,
           originalValue: dpm['originalValue'] as String?,
           referenceRange: dpm['referenceRange'] as String?,
+          originalUnit: dpm['originalUnit'] as String?,
+          dateProvenance: dpm['dateProvenance'] as String?,
         );
       }).toList();
       final observations = (pm['observations'] as List<dynamic>? ?? []).map((
@@ -495,6 +512,9 @@ class ApiReportsRepository implements ReportsRepository {
           value: (row['value'] as num?)?.toDouble(),
           referenceRange: row['referenceRange'] as String?,
           notPlottedReason: row['notPlottedReason'] as String?,
+          originalUnit: row['originalUnit'] as String?,
+          dateProvenance: row['dateProvenance'] as String?,
+          reviewState: row['reviewState'] as String?,
         );
       }).toList();
       return TrendParameter(

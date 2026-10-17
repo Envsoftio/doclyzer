@@ -27,6 +27,10 @@ import { DoclingOcrClient } from './docling-ocr.client';
 import { ImageToPdfService } from './image-to-pdf.service';
 import { buildLabTrends, type TrendParameter } from './lab-trend-builder';
 import {
+  loadObservationRules,
+  normalizeObservation,
+} from './observation-normalizer';
+import {
   OpenDataLoaderJsonParser,
   type OpenDataLoaderParsedWithDiagnosticsOutput,
 } from './opendataloader-json-parser';
@@ -68,9 +72,22 @@ export interface UploadReportResult {
 export interface ExtractedLabValueDto {
   id?: string;
   parameterName: string;
+  originalParameterName?: string;
+  canonicalTestId?: string | null;
   value: string;
+  rawResult?: string;
+  parsedNumericValue?: string | null;
+  normalizedNumericValue?: string | null;
+  comparisonQualifier?: string | null;
+  resultKind?: string;
   unit?: string;
+  originalUnit?: string | null;
+  normalizedUnit?: string | null;
   sampleDate?: string;
+  originalSampleDate?: string | null;
+  collectionDateSource?: string;
+  extractionSource?: string;
+  reviewState?: string;
   referenceRange?: string;
   isAbnormal?: boolean;
   reviewVersion?: number;
@@ -351,6 +368,15 @@ export class ReportsService {
       (normalizedFile.source === 'image' && jsonLabValues.length > 0)
         ? jsonLabValues
         : this.selectBestLabValues(jsonLabValues, transcriptLabValues);
+    const extractionSource =
+      parsedFromJson?.hasMappedLabTables ||
+      (normalizedFile.source === 'image' && jsonLabValues.length > 0)
+        ? 'odl_json'
+        : jsonLabValues.length > 0 && transcriptLabValues.length > 0
+          ? 'merged_extractors'
+          : jsonLabValues.length > 0
+            ? 'odl_json'
+            : 'transcript';
     labValues = this.deduplicateStructuredLabValues(labValues);
 
     const finalStatus = this.resolveParsedReportStatus(
@@ -419,6 +445,9 @@ export class ReportsService {
       }),
     );
     const persistedLabValues = finalStatus === 'parsed' ? labValues : [];
+    const observationRules = await loadObservationRules((sql) =>
+      this.reportRepo.manager.query(sql),
+    );
 
     const summary =
       finalStatus === 'parsed'
@@ -463,9 +492,24 @@ export class ReportsService {
         this.reportLabValueRepo.create({
           reportId: entity.id,
           parameterName: lv.parameterName,
+          originalParameterName: lv.parameterName,
           value: lv.value,
+          rawResult: lv.value,
           unit: lv.unit ?? null,
+          originalUnit: lv.unit ?? null,
           sampleDate: lv.sampleDate ?? null,
+          originalSampleDate: lv.sampleDate ?? null,
+          collectionDateSource: lv.sampleDate ? 'extracted' : 'unknown',
+          extractionSource,
+          referenceRange: lv.referenceRange ?? null,
+          ...normalizeObservation(
+            {
+              parameterName: lv.parameterName,
+              value: lv.value,
+              unit: lv.unit ?? null,
+            },
+            observationRules,
+          ),
           sortOrder: i,
         }),
       );
@@ -596,17 +640,42 @@ export class ReportsService {
     labValueId: string,
     input: CorrectLabValueInput,
   ): Promise<ReportDto> {
-    if (!isUUID(reportId) || !isUUID(labValueId)) throw new ReportNotFoundException();
-    const name = this.requiredCorrectionText(input.parameterName, 'parameterName', 256);
+    if (!isUUID(reportId) || !isUUID(labValueId))
+      throw new ReportNotFoundException();
+    const name = this.requiredCorrectionText(
+      input.parameterName,
+      'parameterName',
+      256,
+    );
     const value = this.requiredCorrectionText(input.value, 'value', 512);
     const unit = this.optionalCorrectionText(input.unit, 'unit', 64);
-    const sampleDate = this.optionalCorrectionText(input.sampleDate, 'sampleDate', 10);
-    const referenceRange = this.optionalCorrectionText(input.referenceRange, 'referenceRange', 256);
-    if (!Number.isSafeInteger(input.expectedVersion) || input.expectedVersion < 0) {
-      throw new BadRequestException({ code: 'REVIEW_VERSION_INVALID', message: 'A valid review version is required.' });
+    const sampleDate = this.optionalCorrectionText(
+      input.sampleDate,
+      'sampleDate',
+      10,
+    );
+    const referenceRange = this.optionalCorrectionText(
+      input.referenceRange,
+      'referenceRange',
+      256,
+    );
+    const observationRules = await loadObservationRules((sql) =>
+      this.reportRepo.manager.query(sql),
+    );
+    if (
+      !Number.isSafeInteger(input.expectedVersion) ||
+      input.expectedVersion < 0
+    ) {
+      throw new BadRequestException({
+        code: 'REVIEW_VERSION_INVALID',
+        message: 'A valid review version is required.',
+      });
     }
     if (sampleDate && !this.validCollectionDate(sampleDate)) {
-      throw new BadRequestException({ code: 'COLLECTION_DATE_INVALID', message: 'Use a valid collection date in YYYY-MM-DD format.' });
+      throw new BadRequestException({
+        code: 'COLLECTION_DATE_INVALID',
+        message: 'Use a valid collection date in YYYY-MM-DD format.',
+      });
     }
 
     await this.reportRepo.manager.transaction(async (manager) => {
@@ -614,7 +683,8 @@ export class ReportsService {
         where: { id: reportId, userId, deletedAt: IsNull() },
         lock: { mode: 'pessimistic_write' },
       });
-      if (!report || report.status !== 'parsed') throw new ReportNotFoundException();
+      if (!report || report.status !== 'parsed')
+        throw new ReportNotFoundException();
       const labRepo = manager.getRepository(ReportLabValueEntity);
       const row = await labRepo.findOne({
         where: { id: labValueId, reportId },
@@ -624,18 +694,29 @@ export class ReportsService {
       if (row.reviewVersion !== input.expectedVersion) {
         throw new ConflictException({
           code: 'REPORT_RESULT_VERSION_CONFLICT',
-          message: 'This result changed. Reload the report before saving your correction.',
+          message:
+            'This result changed. Reload the report before saving your correction.',
         });
       }
-      const source = this.toDto(report, [row], false, true).extractedLabValues[0];
+      const source = this.toDto(report, [row], false, true)
+        .extractedLabValues[0];
       const previous = {
         parameterName: row.parameterName,
         value: row.value,
         unit: row.unit,
         sampleDate: row.sampleDate,
-        referenceRange: row.reviewVersion > 0 ? row.referenceRange : source.referenceRange ?? null,
+        referenceRange:
+          row.reviewVersion > 0
+            ? row.referenceRange
+            : (source.referenceRange ?? null),
       };
-      const next = { parameterName: name, value, unit, sampleDate, referenceRange };
+      const next = {
+        parameterName: name,
+        value,
+        unit,
+        sampleDate,
+        referenceRange,
+      };
       if (JSON.stringify(previous) === JSON.stringify(next)) return;
       row.sourceSnapshot ??= {
         parameterName: source.parameterName,
@@ -649,6 +730,14 @@ export class ReportsService {
       row.unit = unit;
       row.sampleDate = sampleDate;
       row.referenceRange = referenceRange;
+      row.collectionDateSource = sampleDate ? 'corrected' : 'unknown';
+      Object.assign(
+        row,
+        normalizeObservation(
+          { parameterName: name, value, unit, corrected: true },
+          observationRules,
+        ),
+      );
       row.reviewVersion += 1;
       await labRepo.save(row);
       await manager.getRepository(ReportLabValueCorrectionEntity).save({
@@ -666,19 +755,40 @@ export class ReportsService {
     return this.getReport(userId, reportId);
   }
 
-  private requiredCorrectionText(value: unknown, field: string, max: number): string {
-    if (typeof value !== 'string' || !value.trim() || value.trim().length > max) {
-      throw new BadRequestException({ code: 'REPORT_RESULT_FIELD_INVALID', message: `${field} must contain 1–${max} characters.` });
+  private requiredCorrectionText(
+    value: unknown,
+    field: string,
+    max: number,
+  ): string {
+    if (
+      typeof value !== 'string' ||
+      !value.trim() ||
+      value.trim().length > max
+    ) {
+      throw new BadRequestException({
+        code: 'REPORT_RESULT_FIELD_INVALID',
+        message: `${field} must contain 1–${max} characters.`,
+      });
     }
     return value.trim();
   }
 
-  private optionalCorrectionText(value: unknown, field: string, max: number): string | null {
+  private optionalCorrectionText(
+    value: unknown,
+    field: string,
+    max: number,
+  ): string | null {
     if (value !== null && typeof value !== 'string') {
-      throw new BadRequestException({ code: 'REPORT_RESULT_FIELD_INVALID', message: `${field} must be text or null.` });
+      throw new BadRequestException({
+        code: 'REPORT_RESULT_FIELD_INVALID',
+        message: `${field} must be text or null.`,
+      });
     }
     if (typeof value === 'string' && value.trim().length > max) {
-      throw new BadRequestException({ code: 'REPORT_RESULT_FIELD_INVALID', message: `${field} is too long.` });
+      throw new BadRequestException({
+        code: 'REPORT_RESULT_FIELD_INVALID',
+        message: `${field} is too long.`,
+      });
     }
     return typeof value === 'string' ? value.trim() || null : null;
   }
@@ -686,7 +796,10 @@ export class ReportsService {
   private validCollectionDate(value: string): boolean {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
     const parsed = new Date(`${value}T00:00:00Z`);
-    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+    return (
+      !Number.isNaN(parsed.getTime()) &&
+      parsed.toISOString().slice(0, 10) === value
+    );
   }
 
   /** List reports for a profile. Validates user owns the profile (throws if not). */
@@ -765,34 +878,67 @@ export class ReportsService {
     const rangesByReport = new Map<string, Map<string, string | null>>();
     for (const report of reports) {
       const candidates = new Map<string, Array<string | null>>();
-      for (const section of this.getStoredStructuredReport(report)?.sections ?? []) {
+      for (const section of this.getStoredStructuredReport(report)?.sections ??
+        []) {
         for (const test of section.tests) {
-          const key = this.labRowKey(test.parameterName, test.value, test.unit ?? null);
+          const key = this.labRowKey(
+            test.parameterName,
+            test.value,
+            test.unit ?? null,
+          );
           if (!key) continue;
           const ranges = candidates.get(key) ?? [];
           ranges.push(test.referenceRange?.trim() || null);
           candidates.set(key, ranges);
         }
       }
-      rangesByReport.set(report.id, new Map(
-        [...candidates].map(([key, ranges]) => [key, ranges.length === 1 ? ranges[0] : null]),
-      ));
+      rangesByReport.set(
+        report.id,
+        new Map(
+          [...candidates].map(([key, ranges]) => [
+            key,
+            ranges.length === 1 ? ranges[0] : null,
+          ]),
+        ),
+      );
     }
-    return buildLabTrends(labValues.map((row) => {
-      const key = this.labRowKey(row.parameterName, row.value, row.unit ?? null);
-      const sourceRange = key ? rangesByReport.get(row.reportId)?.get(key) : null;
-      return {
-        id: row.id,
-        reportId: row.reportId,
-        parameterName: row.parameterName,
-        value: row.value,
-        unit: row.unit,
-        sampleDate: row.sampleDate,
-        referenceRange: row.reviewVersion > 0
-          ? row.referenceRange
-          : row.referenceRange ?? sourceRange ?? null,
-      };
-    }), parameterName);
+    const observationRules = await loadObservationRules((sql) =>
+      this.reportRepo.manager.query(sql),
+    );
+    return buildLabTrends(
+      labValues.map((row) => {
+        const key = this.labRowKey(
+          row.parameterName,
+          row.value,
+          row.unit ?? null,
+        );
+        const sourceRange = key
+          ? rangesByReport.get(row.reportId)?.get(key)
+          : null;
+        return {
+          id: row.id,
+          reportId: row.reportId,
+          parameterName: row.parameterName,
+          value: row.value,
+          unit: row.unit,
+          sampleDate: row.sampleDate,
+          canonicalTestId: row.canonicalTestId,
+          parsedNumericValue: row.parsedNumericValue,
+          normalizedNumericValue: row.normalizedNumericValue,
+          comparisonQualifier: row.comparisonQualifier,
+          resultKind: row.resultKind,
+          normalizedUnit: row.normalizedUnit,
+          collectionDateSource: row.collectionDateSource,
+          reviewState: row.reviewState,
+          referenceRange:
+            row.reviewVersion > 0
+              ? row.referenceRange
+              : (row.referenceRange ?? sourceRange ?? null),
+        };
+      }),
+      parameterName,
+      observationRules,
+    );
   }
 
   async retryParse(
@@ -835,6 +981,13 @@ export class ReportsService {
           ? retryJsonValues
           : this.selectBestLabValues(retryJsonValues, retryTranscriptValues)
         : [];
+    const retryExtractionSource = retryFromJson?.hasMappedLabTables
+      ? 'odl_json'
+      : retryJsonValues.length > 0 && retryTranscriptValues.length > 0
+        ? 'merged_extractors'
+        : retryJsonValues.length > 0
+          ? 'odl_json'
+          : 'transcript';
     const dedupedRetryLabValues =
       status === 'parsed'
         ? this.deduplicateStructuredLabValues(retryLabValues)
@@ -857,6 +1010,9 @@ export class ReportsService {
     }
     const persistedRetryLabValues =
       finalStatus === 'parsed' ? dedupedRetryLabValues : [];
+    const observationRules = await loadObservationRules((sql) =>
+      this.reportRepo.manager.query(sql),
+    );
 
     entity.status = finalStatus;
     entity.summary =
@@ -895,13 +1051,16 @@ export class ReportsService {
         lock: { mode: 'pessimistic_write' },
       });
       if (!locked) throw new ReportNotFoundException();
-      const corrected = await manager.getRepository(ReportLabValueEntity).count({
-        where: { reportId: entity.id, reviewVersion: MoreThan(0) },
-      });
+      const corrected = await manager
+        .getRepository(ReportLabValueEntity)
+        .count({
+          where: { reportId: entity.id, reviewVersion: MoreThan(0) },
+        });
       if (corrected > 0) {
         throw new ConflictException({
           code: 'REPORT_HAS_CORRECTIONS',
-          message: 'This report has reviewed results. Reprocessing would replace them.',
+          message:
+            'This report has reviewed results. Reprocessing would replace them.',
         });
       }
       locked.status = entity.status;
@@ -909,17 +1068,38 @@ export class ReportsService {
       locked.parsedTranscript = entity.parsedTranscript;
       locked.structuredReport = entity.structuredReport;
       await manager.getRepository(ReportEntity).save(locked);
-      await manager.getRepository(ReportLabValueEntity).delete({ reportId: entity.id });
+      await manager
+        .getRepository(ReportLabValueEntity)
+        .delete({ reportId: entity.id });
       if (persistedRetryLabValues.length > 0) {
         const labRepo = manager.getRepository(ReportLabValueEntity);
-        await labRepo.save(persistedRetryLabValues.map((lv, i) => labRepo.create({
-          reportId: entity.id,
-          parameterName: lv.parameterName,
-          value: lv.value,
-          unit: lv.unit ?? null,
-          sampleDate: lv.sampleDate ?? null,
-          sortOrder: i,
-        })));
+        await labRepo.save(
+          persistedRetryLabValues.map((lv, i) =>
+            labRepo.create({
+              reportId: entity.id,
+              parameterName: lv.parameterName,
+              originalParameterName: lv.parameterName,
+              value: lv.value,
+              rawResult: lv.value,
+              unit: lv.unit ?? null,
+              originalUnit: lv.unit ?? null,
+              sampleDate: lv.sampleDate ?? null,
+              originalSampleDate: lv.sampleDate ?? null,
+              collectionDateSource: lv.sampleDate ? 'extracted' : 'unknown',
+              extractionSource: retryExtractionSource,
+              referenceRange: lv.referenceRange ?? null,
+              ...normalizeObservation(
+                {
+                  parameterName: lv.parameterName,
+                  value: lv.value,
+                  unit: lv.unit ?? null,
+                },
+                observationRules,
+              ),
+              sortOrder: i,
+            }),
+          ),
+        );
       }
       entity.profileId = locked.profileId;
     });
@@ -964,22 +1144,18 @@ export class ReportsService {
     if (labValues.length >= 2) return true;
     if (!transcript) return false;
 
-    const text = transcript.toLowerCase();
-    const signals = [
-      /\b(hemoglobin|haemoglobin|hba1c)\b/,
-      /\b(wbc|rbc|platelet|esr|pcv|mcv|mch|mchc)\b/,
-      /\b(glucose|creatinine|urea|uric acid|bilirubin|albumin|globulin)\b/,
-      /\b(cholesterol|triglycerides|hdl|ldl|vldl)\b/,
-      /\b(tsh|t3|t4|ft3|ft4)\b/,
-      /\b(reference range|normal range|test name|result|unit)\b/,
-      /\b(cbc|lft|kft|lipid profile|thyroid profile|urine routine)\b/,
-    ];
-    const hitCount = signals.reduce(
-      (count, re) => count + (re.test(text) ? 1 : 0),
-      0,
-    );
-
-    return hitCount >= 2 && labValues.length >= 1;
+    if (labValues.length === 0) return false;
+    // A single observation needs report structure as corroboration. Its name
+    // cannot tell us whether the document is a lab report.
+    const hasNameColumn =
+      /\b(test(?: name)?|investigation|parameter|analyte|assay)\b/i.test(
+        transcript,
+      );
+    const hasResultColumn =
+      /\b(result|observed value|observation|patient result)\b/i.test(
+        transcript,
+      );
+    return hasNameColumn && hasResultColumn;
   }
 
   private evaluateParsedTranscript(text: string | null | undefined): {
@@ -1614,7 +1790,7 @@ export class ReportsService {
         /^[A-Za-z][A-Za-z0-9\s(),/%._-]{1,80}\s+(Negative|Positive|Nil|Normal|Absent|Present|Clear|Cloudy|Turbid|Trace)\b/i.test(
           line,
         ) ||
-        /\b(reference range|test name|result|unit|hemoglobin|haemoglobin|wbc|rbc|platelet|creatinine|bilirubin|cholesterol|triglycerides|hdl|ldl|tsh|t3|t4)\b/i.test(
+        /\b(reference range|test name|investigation|parameter|analyte|result|unit)\b/i.test(
           line,
         );
       if (!looksLikeValueLine) continue;
@@ -1925,24 +2101,38 @@ export class ReportsService {
         const meta =
           rangeByKey.get(key) ??
           rangeByName.get(lv.parameterName.trim().toLowerCase());
-        const referenceRange = lv.reviewVersion > 0
-          ? lv.referenceRange
-          : lv.referenceRange ?? meta?.referenceRange;
-        const isAbnormal = lv.reviewVersion > 0
-          ? this.evaluateAbnormalFromReference(lv.value, referenceRange ?? null)
-          : meta?.isAbnormal;
+        const referenceRange =
+          lv.reviewVersion > 0
+            ? lv.referenceRange
+            : (lv.referenceRange ?? meta?.referenceRange);
+        const isAbnormal =
+          lv.reviewVersion > 0
+            ? this.evaluateAbnormalFromReference(
+                lv.value,
+                referenceRange ?? null,
+              )
+            : meta?.isAbnormal;
         return {
           id: lv.id,
           parameterName: lv.parameterName,
+          originalParameterName: lv.originalParameterName,
+          canonicalTestId: lv.canonicalTestId,
           value: lv.value,
+          rawResult: lv.rawResult,
+          parsedNumericValue: lv.parsedNumericValue,
+          normalizedNumericValue: lv.normalizedNumericValue,
+          comparisonQualifier: lv.comparisonQualifier,
+          resultKind: lv.resultKind,
           ...(lv.unit != null && lv.unit !== '' && { unit: lv.unit }),
+          originalUnit: lv.originalUnit,
+          normalizedUnit: lv.normalizedUnit,
           ...(lv.sampleDate != null && { sampleDate: lv.sampleDate }),
-          ...(referenceRange
-            ? { referenceRange }
-            : {}),
-          ...(typeof isAbnormal === 'boolean'
-            ? { isAbnormal }
-            : {}),
+          originalSampleDate: lv.originalSampleDate,
+          collectionDateSource: lv.collectionDateSource,
+          extractionSource: lv.extractionSource,
+          reviewState: lv.reviewState,
+          ...(referenceRange ? { referenceRange } : {}),
+          ...(typeof isAbnormal === 'boolean' ? { isAbnormal } : {}),
           reviewVersion: lv.reviewVersion ?? 0,
           ...(lv.sourceSnapshot ? { sourceSnapshot: lv.sourceSnapshot } : {}),
         };
@@ -2003,7 +2193,7 @@ export class ReportsService {
     const sectionsMap = new Map<string, StructuredSectionItemDto[]>();
 
     for (const lv of labValues) {
-      const heading = this.resolveSectionHeading(lv.parameterName);
+      const heading = 'Lab Results';
       if (!sectionsMap.has(heading)) {
         sectionsMap.set(heading, []);
       }
@@ -2019,31 +2209,9 @@ export class ReportsService {
       });
     }
 
-    const sectionOrder = [
-      'Thyroid Function',
-      'Liver Function',
-      'Kidney Function',
-      'Lipid Profile',
-      'Diabetes',
-      'Complete Blood Count',
-      'Iron Studies',
-      'Vitamin Profile',
-      'Inflammation / Autoimmune',
-      'Urine Analysis',
-      'Hormones',
-      'Other Tests',
-    ];
-
-    const sections: StructuredSectionDto[] = Array.from(sectionsMap.entries())
-      .sort((a, b) => {
-        const ai = sectionOrder.indexOf(a[0]);
-        const bi = sectionOrder.indexOf(b[0]);
-        if (ai === -1 && bi === -1) return a[0].localeCompare(b[0]);
-        if (ai === -1) return 1;
-        if (bi === -1) return -1;
-        return ai - bi;
-      })
-      .map(([heading, tests]) => ({ heading, tests }));
+    const sections: StructuredSectionDto[] = Array.from(
+      sectionsMap.entries(),
+    ).map(([heading, tests]) => ({ heading, tests }));
 
     return {
       patientDetails,
@@ -2159,57 +2327,5 @@ export class ReportsService {
         },
       }),
     );
-  }
-
-  private resolveSectionHeading(parameterName: string): string {
-    const p = parameterName.toLowerCase();
-    if (/tsh|thyroid|t3|t4|tri-iodothyronine|thyroxine/.test(p)) {
-      return 'Thyroid Function';
-    }
-    if (
-      /alt|ast|bilirubin|ggt|alkaline phosphatase|albumin|globulin|sgot|sgpt|liver/.test(
-        p,
-      )
-    ) {
-      return 'Liver Function';
-    }
-    if (
-      /creatinine|gfr|urea|bun|uric acid|sodium|chloride|calcium|potassium|kidney/.test(
-        p,
-      )
-    ) {
-      return 'Kidney Function';
-    }
-    if (/cholesterol|hdl|ldl|vldl|triglycerides|non-hdl|lipid/.test(p)) {
-      return 'Lipid Profile';
-    }
-    if (/hba1c|glucose|fasting blood sugar|estimated glucose/.test(p)) {
-      return 'Diabetes';
-    }
-    if (
-      /haemoglobin|hemoglobin|rbc|wbc|leucocyte|lymphocyte|neutrophil|monocyte|eosinophil|basophil|platelet|mcv|mch|mchc|rdw|cbc|pcv/.test(
-        p,
-      )
-    ) {
-      return 'Complete Blood Count';
-    }
-    if (/iron|uibc|tibc|transferrin/.test(p)) {
-      return 'Iron Studies';
-    }
-    if (/vitamin b12|vitamin d/.test(p)) {
-      return 'Vitamin Profile';
-    }
-    if (/crp|c-reactive|rheumatoid/.test(p)) {
-      return 'Inflammation / Autoimmune';
-    }
-    if (
-      /urine|pus cells|epithelial|ketones|nitrite|leucocyte esterase/.test(p)
-    ) {
-      return 'Urine Analysis';
-    }
-    if (/cortisol/.test(p)) {
-      return 'Hormones';
-    }
-    return 'Other Tests';
   }
 }

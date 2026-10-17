@@ -59,7 +59,12 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
                 .where(
                   (p) =>
                       (p.unit ?? '').toLowerCase() ==
-                      widget.unit!.trim().toLowerCase(),
+                          widget.unit!.trim().toLowerCase() ||
+                      p.observations.any(
+                        (observation) =>
+                            (observation.originalUnit ?? '').toLowerCase() ==
+                            widget.unit!.trim().toLowerCase(),
+                      ),
                 )
                 .firstOrNull;
       if (mounted) {
@@ -222,6 +227,8 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
                     color: colors.onPrimaryContainer,
                   ),
                 ),
+                if (latest.originalUnit != null && latest.originalUnit != unit)
+                  Text('Source unit for this range: ${latest.originalUnit}'),
                 if (points.length > 1) ...[
                   const SizedBox(height: 8),
                   Text(
@@ -458,6 +465,8 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
                   date: point.date,
                   value: point.value,
                   referenceRange: point.referenceRange,
+                  originalUnit: point.originalUnit,
+                  dateProvenance: point.dateProvenance,
                 ),
               )
               .toList();
@@ -481,7 +490,7 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${observations[index].originalValue}$unit',
+                    '${observations[index].originalValue}${observations[index].originalUnit == null ? unit : ' ${observations[index].originalUnit}'}',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(
@@ -492,6 +501,11 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
                   Text(
                     'Lab reference range: ${observations[index].referenceRange ?? 'Unknown'}',
                   ),
+                  if (observations[index].date != null &&
+                      observations[index].dateProvenance == 'legacy_extracted')
+                    const Text(
+                      'Collection date from earlier extraction; review in source report',
+                    ),
                   if (observations[index].notPlottedReason != null)
                     Text(switch (observations[index].notPlottedReason) {
                       'collection_date_unknown' =>

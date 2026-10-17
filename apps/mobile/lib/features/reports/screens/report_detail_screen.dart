@@ -853,6 +853,12 @@ class _ResultCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
+                if (result.reviewState == 'needs_review') ...[
+                  const Text(
+                    'Needs review: test mapping, value, or unit may be uncertain.',
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 Wrap(
                   spacing: 8,
                   runSpacing: 6,

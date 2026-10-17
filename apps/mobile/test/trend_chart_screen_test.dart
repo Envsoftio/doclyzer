@@ -44,6 +44,25 @@ class _MixedUnitTrends extends Fake implements ReportsRepository {
 }
 
 void main() {
+  testWidgets('a source result in g/L opens its converted g/dL series', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TrendChartScreen(
+          reportsRepository: _ConvertedTrends(),
+          profileId: 'profile',
+          parameterName: 'Hb',
+          unit: 'g/L',
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('12 g/dL'), findsWidgets);
+    expect(find.text('120 g/L'), findsOneWidget);
+  });
+
   testWidgets('unplottable result remains visible without a chart', (
     tester,
   ) async {
@@ -216,6 +235,38 @@ void main() {
     expect(find.text('10 g/dL'), findsWidgets);
     expect(find.byKey(const Key('trend-chart-content')), findsNothing);
   });
+}
+
+class _ConvertedTrends extends Fake implements ReportsRepository {
+  @override
+  Future<LabTrendsResult> getLabTrends(
+    String profileId, {
+    String? parameterName,
+  }) async => LabTrendsResult(
+    parameters: [
+      TrendParameter(
+        parameterName: 'Hemoglobin',
+        unit: 'g/dL',
+        dataPoints: [
+          TrendDataPoint(
+            date: DateTime(2026, 1, 1),
+            value: 12,
+            originalValue: '120',
+            originalUnit: 'g/L',
+          ),
+        ],
+        observations: [
+          TrendObservation(
+            reportId: 'r1',
+            originalValue: '120',
+            originalUnit: 'g/L',
+            date: DateTime(2026, 1, 1),
+            value: 12,
+          ),
+        ],
+      ),
+    ],
+  );
 }
 
 class _ObservationTrends extends Fake implements ReportsRepository {

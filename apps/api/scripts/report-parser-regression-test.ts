@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { OpenDataLoaderJsonParser } from '../src/modules/reports/opendataloader-json-parser';
 import { DoclingOcrClient } from '../src/modules/reports/docling-ocr.client';
 import { adaptDoclingDocument } from '../src/modules/reports/docling-document-adapter';
+import { LabValueExtractor } from '../src/modules/reports/lab-value-extractor';
 
 const parser = new OpenDataLoaderJsonParser();
 const table = (rows: string[][]) => ({
@@ -118,12 +119,64 @@ check(
         ['Calcium', '9,4', 'mg/dL', '8.6-10.2'],
       ]),
     ).extractedLabValues;
-    assert.equal(rows.length, 2);
+    assert.equal(rows.length, 3);
     assert.equal(rows[0].value, '<=5');
     assert.equal(rows[0].isAbnormal, undefined);
-    assert.equal(rows[1].value, '1200');
+    assert.equal(rows[1].value, '1,200');
+    assert.equal(rows[2].value, '9,4');
+    assert.equal(rows[2].isAbnormal, undefined);
   },
 );
+check('Unseen test names are extracted from mapped result columns', () => {
+  const rows = parser.parse(
+    table([
+      ['Observed Result', 'Assay', 'Units of Measurement'],
+      ['<0.04', 'Novel marker ZX-47', 'ng/mL'],
+      ['Detected', 'Rare antibody Q', ''],
+    ]),
+  ).extractedLabValues;
+  assert.deepEqual(
+    rows.map((r) => [r.parameterName, r.value]),
+    [
+      ['Novel marker ZX-47', '<0.04'],
+      ['Rare antibody Q', 'Detected'],
+    ],
+  );
+});
+check(
+  'Text fallback keeps unseen names, qualifiers, and decimal notation',
+  () => {
+    const rows = new LabValueExtractor().extract(
+      [
+        'Novel marker ZX-47: <0.04 ng/mL',
+        '| Rare antibody Q | 1,2 | AU/mL |',
+        'Unknown enzyme Z\t1,200\tU/L',
+      ].join('\n'),
+    );
+    assert.deepEqual(
+      rows.map((r) => [r.parameterName, r.value, r.unit]),
+      [
+        ['Rare antibody Q', '1,2', 'AU/mL'],
+        ['Unknown enzyme Z', '1,200', 'U/L'],
+        ['Novel marker ZX-47', '<0.04', 'ng/mL'],
+      ],
+    );
+  },
+);
+check('Single unknown assay is recognized from report structure', () => {
+  const classify = ReportsService.prototype as unknown as {
+    isLikelyLabReport: (
+      transcript: string | null,
+      rows: Array<{ parameterName: string; value: string }>,
+    ) => boolean;
+  };
+  const rows = [{ parameterName: 'Novel marker ZX-47', value: '<0.04' }];
+  assert.equal(
+    classify.isLikelyLabReport('Test Name | Result | Unit', rows),
+    true,
+  );
+  assert.equal(classify.isLikelyLabReport('Invoice total 100', rows), false);
+});
 check('Qualitative results ending in l are not truncated as Low flags', () => {
   const rows = parser.parse(
     table([
