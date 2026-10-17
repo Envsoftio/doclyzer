@@ -749,7 +749,7 @@ export class ReportsService {
     // First get report IDs for this profile (profile ownership already validated above)
     const reports = await this.reportRepo.find({
       where: { profileId, userId, deletedAt: IsNull() },
-      select: ['id'],
+      select: ['id', 'structuredReport'],
     });
 
     if (reports.length === 0) {
@@ -762,7 +762,37 @@ export class ReportsService {
       .createQueryBuilder('lv')
       .where('lv.report_id IN (:...reportIds)', { reportIds });
     const labValues = await qb.getMany();
-    return buildLabTrends(labValues, parameterName);
+    const rangesByReport = new Map<string, Map<string, string | null>>();
+    for (const report of reports) {
+      const candidates = new Map<string, Array<string | null>>();
+      for (const section of this.getStoredStructuredReport(report)?.sections ?? []) {
+        for (const test of section.tests) {
+          const key = this.labRowKey(test.parameterName, test.value, test.unit ?? null);
+          if (!key) continue;
+          const ranges = candidates.get(key) ?? [];
+          ranges.push(test.referenceRange?.trim() || null);
+          candidates.set(key, ranges);
+        }
+      }
+      rangesByReport.set(report.id, new Map(
+        [...candidates].map(([key, ranges]) => [key, ranges.length === 1 ? ranges[0] : null]),
+      ));
+    }
+    return buildLabTrends(labValues.map((row) => {
+      const key = this.labRowKey(row.parameterName, row.value, row.unit ?? null);
+      const sourceRange = key ? rangesByReport.get(row.reportId)?.get(key) : null;
+      return {
+        id: row.id,
+        reportId: row.reportId,
+        parameterName: row.parameterName,
+        value: row.value,
+        unit: row.unit,
+        sampleDate: row.sampleDate,
+        referenceRange: row.reviewVersion > 0
+          ? row.referenceRange
+          : row.referenceRange ?? sourceRange ?? null,
+      };
+    }), parameterName);
   }
 
   async retryParse(

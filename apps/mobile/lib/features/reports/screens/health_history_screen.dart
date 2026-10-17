@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
 
 import '../reports_repository.dart';
+import '../../profiles/profiles_repository.dart';
 import '../../../shared/ai_disclaimer_note.dart';
 import 'trend_chart_screen.dart';
+import 'report_detail_screen.dart';
 
 enum _HealthHistoryState { loading, loaded, error }
 
@@ -12,10 +14,12 @@ class HealthHistoryScreen extends StatefulWidget {
     super.key,
     required this.profileId,
     required this.reportsRepository,
+    required this.profilesRepository,
   });
 
   final String profileId;
   final ReportsRepository reportsRepository;
+  final ProfilesRepository profilesRepository;
 
   @override
   State<HealthHistoryScreen> createState() => _HealthHistoryScreenState();
@@ -67,6 +71,21 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
           profileId: widget.profileId,
           parameterName: param.parameterName,
           unit: param.unit ?? '',
+          onBack: () => Navigator.of(ctx).pop(),
+          onOpenReport: (reportId) => _openSourceReport(reportId),
+        ),
+      ),
+    );
+  }
+
+  void _openSourceReport(String reportId) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (ctx) => ReportDetailScreen(
+          reportsRepository: widget.reportsRepository,
+          profilesRepository: widget.profilesRepository,
+          reportId: reportId,
+          profileId: widget.profileId,
           onBack: () => Navigator.of(ctx).pop(),
         ),
       ),

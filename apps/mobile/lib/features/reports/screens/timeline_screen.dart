@@ -181,6 +181,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 builder: (_) => HealthHistoryScreen(
                   profileId: widget.profileId,
                   reportsRepository: widget.reportsRepository,
+                  profilesRepository: widget.profilesRepository,
                 ),
               ),
             ),

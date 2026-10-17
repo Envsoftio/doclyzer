@@ -15,6 +15,7 @@ class TrendChartScreen extends StatefulWidget {
     required this.profileId,
     required this.parameterName,
     this.unit,
+    this.onOpenReport,
     required this.onBack,
   });
 
@@ -24,6 +25,7 @@ class TrendChartScreen extends StatefulWidget {
 
   /// Empty string explicitly selects results whose unit is unknown.
   final String? unit;
+  final ValueChanged<String>? onOpenReport;
   final VoidCallback onBack;
 
   @override
@@ -119,7 +121,7 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
     }
 
     final param = _parameter;
-    if (param == null || param.dataPoints.isEmpty) {
+    if (param == null) {
       return Center(
         key: const Key('trend-chart-empty'),
         child: Column(
@@ -131,9 +133,7 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              param != null && param.unplottedCount > 0
-                  ? '${param.unplottedCount} saved result${param.unplottedCount == 1 ? '' : 's'} cannot be plotted because the collection date or exact numeric value is unavailable. Open the source report to review them.'
-                  : 'No numeric saved results are available for this test yet.',
+              'No saved results are available for this test yet.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -148,8 +148,17 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
         param.dataPoints.where((point) => point.value.isFinite).toList()
           ..sort((a, b) => a.date.compareTo(b.date));
     if (points.isEmpty) {
-      return const Center(
-        child: Text('No numeric results are available to plot.'),
+      return SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'No exact numeric results with a collection date can be plotted.',
+            ),
+            const SizedBox(height: 16),
+            _buildHistory(param, points),
+          ],
+        ),
       );
     }
     return _buildChart(param, points);
@@ -203,6 +212,13 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
                 Text(
                   AppDateFormat.dateWithRelative(latest.date, hasTime: false),
                   style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colors.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Lab reference range: ${latest.referenceRange ?? 'Unknown'}',
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.onPrimaryContainer,
                   ),
                 ),
@@ -369,7 +385,7 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
                                             final point =
                                                 points[spot.spotIndex];
                                             return LineTooltipItem(
-                                              '${AppDateFormat.date(point.date)}\n${_formatNumber(point.value)}${unit == null ? '' : ' $unit'}',
+                                              '${AppDateFormat.date(point.date)}\n${_formatNumber(point.value)}${unit == null ? '' : ' $unit'}\nLab range: ${point.referenceRange ?? 'Unknown'}',
                                               const TextStyle(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w600,
@@ -424,46 +440,80 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
             ),
           ],
           const SizedBox(height: 20),
-          Text('Recent readings', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          for (final point in points.reversed.take(5))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        AppDateFormat.dateWithRelative(
-                          point.date,
-                          hasTime: false,
-                        ),
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                    Flexible(
-                      child: Text(
-                        '${_formatNumber(point.value)}${unit == null ? '' : ' $unit'}',
-                        textAlign: TextAlign.end,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          _buildHistory(param, points),
         ],
       ),
+    );
+  }
+
+  Widget _buildHistory(TrendParameter param, List<TrendDataPoint> points) {
+    final observations = param.observations.isNotEmpty
+        ? param.observations
+        : points.reversed
+              .map(
+                (point) => TrendObservation(
+                  reportId: point.reportId ?? '',
+                  originalValue:
+                      point.originalValue ?? _formatNumber(point.value),
+                  date: point.date,
+                  value: point.value,
+                  referenceRange: point.referenceRange,
+                ),
+              )
+              .toList();
+    final unit = param.unit?.trim().isNotEmpty == true
+        ? ' ${param.unit!.trim()}'
+        : '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'All saved results',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        for (var index = 0; index < observations.length; index++)
+          Card(
+            key: Key('trend-observation-$index'),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${observations[index].originalValue}$unit',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    observations[index].date == null
+                        ? 'Collection date unknown'
+                        : 'Collected ${AppDateFormat.date(observations[index].date!)}',
+                  ),
+                  Text(
+                    'Lab reference range: ${observations[index].referenceRange ?? 'Unknown'}',
+                  ),
+                  if (observations[index].notPlottedReason != null)
+                    Text(switch (observations[index].notPlottedReason) {
+                      'collection_date_unknown' =>
+                        'Not plotted: collection date unknown',
+                      'non_numeric_value' =>
+                        'Not plotted: result is not an exact number',
+                      _ =>
+                        'Not plotted: collection date unknown and result is not an exact number',
+                    }),
+                  if (widget.onOpenReport != null &&
+                      observations[index].reportId.isNotEmpty)
+                    TextButton(
+                      key: Key('trend-source-report-$index'),
+                      onPressed: () =>
+                          widget.onOpenReport!(observations[index].reportId),
+                      child: const Text('Open source report'),
+                    ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

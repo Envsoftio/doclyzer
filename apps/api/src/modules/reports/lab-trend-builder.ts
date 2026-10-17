@@ -1,9 +1,22 @@
 export interface TrendObservationInput {
+  id?: string;
   reportId: string;
   parameterName: string;
   value: string;
   unit: string | null;
   sampleDate: string | null;
+  referenceRange?: string | null;
+}
+
+export interface TrendObservation {
+  id?: string;
+  reportId: string;
+  originalValue: string;
+  date: string | null;
+  dateProvenance: 'collection' | 'unknown';
+  value: number | null;
+  referenceRange: string | null;
+  notPlottedReason: 'collection_date_unknown' | 'non_numeric_value' | 'collection_date_and_numeric_value_unknown' | null;
 }
 
 export interface TrendDataPoint {
@@ -12,6 +25,7 @@ export interface TrendDataPoint {
   reportId: string;
   originalValue: string;
   dateProvenance: 'collection';
+  referenceRange: string | null;
 }
 
 export interface TrendParameter {
@@ -19,6 +33,7 @@ export interface TrendParameter {
   testId: string;
   unit?: string;
   dataPoints: TrendDataPoint[];
+  observations: TrendObservation[];
   unplottedCount: number;
 }
 
@@ -75,6 +90,7 @@ export function buildLabTrends(
         testId: identity.id,
         ...(unit ? { unit } : {}),
         dataPoints: [],
+        observations: [],
         unplottedCount: 0,
       };
       grouped.set(key, series);
@@ -82,6 +98,21 @@ export function buildLabTrends(
 
     const value = parseExactNumber(observation.value);
     const date = validCollectionDate(observation.sampleDate);
+    const referenceRange = observation.referenceRange?.trim() || null;
+    const notPlottedReason = date === null && value === null
+      ? 'collection_date_and_numeric_value_unknown'
+      : date === null ? 'collection_date_unknown'
+      : value === null ? 'non_numeric_value' : null;
+    series.observations.push({
+      ...(observation.id ? { id: observation.id } : {}),
+      reportId: observation.reportId,
+      originalValue: observation.value,
+      date,
+      dateProvenance: date === null ? 'unknown' : 'collection',
+      value,
+      referenceRange,
+      notPlottedReason,
+    });
     if (value === null || date === null) {
       series.unplottedCount++;
       continue;
@@ -92,6 +123,7 @@ export function buildLabTrends(
       reportId: observation.reportId,
       originalValue: observation.value,
       dateProvenance: 'collection',
+      referenceRange,
     });
   }
 
@@ -99,6 +131,11 @@ export function buildLabTrends(
   for (const series of parameters) {
     series.dataPoints.sort(
       (a, b) => a.date.localeCompare(b.date) || a.reportId.localeCompare(b.reportId),
+    );
+    series.observations.sort((a, b) =>
+      (b.date ?? '').localeCompare(a.date ?? '') ||
+      a.reportId.localeCompare(b.reportId) ||
+      (a.id ?? '').localeCompare(b.id ?? ''),
     );
   }
   parameters.sort(

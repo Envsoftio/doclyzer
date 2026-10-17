@@ -479,12 +479,29 @@ class ApiReportsRepository implements ReportsRepository {
           value: (dpm['value'] as num).toDouble(),
           reportId: dpm['reportId'] as String?,
           originalValue: dpm['originalValue'] as String?,
+          referenceRange: dpm['referenceRange'] as String?,
+        );
+      }).toList();
+      final observations = (pm['observations'] as List<dynamic>? ?? []).map((
+        item,
+      ) {
+        final row = item as Map<String, dynamic>;
+        final date = row['date'] as String?;
+        return TrendObservation(
+          id: row['id'] as String?,
+          reportId: row['reportId'] as String,
+          originalValue: row['originalValue'] as String,
+          date: date == null ? null : DateTime.tryParse(date),
+          value: (row['value'] as num?)?.toDouble(),
+          referenceRange: row['referenceRange'] as String?,
+          notPlottedReason: row['notPlottedReason'] as String?,
         );
       }).toList();
       return TrendParameter(
         parameterName: pm['parameterName'] as String,
         unit: pm['unit'] as String?,
         dataPoints: dataPoints,
+        observations: observations,
         unplottedCount: (pm['unplottedCount'] as num?)?.toInt() ?? 0,
       );
     }).toList();

@@ -44,6 +44,75 @@ class _MixedUnitTrends extends Fake implements ReportsRepository {
 }
 
 void main() {
+  testWidgets('unplottable result remains visible without a chart', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TrendChartScreen(
+          reportsRepository: _ObservationTrends(const []),
+          profileId: 'profile',
+          parameterName: 'Hb',
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Collection date unknown'), findsOneWidget);
+    expect(find.text('<5 g/dL'), findsOneWidget);
+    expect(find.byType(LineChart), findsNothing);
+  });
+
+  testWidgets(
+    'history includes all results, ranges, unknown dates, and source links',
+    (tester) async {
+      String? openedReport;
+      final points = [
+        for (var index = 0; index < 6; index++)
+          TrendDataPoint(
+            date: DateTime(2026, 1, index + 1),
+            value: 10 + index.toDouble(),
+            reportId: 'r$index',
+            referenceRange: index == 0 ? '12-16' : '11-15',
+          ),
+      ];
+      final reports = _ObservationTrends(points);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: TrendChartScreen(
+            reportsRepository: reports,
+            profileId: 'profile',
+            parameterName: 'Hb',
+            onBack: () {},
+            onOpenReport: (id) => openedReport = id,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('trend-observation-6'), skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Collection date unknown', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Lab reference range: 12-16', skipOffstage: false),
+        findsWidgets,
+      );
+      expect(
+        find.text('Lab reference range: Unknown', skipOffstage: false),
+        findsOneWidget,
+      );
+      await tester.ensureVisible(
+        find.byKey(const Key('trend-source-report-6')),
+      );
+      await tester.tap(find.byKey(const Key('trend-source-report-6')));
+      expect(openedReport, 'unknown-date-report');
+    },
+  );
+
   testWidgets('opening a result selects its unit series', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -147,4 +216,39 @@ void main() {
     expect(find.text('10 g/dL'), findsWidgets);
     expect(find.byKey(const Key('trend-chart-content')), findsNothing);
   });
+}
+
+class _ObservationTrends extends Fake implements ReportsRepository {
+  _ObservationTrends(this.points);
+  final List<TrendDataPoint> points;
+
+  @override
+  Future<LabTrendsResult> getLabTrends(
+    String profileId, {
+    String? parameterName,
+  }) async => LabTrendsResult(
+    parameters: [
+      TrendParameter(
+        parameterName: 'Hb',
+        unit: 'g/dL',
+        dataPoints: points,
+        unplottedCount: 1,
+        observations: [
+          for (var index = 0; index < points.length; index++)
+            TrendObservation(
+              reportId: 'r$index',
+              originalValue: '${10 + index}',
+              date: points[index].date,
+              value: points[index].value,
+              referenceRange: points[index].referenceRange,
+            ),
+          const TrendObservation(
+            reportId: 'unknown-date-report',
+            originalValue: '<5',
+            notPlottedReason: 'collection_date_unknown',
+          ),
+        ],
+      ),
+    ],
+  );
 }

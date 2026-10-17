@@ -175,12 +175,35 @@ class TrendDataPoint {
     required this.value,
     this.reportId,
     this.originalValue,
+    this.referenceRange,
   });
 
   final DateTime date;
   final double value;
   final String? reportId;
   final String? originalValue;
+  final String? referenceRange;
+}
+
+/// Every saved observation, including values that cannot be plotted.
+class TrendObservation {
+  const TrendObservation({
+    this.id,
+    required this.reportId,
+    required this.originalValue,
+    this.date,
+    this.value,
+    this.referenceRange,
+    this.notPlottedReason,
+  });
+
+  final String? id;
+  final String reportId;
+  final String originalValue;
+  final DateTime? date;
+  final double? value;
+  final String? referenceRange;
+  final String? notPlottedReason;
 }
 
 /// Trend data for a single parameter across time.
@@ -189,12 +212,14 @@ class TrendParameter {
     required this.parameterName,
     this.unit,
     required this.dataPoints,
+    this.observations = const [],
     this.unplottedCount = 0,
   });
 
   final String parameterName;
   final String? unit;
   final List<TrendDataPoint> dataPoints;
+  final List<TrendObservation> observations;
   final int unplottedCount;
 }
 

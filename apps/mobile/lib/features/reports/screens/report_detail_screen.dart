@@ -91,6 +91,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           parameterName: parameterName,
           unit: unit ?? '',
           onBack: () => Navigator.of(ctx).pop(),
+          onOpenReport: (reportId) => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (sourceCtx) => ReportDetailScreen(
+                reportsRepository: widget.reportsRepository,
+                profilesRepository: widget.profilesRepository,
+                reportId: reportId,
+                profileId: widget.profileId,
+                onBack: () => Navigator.of(sourceCtx).pop(),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -559,6 +570,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       builder: (_) => HealthHistoryScreen(
                         profileId: widget.profileId,
                         reportsRepository: widget.reportsRepository,
+                        profilesRepository: widget.profilesRepository,
                       ),
                     ),
                   ),
