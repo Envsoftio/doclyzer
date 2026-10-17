@@ -164,10 +164,17 @@ class StructuredReport {
 
 /// A single trend data point (date + numeric value).
 class TrendDataPoint {
-  const TrendDataPoint({required this.date, required this.value});
+  const TrendDataPoint({
+    required this.date,
+    required this.value,
+    this.reportId,
+    this.originalValue,
+  });
 
   final DateTime date;
   final double value;
+  final String? reportId;
+  final String? originalValue;
 }
 
 /// Trend data for a single parameter across time.
@@ -176,11 +183,13 @@ class TrendParameter {
     required this.parameterName,
     this.unit,
     required this.dataPoints,
+    this.unplottedCount = 0,
   });
 
   final String parameterName;
   final String? unit;
   final List<TrendDataPoint> dataPoints;
+  final int unplottedCount;
 }
 
 /// Result from GET /reports/lab-trends.

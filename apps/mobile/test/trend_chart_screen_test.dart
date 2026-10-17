@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:mobile/features/reports/reports_repository.dart';
 import 'package:mobile/features/reports/screens/trend_chart_screen.dart';
 
@@ -21,7 +22,74 @@ class _TrendReports extends Fake implements ReportsRepository {
   }
 }
 
+class _MixedUnitTrends extends Fake implements ReportsRepository {
+  @override
+  Future<LabTrendsResult> getLabTrends(
+    String profileId, {
+    String? parameterName,
+  }) async => LabTrendsResult(
+    parameters: [
+      TrendParameter(
+        parameterName: 'Hemoglobin',
+        unit: 'g/dL',
+        dataPoints: [TrendDataPoint(date: DateTime(2026, 1, 1), value: 12)],
+      ),
+      TrendParameter(
+        parameterName: 'Hemoglobin',
+        unit: 'g/L',
+        dataPoints: [TrendDataPoint(date: DateTime(2026, 1, 1), value: 120)],
+      ),
+    ],
+  );
+}
+
 void main() {
+  testWidgets('opening a result selects its unit series', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TrendChartScreen(
+          reportsRepository: _MixedUnitTrends(),
+          profileId: 'profile',
+          parameterName: 'Hb',
+          unit: 'g/L',
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('120 g/L'), findsWidgets);
+    expect(find.text('12 g/dL'), findsNothing);
+  });
+
+  testWidgets('chart positions follow collection dates, not list indexes', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TrendChartScreen(
+          reportsRepository: _TrendReports([
+            TrendDataPoint(date: DateTime(2026, 1, 1), value: 10),
+            TrendDataPoint(date: DateTime(2026, 1, 2), value: 11),
+            TrendDataPoint(date: DateTime(2026, 2, 1), value: 12),
+          ]),
+          profileId: 'profile',
+          parameterName: 'Hb',
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final spots = tester
+        .widget<LineChart>(find.byType(LineChart))
+        .data
+        .lineBarsData
+        .single
+        .spots;
+    expect(spots[1].x - spots[0].x, 1);
+    expect(spots[2].x - spots[1].x, 30);
+  });
+
   testWidgets('dates and small Y values remain readable on a narrow graph', (
     tester,
   ) async {

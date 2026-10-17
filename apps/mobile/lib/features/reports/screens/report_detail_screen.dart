@@ -81,13 +81,14 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     }
   }
 
-  void _openTrendChart(String parameterName) {
+  void _openTrendChart(String parameterName, String? unit) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (ctx) => TrendChartScreen(
           reportsRepository: widget.reportsRepository,
           profileId: widget.profileId,
           parameterName: parameterName,
+          unit: unit ?? '',
           onBack: () => Navigator.of(ctx).pop(),
         ),
       ),
@@ -103,7 +104,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             widget.reportId,
             result,
           ),
-          onViewTrend: () => _openTrendChart(result.parameterName),
+          onViewTrend: () => _openTrendChart(result.parameterName, result.unit),
           onViewOriginal: _openPdf,
         ),
       ),

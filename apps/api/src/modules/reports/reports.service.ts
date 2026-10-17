@@ -22,6 +22,7 @@ import { OpenDataLoaderClient } from './opendataloader.client';
 import { SuryaOcrClient } from './surya-ocr.client';
 import { DoclingOcrClient } from './docling-ocr.client';
 import { ImageToPdfService } from './image-to-pdf.service';
+import { buildLabTrends, type TrendParameter } from './lab-trend-builder';
 import {
   OpenDataLoaderJsonParser,
   type OpenDataLoaderParsedWithDiagnosticsOutput,
@@ -147,17 +148,6 @@ interface ParsedBufferResult {
   status: ReportStatus;
   transcript: string | null;
   opendataloaderJson?: unknown;
-}
-
-export interface TrendDataPoint {
-  date: string;
-  value: number;
-}
-
-export interface TrendParameter {
-  parameterName: string;
-  unit?: string;
-  dataPoints: TrendDataPoint[];
 }
 
 export interface LabTrendsResult {
@@ -633,12 +623,7 @@ export class ReportsService {
     return this.listReportsByProfile(userId, resolved);
   }
 
-  /**
-   * Aggregate lab trend data for a profile.
-   * Only numeric values (parseFloat, exclude NaN) are included.
-   * Date = sampleDate when present, else report createdAt (YYYY-MM-DD).
-   * Note: values like ">10" parse as NaN and are excluded.
-   */
+  /** Build chartable series from confirmed collection dates and exact numeric values. */
   async getLabTrends(
     userId: string,
     profileId: string,
@@ -650,7 +635,7 @@ export class ReportsService {
     // First get report IDs for this profile (profile ownership already validated above)
     const reports = await this.reportRepo.find({
       where: { profileId, userId, deletedAt: IsNull() },
-      select: ['id', 'createdAt'],
+      select: ['id'],
     });
 
     if (reports.length === 0) {
@@ -658,72 +643,12 @@ export class ReportsService {
     }
 
     const reportIds = reports.map((r) => r.id);
-    const reportCreatedAtMap = new Map<string, Date>(
-      reports.map((r) => [r.id, r.createdAt]),
-    );
-
     // Build query for lab values belonging to these reports
     const qb = this.reportLabValueRepo
       .createQueryBuilder('lv')
       .where('lv.report_id IN (:...reportIds)', { reportIds });
-
-    if (parameterName) {
-      qb.andWhere('lv.parameter_name = :parameterName', { parameterName });
-    }
-
-    qb.orderBy('lv.sample_date', 'ASC', 'NULLS LAST');
-
     const labValues = await qb.getMany();
-
-    // Attach report createdAt for date fallback (not loaded via relation)
-    const labValuesWithCreatedAt = labValues.map((lv) => ({
-      ...lv,
-      reportCreatedAt: reportCreatedAtMap.get(lv.reportId) ?? new Date(),
-    }));
-
-    // Group by parameterName
-    const grouped = new Map<
-      string,
-      { unit: string | null; dataPoints: TrendDataPoint[] }
-    >();
-
-    for (const lv of labValuesWithCreatedAt) {
-      const numericValue = parseFloat(lv.value);
-      if (isNaN(numericValue)) continue;
-
-      // Date: sampleDate when present, else report createdAt (YYYY-MM-DD)
-      const date = lv.sampleDate
-        ? lv.sampleDate
-        : lv.reportCreatedAt.toISOString().slice(0, 10);
-
-      if (!grouped.has(lv.parameterName)) {
-        grouped.set(lv.parameterName, {
-          unit: lv.unit ?? null,
-          dataPoints: [],
-        });
-      }
-      const entry = grouped.get(lv.parameterName)!;
-      // Use first non-null unit found
-      if (entry.unit === null && lv.unit) {
-        entry.unit = lv.unit;
-      }
-      entry.dataPoints.push({ date, value: numericValue });
-    }
-
-    const parameters: TrendParameter[] = [];
-    for (const [name, data] of grouped.entries()) {
-      if (data.dataPoints.length === 0) continue;
-      // Sort data points chronologically
-      data.dataPoints.sort((a, b) => a.date.localeCompare(b.date));
-      const param: TrendParameter = {
-        parameterName: name,
-        dataPoints: data.dataPoints,
-      };
-      if (data.unit) param.unit = data.unit;
-      parameters.push(param);
-    }
-
-    return { parameters };
+    return buildLabTrends(labValues, parameterName);
   }
 
   async retryParse(

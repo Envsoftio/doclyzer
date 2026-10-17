@@ -14,12 +14,16 @@ class TrendChartScreen extends StatefulWidget {
     required this.reportsRepository,
     required this.profileId,
     required this.parameterName,
+    this.unit,
     required this.onBack,
   });
 
   final ReportsRepository reportsRepository;
   final String profileId;
   final String parameterName;
+
+  /// Empty string explicitly selects results whose unit is unknown.
+  final String? unit;
   final VoidCallback onBack;
 
   @override
@@ -47,9 +51,15 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
         widget.profileId,
         parameterName: widget.parameterName,
       );
-      final param = result.parameters
-          .where((p) => p.parameterName == widget.parameterName)
-          .firstOrNull;
+      final param = widget.unit == null
+          ? result.parameters.firstOrNull
+          : result.parameters
+                .where(
+                  (p) =>
+                      (p.unit ?? '').toLowerCase() ==
+                      widget.unit!.trim().toLowerCase(),
+                )
+                .firstOrNull;
       if (mounted) {
         setState(() {
           _parameter = param;
@@ -121,7 +131,9 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No numeric saved results are available for this test yet.',
+              param != null && param.unplottedCount > 0
+                  ? '${param.unplottedCount} saved result${param.unplottedCount == 1 ? '' : 's'} cannot be plotted because the collection date or exact numeric value is unavailable. Open the source report to review them.'
+                  : 'No numeric saved results are available for this test yet.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -150,9 +162,12 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
     final unit = param.unit?.trim().isNotEmpty == true
         ? param.unit!.trim()
         : null;
-    final spots = points.asMap().entries.map((e) {
-      return FlSpot(e.key.toDouble(), e.value.value);
-    }).toList();
+    final firstDay = _trendDay(points.first.date);
+    final lastDay = _trendDay(points.last.date);
+    final span = math.max(1.0, lastDay - firstDay);
+    final spots = points
+        .map((point) => FlSpot(_trendDay(point.date), point.value))
+        .toList();
     final scale = _ChartScale.fromPoints(points);
 
     return SingleChildScrollView(
@@ -209,11 +224,21 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
           Text(
             points.length == 1
                 ? 'One saved result. Add another report to see a trend.'
-                : '${points.length} saved results · Swipe the graph to see more dates. Tap a point for its value.',
+                : '${points.length} saved results · Dates are spaced by elapsed time. Tap a point for its value.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: colors.onSurfaceVariant,
             ),
           ),
+          if (param.unplottedCount > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              '${param.unplottedCount} result${param.unplottedCount == 1 ? '' : 's'} not plotted because the collection date or exact numeric value is unavailable.',
+              key: const Key('trend-unplotted-note'),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          ],
           if (points.length > 1) ...[
             const SizedBox(height: 12),
             Container(
@@ -231,146 +256,166 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: SizedBox(
-                      key: const Key('trend-chart-content'),
                       width: chartWidth,
-                      height: 300,
-                      child: Semantics(
-                        label:
-                            '${widget.parameterName} trend chart with ${points.length} results',
-                        child: LineChart(
-                          LineChartData(
-                            minX: -0.18,
-                            maxX: points.length - 0.82,
-                            minY: scale.min,
-                            maxY: scale.max,
-                            gridData: FlGridData(
-                              show: true,
-                              drawVerticalLine: false,
-                              horizontalInterval: scale.interval,
-                              getDrawingHorizontalLine: (_) => FlLine(
-                                color: colors.outlineVariant.withValues(
-                                  alpha: 0.7,
-                                ),
-                                strokeWidth: 1,
-                                dashArray: [4, 4],
-                              ),
-                            ),
-                            titlesData: FlTitlesData(
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  interval: scale.interval,
-                                  reservedSize: scale.labelWidth,
-                                  getTitlesWidget: (value, meta) =>
-                                      SideTitleWidget(
-                                        meta: meta,
-                                        space: 5,
-                                        child: Text(
-                                          scale.label(value),
-                                          style: theme.textTheme.labelSmall
-                                              ?.copyWith(
-                                                color: colors.onSurfaceVariant,
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            key: const Key('trend-chart-content'),
+                            width: chartWidth,
+                            height: 260,
+                            child: Semantics(
+                              label:
+                                  '${widget.parameterName} trend chart with ${points.length} results',
+                              child: LineChart(
+                                LineChartData(
+                                  minX: firstDay - span * 0.025,
+                                  maxX: lastDay + span * 0.025,
+                                  minY: scale.min,
+                                  maxY: scale.max,
+                                  gridData: FlGridData(
+                                    show: true,
+                                    drawVerticalLine: false,
+                                    horizontalInterval: scale.interval,
+                                    getDrawingHorizontalLine: (_) => FlLine(
+                                      color: colors.outlineVariant.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                      strokeWidth: 1,
+                                      dashArray: [4, 4],
+                                    ),
+                                  ),
+                                  titlesData: FlTitlesData(
+                                    leftTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        interval: scale.interval,
+                                        reservedSize: scale.labelWidth,
+                                        getTitlesWidget: (value, meta) =>
+                                            SideTitleWidget(
+                                              meta: meta,
+                                              space: 5,
+                                              child: Text(
+                                                scale.label(value),
+                                                style: theme
+                                                    .textTheme
+                                                    .labelSmall
+                                                    ?.copyWith(
+                                                      color: colors
+                                                          .onSurfaceVariant,
+                                                    ),
                                               ),
+                                            ),
+                                      ),
+                                    ),
+                                    bottomTitles: const AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                    rightTitles: const AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                    topTitles: const AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                  ),
+                                  borderData: FlBorderData(
+                                    show: true,
+                                    border: Border(
+                                      left: BorderSide(
+                                        color: colors.outlineVariant,
+                                      ),
+                                      bottom: BorderSide(
+                                        color: colors.outlineVariant,
+                                      ),
+                                    ),
+                                  ),
+                                  lineBarsData: [
+                                    LineChartBarData(
+                                      spots: spots,
+                                      isCurved: false,
+                                      color: colors.primary,
+                                      barWidth: 3,
+                                      belowBarData: BarAreaData(
+                                        show: true,
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            colors.primary.withValues(
+                                              alpha: 0.18,
+                                            ),
+                                            colors.primary.withValues(
+                                              alpha: 0.01,
+                                            ),
+                                          ],
                                         ),
                                       ),
+                                      dotData: FlDotData(
+                                        show: true,
+                                        getDotPainter: (_, _, _, _) =>
+                                            FlDotCirclePainter(
+                                              radius: 4,
+                                              color: colors.primary,
+                                              strokeWidth: 2,
+                                              strokeColor: colors.surface,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                  lineTouchData: LineTouchData(
+                                    touchTooltipData: LineTouchTooltipData(
+                                      fitInsideHorizontally: true,
+                                      getTooltipItems: (touchedSpots) =>
+                                          touchedSpots.map((spot) {
+                                            final point =
+                                                points[spot.spotIndex];
+                                            return LineTooltipItem(
+                                              '${AppDateFormat.date(point.date)}\n${_formatNumber(point.value)}${unit == null ? '' : ' $unit'}',
+                                              const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            );
+                                          }).toList(),
+                                    ),
+                                  ),
                                 ),
                               ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  interval: 1,
-                                  reservedSize: 42,
-                                  getTitlesWidget: (value, meta) {
-                                    final index = value.round();
-                                    if ((value - index).abs() > 0.001 ||
-                                        index < 0 ||
-                                        index >= points.length) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    return SideTitleWidget(
-                                      meta: meta,
-                                      space: 7,
-                                      fitInside:
-                                          SideTitleFitInsideData.fromTitleMeta(
-                                            meta,
-                                            distanceFromEdge: 2,
-                                          ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 34,
+                            width: chartWidth,
+                            child: Stack(
+                              children: [
+                                for (final index in _visibleDateIndexes(
+                                  points,
+                                  chartWidth,
+                                ))
+                                  Positioned(
+                                    left:
+                                        (((_trendDay(points[index].date) -
+                                                        firstDay) /
+                                                    span) *
+                                                (chartWidth - 72))
+                                            .clamp(0.0, chartWidth - 72),
+                                    child: SizedBox(
+                                      width: 72,
                                       child: Text(
                                         AppDateFormat.date(points[index].date),
                                         key: Key('trend-date-$index'),
+                                        textAlign: TextAlign.center,
                                         style: theme.textTheme.labelSmall
                                             ?.copyWith(
                                               color: colors.onSurfaceVariant,
                                               fontSize: 10,
                                             ),
                                       ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              topTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                            ),
-                            borderData: FlBorderData(
-                              show: true,
-                              border: Border(
-                                left: BorderSide(color: colors.outlineVariant),
-                                bottom: BorderSide(
-                                  color: colors.outlineVariant,
-                                ),
-                              ),
-                            ),
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: spots,
-                                isCurved: false,
-                                color: colors.primary,
-                                barWidth: 3,
-                                belowBarData: BarAreaData(
-                                  show: true,
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      colors.primary.withValues(alpha: 0.18),
-                                      colors.primary.withValues(alpha: 0.01),
-                                    ],
+                                    ),
                                   ),
-                                ),
-                                dotData: FlDotData(
-                                  show: true,
-                                  getDotPainter: (_, _, _, _) =>
-                                      FlDotCirclePainter(
-                                        radius: 4,
-                                        color: colors.primary,
-                                        strokeWidth: 2,
-                                        strokeColor: colors.surface,
-                                      ),
-                                ),
-                              ),
-                            ],
-                            lineTouchData: LineTouchData(
-                              touchTooltipData: LineTouchTooltipData(
-                                fitInsideHorizontally: true,
-                                getTooltipItems: (touchedSpots) =>
-                                    touchedSpots.map((spot) {
-                                      final point = points[spot.x.round()];
-                                      return LineTooltipItem(
-                                        '${AppDateFormat.date(point.date)}\n${_formatNumber(point.value)}${unit == null ? '' : ' $unit'}',
-                                        const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      );
-                                    }).toList(),
-                              ),
+                              ],
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   );
@@ -421,6 +466,27 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
       ),
     );
   }
+}
+
+double _trendDay(DateTime date) =>
+    DateTime.utc(date.year, date.month, date.day).millisecondsSinceEpoch /
+    Duration.millisecondsPerDay;
+
+List<int> _visibleDateIndexes(List<TrendDataPoint> points, double width) {
+  if (points.length <= 2) return List<int>.generate(points.length, (i) => i);
+  final first = _trendDay(points.first.date);
+  final span = math.max(1.0, _trendDay(points.last.date) - first);
+  final indexes = <int>[0];
+  var lastPosition = 0.0;
+  for (var i = 1; i < points.length - 1; i++) {
+    final position = (_trendDay(points[i].date) - first) / span * (width - 72);
+    if (position - lastPosition >= 92 && width - 72 - position >= 92) {
+      indexes.add(i);
+      lastPosition = position;
+    }
+  }
+  if (_trendDay(points.last.date) != first) indexes.add(points.length - 1);
+  return indexes;
 }
 
 String _formatNumber(double value) {

@@ -41,9 +41,8 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
       final result = await widget.reportsRepository.getLabTrends(
         widget.profileId,
       );
-      final allParams =
-          result.parameters.where((p) => p.dataPoints.isNotEmpty).toList()
-            ..sort((a, b) => a.parameterName.compareTo(b.parameterName));
+      final allParams = result.parameters.toList()
+        ..sort((a, b) => a.parameterName.compareTo(b.parameterName));
       if (mounted) {
         setState(() {
           _params = allParams;
@@ -67,6 +66,7 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
           reportsRepository: widget.reportsRepository,
           profileId: widget.profileId,
           parameterName: param.parameterName,
+          unit: param.unit ?? '',
           onBack: () => Navigator.of(ctx).pop(),
         ),
       ),
@@ -146,10 +146,12 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final param = _params[index];
-        final latest = param.dataPoints.last;
-        final first = param.dataPoints.first;
+        final latest = param.dataPoints.isEmpty ? null : param.dataPoints.last;
+        final first = param.dataPoints.isEmpty ? null : param.dataPoints.first;
         return Card(
-          key: Key('health-history-param-${param.parameterName}'),
+          key: Key(
+            'health-history-param-${param.parameterName}-${param.unit ?? 'unknown'}',
+          ),
           margin: EdgeInsets.zero,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
@@ -175,20 +177,36 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      _InfoBadge(
-                        icon: Icons.monitor_heart_outlined,
-                        label:
-                            'Latest: ${latest.value}${param.unit != null ? ' ${param.unit}' : ''}',
-                      ),
-                      _InfoBadge(
-                        icon: Icons.event,
-                        label: 'Updated: ${_formatDate(latest.date)}',
-                      ),
+                      if (latest != null) ...[
+                        _InfoBadge(
+                          icon: Icons.monitor_heart_outlined,
+                          label:
+                              'Latest: ${latest.value}${param.unit != null ? ' ${param.unit}' : ''}',
+                        ),
+                        _InfoBadge(
+                          icon: Icons.event,
+                          label: 'Collected: ${_formatDate(latest.date)}',
+                        ),
+                      ] else
+                        const _InfoBadge(
+                          icon: Icons.info_outline,
+                          label: 'No chartable result yet',
+                        ),
+                      if (param.unit == null)
+                        const _InfoBadge(
+                          icon: Icons.straighten,
+                          label: 'Unit unavailable',
+                        ),
+                      if (param.unplottedCount > 0)
+                        _InfoBadge(
+                          icon: Icons.info_outline,
+                          label: '${param.unplottedCount} not plotted',
+                        ),
                       if (param.dataPoints.length > 1)
                         _InfoBadge(
                           icon: Icons.timeline,
                           label:
-                              '${param.dataPoints.length} points since ${_formatDate(first.date)}',
+                              '${param.dataPoints.length} points since ${_formatDate(first!.date)}',
                         ),
                     ],
                   ),
