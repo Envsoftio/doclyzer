@@ -9,6 +9,7 @@ import '../../sharing/screens/create_share_link_screen.dart';
 import '../../support/support_repository.dart';
 import '../reports_repository.dart';
 import 'health_history_screen.dart';
+import 'pdf_viewer_screen.dart';
 import 'recycle_bin_screen.dart';
 import 'report_detail_screen.dart';
 
@@ -47,6 +48,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
   List<Report> _reports = [];
   List<Profile> _profiles = [];
   String? _errorMessage;
+  String _query = '';
+  int _loadVersion = 0;
 
   @override
   void initState() {
@@ -61,6 +64,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
       setState(() {
         _state = _TimelineState.loading;
         _reports = [];
+        _profiles = [];
+        _query = '';
         _errorMessage = null;
       });
       _loadReports();
@@ -68,22 +73,24 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Future<void> _loadReports() async {
-    setState(() {
-      _state = _TimelineState.loading;
-      _errorMessage = null;
-    });
+    final version = ++_loadVersion;
+    final profileId = widget.profileId;
+    if (_state != _TimelineState.loaded) {
+      setState(() => _state = _TimelineState.loading);
+    }
     try {
       final profiles = await widget.profilesRepository.getProfiles();
-      final list = await widget.reportsRepository.listAllReports();
-      if (mounted) {
+      final list = await widget.reportsRepository.listReports(profileId);
+      if (mounted && version == _loadVersion && profileId == widget.profileId) {
         setState(() {
           _profiles = profiles;
           _reports = list;
           _state = _TimelineState.loaded;
+          _errorMessage = null;
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && version == _loadVersion && profileId == widget.profileId) {
         setState(() {
           _state = _TimelineState.error;
           _errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -106,6 +113,19 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
     if (!mounted) return;
     await _loadReports();
+  }
+
+  void _openOriginal(Report report) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (ctx) => PdfViewerScreen(
+          reportsRepository: widget.reportsRepository,
+          reportId: report.id,
+          fileName: report.originalFileName,
+          onBack: () => Navigator.of(ctx).pop(),
+        ),
+      ),
+    );
   }
 
   Future<void> _showReassignSheet(Report report) async {
@@ -281,85 +301,149 @@ class _TimelineScreenState extends State<TimelineScreen> {
         ),
       );
     }
-    return ListView.builder(
-      key: const Key('timeline-list'),
-      itemCount: _reports.length,
-      itemBuilder: (context, index) {
-        final report = _reports[index];
-        final statusColor = _statusColor(context, report.status);
-        return Card(
-          key: Key('timeline-report-${report.id}'),
-          margin: const EdgeInsets.only(bottom: 10),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => _openReport(report),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
+    final query = _query.trim().toLowerCase();
+    final visible = query.isEmpty
+        ? _reports
+        : _reports
+              .where(
+                (report) =>
+                    report.originalFileName.toLowerCase().contains(query) ||
+                    (report.collectionDate ?? '').toLowerCase().contains(query),
+              )
+              .toList();
+    final groups = <String, List<Report>>{};
+    for (final report in visible) {
+      groups.putIfAbsent(_collectionLabel(report), () => []).add(report);
+    }
+    final groupNames = groups.keys.toList()
+      ..sort((a, b) {
+        final aDate = DateTime.tryParse(groups[a]!.first.collectionDate ?? '');
+        final bDate = DateTime.tryParse(groups[b]!.first.collectionDate ?? '');
+        if (aDate != null && bDate != null) return bDate.compareTo(aDate);
+        if (aDate != null) return -1;
+        if (bDate != null) return 1;
+        return a.compareTo(b);
+      });
+    final entries = <Object>[
+      for (final name in groupNames) ...[name, ...groups[name]!],
+    ];
+    return Column(
+      children: [
+        TextField(
+          key: ValueKey('timeline-search-${widget.profileId}'),
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.search),
+            hintText: 'Search reports',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (value) => setState(() => _query = value),
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: visible.isEmpty
+              ? const Center(child: Text('No reports match your search.'))
+              : ListView.builder(
+                  key: PageStorageKey('timeline-list-${widget.profileId}'),
+                  itemCount: entries.length,
+                  itemBuilder: (context, index) {
+                    final entry = entries[index];
+                    if (entry is String) {
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 10, 4, 8),
                         child: Text(
-                          report.originalFileName,
+                          entry,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Chip(
-                        avatar: Icon(
-                          Icons.circle,
-                          size: 10,
-                          color: statusColor,
+                      );
+                    }
+                    final report = entry as Report;
+                    final statusColor = _statusColor(context, report.status);
+                    return Card(
+                      key: Key('timeline-report-${report.id}'),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => _openReport(report),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      report.originalFileName,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleSmall,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Chip(
+                                    avatar: Icon(
+                                      Icons.circle,
+                                      size: 10,
+                                      color: statusColor,
+                                    ),
+                                    label: Text(_statusLabel(report.status)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 6,
+                                children: [
+                                  _dateBadge(
+                                    context,
+                                    icon: Icons.person_outline,
+                                    label: 'Profile',
+                                    value: report.profileName ?? 'Unknown',
+                                  ),
+                                  _dateBadge(
+                                    context,
+                                    icon: Icons.event_note,
+                                    label: 'Collected',
+                                    value: _collectionLabel(report),
+                                  ),
+                                  _dateBadge(
+                                    context,
+                                    icon: Icons.cloud_upload_outlined,
+                                    label: 'Uploaded',
+                                    value: _formatDate(report.createdAt),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                alignment: WrapAlignment.end,
+                                spacing: 8,
+                                children: [
+                                  TextButton.icon(
+                                    onPressed: () => _openOriginal(report),
+                                    icon: const Icon(
+                                      Icons.description_outlined,
+                                    ),
+                                    label: const Text('Original'),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: () => _showReassignSheet(report),
+                                    icon: const Icon(Icons.swap_horiz),
+                                    label: const Text('Change profile'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                        label: Text(_statusLabel(report.status)),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 6,
-                    children: [
-                      _dateBadge(
-                        context,
-                        icon: Icons.person_outline,
-                        label: 'Profile',
-                        value: report.profileName ?? 'Unknown',
-                      ),
-                      _dateBadge(
-                        context,
-                        icon: Icons.event_note,
-                        label: 'Report date',
-                        value: _formatDate(report.createdAt),
-                      ),
-                      _dateBadge(
-                        context,
-                        icon: Icons.check_circle_outline,
-                        label: 'Parsed date',
-                        value: report.parsedAt != null
-                            ? _formatDate(report.parsedAt!)
-                            : '—',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: () => _showReassignSheet(report),
-                      icon: const Icon(Icons.swap_horiz),
-                      label: const Text('Change profile'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 
@@ -392,6 +476,16 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   String _formatDate(DateTime d) {
     return AppDateFormat.dateWithRelative(d);
+  }
+
+  String _collectionLabel(Report report) {
+    if (report.collectionDateStatus == 'multiple') {
+      return 'Multiple collection dates';
+    }
+    final date = report.collectionDate?.trim();
+    return date == null || date.isEmpty
+        ? 'Unknown collection date'
+        : AppDateFormat.fromRaw(date);
   }
 
   Color _statusColor(BuildContext context, String status) {

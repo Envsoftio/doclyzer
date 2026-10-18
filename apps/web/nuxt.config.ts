@@ -31,5 +31,7 @@ export default defineNuxtConfig({
   },
   routeRules: {
     '/admin/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/reports': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/reports/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
   },
 })

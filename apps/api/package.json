@@ -28,6 +28,7 @@
     "reports:insight-test": "ts-node scripts/report-result-insight-test.ts",
     "reports:trends-test": "ts-node scripts/lab-trend-builder-test.ts",
     "reports:correction-test": "ts-node scripts/report-correction-test.ts",
+    "reports:history-test": "ts-node scripts/report-collection-date-test.ts",
     "observations:refresh": "ts-node scripts/refresh-observation-rules.ts"
   },
   "dependencies": {

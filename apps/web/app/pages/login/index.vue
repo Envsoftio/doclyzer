@@ -19,13 +19,7 @@ const form = reactive({
 
 const fieldErrors = reactive<FormErrors>({})
 const generalError = ref<string | null>(null)
-const successMessage = ref<string | null>(null)
 const isSubmitting = ref(false)
-const loginTokens = ref<{
-  accessToken: string
-  refreshToken: string
-  expiresIn: number
-} | null>(null)
 
 const canSubmit = computed(
   () =>
@@ -76,19 +70,14 @@ const applyApiError = (message: string, code?: string) => {
   }
 }
 
-const persistTokens = (tokens: { accessToken: string; refreshToken: string; expiresIn: number }) => {
+const persistTokens = (tokens: { accessToken: string }) => {
   if (!process.client) return
-  try {
-    window.localStorage.setItem('doclyzerAuthTokens', JSON.stringify(tokens))
-  } catch {
-    // best effort, proceed even if storage is unavailable
-  }
+  window.localStorage.removeItem('doclyzerAuthTokens')
+  window.sessionStorage.setItem('doclyzerConsumerAccessToken', tokens.accessToken)
 }
 
 const submitForm = async () => {
   resetErrors()
-  successMessage.value = null
-  loginTokens.value = null
   isSubmitting.value = true
 
   try {
@@ -109,10 +98,8 @@ const submitForm = async () => {
     })
 
     const data = response.data
-    loginTokens.value = data
     persistTokens(data)
-    successMessage.value = 'Logged in successfully. Tokens are stored in this browser session for API experimentation.'
-    router.push('/admin')
+    await router.push('/reports')
   } catch (error) {
     const { message, code } = extractFetchError(error)
     applyApiError(message, code)
@@ -129,14 +116,11 @@ const submitForm = async () => {
       <h1>Sign in to Doclyzer</h1>
       <p>
         Enter the email and password you used during registration. Tokens from this login are
-        kept in your browser for the current session so you can exercise API flows.
+        kept for this browser session so you can view your reports.
       </p>
     </section>
 
-    <div v-if="successMessage" class="alert success" role="status" aria-live="polite">
-      {{ successMessage }}
-    </div>
-    <div v-else-if="generalError" class="alert error" role="alert">
+    <div v-if="generalError" class="alert error" role="alert">
       {{ generalError }}
     </div>
 
@@ -178,19 +162,6 @@ const submitForm = async () => {
         <span v-else>Log in</span>
       </button>
     </form>
-
-    <div v-if="loginTokens" class="token-panel">
-      <h2>Tokens stored locally</h2>
-      <p class="helper-text">Access token expires in {{ loginTokens.expiresIn }} seconds.</p>
-      <label>
-        <span>Access token</span>
-        <textarea readonly rows="2">{{ loginTokens.accessToken }}</textarea>
-      </label>
-      <label>
-        <span>Refresh token</span>
-        <textarea readonly rows="2">{{ loginTokens.refreshToken }}</textarea>
-      </label>
-    </div>
 
     <p class="support-note">
       Need to create an account? <NuxtLink to="/register">Register</NuxtLink>.
@@ -240,12 +211,6 @@ const submitForm = async () => {
   border-radius: 12px;
   margin-bottom: 24px;
   font-size: 0.95rem;
-}
-
-.alert.success {
-  background: #ecfdf3;
-  border: 1px solid #22c55e;
-  color: #0f5a29;
 }
 
 .alert.error {
@@ -325,28 +290,6 @@ const submitForm = async () => {
 
 .primary:not(:disabled):hover {
   background: #4338ca;
-}
-
-.token-panel {
-  margin-top: 24px;
-  padding: 20px;
-  border-radius: 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.token-panel h2 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.token-panel textarea {
-  resize: vertical;
-  min-height: 68px;
-  font-family: 'SFMono-Regular', Menlo, 'Segoe UI', sans-serif;
 }
 
 .support-note {

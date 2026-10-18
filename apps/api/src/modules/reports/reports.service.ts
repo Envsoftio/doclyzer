@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createHash, randomUUID } from 'node:crypto';
-import { IsNull, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
+import { In, IsNull, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { redactSecrets } from '../../common/redact-secrets';
 import type { FileStorageService } from '../../common/storage/file-storage.interface';
@@ -38,6 +38,7 @@ import { LabValueExtractor } from './lab-value-extractor';
 import { LabDetailsExtractor } from './lab-details-extractor';
 import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
+import { summarizeReportCollectionDate } from './report-collection-date';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
 import { ReportLimitExceededException } from './exceptions/report-limit-exceeded.exception';
 import { ReportNotFoundException } from './exceptions/report-not-found.exception';
@@ -114,6 +115,8 @@ export interface ReportDto {
   sizeBytes: number;
   status: string;
   createdAt: string;
+  collectionDate?: string;
+  collectionDateStatus?: 'known' | 'unknown' | 'multiple';
   deletedAt?: string;
   purgeAfterAt?: string;
   summary?: string;
@@ -830,8 +833,12 @@ export class ReportsService {
       where: { profileId, userId, deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
     });
+    const datesByReport = await this.getCollectionDatesForReports(entities);
     return entities.map((e) =>
-      this.withProfileInfo(this.toDto(e), profileInfoById),
+      this.withProfileInfo(
+        this.toDto(e, [], false, false, datesByReport.get(e.id)),
+        profileInfoById,
+      ),
     );
   }
 
@@ -849,8 +856,12 @@ export class ReportsService {
         where: { userId, deletedAt: IsNull() },
         order: { createdAt: 'DESC' },
       });
+      const datesByReport = await this.getCollectionDatesForReports(entities);
       return entities.map((e) =>
-        this.withProfileInfo(this.toDto(e), profileInfoById),
+        this.withProfileInfo(
+          this.toDto(e, [], false, false, datesByReport.get(e.id)),
+          profileInfoById,
+        ),
       );
     }
 
@@ -1115,7 +1126,10 @@ export class ReportsService {
               collectionDateSource: lv.sampleDate ? 'extracted' : 'unknown',
               extractionSource: retryExtractionSource,
               referenceRange: lv.referenceRange ?? null,
-              identityEvidence: this.withLabIdentityEvidence(lv, retryStructuredReport),
+              identityEvidence: this.withLabIdentityEvidence(
+                lv,
+                retryStructuredReport,
+              ),
               ...normalizeObservation(
                 {
                   parameterName: lv.parameterName,
@@ -1522,7 +1536,9 @@ export class ReportsService {
           typeof value.isAbnormal === 'boolean'
             ? value.isAbnormal
             : inferredAbnormal,
-        ...(value.identityEvidence ? { identityEvidence: value.identityEvidence } : {}),
+        ...(value.identityEvidence
+          ? { identityEvidence: value.identityEvidence }
+          : {}),
       });
     }
     return out;
@@ -1662,7 +1678,8 @@ export class ReportsService {
       const unit = (row.unit ?? '').trim().toLowerCase();
       const value = this.normalizeComparableValue(row.value ?? '');
       if (!name || !value) continue;
-      const specimen = row.identityEvidence?.specimen?.trim().toLowerCase() ?? '';
+      const specimen =
+        row.identityEvidence?.specimen?.trim().toLowerCase() ?? '';
       const key = `${name}::${value}::${unit}::${specimen}`;
       const current = bestByKey.get(key);
       if (!current) {
@@ -1704,16 +1721,39 @@ export class ReportsService {
     for (const row of [...preferred, ...parsedValues, ...transcriptValues]) {
       const key = this.labRowKey(row.parameterName, row.value, row.unit);
       if (!key) continue;
-      const specimen = row.identityEvidence?.specimen?.trim().toLowerCase() ?? '';
-      const sameResult = merged.findIndex((existing) =>
-        this.labRowKey(existing.parameterName, existing.value, existing.unit) === key &&
-        (existing.identityEvidence?.specimen?.trim().toLowerCase() ?? '') === specimen);
+      const specimen =
+        row.identityEvidence?.specimen?.trim().toLowerCase() ?? '';
+      const sameResult = merged.findIndex(
+        (existing) =>
+          this.labRowKey(
+            existing.parameterName,
+            existing.value,
+            existing.unit,
+          ) === key &&
+          (existing.identityEvidence?.specimen?.trim().toLowerCase() ?? '') ===
+            specimen,
+      );
       if (sameResult >= 0) continue;
-      const unknownSpecimen = merged.findIndex((existing) =>
-        this.labRowKey(existing.parameterName, existing.value, existing.unit) === key &&
-        !existing.identityEvidence?.specimen?.trim());
-      if (!specimen && merged.some((existing) =>
-        this.labRowKey(existing.parameterName, existing.value, existing.unit) === key)) continue;
+      const unknownSpecimen = merged.findIndex(
+        (existing) =>
+          this.labRowKey(
+            existing.parameterName,
+            existing.value,
+            existing.unit,
+          ) === key && !existing.identityEvidence?.specimen?.trim(),
+      );
+      if (
+        !specimen &&
+        merged.some(
+          (existing) =>
+            this.labRowKey(
+              existing.parameterName,
+              existing.value,
+              existing.unit,
+            ) === key,
+        )
+      )
+        continue;
       if (specimen && unknownSpecimen >= 0) {
         merged[unknownSpecimen] = row;
         continue;
@@ -2081,9 +2121,31 @@ export class ReportsService {
       },
       order: { deletedAt: 'DESC', createdAt: 'DESC' },
     });
+    const datesByReport = await this.getCollectionDatesForReports(entities);
     return entities.map((e) =>
-      this.withProfileInfo(this.toDto(e), profileInfoById),
+      this.withProfileInfo(
+        this.toDto(e, [], false, false, datesByReport.get(e.id)),
+        profileInfoById,
+      ),
     );
+  }
+
+  private async getCollectionDatesForReports(
+    reports: ReportEntity[],
+  ): Promise<Map<string, string[]>> {
+    const datesByReport = new Map<string, string[]>();
+    if (reports.length === 0) return datesByReport;
+    const rows = await this.reportLabValueRepo.find({
+      where: { reportId: In(reports.map((report) => report.id)) },
+      select: ['reportId', 'sampleDate'],
+    });
+    for (const row of rows) {
+      if (!row.sampleDate) continue;
+      const dates = datesByReport.get(row.reportId) ?? [];
+      dates.push(row.sampleDate);
+      datesByReport.set(row.reportId, dates);
+    }
+    return datesByReport;
   }
 
   async restoreFromRecycleBin(
@@ -2136,10 +2198,16 @@ export class ReportsService {
     labValues: ReportLabValueEntity[] = [],
     includeTranscript = false,
     includeStructuredReport = false,
+    collectionDates?: string[],
   ): ReportDto {
     const structuredReport = includeStructuredReport
       ? this.getStoredStructuredReport(e)
       : undefined;
+    const collection = summarizeReportCollectionDate(
+      collectionDates ?? labValues.map((value) => value.sampleDate),
+      structuredReport?.patientDetails.sampleCollectionDate ??
+        this.getStoredStructuredReport(e)?.patientDetails.sampleCollectionDate,
+    );
     const rangeByKey = new Map<
       string,
       { referenceRange?: string; isAbnormal?: boolean }
@@ -2180,6 +2248,7 @@ export class ReportsService {
       sizeBytes: e.sizeBytes,
       status: e.status,
       createdAt: e.createdAt.toISOString(),
+      ...collection,
       ...(e.deletedAt ? { deletedAt: e.deletedAt.toISOString() } : {}),
       ...(e.purgeAfterAt ? { purgeAfterAt: e.purgeAfterAt.toISOString() } : {}),
       ...(e.summary != null && { summary: e.summary }),
@@ -2225,7 +2294,9 @@ export class ReportsService {
           ...(typeof isAbnormal === 'boolean' ? { isAbnormal } : {}),
           reviewVersion: lv.reviewVersion ?? 0,
           ...(lv.sourceSnapshot ? { sourceSnapshot: lv.sourceSnapshot } : {}),
-          ...(lv.identityEvidence ? { identityEvidence: lv.identityEvidence } : {}),
+          ...(lv.identityEvidence
+            ? { identityEvidence: lv.identityEvidence }
+            : {}),
         };
       }),
       ...(structuredReport &&
@@ -2294,7 +2365,9 @@ export class ReportsService {
         ...(lv.unit ? { unit: lv.unit } : {}),
         ...(lv.sampleDate ? { sampleDate: lv.sampleDate } : {}),
         ...(lv.referenceRange ? { referenceRange: lv.referenceRange } : {}),
-        ...(lv.identityEvidence ? { identityEvidence: lv.identityEvidence } : {}),
+        ...(lv.identityEvidence
+          ? { identityEvidence: lv.identityEvidence }
+          : {}),
         ...(typeof lv.isAbnormal === 'boolean'
           ? { isAbnormal: lv.isAbnormal }
           : {}),

@@ -140,6 +140,14 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 8),
+                Text(
+                  'Collected: ${report.collectionDateStatus == 'multiple'
+                      ? 'Multiple collection dates'
+                      : report.collectionDate == null || report.collectionDate!.trim().isEmpty
+                      ? 'Unknown'
+                      : AppDateFormat.fromRaw(report.collectionDate!)}',
+                ),
+                Text('Uploaded: ${_formatDate(report.createdAt)}'),
                 if (deleted != null)
                   Text('Deleted on: ${_formatDate(deleted)}'),
                 if (purgeAfter != null)

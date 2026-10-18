@@ -80,6 +80,8 @@ class Report {
     required this.sizeBytes,
     required this.status,
     required this.createdAt,
+    this.collectionDate,
+    this.collectionDateStatus,
     this.parsedAt,
     this.summary,
     this.parsedTranscript,
@@ -98,6 +100,10 @@ class Report {
   final int sizeBytes;
   final String status;
   final DateTime createdAt;
+
+  /// Date printed in the report, when extraction found one.
+  final String? collectionDate;
+  final String? collectionDateStatus;
   final DateTime? parsedAt;
   final String? summary;
   final String? parsedTranscript;

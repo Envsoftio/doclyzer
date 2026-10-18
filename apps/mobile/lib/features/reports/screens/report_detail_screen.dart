@@ -452,7 +452,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     ),
                     Chip(
                       avatar: const Icon(Icons.event, size: 16),
-                      label: Text(_formatDate(report.createdAt)),
+                      label: Text(
+                        'Collected: ${report.collectionDateStatus == 'multiple'
+                            ? 'Multiple collection dates'
+                            : report.collectionDate == null || report.collectionDate!.trim().isEmpty
+                            ? 'Unknown'
+                            : AppDateFormat.fromRaw(report.collectionDate!)}',
+                      ),
+                    ),
+                    Chip(
+                      avatar: const Icon(Icons.cloud_upload_outlined, size: 16),
+                      label: Text('Uploaded: ${_formatDate(report.createdAt)}'),
                     ),
                   ],
                 ),
@@ -590,7 +600,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   key: const Key('report-detail-view-pdf'),
                   onPressed: _openPdf,
                   icon: const Icon(Icons.picture_as_pdf),
-                  label: const Text('View PDF'),
+                  label: const Text('View original'),
                 ),
                 OutlinedButton.icon(
                   key: const Key('report-detail-view-attempts'),

@@ -315,6 +315,8 @@ class ApiReportsRepository implements ReportsRepository {
       sizeBytes: d['sizeBytes'] as int,
       status: d['status'] as String,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
+      collectionDate: d['collectionDate'] as String?,
+      collectionDateStatus: d['collectionDateStatus'] as String?,
       parsedAt: parsedAt != null ? DateTime.parse(parsedAt) : null,
       deletedAt: deletedAt != null ? DateTime.parse(deletedAt) : null,
       purgeAfterAt: purgeAfterAt != null ? DateTime.parse(purgeAfterAt) : null,
