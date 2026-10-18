@@ -29,6 +29,7 @@ interface ExtractionStats {
   parsedRows: number;
   aiCandidateRows: string[];
   mappedTables?: number;
+  unmappedTables?: number;
   ambiguousHeaders?: number;
 }
 
@@ -39,6 +40,7 @@ export interface OpenDataLoaderParsedOutput {
 
 export interface OpenDataLoaderParseDiagnostics {
   hasMappedLabTables: boolean;
+  hasUnmappedTables: boolean;
   hasAmbiguousHeaders: boolean;
   confidence: number;
   coverage: number;
@@ -93,6 +95,7 @@ export class OpenDataLoaderJsonParser {
             tableExtraction.stats.parsedRows +
             heuristicExtraction.stats.parsedRows,
           ambiguousHeaders: tableExtraction.stats.ambiguousHeaders,
+          unmappedTables: tableExtraction.stats.unmappedTables,
           aiCandidateRows: this.uniqueTrimmed([
             ...tableExtraction.stats.aiCandidateRows,
             ...heuristicExtraction.stats.aiCandidateRows,
@@ -392,6 +395,7 @@ export class OpenDataLoaderJsonParser {
         ? (table.rows as Record<string, unknown>[])
         : [];
       if (rows.length === 0) continue;
+      let tableMapped = false;
       let currentSection = 'Other Tests';
       let columns: Partial<
         Record<'name' | 'value' | 'unit' | 'range', number>
@@ -431,6 +435,7 @@ export class OpenDataLoaderJsonParser {
           }
         });
         if (detected.name !== undefined && detected.value !== undefined) {
+          tableMapped = true;
           ambiguousHeader ||= texts.some((text) =>
             /previous|prior|historical|\b20\d{2}\b/i.test(text),
           );
@@ -507,7 +512,13 @@ export class OpenDataLoaderJsonParser {
           /^(?:\d+(?:\.\d+)?\s*[-–]\s*\d+(?:\.\d+)?|\d+:\d+|[+]{1,4})$/.test(
             cleanedValue,
           );
-        if (!numeric && !qualitative && !nonScalar) continue;
+        // Short microscopy and culture descriptions are observations too.
+        // Keep their wording rather than forcing them into a numeric value.
+        const descriptive =
+          /^(?:(?:few|occasional|rare|moderate|many)(?:\s+[a-z][a-z .-]{0,50})?|growth of [a-z][a-z .-]{1,70})$/i.test(
+            cleanedValue,
+          );
+        if (!numeric && !qualitative && !nonScalar && !descriptive) continue;
         const value = cleanedValue;
         const isAbnormal =
           !numeric || /^[<>≤≥]/.test(value) || /,/.test(value)
@@ -523,6 +534,8 @@ export class OpenDataLoaderJsonParser {
         });
         stats.parsedRows += 1;
       }
+      if (!tableMapped && rows.length > 1)
+        stats.unmappedTables = (stats.unmappedTables ?? 0) + 1;
     }
 
     return {
@@ -721,6 +734,7 @@ export class OpenDataLoaderJsonParser {
 
     return {
       hasMappedLabTables: (stats.mappedTables ?? 0) > 0,
+      hasUnmappedTables: (stats.unmappedTables ?? 0) > 0,
       hasAmbiguousHeaders: (stats.ambiguousHeaders ?? 0) > 0,
       confidence: Number(confidence.toFixed(3)),
       coverage: Number(coverage.toFixed(3)),

@@ -341,6 +341,37 @@ check(
     assert.equal(result.diagnostics.hasAmbiguousHeaders, true);
   },
 );
+check('Microscopy and culture descriptions retain their raw wording', () => {
+  const rows = parser.parse(
+    table([
+      ['Test Name', 'Result', 'Unit'],
+      ['Urine bacteria', 'Moderate bacteria', '/hpf'],
+      ['Culture', 'Growth of Escherichia coli', ''],
+    ]),
+  ).extractedLabValues;
+  assert.deepEqual(
+    rows.map((r) => r.value),
+    ['Moderate bacteria', 'Growth of Escherichia coli'],
+  );
+  assert.ok(rows.every((r) => r.isAbnormal === undefined));
+});
+check('Unmapped tables are reported alongside mapped lab rows', () => {
+  const result = parser.parseWithDiagnostics({
+    type: 'document',
+    kids: [
+      table([
+        ['Test Name', 'Result'],
+        ['Glucose', '90'],
+      ]).kids[0],
+      table([
+        ['Analyte', 'Finding'],
+        ['Other organism', 'See note'],
+      ]).kids[0],
+    ],
+  });
+  assert.equal(result.extractedLabValues.length, 1);
+  assert.equal(result.diagnostics.hasUnmappedTables, true);
+});
 console.log(`${checks} report parser regression checks passed.`);
 
 async function checkPdfRouting() {
@@ -406,7 +437,54 @@ async function checkPdfRouting() {
   assert.equal(normalize('1,200'), '1200');
   console.log('PASS PDF/image routing and comparator-preserving deduplication');
 }
-void checkPdfRouting().catch((error: unknown) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+async function checkPartialExtractionReview() {
+  const service = Object.assign(
+    Object.create(ReportsService.prototype) as object,
+    {
+      odlJsonParser: parser,
+      logger: { log: () => undefined },
+      reportLabAiFallbackService: { tryExtract: () => Promise.resolve(null) },
+    },
+  ) as unknown as {
+    extractLabValuesFromOdlJsonWithFallback(input: {
+      opendataloaderJson: unknown;
+      reportId: string;
+      trigger: 'upload';
+      transcript: string;
+    }): Promise<{
+      extractedLabValues: Array<{ parameterName: string }>;
+      extractionReview: {
+        required: boolean;
+        candidateRows: number;
+        parsedRows: number;
+      };
+    }>;
+  };
+  const result = await service.extractLabValuesFromOdlJsonWithFallback({
+    opendataloaderJson: table([
+      ['Test Name', 'Result', 'Unit'],
+      ['Glucose', '90', 'mg/dL'],
+      ['Urine sediment', 'See susceptibility panel', ''],
+    ]),
+    reportId: 'synthetic',
+    trigger: 'upload',
+    transcript:
+      'Test Name Result Unit Glucose 90 Urine sediment See susceptibility panel',
+  });
+  assert.equal(result.extractedLabValues.length, 1);
+  assert.deepEqual(
+    [
+      result.extractionReview.required,
+      result.extractionReview.candidateRows,
+      result.extractionReview.parsedRows,
+    ],
+    [true, 2, 1],
+  );
+  console.log('PASS partial table extraction requires report-level review');
+}
+void Promise.all([checkPdfRouting(), checkPartialExtractionReview()]).catch(
+  (error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  },
+);

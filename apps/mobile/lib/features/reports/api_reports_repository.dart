@@ -205,6 +205,7 @@ class ApiReportsRepository implements ReportsRepository {
 
     final pd = sr['patientDetails'] as Map<String, dynamic>? ?? const {};
     final sectionsRaw = sr['sections'] as List<dynamic>? ?? const [];
+    final review = sr['extractionReview'];
 
     var sections = sectionsRaw.whereType<Map<String, dynamic>>().map((s) {
       final testsRaw = s['tests'] as List<dynamic>? ?? const [];
@@ -256,6 +257,16 @@ class ApiReportsRepository implements ReportsRepository {
         : (splitFromPatient.gender ?? extractedGenderFromTests);
 
     return StructuredReport(
+      extractionReview: review is Map<String, dynamic>
+          ? ExtractionReview(
+              required: review['required'] == true,
+              candidateRows: (review['candidateRows'] as num?)?.toInt() ?? 0,
+              parsedRows: (review['parsedRows'] as num?)?.toInt() ?? 0,
+              reasons: (review['reasons'] as List<dynamic>? ?? const [])
+                  .whereType<String>()
+                  .toList(),
+            )
+          : null,
       patientDetails: StructuredPatientDetails(
         name: pd['name'] as String?,
         age: age,

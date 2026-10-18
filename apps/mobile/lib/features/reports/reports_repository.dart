@@ -169,11 +169,27 @@ class StructuredReport {
     required this.patientDetails,
     this.labDetails,
     required this.sections,
+    this.extractionReview,
   });
 
   final StructuredPatientDetails patientDetails;
   final StructuredLabDetails? labDetails;
   final List<StructuredSection> sections;
+  final ExtractionReview? extractionReview;
+}
+
+class ExtractionReview {
+  const ExtractionReview({
+    required this.required,
+    required this.candidateRows,
+    required this.parsedRows,
+    required this.reasons,
+  });
+
+  final bool required;
+  final int candidateRows;
+  final int parsedRows;
+  final List<String> reasons;
 }
 
 /// A single trend data point (date + numeric value).

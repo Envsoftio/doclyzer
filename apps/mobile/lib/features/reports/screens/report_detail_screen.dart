@@ -393,7 +393,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
     final report = _report!;
     final summary = report.summary;
-    final statusColor = _statusColor(context, report.status);
+    final statusColor =
+        report.structuredReport?.extractionReview?.required == true
+        ? Colors.orange.shade700
+        : _statusColor(context, report.status);
     final results = _displayResults(report);
 
     return SingleChildScrollView(
@@ -440,7 +443,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   children: [
                     Chip(
                       avatar: Icon(Icons.circle, size: 10, color: statusColor),
-                      label: Text(_statusLabel(report.status)),
+                      label: Text(
+                        report.structuredReport?.extractionReview?.required ==
+                                true
+                            ? 'Needs review'
+                            : _statusLabel(report.status),
+                      ),
                     ),
                     Chip(
                       avatar: const Icon(Icons.event, size: 16),
@@ -465,6 +473,42 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               onPressed: _loadReport,
               icon: const Icon(Icons.refresh),
               label: const Text('Check status'),
+            ),
+          ],
+          if (report.structuredReport?.extractionReview?.required == true) ...[
+            const SizedBox(height: 16),
+            Card(
+              key: const Key('report-detail-extraction-review'),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Check this report against the original',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Some results may be missing or uncertain. Review the original report before relying on this list.',
+                    ),
+                    for (final reason
+                        in report
+                            .structuredReport!
+                            .extractionReview!
+                            .reasons) ...[
+                      const SizedBox(height: 4),
+                      Text('• $reason'),
+                    ],
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: _openPdf,
+                      icon: const Icon(Icons.picture_as_pdf_outlined),
+                      label: const Text('View original'),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
           if (results.isNotEmpty) ...[

@@ -155,6 +155,12 @@ export interface StructuredReportDto {
   patientDetails: StructuredPatientDetailsDto;
   labDetails?: StructuredLabDetailsDto;
   sections: StructuredSectionDto[];
+  extractionReview?: {
+    required: boolean;
+    candidateRows: number;
+    parsedRows: number;
+    reasons: string[];
+  };
 }
 
 interface StructuredReportLabInput {
@@ -170,6 +176,7 @@ interface SelectedOdlLabOutput {
   hasMappedLabTables?: boolean;
   extractedLabValues: StructuredReportLabInput[];
   structuredReport: StructuredReportDto;
+  extractionReview: NonNullable<StructuredReportDto['extractionReview']>;
 }
 
 const OCR_TEXT_LOG_CHAR_LIMIT = 6000;
@@ -398,6 +405,12 @@ export class ReportsService {
         null,
         labValues,
       ).sections;
+      structuredReport.extractionReview = parsedFromJson?.extractionReview ?? {
+        required: true,
+        candidateRows: 0,
+        parsedRows: labValues.length,
+        reasons: ['Results came from text without verifiable table coverage.'],
+      };
     }
     if (finalStatus === 'parsed' && structuredReport) {
       this.logLabDetailsExtraction({
@@ -1032,6 +1045,15 @@ export class ReportsService {
         null,
         dedupedRetryLabValues,
       ).sections;
+      retryStructuredReport.extractionReview =
+        retryFromJson?.extractionReview ?? {
+          required: true,
+          candidateRows: 0,
+          parsedRows: dedupedRetryLabValues.length,
+          reasons: [
+            'Results came from text without verifiable table coverage.',
+          ],
+        };
       this.logLabDetailsExtraction({
         trigger: 'retry',
         reportId: entity.id,
@@ -1319,9 +1341,38 @@ export class ReportsService {
       deterministic.extractedLabValues,
     );
     let structuredReport = deterministic.structuredReport;
+    const diagnostics = deterministic.diagnostics;
+    const reviewReasons: string[] = [];
+    if (!diagnostics.hasMappedLabTables)
+      reviewReasons.push(
+        'Results could not be checked against mapped table columns.',
+      );
+    if (diagnostics.hasUnmappedTables)
+      reviewReasons.push(
+        'Some tables had no identifiable test and result columns.',
+      );
+    if (diagnostics.hasAmbiguousHeaders)
+      reviewReasons.push('Some result columns could not be distinguished.');
+    if (diagnostics.candidateRows > diagnostics.parsedRows)
+      reviewReasons.push(
+        `${diagnostics.candidateRows - diagnostics.parsedRows} candidate result row(s) were not extracted.`,
+      );
+    if (diagnostics.candidateRows === 0)
+      reviewReasons.push('Table coverage could not be measured.');
+    const extractionReview: NonNullable<
+      StructuredReportDto['extractionReview']
+    > = {
+      required: reviewReasons.length > 0,
+      candidateRows: diagnostics.candidateRows,
+      parsedRows: diagnostics.parsedRows,
+      reasons: reviewReasons,
+    };
     if (
       deterministic.diagnostics.hasMappedLabTables &&
-      !deterministic.diagnostics.hasAmbiguousHeaders
+      !deterministic.diagnostics.hasAmbiguousHeaders &&
+      deterministic.diagnostics.candidateRows > 0 &&
+      deterministic.diagnostics.parsedRows ===
+        deterministic.diagnostics.candidateRows
     ) {
       this.logger.log(
         JSON.stringify({
@@ -1340,6 +1391,7 @@ export class ReportsService {
         extractedLabValues,
         structuredReport,
         hasMappedLabTables: deterministic.diagnostics.hasMappedLabTables,
+        extractionReview,
       };
     }
     const transcriptCandidates = this.extractAiFallbackCandidatesFromTranscript(
@@ -1377,6 +1429,7 @@ export class ReportsService {
         extractedLabValues,
         structuredReport,
         hasMappedLabTables: deterministic.diagnostics.hasMappedLabTables,
+        extractionReview,
       };
     }
 
@@ -1405,10 +1458,15 @@ export class ReportsService {
         extractedLabValues,
         structuredReport,
         hasMappedLabTables: deterministic.diagnostics.hasMappedLabTables,
+        extractionReview,
       };
     }
 
     extractedLabValues = aiValues;
+    extractionReview.required = true;
+    extractionReview.reasons.push(
+      'Some results required automated fallback extraction.',
+    );
     structuredReport = {
       patientDetails: deterministic.structuredReport.patientDetails,
       ...(deterministic.structuredReport.labDetails
@@ -1420,6 +1478,7 @@ export class ReportsService {
       extractedLabValues,
       structuredReport,
       hasMappedLabTables: deterministic.diagnostics.hasMappedLabTables,
+      extractionReview,
     };
   }
 
