@@ -110,6 +110,11 @@ export class OpenDataLoaderJsonParser {
           value: test.value,
           unit: test.unit ?? null,
           sampleDate: test.sampleDate ?? null,
+          identityEvidence: {
+            ...(section.heading && section.heading !== 'Other Tests'
+              ? { panelName: section.heading } : {}),
+            ...test.identityEvidence,
+          },
           ...(test.referenceRange
             ? { referenceRange: test.referenceRange }
             : {}),
@@ -398,7 +403,7 @@ export class OpenDataLoaderJsonParser {
       let tableMapped = false;
       let currentSection = 'Other Tests';
       let columns: Partial<
-        Record<'name' | 'value' | 'unit' | 'range', number>
+        Record<'name' | 'value' | 'unit' | 'range' | 'specimen' | 'method' | 'code', number>
       > = {};
       for (const row of rows) {
         const cells = Array.isArray(row.cells)
@@ -424,6 +429,12 @@ export class OpenDataLoaderJsonParser {
                 ? 'value'
                 : /^(unit(?:s)?|uom|units of measurement)$/.test(label)
                   ? 'unit'
+                  : /^(specimen|sample type|specimen type)$/.test(label)
+                    ? 'specimen'
+                    : /^(method|test method|assay method)$/.test(label)
+                      ? 'method'
+                      : /^(test code|assay code|loinc code)$/.test(label)
+                        ? 'code'
                   : /^(ref(?:erence)?(?: range| interval| values?)?|normal (?:range|interval|value(?:s)?)|bio(?:logical)? ref(?:erence)? (?:range|interval)|biological reference interval|reference limits)$/.test(
                         label,
                       )
@@ -448,6 +459,7 @@ export class OpenDataLoaderJsonParser {
         // Do not guess column order on headerless or ambiguous tables.
         if (columns.name === undefined || columns.value === undefined) continue;
         let c1 = texts[columns.name] ?? '';
+        const sourceName = c1;
         const methodFragments = texts.filter(
           (text, index) =>
             !Object.values(columns).includes(index) && /\bmethod\b/i.test(text),
@@ -528,6 +540,18 @@ export class OpenDataLoaderJsonParser {
         sections.get(currentSection)!.push({
           parameterName: normalizedName,
           value,
+          identityEvidence: {
+            sourceText: texts.filter(Boolean).join(' | ').slice(0, 1000),
+            ...(columns.specimen !== undefined && texts[columns.specimen]?.trim()
+              ? { specimen: texts[columns.specimen].trim() } : {}),
+            ...(columns.code !== undefined && texts[columns.code]?.trim()
+              ? { testCode: texts[columns.code].trim() } : {}),
+            ...(columns.method !== undefined && texts[columns.method]?.trim()
+              ? { method: texts[columns.method].trim() } : {}),
+            ...(/\bMethod\s*:\s*([^|;]+)/i.test(sourceName)
+              ? { method: sourceName.match(/\bMethod\s*:\s*([^|;]+)/i)![1].trim() }
+              : {}),
+          },
           ...(c3 ? { unit: c3 } : {}),
           ...(c4 ? { referenceRange: c4 } : {}),
           ...(typeof isAbnormal === 'boolean' ? { isAbnormal } : {}),
@@ -1152,7 +1176,7 @@ export class OpenDataLoaderJsonParser {
     const seen = new Set<string>();
     const out: ExtractedLabValue[] = [];
     for (const v of values) {
-      const key = `${v.parameterName.toLowerCase()}::${v.value.toLowerCase()}::${(v.unit ?? '').toLowerCase()}`;
+      const key = `${v.parameterName.toLowerCase()}::${v.value.toLowerCase()}::${(v.unit ?? '').toLowerCase()}::${v.identityEvidence?.specimen?.toLowerCase() ?? ''}`;
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(v);
@@ -1163,7 +1187,7 @@ export class OpenDataLoaderJsonParser {
   private compactLabValues(values: ExtractedLabValue[]): ExtractedLabValue[] {
     const bestByParamValue = new Map<string, ExtractedLabValue>();
     for (const row of values) {
-      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}`;
+      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}::${row.identityEvidence?.specimen?.toLowerCase() ?? ''}`;
       const current = bestByParamValue.get(key);
       if (!current) {
         bestByParamValue.set(key, row);
@@ -1185,7 +1209,7 @@ export class OpenDataLoaderJsonParser {
     const seen = new Set<string>();
     const out: StructuredSectionItemDto[] = [];
     for (const row of rows) {
-      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}::${(row.unit ?? '').toLowerCase()}::${(row.referenceRange ?? '').toLowerCase()}`;
+      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}::${(row.unit ?? '').toLowerCase()}::${(row.referenceRange ?? '').toLowerCase()}::${row.identityEvidence?.specimen?.toLowerCase() ?? ''}`;
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(row);

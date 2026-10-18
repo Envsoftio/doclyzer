@@ -73,6 +73,8 @@ check(
     assert.equal(rows.length, 1);
     assert.equal(rows[0].parameterName, 'Creatinine');
     assert.equal(rows[0].unit, 'mg/dL');
+    assert.equal(rows[0].identityEvidence?.method, 'Enzymatic');
+    assert.match(rows[0].identityEvidence?.sourceText ?? '', /Creatinine Method : Enzymatic/);
   },
 );
 check('Interpretation tables do not become patient observations', () => {
@@ -142,6 +144,41 @@ check('Unseen test names are extracted from mapped result columns', () => {
       ['Rare antibody Q', 'Detected'],
     ],
   );
+});
+check('Explicit identity evidence is preserved without a test vocabulary', () => {
+  const row = parser.parse(table([
+    ['Test Name', 'Result', 'Unit', 'Specimen', 'Method', 'Test Code'],
+    ['Unseen Panel', '', '', '', '', ''],
+    ['Novel marker ZX-47', '2.4', 'ng/mL', 'Serum', 'Immunoassay', 'ZX47'],
+  ])).extractedLabValues[0];
+  assert.deepEqual(
+    [row.identityEvidence?.panelName, row.identityEvidence?.specimen,
+      row.identityEvidence?.method, row.identityEvidence?.testCode],
+    ['Unseen Panel', 'Serum', 'Immunoassay', 'ZX47'],
+  );
+  assert.match(row.identityEvidence?.sourceText ?? '', /Novel marker ZX-47/);
+});
+check('Distinct explicit specimens survive deduplication', () => {
+  const rows = parser.parse(table([
+    ['Test Name', 'Result', 'Unit', 'Specimen'],
+    ['Novel marker ZX-47', '2.4', 'ng/mL', 'Serum'],
+    ['Novel marker ZX-47', '2.4', 'ng/mL', 'Urine'],
+  ])).extractedLabValues;
+  assert.deepEqual(rows.map((row) => row.identityEvidence?.specimen), ['Serum', 'Urine']);
+});
+check('Merged extractors retain distinct specimens without duplicating unknown context', () => {
+  const service = ReportsService.prototype as unknown as {
+    selectBestLabValues: (parsed: object[], transcript: object[]) => Array<{
+      identityEvidence?: { specimen?: string };
+    }>;
+  };
+  const base = { parameterName: 'Novel marker ZX-47', value: '2.4', unit: 'ng/mL',
+    sampleDate: null, referenceRange: null, isAbnormal: null };
+  const rows = service.selectBestLabValues([
+    { ...base, identityEvidence: { specimen: 'Serum' } },
+    { ...base, identityEvidence: { specimen: 'Urine' } },
+  ], [{ ...base }]);
+  assert.deepEqual(rows.map((row) => row.identityEvidence?.specimen), ['Serum', 'Urine']);
 });
 check(
   'Text fallback keeps unseen names, qualifiers, and decimal notation',

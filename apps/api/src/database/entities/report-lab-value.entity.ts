@@ -79,6 +79,9 @@ export class ReportLabValueEntity {
   @Column({ type: 'jsonb', name: 'source_snapshot', nullable: true })
   sourceSnapshot!: Record<string, unknown> | null;
 
+  @Column({ type: 'jsonb', name: 'identity_evidence', nullable: true })
+  identityEvidence!: Record<string, string> | null;
+
   @Column({ type: 'integer', name: 'sort_order', default: 0 })
   sortOrder!: number;
 }

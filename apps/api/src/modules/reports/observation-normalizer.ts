@@ -23,8 +23,22 @@ export async function loadObservationRules(query: (sql: string) => Promise<unkno
     Array<{ alias_key: string; canonical_test_id: string; canonical_name: string }>;
   const units = await query(`SELECT canonical_test_id, source_unit_key, target_unit, decimal_exponent FROM lab_unit_rules`) as
     Array<{ canonical_test_id: string; source_unit_key: string; target_unit: string; decimal_exponent: number }>;
+  const approvedAliases = new Map<string, { id: string; name: string }>();
+  const conflictingKeys = new Set<string>();
+  for (const row of aliases) {
+    const key = labelKey(row.alias_key);
+    if (!key) continue;
+    const existing = approvedAliases.get(key);
+    if (existing && existing.id !== row.canonical_test_id) {
+      conflictingKeys.add(key);
+      approvedAliases.delete(key);
+    } else if (!conflictingKeys.has(key)) {
+      approvedAliases.set(key, { id: row.canonical_test_id, name: row.canonical_name });
+    }
+  }
+
   return {
-    aliases: new Map(aliases.map((row) => [row.alias_key, { id: row.canonical_test_id, name: row.canonical_name }])),
+    aliases: approvedAliases,
     units: new Map(units.map((row) => [`${row.canonical_test_id}\u0000${row.source_unit_key}`,
       { targetUnit: row.target_unit, decimalExponent: row.decimal_exponent }])),
   };

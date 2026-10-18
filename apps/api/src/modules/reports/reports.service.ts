@@ -92,6 +92,7 @@ export interface ExtractedLabValueDto {
   isAbnormal?: boolean;
   reviewVersion?: number;
   sourceSnapshot?: Record<string, unknown>;
+  identityEvidence?: Record<string, string>;
 }
 
 export interface CorrectLabValueInput {
@@ -144,6 +145,7 @@ export interface StructuredSectionItemDto {
   sampleDate?: string;
   referenceRange?: string;
   isAbnormal?: boolean;
+  identityEvidence?: Record<string, string>;
 }
 
 export interface StructuredSectionDto {
@@ -170,6 +172,7 @@ interface StructuredReportLabInput {
   sampleDate: string | null;
   referenceRange: string | null;
   isAbnormal: boolean | null;
+  identityEvidence?: Record<string, string>;
 }
 
 interface SelectedOdlLabOutput {
@@ -515,6 +518,7 @@ export class ReportsService {
           collectionDateSource: lv.sampleDate ? 'extracted' : 'unknown',
           extractionSource,
           referenceRange: lv.referenceRange ?? null,
+          identityEvidence: this.withLabIdentityEvidence(lv, structuredReport),
           ...normalizeObservation(
             {
               parameterName: lv.parameterName,
@@ -1033,8 +1037,9 @@ export class ReportsService {
         ? await this.reportSummaryService.generateSummary(buffer)
         : null;
     // Only overwrite transcript on success; preserve existing on failure (AC3)
+    let retryStructuredReport: StructuredReportDto | null = null;
     if (finalStatus === 'parsed') {
-      let retryStructuredReport =
+      retryStructuredReport =
         retryFromJson?.structuredReport ??
         this.buildStructuredReport(transcript, dedupedRetryLabValues);
       retryStructuredReport = this.withBestPatientDetails(
@@ -1110,6 +1115,7 @@ export class ReportsService {
               collectionDateSource: lv.sampleDate ? 'extracted' : 'unknown',
               extractionSource: retryExtractionSource,
               referenceRange: lv.referenceRange ?? null,
+              identityEvidence: this.withLabIdentityEvidence(lv, retryStructuredReport),
               ...normalizeObservation(
                 {
                   parameterName: lv.parameterName,
@@ -1490,6 +1496,7 @@ export class ReportsService {
       sampleDate?: string | null;
       referenceRange?: string | null;
       isAbnormal?: boolean | null;
+      identityEvidence?: Record<string, string>;
     }>,
   ): StructuredReportLabInput[] {
     const out: StructuredReportLabInput[] = [];
@@ -1515,9 +1522,20 @@ export class ReportsService {
           typeof value.isAbnormal === 'boolean'
             ? value.isAbnormal
             : inferredAbnormal,
+        ...(value.identityEvidence ? { identityEvidence: value.identityEvidence } : {}),
       });
     }
     return out;
+  }
+
+  private withLabIdentityEvidence(
+    value: StructuredReportLabInput,
+    report: StructuredReportDto | null,
+  ): Record<string, string> | null {
+    const evidence = { ...value.identityEvidence };
+    const labName = report?.labDetails?.name?.trim();
+    if (labName) evidence.labName = labName;
+    return Object.keys(evidence).length > 0 ? evidence : null;
   }
 
   private evaluateAbnormalFromReference(
@@ -1644,7 +1662,8 @@ export class ReportsService {
       const unit = (row.unit ?? '').trim().toLowerCase();
       const value = this.normalizeComparableValue(row.value ?? '');
       if (!name || !value) continue;
-      const key = `${name}::${value}::${unit}`;
+      const specimen = row.identityEvidence?.specimen?.trim().toLowerCase() ?? '';
+      const key = `${name}::${value}::${unit}::${specimen}`;
       const current = bestByKey.get(key);
       if (!current) {
         bestByKey.set(key, row);
@@ -1682,11 +1701,23 @@ export class ReportsService {
 
     // Merge both sets to avoid dropping valid rows when one source is partial.
     const merged: StructuredReportLabInput[] = [];
-    const seen = new Set<string>();
     for (const row of [...preferred, ...parsedValues, ...transcriptValues]) {
       const key = this.labRowKey(row.parameterName, row.value, row.unit);
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
+      if (!key) continue;
+      const specimen = row.identityEvidence?.specimen?.trim().toLowerCase() ?? '';
+      const sameResult = merged.findIndex((existing) =>
+        this.labRowKey(existing.parameterName, existing.value, existing.unit) === key &&
+        (existing.identityEvidence?.specimen?.trim().toLowerCase() ?? '') === specimen);
+      if (sameResult >= 0) continue;
+      const unknownSpecimen = merged.findIndex((existing) =>
+        this.labRowKey(existing.parameterName, existing.value, existing.unit) === key &&
+        !existing.identityEvidence?.specimen?.trim());
+      if (!specimen && merged.some((existing) =>
+        this.labRowKey(existing.parameterName, existing.value, existing.unit) === key)) continue;
+      if (specimen && unknownSpecimen >= 0) {
+        merged[unknownSpecimen] = row;
+        continue;
+      }
       merged.push(row);
     }
     return merged;
@@ -2194,6 +2225,7 @@ export class ReportsService {
           ...(typeof isAbnormal === 'boolean' ? { isAbnormal } : {}),
           reviewVersion: lv.reviewVersion ?? 0,
           ...(lv.sourceSnapshot ? { sourceSnapshot: lv.sourceSnapshot } : {}),
+          ...(lv.identityEvidence ? { identityEvidence: lv.identityEvidence } : {}),
         };
       }),
       ...(structuredReport &&
@@ -2262,6 +2294,7 @@ export class ReportsService {
         ...(lv.unit ? { unit: lv.unit } : {}),
         ...(lv.sampleDate ? { sampleDate: lv.sampleDate } : {}),
         ...(lv.referenceRange ? { referenceRange: lv.referenceRange } : {}),
+        ...(lv.identityEvidence ? { identityEvidence: lv.identityEvidence } : {}),
         ...(typeof lv.isAbnormal === 'boolean'
           ? { isAbnormal: lv.isAbnormal }
           : {}),

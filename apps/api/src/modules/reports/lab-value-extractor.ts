@@ -5,6 +5,13 @@ export interface ExtractedLabValue {
   sampleDate: string | null;
   referenceRange?: string | null;
   isAbnormal?: boolean | null;
+  identityEvidence?: {
+    panelName?: string;
+    specimen?: string;
+    method?: string;
+    testCode?: string;
+    sourceText?: string;
+  };
 }
 
 function cleanName(s: string): string {

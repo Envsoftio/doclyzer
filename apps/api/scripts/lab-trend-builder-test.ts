@@ -3,7 +3,7 @@ import { buildLabTrends } from '../src/modules/reports/lab-trend-builder';
 import { ReportsService } from '../src/modules/reports/reports.service';
 import { ReportEntity } from '../src/database/entities/report.entity';
 import { ReportLabValueEntity } from '../src/database/entities/report-lab-value.entity';
-import { normalizeObservation, type ObservationRules } from '../src/modules/reports/observation-normalizer';
+import { loadObservationRules, normalizeObservation, type ObservationRules } from '../src/modules/reports/observation-normalizer';
 
 const rules: ObservationRules = {
   aliases: new Map([
@@ -115,7 +115,31 @@ async function verifyReportSpecificRanges() {
   assert.equal(series.observations.find((item) => item.id === 'c')?.referenceRange, '10-14');
 }
 
-void verifyReportSpecificRanges().then(() => {
+async function verifyIdentityRuleConflicts() {
+  const loaded = await loadObservationRules(async (sql) => sql.includes('lab_test_aliases') ? [
+    { alias_key: ' Hb ', canonical_test_id: 'hemoglobin', canonical_name: 'Hemoglobin' },
+    { alias_key: 'HB', canonical_test_id: 'other', canonical_name: 'Other' },
+    { alias_key: 'HbA1c', canonical_test_id: 'hba1c', canonical_name: 'HbA1c' },
+  ] : []);
+  assert.equal(normalizeObservation({ parameterName: 'Hb', value: '11', unit: 'g/dL' }, loaded).canonicalTestId, null);
+  assert.equal(normalizeObservation({ parameterName: 'Hb', value: '11', unit: 'g/dL' }, loaded).reviewState, 'needs_review');
+  assert.equal(normalizeObservation({ parameterName: 'HbA1c', value: '6', unit: '%' }, loaded).canonicalTestId, 'hba1c');
+
+  const approved = await loadObservationRules(async (sql) => sql.includes('lab_test_aliases') ? [
+    { alias_key: ' Serum  Creatinine ', canonical_test_id: 'creatinine', canonical_name: 'Creatinine' },
+    { alias_key: 'serum creatinine', canonical_test_id: 'creatinine', canonical_name: 'Creatinine' },
+    { alias_key: 'Urine Creatinine', canonical_test_id: 'urine-creatinine', canonical_name: 'Urine Creatinine' },
+  ] : []);
+  assert.equal(approved.aliases.size, 2);
+  assert.equal(normalizeObservation({ parameterName: 'SERUM CREATININE', value: '1.2', unit: 'mg/dL' }, approved).canonicalTestId, 'creatinine');
+  const separated = buildLabTrends([
+    { reportId: 'serum', parameterName: 'Serum Creatinine', value: '1.2', unit: 'mg/dL', sampleDate: '2026-01-01' },
+    { reportId: 'urine', parameterName: 'Urine Creatinine', value: '20', unit: 'mg/dL', sampleDate: '2026-01-01' },
+  ], undefined, approved);
+  assert.deepEqual(separated.parameters.map((series) => series.testId), ['creatinine', 'urine-creatinine']);
+}
+
+void Promise.all([verifyReportSpecificRanges(), verifyIdentityRuleConflicts()]).then(() => {
   console.log('PASS exact values, aliases, validated unit conversion, dates, and observation-specific ranges');
 }).catch((error: unknown) => {
   console.error(error);
