@@ -1,3 +1,8 @@
+import { CompleteReportProcessingRuntime1730818100000 } from './1730818100000-CompleteReportProcessingRuntime';
+import { RepairReportProviderSubmissionCount1730818200000 } from './1730818200000-RepairReportProviderSubmissionCount';
+import { CreateReportJobExecutions1730818000000 } from './1730818000000-CreateReportJobExecutions';
+import { CreateReportUploadIntents1730817900000 } from './1730817900000-CreateReportUploadIntents';
+import { CreateDurableReportProcessing1730817800000 } from './1730817800000-CreateDurableReportProcessing';
 import { InitialSchema1730812800000 } from './1730812800000-InitialSchema';
 import { AddDisplayName1730812900000 } from './1730812900000-AddDisplayName';
 import { AddPolicyTypeToConsentRecords1730813000000 } from './1730813000000-AddPolicyTypeToConsentRecords';
@@ -100,4 +105,9 @@ export const migrations = [
   CompleteObservationContract1730817500000,
   CreateObservationRules1730817600000,
   AddObservationIdentityEvidence1730817700000,
+  CreateDurableReportProcessing1730817800000,
+  CreateReportUploadIntents1730817900000,
+  CreateReportJobExecutions1730818000000,
+  CompleteReportProcessingRuntime1730818100000,
+  RepairReportProviderSubmissionCount1730818200000,
 ];

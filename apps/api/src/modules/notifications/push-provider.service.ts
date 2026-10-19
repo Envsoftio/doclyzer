@@ -9,6 +9,8 @@ export interface PushProviderMessage {
   body: string;
   data?: Record<string, string>;
   deepLink?: string | null;
+  collapseId?: string;
+  expiresAt?: Date;
 }
 
 export interface PushProviderResult {
@@ -17,6 +19,7 @@ export interface PushProviderResult {
   providerMessageId: string | null;
   errorCode: string | null;
   errorMessage: string | null;
+  retryAfterMs?: number;
 }
 
 interface FcmOAuthResponse {
@@ -31,6 +34,7 @@ interface FcmSendResponse {
   error?: {
     status?: string;
     message?: string;
+    details?: { errorCode?: string }[];
   };
 }
 
@@ -62,7 +66,7 @@ export class PushProviderService {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown FCM send error';
-      this.logger.warn(`FCM push send failed: ${errorMessage}`);
+      this.logger.warn('FCM push send failed');
       return {
         outcome: 'failed',
         provider: 'fcm',
@@ -77,9 +81,9 @@ export class PushProviderService {
     const push = this.config.get<PushConfig>('push');
     return Boolean(
       push?.provider === 'fcm' &&
-        push.fcm.projectId &&
-        push.fcm.clientEmail &&
-        push.fcm.privateKey,
+      push.fcm.projectId &&
+      push.fcm.clientEmail &&
+      push.fcm.privateKey,
     );
   }
 
@@ -94,6 +98,7 @@ export class PushProviderService {
       )}/messages:send`,
       {
         method: 'POST',
+        signal: AbortSignal.timeout(30000),
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -108,11 +113,29 @@ export class PushProviderService {
             data: message.data ?? {},
             android: {
               priority: 'HIGH',
+              ...(message.expiresAt
+                ? {
+                    ttl: `${Math.max(0, Math.floor((message.expiresAt.getTime() - Date.now()) / 1000))}s`,
+                  }
+                : {}),
               notification: {
                 sound: 'default',
+                ...(message.collapseId ? { tag: message.collapseId } : {}),
               },
             },
             apns: {
+              headers: {
+                ...(message.collapseId
+                  ? { 'apns-collapse-id': message.collapseId }
+                  : {}),
+                ...(message.expiresAt
+                  ? {
+                      'apns-expiration': String(
+                        Math.floor(message.expiresAt.getTime() / 1000),
+                      ),
+                    }
+                  : {}),
+              },
               payload: {
                 aps: {
                   sound: 'default',
@@ -131,13 +154,27 @@ export class PushProviderService {
       },
     );
 
-    const payload = (await response.json().catch(() => ({}))) as FcmSendResponse;
+    const payload = (await response
+      .json()
+      .catch(() => ({}))) as FcmSendResponse;
     if (!response.ok) {
+      const retryAfter = response.headers.get('retry-after');
+      const retryAfterMs =
+        retryAfter == null
+          ? undefined
+          : /^\d+$/.test(retryAfter)
+            ? Number(retryAfter) * 1000
+            : Math.max(0, Date.parse(retryAfter) - Date.now());
       return {
+        retryAfterMs: Number.isFinite(retryAfterMs) ? retryAfterMs : undefined,
         outcome: 'failed',
         provider: 'fcm',
         providerMessageId: null,
-        errorCode: payload.error?.status ?? `FCM_HTTP_${response.status}`,
+        errorCode:
+          payload.error?.details?.find((detail) => detail.errorCode)
+            ?.errorCode ??
+          payload.error?.status ??
+          `FCM_HTTP_${response.status}`,
         errorMessage:
           payload.error?.message ?? `FCM request failed (${response.status})`,
       };
@@ -165,10 +202,13 @@ export class PushProviderService {
     });
     const response = await fetch(push.fcm.oauthTokenUrl, {
       method: 'POST',
+      signal: AbortSignal.timeout(30000),
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body,
     });
-    const payload = (await response.json().catch(() => ({}))) as FcmOAuthResponse;
+    const payload = (await response
+      .json()
+      .catch(() => ({}))) as FcmOAuthResponse;
     if (!response.ok || !payload.access_token) {
       throw new Error(
         payload.error_description ??

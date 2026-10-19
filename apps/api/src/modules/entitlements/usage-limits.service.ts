@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, IsNull, Repository } from 'typeorm';
+import { EntityManager, In, IsNull, Repository } from 'typeorm';
 import { ReportEntity } from '../../database/entities/report.entity';
 import { ShareLinkEntity } from '../../database/entities/share-link.entity';
 import { UserEntitlementEntity } from '../../database/entities/user-entitlement.entity';
@@ -39,10 +39,17 @@ export class UsageLimitsService {
 
   async getReportUsage(userId: string): Promise<UsageLimitSnapshot> {
     const planInfo = await this.getPlanLimits(userId);
-    // Count only successfully parsed, active reports.
-    // Failed/unparsed/content_not_recognized uploads should not consume quota.
+    // Accepted asynchronous work reserves a slot until completion or failure.
+    // Terminal failed/unparsed uploads do not consume quota.
     const current = await this.reportRepo.count({
-      where: { userId, status: 'parsed', deletedAt: IsNull() },
+      where: [
+        { userId, status: 'parsed', deletedAt: IsNull() },
+        {
+          userId,
+          processingState: In(['queued', 'processing', 'retry_scheduled']),
+          deletedAt: IsNull(),
+        },
+      ],
     });
     return {
       limit: planInfo.limits.maxReports,

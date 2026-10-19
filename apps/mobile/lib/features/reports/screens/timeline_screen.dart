@@ -1,3 +1,4 @@
+import '../report_processing_store.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
 
@@ -51,9 +52,20 @@ class _TimelineScreenState extends State<TimelineScreen> {
   String _query = '';
   int _loadVersion = 0;
 
+  void _onProcessingChanged() {
+    if (mounted) _loadReports();
+  }
+
+  @override
+  void dispose() {
+    ReportProcessingStore.instance.removeListener(_onProcessingChanged);
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+    ReportProcessingStore.instance.addListener(_onProcessingChanged);
     _loadReports();
   }
 

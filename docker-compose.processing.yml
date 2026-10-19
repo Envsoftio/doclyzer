@@ -1,0 +1,54 @@
+# Opt-in: docker compose -f docker-compose.yml -f docker-compose.processing.yml --profile report-processing up -d
+# Run migrations before starting these processes. Persistent B2 configuration is required.
+services:
+  api:
+    command: sh -c "npm run migration:run && npm run start:prod"
+    environment:
+      REPORT_ASYNC_RUNTIME_ENABLED: "${REPORT_ASYNC_RUNTIME_ENABLED:-false}"
+      REPORT_ASYNC_ACCEPTANCE_ENABLED: "${REPORT_ASYNC_ACCEPTANCE_ENABLED:-false}"
+      REPORT_PROCESS_ROLE: api
+  report-worker:
+    profiles: [report-processing]
+    image: node:24-alpine
+    working_dir: /workspace/apps/api
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-doclyzer}:${POSTGRES_PASSWORD:-doclyzer_dev_password}@postgres:5432/${POSTGRES_DB:-doclyzer}
+      REPORT_ASYNC_RUNTIME_ENABLED: "true"
+      REPORT_ASYNC_ACCEPTANCE_ENABLED: "false"
+      REPORT_PROCESS_ROLE: worker
+      DOCLING_OCR_BASE_URL: http://docling:5002
+      REPORT_WORKER_CONCURRENCY: "${REPORT_WORKER_CONCURRENCY:-1}"
+      NODE_ENV: production
+    command: npm run start:report-worker:prod
+    volumes:
+      - ./:/workspace
+      - api_node_modules:/workspace/apps/api/node_modules
+    depends_on:
+      postgres: { condition: service_healthy }
+      docling: { condition: service_healthy }
+    stop_grace_period: 45s
+    mem_limit: 1g
+    restart: unless-stopped
+    networks: [doclyzer_net]
+  report-dispatcher:
+    profiles: [report-processing]
+    image: node:24-alpine
+    working_dir: /workspace/apps/api
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-doclyzer}:${POSTGRES_PASSWORD:-doclyzer_dev_password}@postgres:5432/${POSTGRES_DB:-doclyzer}
+      REPORT_ASYNC_RUNTIME_ENABLED: "true"
+      REPORT_ASYNC_ACCEPTANCE_ENABLED: "false"
+      REPORT_PROCESS_ROLE: dispatcher
+      NODE_ENV: production
+    command: npm run start:report-dispatcher:prod
+    volumes:
+      - ./:/workspace
+      - api_node_modules:/workspace/apps/api/node_modules
+    depends_on:
+      postgres: { condition: service_healthy }
+    stop_grace_period: 45s
+    mem_limit: 768m
+    restart: unless-stopped
+    networks: [doclyzer_net]

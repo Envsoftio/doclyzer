@@ -1,3 +1,4 @@
+import '../../reports/report_processing_store.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
 
@@ -267,9 +268,20 @@ class _HomeScreenState extends State<HomeScreen> {
     StatusMessenger.showWarning(context, message);
   }
 
+  void _processingChanged() {
+    if (mounted) _refresh();
+  }
+
+  @override
+  void dispose() {
+    ReportProcessingStore.instance.removeListener(_processingChanged);
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+    ReportProcessingStore.instance.addListener(_processingChanged);
     _refresh();
   }
 

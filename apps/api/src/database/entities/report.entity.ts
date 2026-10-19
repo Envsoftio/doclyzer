@@ -1,3 +1,7 @@
+import type {
+  ProcessingState,
+  ProcessingStage,
+} from '../../modules/reports/processing/report-processing.contract';
 import {
   Column,
   CreateDateColumn,
@@ -60,6 +64,72 @@ export class ReportEntity {
     default: 'queued',
   })
   status!: ReportStatus;
+
+  @Column({
+    type: 'varchar',
+    name: 'processing_state',
+    length: 32,
+    nullable: true,
+  })
+  processingState!: ProcessingState | null;
+
+  @Column({ type: 'integer', name: 'processing_generation', default: 0 })
+  processingGeneration!: number;
+
+  @Column({ type: 'bigint', name: 'processing_version', default: 0 })
+  processingVersion!: string;
+
+  @Column({
+    type: 'varchar',
+    name: 'processing_stage',
+    length: 32,
+    nullable: true,
+  })
+  processingStage!: ProcessingStage | null;
+
+  @Column({
+    type: 'varchar',
+    name: 'processing_error_code',
+    length: 64,
+    nullable: true,
+  })
+  processingErrorCode!: string | null;
+
+  @Column({
+    type: 'timestamptz',
+    name: 'processing_accepted_at',
+    nullable: true,
+  })
+  processingAcceptedAt!: Date | null;
+
+  @Column({
+    type: 'timestamptz',
+    name: 'processing_started_at',
+    nullable: true,
+  })
+  processingStartedAt!: Date | null;
+
+  @Column({
+    type: 'timestamptz',
+    name: 'processing_completed_at',
+    nullable: true,
+  })
+  processingCompletedAt!: Date | null;
+
+  @Column({ type: 'timestamptz', name: 'processing_retry_at', nullable: true })
+  processingRetryAt!: Date | null;
+
+  @Column({ type: 'varchar', name: 'source_hash', length: 64, nullable: true })
+  sourceHash!: string | null;
+
+  @Column({ type: 'smallint', name: 'source_hash_version', nullable: true })
+  sourceHashVersion!: number | null;
+
+  @Column({ type: 'varchar', name: 'summary_status', length: 24, default: 'not_requested' })
+  summaryStatus!: string;
+
+  @Column({ type: 'timestamptz', name: 'processing_acknowledged_at', nullable: true })
+  processingAcknowledgedAt!: Date | null;
 
   @Column({ type: 'text', nullable: true })
   summary!: string | null;

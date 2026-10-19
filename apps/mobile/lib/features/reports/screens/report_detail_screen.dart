@@ -1,3 +1,4 @@
+import '../report_processing_store.dart';
 import 'package:flutter/material.dart';
 
 import '../../profiles/profiles_repository.dart';
@@ -41,9 +42,20 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   String? _errorMessage;
   List<Profile> _profiles = [];
 
+  void _onProcessingChanged() {
+    if (mounted) _loadReport();
+  }
+
+  @override
+  void dispose() {
+    ReportProcessingStore.instance.removeListener(_onProcessingChanged);
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+    ReportProcessingStore.instance.addListener(_onProcessingChanged);
     _loadReport();
     _loadProfiles();
   }
@@ -356,13 +368,71 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       key: const Key('report-detail-scaffold'),
       appBar: AppBar(
         title: const Text('Report'),
+        actions: [
+          if (ReportProcessingStore.instance.reports[widget
+                  .reportId]?['status'] ==
+              'ready')
+            IconButton(
+              tooltip: 'Mark reviewed',
+              icon: const Icon(Icons.done_all),
+              onPressed: () async {
+                try {
+                  await ReportProcessingStore.instance.acknowledge(
+                    widget.reportId,
+                  );
+                } catch (_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Could not mark reviewed. Try again.'),
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+        ],
         leading: IconButton(
           key: const Key('report-detail-back'),
           icon: const Icon(Icons.arrow_back),
           onPressed: widget.onBack,
         ),
       ),
-      body: Padding(padding: const EdgeInsets.all(16), child: _buildBody()),
+      body: Column(
+        children: [
+          if (_report?.summaryStatus == 'failed')
+            TextButton(
+              onPressed: () async {
+                try {
+                  await ReportProcessingStore.instance.retrySummary(
+                    widget.reportId,
+                  );
+                  await _loadReport();
+                } catch (_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Summary retry is unavailable.'),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Summary unavailable — retry summary'),
+            ),
+          if (_report?.summaryStatus == 'pending')
+            TextButton(
+              onPressed: _loadReport,
+              child: const Text('Summary pending — refresh'),
+            ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _buildBody(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -474,7 +544,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               report.status == 'parsing') ...[
             const SizedBox(height: 16),
             Text(
-              'We are analyzing this report. Check again to see when results are ready.',
+              'We are analyzing this report. You can leave this screen; results will appear when ready.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 8),

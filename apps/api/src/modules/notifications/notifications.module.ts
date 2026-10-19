@@ -26,6 +26,6 @@ import { PushProviderService } from './push-provider.service';
   ],
   controllers: [NotificationsController, NotificationsAdminController],
   providers: [NotificationsService, PushProviderService],
-  exports: [NotificationsService],
+  exports: [NotificationsService, PushProviderService],
 })
 export class NotificationsModule {}

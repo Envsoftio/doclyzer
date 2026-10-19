@@ -53,6 +53,7 @@ export class EmailDeliveryWorkerService
   ) {}
 
   onModuleInit(): void {
+    if (process.env.REPORT_PROCESS_ROLE === 'worker') return;
     const enabled = this.configService.get<boolean>('email.worker.enabled');
     if (!enabled) return;
 

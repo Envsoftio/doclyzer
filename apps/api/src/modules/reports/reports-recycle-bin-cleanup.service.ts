@@ -18,6 +18,7 @@ export class ReportsRecycleBinCleanupService
   constructor(private readonly reportsService: ReportsService) {}
 
   onModuleInit(): void {
+    if (process.env.REPORT_PROCESS_ROLE && process.env.REPORT_PROCESS_ROLE !== 'api') return;
     this.timer = setInterval(() => {
       void this.runOnce();
     }, ReportsRecycleBinCleanupService.RUN_INTERVAL_MS);

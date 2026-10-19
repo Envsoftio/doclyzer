@@ -1,3 +1,5 @@
+import 'features/reports/report_processing_store.dart';
+import 'features/reports/screens/report_detail_screen.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -122,6 +124,7 @@ class DoclyzerApp extends StatefulWidget {
 }
 
 class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
 
@@ -237,6 +240,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    ReportProcessingStore.instance.stop();
     unawaited(_pushNotificationService.dispose());
     super.dispose();
   }
@@ -245,6 +249,11 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _refreshIncidentStatus();
+      if (_apiClient?.accessToken != null) {
+        ReportProcessingStore.instance.start(_apiClient!);
+      }
+    } else {
+      ReportProcessingStore.instance.stop();
     }
   }
 
@@ -273,7 +282,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   Future<void> _initAuth() async {
     final restored = await _authRepository!.restoreSession();
     if (restored && mounted) {
-      unawaited(_pushNotificationService.start());
+      _startReportServices();
       setState(() {
         _authView = _AuthView.home;
         _initialized = true;
@@ -312,15 +321,50 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     }
   }
 
+  void _startReportServices() {
+    if (_apiClient != null) ReportProcessingStore.instance.start(_apiClient!);
+    _pushNotificationService.onReportOpen = (id) async {
+      if (_apiClient?.accessToken == null) return;
+      try {
+        final report = await _reportsRepository.getReport(id);
+        if (!mounted || _apiClient?.accessToken == null) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _apiClient?.accessToken == null) return;
+          _navigatorKey.currentState?.push(
+            MaterialPageRoute<void>(
+              builder: (_) => ReportDetailScreen(
+                reportsRepository: _reportsRepository,
+                profilesRepository: _profilesRepository,
+                reportId: report.id,
+                profileId: report.profileId,
+                onBack: () => _navigatorKey.currentState?.pop(),
+              ),
+            ),
+          );
+        });
+      } catch (_) {
+        _scaffoldMessengerKey.currentState?.showSnackBar(
+          const SnackBar(content: Text('This report is no longer available.')),
+        );
+      }
+    };
+    _pushNotificationService.onForegroundReport = () =>
+        ReportProcessingStore.instance.reconcile();
+    unawaited(_pushNotificationService.start());
+  }
+
   Future<void> _login(String email, String password) async {
     await _auth.login(email: email, password: password);
-    unawaited(_pushNotificationService.start());
+    _startReportServices();
     if (mounted) {
       setState(() => _authView = _AuthView.home);
     }
   }
 
   Future<void> _logout() async {
+    _navigatorKey.currentState?.popUntil((route) => route.isFirst);
+    ReportProcessingStore.instance.stop();
+    await _pushNotificationService.dispose();
     await _pushNotificationService.deactivateCurrentToken();
     await _auth.logout();
     if (mounted) {
@@ -332,6 +376,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     if (_isHandlingUnauthorized) return;
     _isHandlingUnauthorized = true;
     try {
+      _navigatorKey.currentState?.popUntil((route) => route.isFirst);
+      ReportProcessingStore.instance.stop();
+      await _pushNotificationService.dispose();
       await _pushNotificationService.deactivateCurrentToken();
       await _auth.logout();
       if (mounted) {
@@ -431,6 +478,47 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       title: 'Doclyzer',
       theme: AppTheme.light,
       scaffoldMessengerKey: _scaffoldMessengerKey,
+      navigatorKey: _navigatorKey,
+      builder: (context, child) => AnimatedBuilder(
+        animation: ReportProcessingStore.instance,
+        builder: (context, _) {
+          final store = ReportProcessingStore.instance;
+          return Column(
+            children: [
+              if (store.readyCount > 0)
+                Material(
+                  color: const Color(0xffe6f4ee),
+                  child: SafeArea(
+                    bottom: false,
+                    child: ListTile(
+                      title: Text(
+                        '${store.readyCount} report(s) ready to review',
+                      ),
+                      onTap: () {
+                        final ready = store.reports.values.firstWhere(
+                          (r) =>
+                              r['status'] == 'ready' &&
+                              r['acknowledgedAt'] == null,
+                        );
+                        _pushNotificationService.onReportOpen?.call(
+                          ready['reportId'] as String,
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              if (store.connection == 'reconnecting')
+                const Material(
+                  child: SafeArea(
+                    bottom: false,
+                    child: Text('Report updates reconnecting…'),
+                  ),
+                ),
+              Expanded(child: child ?? const SizedBox.shrink()),
+            ],
+          );
+        },
+      ),
       home: switch (_authView) {
         _AuthView.login => LoginScreen(
           onLogin: _login,

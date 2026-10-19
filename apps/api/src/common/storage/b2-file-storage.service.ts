@@ -22,6 +22,7 @@ import { redactSecrets } from '../redact-secrets';
 
 @Injectable()
 export class B2FileStorageService implements FileStorageService {
+  readonly durability = 'durable' as const;
   private readonly logger = new Logger(B2FileStorageService.name);
   private readonly client: S3Client;
   private readonly bucket: string;

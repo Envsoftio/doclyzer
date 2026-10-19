@@ -156,6 +156,12 @@ export class AuthGuard implements CanActivate {
       (
         {
           'ReportsController.uploadReport': 'upload_report',
+          'ReportProcessingController.uploadReport': 'upload_report',
+          'ReportProcessingController.retry': 'upload_report',
+          'ReportProcessingController.snapshot': 'view_timeline',
+          'ReportProcessingController.events': 'view_timeline',
+          'ReportProcessingController.status': 'view_timeline',
+          'ReportProcessingController.inbox': 'view_timeline',
           'ReportsController.listReports': 'view_timeline',
           'ReportsController.getLabTrends': 'view_timeline',
           'ReportsController.getReport': 'view_timeline',

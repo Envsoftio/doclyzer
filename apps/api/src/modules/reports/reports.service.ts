@@ -1,3 +1,6 @@
+import { cancelReportProcessing } from './processing/report-lifecycle';
+import { appendReportEvent } from './processing/report-event.store';
+import type { EntityManager } from 'typeorm';
 import {
   BadRequestException,
   ConflictException,
@@ -106,6 +109,10 @@ export interface CorrectLabValueInput {
 }
 
 export interface ReportDto {
+  processingState?: string;
+  processingVersion?: string;
+  processingStage?: string;
+  summaryStatus?: string;
   id: string;
   profileId: string;
   profileName?: string;
@@ -270,6 +277,12 @@ export class ReportsService {
     options?: { duplicateAction?: 'upload_anyway' },
     correlationId?: string,
   ): Promise<UploadReportResult> {
+    if (process.env.REPORT_ASYNC_RUNTIME_ENABLED === 'true')
+      throw new ConflictException({
+        code: 'REPORT_CLIENT_UPGRADE_REQUIRED',
+        message:
+          'Update the app to upload reports using the background processing contract.',
+      });
     const activeProfileId =
       await this.profilesService.getActiveProfileId(userId);
     if (!activeProfileId) {
@@ -560,6 +573,167 @@ export class ReportsService {
       sizeBytes: entity.sizeBytes,
       status: entity.status,
     };
+  }
+
+  async normalizeWorkerSource(file: {
+    buffer: Buffer;
+    originalname: string;
+    mimetype: string;
+    size: number;
+  }) {
+    return this.normalizeReportInput(file);
+  }
+
+  async prepareWorkerResult(
+    reportId: string,
+    source: ReportInputSource,
+    transcript: string,
+    opendataloaderJson: unknown,
+  ) {
+    const status: ReportStatus = 'parsed';
+    const parsedFromJson = opendataloaderJson
+      ? await this.extractLabValuesFromOdlJsonWithFallback({
+          opendataloaderJson,
+          reportId,
+          trigger: 'upload',
+          transcript,
+        })
+      : null;
+    const transcriptLabValuesRaw = transcript
+      ? this.toStructuredLabInputs(this.labExtractor.extract(transcript))
+      : [];
+    const transcriptLabValues = this.filterNoisyLabValues(
+      transcriptLabValuesRaw,
+    );
+    const jsonLabValues = this.filterNoisyLabValues(
+      parsedFromJson?.extractedLabValues ?? [],
+    );
+    let labValues =
+      parsedFromJson?.hasMappedLabTables ||
+      (source === 'image' && jsonLabValues.length > 0)
+        ? jsonLabValues
+        : this.selectBestLabValues(jsonLabValues, transcriptLabValues);
+    const extractionSource =
+      parsedFromJson?.hasMappedLabTables ||
+      (source === 'image' && jsonLabValues.length > 0)
+        ? 'odl_json'
+        : jsonLabValues.length > 0 && transcriptLabValues.length > 0
+          ? 'merged_extractors'
+          : jsonLabValues.length > 0
+            ? 'odl_json'
+            : 'transcript';
+    labValues = this.deduplicateStructuredLabValues(labValues);
+
+    const finalStatus = this.resolveParsedReportStatus(
+      status,
+      transcript,
+      labValues,
+    );
+    let structuredReport =
+      finalStatus === 'parsed'
+        ? (parsedFromJson?.structuredReport ??
+          this.buildStructuredReport(transcript, labValues))
+        : null;
+    if (finalStatus === 'parsed' && structuredReport) {
+      structuredReport = this.withBestPatientDetails(
+        structuredReport,
+        transcript,
+      );
+      structuredReport.sections = this.buildStructuredReport(
+        null,
+        labValues,
+      ).sections;
+      structuredReport.extractionReview = parsedFromJson?.extractionReview ?? {
+        required: true,
+        candidateRows: 0,
+        parsedRows: labValues.length,
+        reasons: ['Results came from text without verifiable table coverage.'],
+      };
+    }
+
+    const persistedLabValues = finalStatus === 'parsed' ? labValues : [];
+    const observationRules = await loadObservationRules((sql) =>
+      this.reportRepo.manager.query(sql),
+    );
+    return {
+      outcome:
+        finalStatus === 'parsed'
+          ? ('ready' as const)
+          : ('needs_attention' as const),
+      persist: async (manager: EntityManager) => {
+        await manager.query(
+          `UPDATE reports SET parsed_transcript=$2,structured_report=$3::jsonb,summary_status=$4 WHERE id=$1`,
+          [
+            reportId,
+            finalStatus === 'parsed' ? transcript : null,
+            finalStatus === 'parsed' ? JSON.stringify(structuredReport) : null,
+            finalStatus === 'parsed' ? 'pending' : 'not_requested',
+          ],
+        );
+        await manager.getRepository(ReportLabValueEntity).delete({ reportId });
+        const labEntities = persistedLabValues.map((lv, i) =>
+          manager.getRepository(ReportLabValueEntity).create({
+            reportId: reportId,
+            parameterName: lv.parameterName,
+            originalParameterName: lv.parameterName,
+            value: lv.value,
+            rawResult: lv.value,
+            unit: lv.unit ?? null,
+            originalUnit: lv.unit ?? null,
+            sampleDate: lv.sampleDate ?? null,
+            originalSampleDate: lv.sampleDate ?? null,
+            collectionDateSource: lv.sampleDate ? 'extracted' : 'unknown',
+            extractionSource,
+            referenceRange: lv.referenceRange ?? null,
+            identityEvidence: this.withLabIdentityEvidence(
+              lv,
+              structuredReport,
+            ),
+            ...normalizeObservation(
+              {
+                parameterName: lv.parameterName,
+                value: lv.value,
+                unit: lv.unit ?? null,
+              },
+              observationRules,
+            ),
+            sortOrder: i,
+          }),
+        );
+
+        await manager.getRepository(ReportLabValueEntity).save(labEntities);
+      },
+    };
+  }
+
+  async enrichWorkerSummary(
+    reportId: string,
+    generation: number,
+  ): Promise<void> {
+    const report = await this.reportRepo.findOneByOrFail({
+      id: reportId,
+      deletedAt: IsNull(),
+    });
+    const buffer = await this.fileStorage.get(report.originalFileStorageKey);
+    const normalized = await this.normalizeReportInput({
+      buffer,
+      originalname: report.originalFileName,
+      mimetype: report.contentType,
+      size: buffer.length,
+    });
+    const summary = await this.reportSummaryService.generateSummary(
+      normalized.buffer,
+    );
+    if (!summary) throw new Error('SUMMARY_UNAVAILABLE');
+    await this.reportRepo.update(
+      {
+        id: reportId,
+        processingGeneration: generation,
+        deletedAt: IsNull(),
+        status: 'parsed',
+      },
+      { summary, summaryStatus: 'ready' },
+    );
   }
 
   private computeContentHash(buffer: Buffer): string {
@@ -976,6 +1150,14 @@ export class ReportsService {
     correlationId?: string,
   ): Promise<ReportDto> {
     const entity = await this.getActiveReportOrThrow(userId, reportId);
+    if (
+      entity.processingGeneration > 0 ||
+      process.env.REPORT_ASYNC_RUNTIME_ENABLED === 'true'
+    )
+      throw new ConflictException({
+        code: 'REPORT_ASYNC_RETRY_REQUIRED',
+        message: 'Use the background retry endpoint.',
+      });
     const force = options?.force === true;
     if (!force) {
       this.throwIfAlreadyParsed(entity.status);
@@ -2039,7 +2221,26 @@ export class ReportsService {
     userId: string,
     reportId: string,
   ): Promise<ProcessingAttemptDto[]> {
-    await this.getActiveReportOrThrow(userId, reportId);
+    const report = await this.getActiveReportOrThrow(userId, reportId);
+    if (report.processingGeneration > 0) {
+      const executions = await this.reportRepo.manager.query(
+        `SELECT e.id,j.trigger,e.outcome,e.started_at FROM report_job_executions e JOIN report_processing_jobs j ON j.id=e.job_id WHERE j.report_id=$1 ORDER BY e.started_at DESC`,
+        [reportId],
+      );
+      return executions.map(
+        (e: {
+          id: string;
+          trigger: string;
+          outcome: string;
+          started_at: Date;
+        }) => ({
+          id: e.id,
+          trigger: e.trigger,
+          outcome: e.outcome,
+          attemptedAt: e.started_at.toISOString(),
+        }),
+      );
+    }
     const attempts = await this.attemptRepo.find({
       where: { reportId },
       order: { attemptedAt: 'DESC' },
@@ -2064,6 +2265,12 @@ export class ReportsService {
       });
     }
     const entity = await this.getActiveReportOrThrow(userId, reportId);
+    if (entity.processingGeneration > 0)
+      throw new ConflictException({
+        code: 'REPORT_ASYNC_MUTATION_UNSUPPORTED',
+        message:
+          'Background reports cannot be reassigned or changed to file-only records.',
+      });
     // Validates user owns targetProfileId (throws ProfileNotFoundException → 404 if not)
     await this.profilesService.getProfile(userId, targetProfileId);
     if (entity.profileId === targetProfileId) {
@@ -2080,6 +2287,12 @@ export class ReportsService {
 
   async keepFile(userId: string, reportId: string): Promise<ReportDto> {
     const entity = await this.getActiveReportOrThrow(userId, reportId);
+    if (entity.processingGeneration > 0)
+      throw new ConflictException({
+        code: 'REPORT_ASYNC_MUTATION_UNSUPPORTED',
+        message:
+          'Background reports cannot be reassigned or changed to file-only records.',
+      });
     this.throwIfAlreadyParsed(entity.status);
     // Sets to unparsed so user sees "View PDF"; applies to unparsed and content_not_recognized
     entity.status = 'unparsed';
@@ -2093,6 +2306,19 @@ export class ReportsService {
 
   async moveToRecycleBin(userId: string, reportId: string): Promise<ReportDto> {
     const entity = await this.getActiveReportOrThrow(userId, reportId);
+    if (entity.processingGeneration > 0) {
+      await cancelReportProcessing(
+        this.reportRepo.manager.connection,
+        userId,
+        reportId,
+        true,
+      );
+      const updated = await this.reportRepo.findOneByOrFail({
+        id: reportId,
+        userId,
+      });
+      return this.toDto(updated);
+    }
     const now = new Date();
     const purgeAfterAt = new Date(now);
     purgeAfterAt.setDate(
@@ -2157,9 +2383,59 @@ export class ReportsService {
       where: { id: reportId, userId, deletedAt: LessThanOrEqual(new Date()) },
     });
     if (!entity) throw new ReportNotFoundException();
-    entity.deletedAt = null;
-    entity.purgeAfterAt = null;
-    await this.reportRepo.save(entity);
+    await this.reportRepo.manager.transaction(async (manager) => {
+      await manager.query(
+        'SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE',
+        [userId],
+      );
+      const locked = await manager
+        .getRepository(ReportEntity)
+        .findOneOrFail({
+          where: { id: reportId, userId },
+          lock: { mode: 'pessimistic_write' },
+        });
+      const [entitlement] = await manager.query(
+        'SELECT plan_id FROM user_entitlements WHERE user_id=$1 FOR UPDATE',
+        [userId],
+      );
+      const [plan] = await manager.query(
+        'SELECT limits FROM plans WHERE id=$1 FOR SHARE',
+        [entitlement?.plan_id],
+      );
+      const [usage] = await manager.query(
+        "SELECT count(*)::integer AS count FROM reports WHERE user_id=$1 AND deleted_at IS NULL AND (status='parsed' OR processing_state IN ('queued','processing','retry_scheduled'))",
+        [userId],
+      );
+      if (
+        locked.status === 'parsed' &&
+        (!plan || usage.count >= plan.limits.maxReports)
+      )
+        throw new ConflictException({ code: 'REPORT_LIMIT_EXCEEDED' });
+      locked.deletedAt = null;
+      locked.purgeAfterAt = null;
+      if (locked.processingGeneration > 0) {
+        locked.processingState =
+          locked.status === 'parsed' ? 'ready' : 'failed';
+        locked.status =
+          locked.status === 'parsed' ? 'parsed' : 'failed_terminal';
+        locked.processingVersion = (
+          BigInt(locked.processingVersion) + 1n
+        ).toString();
+        locked.processingStage = 'complete';
+      }
+      await manager.getRepository(ReportEntity).save(locked);
+      if (locked.processingGeneration > 0)
+        await appendReportEvent(manager, userId, {
+          schemaVersion: 1,
+          reportId,
+          profileId: locked.profileId,
+          generation: locked.processingGeneration,
+          version: locked.processingVersion,
+          status: locked.processingState!,
+          stage: 'complete',
+        });
+      Object.assign(entity, locked);
+    });
     const profileInfoById = await this.getProfileInfoMap(userId);
     return this.withProfileInfo(this.toDto(entity), profileInfoById);
   }
@@ -2247,6 +2523,10 @@ export class ReportsService {
       contentType: e.contentType,
       sizeBytes: e.sizeBytes,
       status: e.status,
+      processingState: e.processingState ?? undefined,
+      processingVersion: e.processingVersion,
+      processingStage: e.processingStage ?? undefined,
+      summaryStatus: e.summaryStatus,
       createdAt: e.createdAt.toISOString(),
       ...collection,
       ...(e.deletedAt ? { deletedAt: e.deletedAt.toISOString() } : {}),

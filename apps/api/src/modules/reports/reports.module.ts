@@ -1,3 +1,12 @@
+import {
+  ReportOperationsController,
+  ReportProcessHealthController,
+} from './processing/report-operations.controller';
+import { ReportProcessingController } from './processing/report-processing.controller';
+import { ReportWorkerService } from './processing/report-worker.service';
+import { ReportDispatcherService } from './processing/report-dispatcher.service';
+import { ReportStreamService } from './processing/report-stream.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ReportEntity } from '../../database/entities/report.entity';
@@ -34,15 +43,24 @@ import { DoclingOcrClient } from './docling-ocr.client';
       ReportResultInsightUsageEntity,
     ]),
     AuthModule,
+    NotificationsModule,
     EntitlementsModule,
     ProfilesModule,
     StorageModule,
     NotificationPipelineModule,
     ReferralsModule,
   ],
-  controllers: [ReportsController],
+  controllers: [
+    ReportProcessHealthController,
+    ReportOperationsController,
+    ReportProcessingController,
+    ReportsController,
+  ],
   providers: [
     ReportsService,
+    ReportWorkerService,
+    ReportDispatcherService,
+    ReportStreamService,
     ReportsRecycleBinCleanupService,
     ReportSummaryService,
     OpenDataLoaderClient,
@@ -52,5 +70,6 @@ import { DoclingOcrClient } from './docling-ocr.client';
     ReportResultInsightService,
     ImageToPdfService,
   ],
+  exports: [ReportWorkerService, ReportDispatcherService],
 })
 export class ReportsModule {}

@@ -65,10 +65,7 @@ class ApiClient {
       if (auth && _accessToken != null) {
         headers['Authorization'] = 'Bearer $_accessToken';
       }
-      final res = await http.get(
-        Uri.parse(_url(path)),
-        headers: headers,
-      );
+      final res = await http.get(Uri.parse(_url(path)), headers: headers);
       if (res.statusCode >= 200 && res.statusCode < 300) {
         return res.bodyBytes;
       }
@@ -129,12 +126,33 @@ class ApiClient {
     }, auth);
   }
 
+  Future<http.StreamedResponse> openReportEvents(
+    http.Client transport,
+    String cursor,
+  ) async {
+    return _requestWithRefresh(() async {
+      final uri = Uri.parse(
+        _url('v1/reports/processing/events'),
+      ).replace(queryParameters: {'cursor': cursor});
+      final request = http.Request('GET', uri);
+      request.headers.addAll(_headers());
+      request.headers['Accept'] = 'text/event-stream';
+      final response = await transport.send(request);
+      if (response.statusCode != 200) {
+        _handleResponse(await http.Response.fromStream(response));
+      }
+      return response;
+    }, true);
+  }
+
   Future<Map<String, dynamic>> uploadFile(
     String path,
     String fieldName,
     String filePath, {
     bool auth = true,
     Map<String, String>? queryParams,
+    Map<String, String>? extraHeaders,
+    Map<String, String>? fields,
   }) async {
     return _requestWithRefresh(() async {
       var uri = Uri.parse(_url(path));
@@ -142,19 +160,22 @@ class ApiClient {
         uri = uri.replace(queryParameters: queryParams);
       }
       final request = http.MultipartRequest('POST', uri);
+      request.headers.addAll(extraHeaders ?? {});
+      request.fields.addAll(fields ?? {});
       if (auth && _accessToken != null) {
         request.headers['Authorization'] = 'Bearer $_accessToken';
       }
-      request.headers['x-correlation-id'] =
-          DateTime.now().millisecondsSinceEpoch.toString();
+      request.headers['x-correlation-id'] = DateTime.now()
+          .millisecondsSinceEpoch
+          .toString();
       final lower = filePath.toLowerCase();
       final contentType = lower.endsWith('.jpg') || lower.endsWith('.jpeg')
           ? MediaType('image', 'jpeg')
           : lower.endsWith('.png')
-              ? MediaType('image', 'png')
-              : lower.endsWith('.pdf')
-                  ? MediaType('application', 'pdf')
-                  : null;
+          ? MediaType('image', 'png')
+          : lower.endsWith('.pdf')
+          ? MediaType('application', 'pdf')
+          : null;
       request.files.add(
         await http.MultipartFile.fromPath(
           fieldName,
@@ -256,6 +277,7 @@ class ApiException implements Exception {
 
   final String code;
   final String message;
+
   /// Full error response body (e.g. contains existingReport for REPORT_DUPLICATE_DETECTED).
   final Map<String, dynamic>? data;
 

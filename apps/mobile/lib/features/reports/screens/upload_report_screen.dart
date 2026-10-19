@@ -1,3 +1,4 @@
+import '../report_processing_store.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
@@ -73,9 +74,43 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   SupportRequestContext? _supportContext;
   String? _supportErrorMessage;
 
+  void _onProcessingChanged() {
+    final result = _result;
+    if (!mounted || result == null) return;
+    final update = ReportProcessingStore.instance.reports[result.reportId];
+    if (update == null) return;
+    const legacy = {
+      'ready': 'parsed',
+      'processing': 'parsing',
+      'retry_scheduled': 'failed_transient',
+      'failed': 'failed_terminal',
+      'needs_attention': 'content_not_recognized',
+      'cancelled': 'unparsed',
+    };
+    final status = legacy[update['status']] ?? update['status'] as String;
+    if (status == result.status) return;
+    setState(
+      () => _result = UploadedReport(
+        reportId: result.reportId,
+        profileId: result.profileId,
+        fileName: result.fileName,
+        contentType: result.contentType,
+        sizeBytes: result.sizeBytes,
+        status: status,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    ReportProcessingStore.instance.removeListener(_onProcessingChanged);
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+    ReportProcessingStore.instance.addListener(_onProcessingChanged);
     if (widget.initialReport != null) {
       _result = widget.initialReport;
       _state = _UploadState.success;
@@ -338,7 +373,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
               switch (_state) {
                 _UploadState.idle => _buildIdle(),
                 _UploadState.uploading => _buildProgress(
-                  'Uploading and analyzing report…',
+                  'Uploading report…',
                 ),
                 _UploadState.reading => _buildProgress('Reading report…'),
                 _UploadState.success =>

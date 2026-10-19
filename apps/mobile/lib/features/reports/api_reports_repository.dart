@@ -1,3 +1,7 @@
+import 'dart:io';
+import 'dart:math';
+import 'package:crypto/crypto.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/api_client.dart';
 import 'reports_repository.dart';
 
@@ -314,6 +318,7 @@ class ApiReportsRepository implements ReportsRepository {
       contentType: d['contentType'] as String,
       sizeBytes: d['sizeBytes'] as int,
       status: d['status'] as String,
+      summaryStatus: d['summaryStatus'] as String?,
       createdAt: createdAt != null ? DateTime.parse(createdAt) : DateTime.now(),
       collectionDate: d['collectionDate'] as String?,
       collectionDateStatus: d['collectionDateStatus'] as String?,
@@ -332,6 +337,59 @@ class ApiReportsRepository implements ReportsRepository {
     String filePath, {
     bool forceUploadAnyway = false,
   }) async {
+    final capabilities = await _client.get(
+      'v1/reports/processing/capabilities',
+    );
+    if (capabilities['data']?['acceptance'] == true) {
+      final profiles = (await _client.get('v1/profiles'))['data'] as List;
+      final profile = profiles.cast<Map<String, dynamic>>().firstWhere(
+        (p) => p['isActive'] == true,
+      );
+      final profileId = profile['id'] as String;
+      final hash = sha256
+          .convert(await File(filePath).readAsBytes())
+          .toString();
+      final storage = const FlutterSecureStorage();
+      final storageKey = 'report-upload:$profileId:$hash';
+      var key = await storage.read(key: storageKey);
+      key ??= List.generate(
+        24,
+        (_) => Random.secure().nextInt(256).toRadixString(16).padLeft(2, '0'),
+      ).join();
+      await storage.write(key: storageKey, value: key);
+      late Map<String, dynamic> response;
+      try {
+        response = await _client.uploadFile(
+          'v1/reports/processing/uploads',
+          'file',
+          filePath,
+          extraHeaders: {'Idempotency-Key': key},
+          fields: {'profileId': profileId},
+        );
+      } on ApiException catch (error) {
+        if (error.code == 'REPORT_IDEMPOTENCY_EXPIRED') {
+          await storage.delete(key: storageKey);
+        }
+        rethrow;
+      }
+      final d = response['data'] as Map<String, dynamic>;
+      const legacy = {
+        'ready': 'parsed',
+        'processing': 'parsing',
+        'retry_scheduled': 'failed_transient',
+        'failed': 'failed_terminal',
+        'needs_attention': 'content_not_recognized',
+        'cancelled': 'unparsed',
+      };
+      return UploadedReport(
+        reportId: d['reportId'] as String,
+        profileId: d['profileId'] as String,
+        fileName: d['fileName'] as String,
+        contentType: d['contentType'] as String,
+        sizeBytes: d['sizeBytes'] as int,
+        status: legacy[d['status']] ?? d['status'] as String,
+      );
+    }
     final queryParams = forceUploadAnyway
         ? <String, String>{'duplicateAction': 'upload_anyway'}
         : null;
@@ -451,6 +509,13 @@ class ApiReportsRepository implements ReportsRepository {
 
   @override
   Future<Report> retryParse(String reportId, {bool force = false}) async {
+    final existing =
+        (await _client.get('v1/reports/$reportId'))['data']
+            as Map<String, dynamic>;
+    if (existing['processingState'] != null) {
+      await _client.post('v1/reports/processing/$reportId/retry');
+      return getReport(reportId);
+    }
     final path = force
         ? 'v1/reports/$reportId/retry?force=true'
         : 'v1/reports/$reportId/retry';

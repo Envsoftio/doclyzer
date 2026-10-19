@@ -20,6 +20,11 @@ const config = useRuntimeConfig()
 const router = useRouter()
 const apiBase = String(config.public.apiBaseUrl).replace(/\/+$/, '')
 const token = ref('')
+const asyncEnabled = ref(false)
+const connection = useState<string>('report-connection', () => 'offline')
+const processing = useState<Record<string, { status: string; stage: string; acknowledgedAt?: string }>>('report-processing', () => ({}))
+let refreshTimer: ReturnType<typeof setTimeout> | undefined
+const onReportChange = () => { clearTimeout(refreshTimer); refreshTimer = setTimeout(() => void loadReports(), 100) }
 const profiles = ref<Profile[]>([])
 const profileId = ref('')
 const reports = ref<Report[]>([])
@@ -41,7 +46,7 @@ async function request<T>(path: string, options: Record<string, unknown> = {}): 
   try {
     return await $fetch<T>(`${apiBase}${path}`, {
       ...options,
-      headers: { Authorization: `Bearer ${token.value}` },
+      headers: { ...(options.headers as Record<string, string> ?? {}), Authorization: `Bearer ${token.value}` },
     })
   } catch (error) {
     if ((error as { statusCode?: number }).statusCode === 401) {
@@ -49,8 +54,8 @@ async function request<T>(path: string, options: Record<string, unknown> = {}): 
       await router.replace('/login')
       throw new Error('Your session has expired. Sign in again.')
     }
-    const payload = (error as { data?: { error?: { message?: string } } }).data
-    throw new Error(payload?.error?.message ?? 'Unable to load reports. Try again.')
+    const payload = (error as { data?: { error?: { message?: string; code?: string } } }).data
+    throw Object.assign(new Error(payload?.error?.message ?? 'Unable to load reports. Try again.'), { code: payload?.error?.code })
   }
 }
 
@@ -81,6 +86,8 @@ onMounted(async () => {
     await router.replace('/login')
     return
   }
+  window.addEventListener('doclyzer-report-change', onReportChange)
+  try { asyncEnabled.value = (await request<{ data: { acceptance: boolean } }>('/reports/processing/capabilities')).data.acceptance } catch { /* Legacy server. */ }
   try {
     const result = await request<{ data: Profile[] }>('/profiles')
     profiles.value = result.data
@@ -156,7 +163,7 @@ function closeOriginal() {
   if (originalUrl.value) URL.revokeObjectURL(originalUrl.value)
   originalUrl.value = ''
 }
-onBeforeUnmount(closeOriginal)
+onBeforeUnmount(() => { closeOriginal(); clearTimeout(refreshTimer); window.removeEventListener('doclyzer-report-change', onReportChange) })
 
 async function deleteReport(report: Report) {
   if (!window.confirm(`Move ${report.originalFileName} to the recycle bin? It will be permanently deleted after 30 days.`)) return
@@ -187,9 +194,39 @@ async function restoreReport(report: Report) {
   }
 }
 
+async function upload(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !profileId.value) return
+  let storageKey = ''
+  busy.value = true; errorMessage.value = ''; feedback.value = 'Transferring file. Stay here until accepted.'
+  try {
+    const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await file.arrayBuffer()))).map(x => x.toString(16).padStart(2, '0')).join('')
+    const keyName = `report-upload:${profileId.value}:${hash}`
+    storageKey = keyName
+    const key = sessionStorage.getItem(keyName) ?? crypto.randomUUID()
+    sessionStorage.setItem(keyName, key)
+    const body = new FormData(); body.append('file', file); body.append('profileId', profileId.value)
+    await request('/reports/processing/uploads', { method: 'POST', body, headers: { 'Idempotency-Key': key } })
+    feedback.value = 'Accepted. Processing continues when you leave this screen.'
+    await loadReports()
+  } catch (error) { if ((error as { code?: string }).code === 'REPORT_IDEMPOTENCY_EXPIRED') sessionStorage.removeItem(storageKey); errorMessage.value = (error as Error).message; feedback.value = '' }
+  finally { busy.value = false; (event.target as HTMLInputElement).value = '' }
+}
+async function retryBackground(report: Report) {
+  busy.value = true
+  try { await request(`/reports/processing/${report.id}/retry`, { method: 'POST' }); await loadReports() }
+  catch (error) { errorMessage.value = (error as Error).message }
+  finally { busy.value = false }
+}
+async function acknowledge(report: Report) {
+  try { await request(`/reports/processing/${report.id}/acknowledge`, { method: 'POST' }); if (processing.value[report.id]) processing.value[report.id]!.acknowledgedAt = new Date().toISOString(); feedback.value = 'Marked as reviewed.' }
+  catch (error) { errorMessage.value = (error as Error).message }
+}
+
 function signOut() {
   closeOriginal()
   sessionStorage.removeItem('doclyzerConsumerAccessToken')
+  window.dispatchEvent(new Event('doclyzer-auth-change'))
   localStorage.removeItem('doclyzerAuthTokens')
   void router.replace('/login')
 }
@@ -216,6 +253,8 @@ function signOut() {
         <input v-model="query" type="search" placeholder="Search by filename or collection date" />
       </label>
     </div>
+    <label v-if="asyncEnabled && profileId">Upload a report <input type="file" accept="application/pdf,image/png,image/jpeg" :disabled="busy" @change="upload" /></label>
+    <p v-if="asyncEnabled && connection !== 'connected'" role="status">Updates: {{ connection }}</p>
     <nav v-if="profiles.length" class="tabs" aria-label="Report views">
       <button type="button" :aria-current="!showingBin ? 'page' : undefined" @click="showingBin = false">Reports</button>
       <button type="button" :aria-current="showingBin ? 'page' : undefined" @click="showingBin = true">Recycle bin</button>
@@ -232,12 +271,14 @@ function signOut() {
           <h3>{{ report.originalFileName }}</h3>
           <p>Collected: {{ collectionLabel(report) }}</p>
           <p>Uploaded: {{ formatDisplayDate(report.createdAt) }}</p>
-          <p>Status: {{ showingBin ? 'Deleted' : report.status.replaceAll('_', ' ') }}</p>
+          <p>Status: {{ showingBin ? 'Deleted' : (processing[report.id]?.status ?? report.status).replaceAll('_', ' ') }}</p>
           <p v-if="showingBin && report.purgeAfterAt">Permanent deletion: {{ formatDisplayDate(report.purgeAfterAt) }}</p>
         </div>
         <div class="actions">
           <button v-if="showingBin" type="button" :disabled="busy" @click="restoreReport(report)">Restore</button>
           <template v-else>
+            <button v-if="['failed', 'needs_attention', 'cancelled'].includes(processing[report.id]?.status ?? '')" :disabled="busy" @click="retryBackground(report)">Retry processing</button>
+            <button v-if="processing[report.id]?.status === 'ready' && !processing[report.id]?.acknowledgedAt" @click="acknowledge(report)">Mark reviewed</button>
             <button type="button" :disabled="busy" @click="openOriginal(report)">Open original</button>
             <button type="button" class="quiet" :disabled="busy" @click="deleteReport(report)">Move to recycle bin</button>
           </template>

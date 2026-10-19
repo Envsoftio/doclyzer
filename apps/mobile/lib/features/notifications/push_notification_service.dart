@@ -20,13 +20,19 @@ class PushNotificationService {
   StreamSubscription<String>? _tokenRefreshSubscription;
   StreamSubscription<RemoteMessage>? _openSubscription;
   bool _started = false;
+  Future<void> Function(String reportId)? onReportOpen;
+  VoidCallback? onForegroundReport;
+  StreamSubscription<RemoteMessage>? _foregroundSubscription;
 
   Future<void> start() async {
     if (_started) return;
     _started = true;
 
     final messaging = await _messagingOrNull();
-    if (messaging == null) return;
+    if (messaging == null) {
+      _started = false;
+      return;
+    }
 
     await _registerCurrentToken(messaging);
 
@@ -37,6 +43,12 @@ class PushNotificationService {
       message,
     ) {
       unawaited(_trackOpen(message));
+    });
+
+    _foregroundSubscription ??= FirebaseMessaging.onMessage.listen((message) {
+      if (message.data['notificationType'] == 'report.completed') {
+        onForegroundReport?.call();
+      }
     });
 
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
@@ -60,6 +72,8 @@ class PushNotificationService {
   Future<void> dispose() async {
     await _tokenRefreshSubscription?.cancel();
     await _openSubscription?.cancel();
+    await _foregroundSubscription?.cancel();
+    _foregroundSubscription = null;
     _tokenRefreshSubscription = null;
     _openSubscription = null;
     _started = false;
@@ -118,6 +132,14 @@ class PushNotificationService {
   }
 
   Future<void> _trackOpen(RemoteMessage message) async {
+    final reportId = message.data['reportId'];
+    if (message.data['notificationType'] == 'report.completed' &&
+        reportId is String &&
+        RegExp(
+          r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+        ).hasMatch(reportId)) {
+      await onReportOpen?.call(reportId);
+    }
     try {
       final deviceTokenId = await _tokenStorage.getPushDeviceTokenId();
       await _notificationsRepository.trackPushOpen(

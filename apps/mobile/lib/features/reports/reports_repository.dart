@@ -79,6 +79,7 @@ class Report {
     required this.contentType,
     required this.sizeBytes,
     required this.status,
+    this.summaryStatus,
     required this.createdAt,
     this.collectionDate,
     this.collectionDateStatus,
@@ -99,6 +100,7 @@ class Report {
   final String contentType;
   final int sizeBytes;
   final String status;
+  final String? summaryStatus;
   final DateTime createdAt;
 
   /// Date printed in the report, when extraction found one.

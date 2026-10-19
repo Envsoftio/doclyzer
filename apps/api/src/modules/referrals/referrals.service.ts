@@ -128,6 +128,7 @@ export class ReferralsService implements OnModuleInit {
   ) {}
 
   onModuleInit(): void {
+    if (process.env.REPORT_PROCESS_ROLE && process.env.REPORT_PROCESS_ROLE !== 'api') return;
     void this.backfillMissingReferralProfiles();
   }
 

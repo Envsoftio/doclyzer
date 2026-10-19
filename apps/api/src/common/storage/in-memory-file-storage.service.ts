@@ -7,6 +7,7 @@ import {
 
 @Injectable()
 export class InMemoryFileStorageService implements FileStorageService {
+  readonly durability = 'ephemeral' as const;
   private readonly logger = new Logger(InMemoryFileStorageService.name);
   private readonly store = new Map<string, Buffer>();
 
