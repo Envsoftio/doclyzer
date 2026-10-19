@@ -152,6 +152,13 @@ async function openOriginal(report: Report) {
     originalUrl.value = URL.createObjectURL(blob)
     originalType.value = report.contentType
     originalName.value = report.originalFileName
+    if (report.status === 'parsed' && !processing.value[report.id]?.acknowledgedAt) {
+      try {
+        await request(`/reports/processing/${encodeURIComponent(report.id)}/acknowledge`, { method: 'POST' })
+        if (processing.value[report.id]) processing.value[report.id]!.acknowledgedAt = new Date().toISOString()
+        else window.dispatchEvent(new Event('doclyzer-report-acknowledged'))
+      } catch { /* Opening a report must remain usable if acknowledgement fails. */ }
+    }
   } catch (error) {
     errorMessage.value = (error as Error).message
   } finally {
@@ -218,10 +225,6 @@ async function retryBackground(report: Report) {
   catch (error) { errorMessage.value = (error as Error).message }
   finally { busy.value = false }
 }
-async function acknowledge(report: Report) {
-  try { await request(`/reports/processing/${report.id}/acknowledge`, { method: 'POST' }); if (processing.value[report.id]) processing.value[report.id]!.acknowledgedAt = new Date().toISOString(); feedback.value = 'Marked as reviewed.' }
-  catch (error) { errorMessage.value = (error as Error).message }
-}
 
 function signOut() {
   closeOriginal()
@@ -278,7 +281,6 @@ function signOut() {
           <button v-if="showingBin" type="button" :disabled="busy" @click="restoreReport(report)">Restore</button>
           <template v-else>
             <button v-if="['failed', 'needs_attention', 'cancelled'].includes(processing[report.id]?.status ?? '')" :disabled="busy" @click="retryBackground(report)">Retry processing</button>
-            <button v-if="processing[report.id]?.status === 'ready' && !processing[report.id]?.acknowledgedAt" @click="acknowledge(report)">Mark reviewed</button>
             <button type="button" :disabled="busy" @click="openOriginal(report)">Open original</button>
             <button type="button" class="quiet" :disabled="busy" @click="deleteReport(report)">Move to recycle bin</button>
           </template>

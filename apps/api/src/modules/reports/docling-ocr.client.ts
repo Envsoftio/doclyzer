@@ -6,6 +6,8 @@ import { redactSecrets } from '../../common/redact-secrets';
 interface DoclingOptions {
   doOcr?: boolean;
   forceOcr?: boolean;
+  engine?: 'rapidocr' | 'tesseract';
+  signal?: AbortSignal;
 }
 
 interface MultipartPart {
@@ -35,10 +37,15 @@ export class DoclingOcrClient {
     const timeoutMs =
       this.configService.get<number>('reports.doclingOcrTimeoutMs') ?? 180000;
     const ocrEngine =
-      this.configService.get<string>('reports.doclingOcrEngine') ?? 'rapidocr';
+      options?.engine ??
+      this.configService.get<string>('reports.doclingOcrEngine') ??
+      'rapidocr';
     const languages = (
-      this.configService.get<string>('reports.doclingOcrLanguages')?.trim() ||
-      (ocrEngine.startsWith('tesser') ? 'eng' : '')
+      (options?.engine
+        ? ''
+        : this.configService
+            .get<string>('reports.doclingOcrLanguages')
+            ?.trim()) || (ocrEngine.startsWith('tesser') ? 'eng' : '')
     )
       .split(',')
       .map((lang) => lang.trim())
@@ -47,10 +54,14 @@ export class DoclingOcrClient {
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const signal = options?.signal
+      ? AbortSignal.any([controller.signal, options.signal])
+      : controller.signal;
     let lastError: string | null = null;
 
     try {
       for (const baseUrl of baseUrls) {
+        if (signal.aborted) return null;
         const endpoint = `${baseUrl.replace(/\/+$/, '')}/v1/convert/file`;
         const callWithFields = async (): Promise<Response> => {
           const { body, contentType } = this.buildMultipartBody([
@@ -70,7 +81,10 @@ export class DoclingOcrClient {
               name: 'force_ocr',
               value: options?.forceOcr ? 'true' : 'false',
             },
-            { name: 'ocr_engine', value: ocrEngine },
+            {
+              name: 'ocr_preset',
+              value: ocrEngine === 'tesseract' ? 'tesseract-table' : ocrEngine,
+            },
             ...languages.map((value) => ({ name: 'ocr_lang', value })),
             { name: 'return_as_file', value: 'false' },
           ]);
@@ -80,64 +94,26 @@ export class DoclingOcrClient {
             headers: {
               'Content-Type': contentType,
               'Content-Length': String(body.length),
+              ...(this.configService.get<string>('DOCLING_API_KEY')
+                ? {
+                    'X-Api-Key':
+                      this.configService.get<string>('DOCLING_API_KEY')!,
+                  }
+                : {}),
             },
-            signal: controller.signal,
-          });
-        };
-        const callWithParametersJson = async (): Promise<Response> => {
-          const { body, contentType } = this.buildMultipartBody([
-            {
-              name: 'files',
-              value: buffer,
-              filename: 'report.pdf',
-              contentType: 'application/pdf',
-            },
-            {
-              name: 'parameters',
-              value: JSON.stringify({
-                from_formats: ['pdf'],
-                to_formats: ['md', 'json'],
-                do_ocr: options?.doOcr !== false,
-                do_table_structure: true,
-                table_mode: 'accurate',
-                force_ocr: Boolean(options?.forceOcr),
-                ocr_engine: ocrEngine,
-                ...(languages.length ? { ocr_lang: languages } : {}),
-                return_as_file: false,
-                abort_on_error: false,
-              }),
-            },
-          ]);
-          return fetch(endpoint, {
-            method: 'POST',
-            body: new Uint8Array(body),
-            headers: {
-              'Content-Type': contentType,
-              'Content-Length': String(body.length),
-            },
-            signal: controller.signal,
+            signal,
           });
         };
 
         try {
-          let response = await this.callWithRetry(callWithFields, 2);
+          const response = await this.callWithRetry(callWithFields, 2);
           if (!response.ok) {
-            const nonOkBody = await this.readBodyPreview(response);
             this.logger.warn(
-              redactSecrets(
-                `Docling OCR non-OK (fields payload) status=${response.status} endpoint=${endpoint} body=${nonOkBody}`,
-              ),
+              `Docling conversion failed status=${response.status} engine=${ocrEngine}`,
             );
-            response = await this.callWithRetry(callWithParametersJson, 2);
-          }
-          if (!response.ok) {
-            const nonOkBody = await this.readBodyPreview(response);
-            this.logger.warn(
-              redactSecrets(
-                `Docling OCR returned non-OK status=${response.status} endpoint=${endpoint} body=${nonOkBody}`,
-              ),
-            );
-            continue;
+            // Never retry an engine-specific request with another request schema:
+            // ignored options could silently run the default engine twice.
+            return null;
           }
           const data = (await response.json()) as unknown;
           this.logger.log(
@@ -152,29 +128,12 @@ export class DoclingOcrClient {
             JSON.stringify({
               action: 'DOCLING_OCR_RESULT',
               endpoint,
+              engine: options?.doOcr === false ? 'native' : ocrEngine,
               hasText: text.length > 0,
               textChars: text.length,
               hasJson: Boolean(parsedJson),
             }),
           );
-          if (parsedJson) {
-            this.logger.log(
-              JSON.stringify({
-                action: 'DOCLING_OCR_PARSED_JSON_DEBUG',
-                parsedJson: this.safeForLog(parsedJson),
-              }),
-            );
-          }
-          if (text.trim().length > 0) {
-            this.logger.log(
-              JSON.stringify({
-                action: 'DOCLING_OCR_TEXT_DEBUG',
-                textChars: text.length,
-                textPreview: text.slice(0, 8000),
-                truncated: text.length > 8000,
-              }),
-            );
-          }
           return { text, ...(parsedJson ? { parsedJson } : {}) };
         } catch (err) {
           const cause =

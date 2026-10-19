@@ -65,13 +65,11 @@ export class ReportDispatcherService {
             ];
             if (e.status === 'ready') {
               channels.push({ channel: 'referral', target: 'account' });
-              if (this.config.get<boolean>('reports.reportSummaryEnabled'))
-                channels.push({ channel: 'summary', target: 'report' });
-              else
-                await m.query(
-                  "UPDATE reports SET summary_status='not_requested' WHERE id=$1",
-                  [e.report_id],
-                );
+              // Raw-document summaries are disabled at the privacy boundary.
+              await m.query(
+                "UPDATE reports SET summary_status='not_requested' WHERE id=$1",
+                [e.report_id],
+              );
             }
             if (e.status === 'failed')
               channels.push({ channel: 'ops', target: 'ops' });
@@ -151,7 +149,7 @@ export class ReportDispatcherService {
             title: 'Report update',
             body:
               r.status === 'ready'
-                ? 'Your report is ready to review.'
+                ? 'Your report results are ready.'
                 : 'Your report needs attention. Open the app for details.',
             collapseId: r.id,
             expiresAt: new Date(delivery.expires_at),

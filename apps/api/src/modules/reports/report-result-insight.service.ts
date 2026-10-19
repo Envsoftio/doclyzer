@@ -90,14 +90,38 @@ export class ReportResultInsightService {
     const baseUrl =
       this.configService.get<string>('reports.labAiFallbackOpenaiBaseUrl') ||
       'https://api.openai.com/v1';
+    // Only an exact, approved catalog alias may supply a test name. Never send
+    // OCR labels, dates, identifiers, or arbitrary free-text fields to a model.
+    const aliases: Array<{ name: string }> =
+      await this.insightRepo.manager.query(
+        `SELECT DISTINCT t.display_name AS name FROM lab_test_aliases a
+       JOIN lab_tests t ON t.id=a.canonical_test_id WHERE a.alias_key=$1`,
+        [result.parameterName.trim().replace(/\s+/g, ' ').toLowerCase()],
+      );
+    const numeric = /^[<>≤≥]?\s*[+-]?\d{1,5}(?:\.\d{1,6})?$/;
+    const unit =
+      /^(?:%|(?:[fpnumkµμ]?g|mmol|mol|mEq|IU|U|ng|pg|fL|L|cells|10\^\d{1,2})(?:\/(?:dL|L|mL|uL|µL|μL|mm3|cmm))?)$/i;
+    const range =
+      /^(?:[<>≤≥]?\s*\d{1,5}(?:\.\d{1,6})?|\d{1,5}(?:\.\d{1,6})?\s*[-–]\s*\d{1,5}(?:\.\d{1,6})?)$/;
+    if (
+      aliases.length !== 1 ||
+      !numeric.test(result.value.trim()) ||
+      (result.unit && !unit.test(result.unit.trim())) ||
+      (result.referenceRange && !range.test(result.referenceRange.trim()))
+    ) {
+      throw new ServiceUnavailableException({
+        code: 'RESULT_INSIGHT_UNSAFE_INPUT',
+        message: 'This result cannot be safely sent for an explanation.',
+      });
+    }
     const input = {
-      testName: result.parameterName.slice(0, 150),
-      value: result.value.slice(0, 60),
-      unit: (result.unit ?? '').slice(0, 40),
-      printedLabRange: (result.referenceRange ?? '').slice(0, 100),
+      testName: aliases[0].name,
+      value: result.value.trim(),
+      unit: (result.unit ?? '').trim(),
+      printedLabRange: (result.referenceRange ?? '').trim(),
       rangeStatus: comparePrintedRange(result),
-      labAbnormalFlag: result.isAbnormal ?? null,
-      sampleDate: (result.sampleDate ?? '').slice(0, 40),
+      labAbnormalFlag:
+        typeof result.isAbnormal === 'boolean' ? result.isAbnormal : null,
     };
     const cacheKey = createHash('sha256')
       .update(
@@ -117,7 +141,15 @@ export class ReportResultInsightService {
     try {
       const cached = await this.insightRepo.findOneBy({ reportId, cacheKey });
       if (cached) {
-        if (userId) void this.recordUsageSafely(userId, reportId, cacheKey, model, null, true);
+        if (userId)
+          void this.recordUsageSafely(
+            userId,
+            reportId,
+            cacheKey,
+            model,
+            null,
+            true,
+          );
         return this.validate(cached.insight);
       }
     } catch {
@@ -131,15 +163,23 @@ export class ReportResultInsightService {
       .then(async (insight) => {
         const { usage, ...data } = insight;
         try {
-          await this.insightRepo.upsert(
-            { reportId, cacheKey, insight: data },
-            ['reportId', 'cacheKey'],
-          );
+          await this.insightRepo.upsert({ reportId, cacheKey, insight: data }, [
+            'reportId',
+            'cacheKey',
+          ]);
         } catch {
           // The response is still useful if persistence is unavailable.
           this.logger.warn('Result insight cache write failed');
         }
-        if (userId) await this.recordUsageSafely(userId, reportId, cacheKey, model, usage ?? null, false);
+        if (userId)
+          await this.recordUsageSafely(
+            userId,
+            reportId,
+            cacheKey,
+            model,
+            usage ?? null,
+            false,
+          );
         return data;
       })
       .finally(() => this.inFlight.delete(flightKey));
@@ -220,9 +260,14 @@ export class ReportResultInsightService {
       if (!text) throw new Error('provider-empty');
       const root = payload as Record<string, unknown>;
       const usage = (root.usage ?? {}) as Record<string, unknown>;
-      return { ...this.validate(JSON.parse(text) as unknown), usage: {
-        inputTokens: Number(usage.input_tokens ?? 0), outputTokens: Number(usage.output_tokens ?? 0), totalTokens: Number(usage.total_tokens ?? 0),
-      }};
+      return {
+        ...this.validate(JSON.parse(text) as unknown),
+        usage: {
+          inputTokens: Number(usage.input_tokens ?? 0),
+          outputTokens: Number(usage.output_tokens ?? 0),
+          totalTokens: Number(usage.total_tokens ?? 0),
+        },
+      };
     } catch {
       // Never log the provider response or clinical input.
       throw new ServiceUnavailableException({
@@ -234,21 +279,61 @@ export class ReportResultInsightService {
     }
   }
 
-  private async recordUsageSafely(userId: string, reportId: string, cacheKey: string, model: string, usage: UsageMetadata | null, cacheHit: boolean): Promise<void> {
+  private async recordUsageSafely(
+    userId: string,
+    reportId: string,
+    cacheKey: string,
+    model: string,
+    usage: UsageMetadata | null,
+    cacheHit: boolean,
+  ): Promise<void> {
     try {
-      await this.recordUsage(userId, reportId, cacheKey, model, usage, cacheHit);
+      await this.recordUsage(
+        userId,
+        reportId,
+        cacheKey,
+        model,
+        usage,
+        cacheHit,
+      );
     } catch {
       // Usage accounting must not turn a saved explanation into an error.
       this.logger.warn('Result insight usage write failed');
     }
   }
 
-  private async recordUsage(userId: string, reportId: string, cacheKey: string, model: string, usage: UsageMetadata | null, cacheHit: boolean): Promise<void> {
+  private async recordUsage(
+    userId: string,
+    reportId: string,
+    cacheKey: string,
+    model: string,
+    usage: UsageMetadata | null,
+    cacheHit: boolean,
+  ): Promise<void> {
     const inputTokens = usage?.inputTokens ?? 0;
     const outputTokens = usage?.outputTokens ?? 0;
-    const inputRate = this.configService.get<number>('reports.resultInsightOpenaiInputPricePerMillion') ?? 0;
-    const outputRate = this.configService.get<number>('reports.resultInsightOpenaiOutputPricePerMillion') ?? 0;
-    await this.usageRepo.insert({ userId, reportId, cacheKey, model, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens, estimatedCostUsd: ((inputTokens * inputRate + outputTokens * outputRate) / 1_000_000).toFixed(8), cacheHit });
+    const inputRate =
+      this.configService.get<number>(
+        'reports.resultInsightOpenaiInputPricePerMillion',
+      ) ?? 0;
+    const outputRate =
+      this.configService.get<number>(
+        'reports.resultInsightOpenaiOutputPricePerMillion',
+      ) ?? 0;
+    await this.usageRepo.insert({
+      userId,
+      reportId,
+      cacheKey,
+      model,
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      estimatedCostUsd: (
+        (inputTokens * inputRate + outputTokens * outputRate) /
+        1_000_000
+      ).toFixed(8),
+      cacheHit,
+    });
   }
 
   private readOutputText(payload: unknown): string | null {
@@ -303,4 +388,8 @@ export class ReportResultInsightService {
   }
 }
 
-interface UsageMetadata { inputTokens: number; outputTokens: number; totalTokens: number }
+interface UsageMetadata {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+}

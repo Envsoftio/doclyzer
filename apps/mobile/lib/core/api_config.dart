@@ -1,6 +1,6 @@
 // Base URL for the Doclyzer API.
-// Uses 10.0.2.2:3000 on Android (emulator -> host). localhost elsewhere.
-// Physical device: use your machine IP (e.g. http://192.168.1.x:3000).
+// Uses 10.0.2.2:4002 on Android emulators and localhost:4002 elsewhere.
+// Physical devices need --dart-define=API_BASE_URL=http://<host-LAN-IP>:4002.
 import 'api_config_stub.dart'
     if (dart.library.io) 'api_config_io.dart'
     as config;

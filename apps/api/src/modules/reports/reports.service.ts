@@ -1,3 +1,8 @@
+import {
+  ReportOcrCascade,
+  type OcrOutput,
+  type CascadeCheckpoint,
+} from './report-ocr-cascade';
 import { cancelReportProcessing } from './processing/report-lifecycle';
 import { appendReportEvent } from './processing/report-event.store';
 import type { EntityManager } from 'typeorm';
@@ -25,7 +30,7 @@ import { ReportResultInsightEntity } from '../../database/entities/report-result
 import { ProfilesService } from '../profiles/profiles.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
-import { SuryaOcrClient } from './surya-ocr.client';
+import { UnlimitedOcrClient } from './unlimited-ocr.client';
 import { DoclingOcrClient } from './docling-ocr.client';
 import { ImageToPdfService } from './image-to-pdf.service';
 import { buildLabTrends, type TrendParameter } from './lab-trend-builder';
@@ -232,7 +237,7 @@ export class ReportsService {
     private readonly usageLimitsService: UsageLimitsService,
     private readonly openDataLoaderClient: OpenDataLoaderClient,
     private readonly doclingOcrClient: DoclingOcrClient,
-    private readonly suryaOcrClient: SuryaOcrClient,
+    private readonly unlimitedOcrClient: UnlimitedOcrClient,
     private readonly reportLabAiFallbackService: ReportLabAiFallbackService,
     private readonly notificationPipeline: NotificationPipelineService,
     private readonly imageToPdfService: ImageToPdfService,
@@ -409,20 +414,25 @@ export class ReportsService {
       status,
       transcript,
       labValues,
+      parsedFromJson?.extractionReview.required ?? true,
     );
+    const preserveDetailsForReview =
+      finalStatus === 'content_not_recognized' &&
+      labValues.length > 0 &&
+      parsedFromJson?.hasMappedLabTables;
     let structuredReport =
-      finalStatus === 'parsed'
+      finalStatus === 'parsed' || preserveDetailsForReview
         ? (parsedFromJson?.structuredReport ??
           this.buildStructuredReport(transcript, labValues))
         : null;
-    if (finalStatus === 'parsed' && structuredReport) {
+    if (structuredReport) {
       structuredReport = this.withBestPatientDetails(
         structuredReport,
         transcript,
       );
       structuredReport.sections = this.buildStructuredReport(
         null,
-        labValues,
+        finalStatus === 'parsed' ? labValues : [],
       ).sections;
       structuredReport.extractionReview = parsedFromJson?.extractionReview ?? {
         required: true,
@@ -628,20 +638,25 @@ export class ReportsService {
       status,
       transcript,
       labValues,
+      parsedFromJson?.extractionReview.required ?? true,
     );
+    const preserveDetailsForReview =
+      finalStatus === 'content_not_recognized' &&
+      labValues.length > 0 &&
+      parsedFromJson?.hasMappedLabTables;
     let structuredReport =
-      finalStatus === 'parsed'
+      finalStatus === 'parsed' || preserveDetailsForReview
         ? (parsedFromJson?.structuredReport ??
           this.buildStructuredReport(transcript, labValues))
         : null;
-    if (finalStatus === 'parsed' && structuredReport) {
+    if (structuredReport) {
       structuredReport = this.withBestPatientDetails(
         structuredReport,
         transcript,
       );
       structuredReport.sections = this.buildStructuredReport(
         null,
-        labValues,
+        finalStatus === 'parsed' ? labValues : [],
       ).sections;
       structuredReport.extractionReview = parsedFromJson?.extractionReview ?? {
         required: true,
@@ -666,7 +681,7 @@ export class ReportsService {
           [
             reportId,
             finalStatus === 'parsed' ? transcript : null,
-            finalStatus === 'parsed' ? JSON.stringify(structuredReport) : null,
+            structuredReport ? JSON.stringify(structuredReport) : null,
             finalStatus === 'parsed' ? 'pending' : 'not_requested',
           ],
         );
@@ -710,29 +725,10 @@ export class ReportsService {
     reportId: string,
     generation: number,
   ): Promise<void> {
-    const report = await this.reportRepo.findOneByOrFail({
-      id: reportId,
-      deletedAt: IsNull(),
-    });
-    const buffer = await this.fileStorage.get(report.originalFileStorageKey);
-    const normalized = await this.normalizeReportInput({
-      buffer,
-      originalname: report.originalFileName,
-      mimetype: report.contentType,
-      size: buffer.length,
-    });
-    const summary = await this.reportSummaryService.generateSummary(
-      normalized.buffer,
-    );
-    if (!summary) throw new Error('SUMMARY_UNAVAILABLE');
+    // Drain previously queued summary intents without reading/transmitting PHI.
     await this.reportRepo.update(
-      {
-        id: reportId,
-        processingGeneration: generation,
-        deletedAt: IsNull(),
-        status: 'parsed',
-      },
-      { summary, summaryStatus: 'ready' },
+      { id: reportId, processingGeneration: generation, deletedAt: IsNull() },
+      { summaryStatus: 'not_requested' },
     );
   }
 
@@ -1206,6 +1202,7 @@ export class ReportsService {
       status,
       transcript,
       dedupedRetryLabValues,
+      retryFromJson?.extractionReview.required ?? true,
     );
     if (finalStatus === 'parsed') {
       this.logger.log(
@@ -1349,7 +1346,13 @@ export class ReportsService {
     initialStatus: ReportStatus,
     transcript: string | null,
     labValues: StructuredReportLabInput[],
+    incompleteExtraction = false,
   ): ReportStatus {
+    if (incompleteExtraction) {
+      return initialStatus === 'parsed' || labValues.length > 0
+        ? 'content_not_recognized'
+        : initialStatus;
+    }
     if (initialStatus !== 'parsed') {
       // Additive fallback for image/scanned uploads:
       // if deterministic extraction produced enough lab rows, treat as parsed
@@ -1398,24 +1401,22 @@ export class ReportsService {
     return { ok: true, text: cleaned };
   }
 
+  async extractWithOcrCascade(
+    buffer: Buffer,
+    signal: AbortSignal,
+    initial?: OcrOutput,
+    checkpoint?: CascadeCheckpoint,
+  ) {
+    return new ReportOcrCascade(this.doclingOcrClient, this.unlimitedOcrClient).run(
+      buffer,
+      signal,
+      initial,
+      checkpoint,
+    );
+  }
+
   private async parseWithPreferredOcr(buffer: Buffer) {
-    const surya = await this.suryaOcrClient.parsePdf(buffer);
-    if (surya) {
-      const parsed = this.odlJsonParser.parseWithDiagnostics(surya.parsedJson);
-      if (
-        parsed.diagnostics.hasMappedLabTables &&
-        !parsed.diagnostics.hasAmbiguousHeaders &&
-        parsed.extractedLabValues.length > 0 &&
-        parsed.diagnostics.coverage >= 0.9
-      )
-        return surya;
-    }
-    const fallback = await this.doclingOcrClient.parsePdf(buffer, {
-      doOcr: true,
-      forceOcr: true,
-    });
-    // A backend failure should not erase Surya's readable transcript.
-    return fallback?.text?.trim() || fallback?.parsedJson ? fallback : surya;
+    return this.extractWithOcrCascade(buffer, AbortSignal.timeout(1800000));
   }
 
   private async parseReportBuffer(
@@ -1448,8 +1449,10 @@ export class ReportsService {
       firstEval.ok &&
       firstStructure?.diagnostics.hasMappedLabTables &&
       !firstStructure.diagnostics.hasAmbiguousHeaders &&
+      !firstStructure.diagnostics.hasUnmappedTables &&
       firstStructure.extractedLabValues.length > 0 &&
-      firstStructure.diagnostics.coverage >= 0.9
+      firstStructure.diagnostics.parsedRows ===
+        firstStructure.diagnostics.candidateRows
     ) {
       const status = 'parsed';
       this.logParseQuality(trigger, reportId, firstEval.text, status);
@@ -1477,19 +1480,13 @@ export class ReportsService {
       !nativeStructure?.diagnostics.hasMappedLabTables ||
       nativeStructure.diagnostics.hasAmbiguousHeaders ||
       nativeStructure.extractedLabValues.length === 0 ||
-      nativeStructure.diagnostics.coverage < 0.9
+      nativeStructure.diagnostics.hasUnmappedTables ||
+      nativeStructure.diagnostics.parsedRows !==
+        nativeStructure.diagnostics.candidateRows
     ) {
       const ocrAttempt = await this.parseWithPreferredOcr(buffer);
       const ocrEval = this.evaluateParsedTranscript(ocrAttempt?.text);
-      // An unavailable OCR backend must not discard usable native output.
-      const ocrRows = ocrAttempt?.parsedJson
-        ? this.odlJsonParser.parseWithDiagnostics(ocrAttempt.parsedJson)
-            .extractedLabValues.length
-        : 0;
-      if (
-        (ocrEval.ok || ocrAttempt?.parsedJson) &&
-        ocrRows >= (nativeStructure?.extractedLabValues.length ?? 0)
-      ) {
+      if (ocrAttempt?.parsedJson) {
         doclingAttempt = ocrAttempt;
         doclingEval = ocrEval;
       }
@@ -1545,6 +1542,14 @@ export class ReportsService {
     let structuredReport = deterministic.structuredReport;
     const diagnostics = deterministic.diagnostics;
     const reviewReasons: string[] = [];
+    if (
+      (input.opendataloaderJson as { ocrVerificationFailed?: boolean })
+        ?.ocrVerificationFailed
+    ) {
+      reviewReasons.push(
+        'Native extraction and visual OCR left incomplete or conflicting pages requiring review.',
+      );
+    }
     if (!diagnostics.hasMappedLabTables)
       reviewReasons.push(
         'Results could not be checked against mapped table columns.',
@@ -1950,6 +1955,7 @@ export class ReportsService {
     transcript: string | null,
   ): StructuredReportDto {
     const fromTranscript = this.extractPatientDetails(transcript);
+    const labFromTranscript = this.labDetailsExtractor.extractFromTranscript(transcript);
     const baseRaw = structuredReport.patientDetails ?? {};
     const base: StructuredPatientDetailsDto = {
       ...(baseRaw.name && !baseRaw.name.startsWith('#/')
@@ -1971,6 +1977,9 @@ export class ReportsService {
     };
     return {
       ...structuredReport,
+      ...(this.hasLabDetails(labFromTranscript)
+        ? { labDetails: { ...structuredReport.labDetails, ...labFromTranscript } }
+        : {}),
       patientDetails: {
         ...base,
         ...(fromTranscript.name ? { name: fromTranscript.name } : {}),
@@ -2388,12 +2397,10 @@ export class ReportsService {
         'SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE',
         [userId],
       );
-      const locked = await manager
-        .getRepository(ReportEntity)
-        .findOneOrFail({
-          where: { id: reportId, userId },
-          lock: { mode: 'pessimistic_write' },
-        });
+      const locked = await manager.getRepository(ReportEntity).findOneOrFail({
+        where: { id: reportId, userId },
+        lock: { mode: 'pessimistic_write' },
+      });
       const [entitlement] = await manager.query(
         'SELECT plan_id FROM user_entitlements WHERE user_id=$1 FOR UPDATE',
         [userId],
@@ -2697,19 +2704,21 @@ export class ReportsService {
       return undefined;
     };
     const name =
+      lines.map(line => line.match(/^(?:\|\s*)?(?:Patient\s+)?Name\s*(?:\|\s*)?:\s*([^|]+?)(?=\||\s+(?:Client|Ref(?:erred)?|Sex|Age|Registration|Lab\s+Id)\b|$)/i)?.[1]?.trim()).find(Boolean) ??
       read(
         /Patient Name\s*:\s*([^|]+?)(?:\s{2,}|Age\/Gender|Barcode|Order Id|$)/i,
       ) ??
       readNextLineValue(/^patient name$/i) ??
       read(/\bDear\s+([A-Za-z][A-Za-z ]{1,60})[,!]/i);
     const ageGender =
+      lines.find(line => /\b(?:Sex\s*\/\s*Age|Age\s*\/\s*Sex)\b/i.test(line)) ??
       read(/Age\/Gender\s*:\s*([^|]+?)(?:\s{2,}|Order Id|$)/i) ??
       readNextLineValue(/^age\/gender$/i) ??
       read(
         /\b(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?\s+(?:Male|Female|Other))\b/i,
       );
     const age = ageGender?.match(
-      /(\d+\s*Y(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?|\d+\s*Yrs?)/i,
+      /(\d+\s*(?:Years?|Yrs?|Y)(?:\s*\d+\s*M)?(?:\s*\d+\s*D)?)/i,
     )?.[1];
     const gender = ageGender?.match(/\b(Male|Female|Other)\b/i)?.[1];
     const bookingId =
@@ -2717,6 +2726,7 @@ export class ReportsService {
       readNextLineValue(/^booking id$/i) ??
       readNextLineValue(/^lab accession id$/i);
     const sampleCollectionDate =
+      read(/Collected\s+(?:On|Date)\s*:\s*(\d{1,2}[-/](?:[A-Za-z]{3}|\d{1,2})[-/]\d{4})/i) ??
       read(
         /Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i,
       ) ??

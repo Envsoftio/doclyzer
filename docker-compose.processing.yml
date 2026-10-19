@@ -18,6 +18,8 @@ services:
       REPORT_ASYNC_ACCEPTANCE_ENABLED: "false"
       REPORT_PROCESS_ROLE: worker
       DOCLING_OCR_BASE_URL: http://docling:5002
+      UNLIMITED_OCR_ENABLED: "${UNLIMITED_OCR_ENABLED:-true}"
+      UNLIMITED_OCR_BASE_URL: ${UNLIMITED_OCR_BASE_URL:-http://host.docker.internal:5004}
       REPORT_WORKER_CONCURRENCY: "${REPORT_WORKER_CONCURRENCY:-1}"
       NODE_ENV: production
     command: npm run start:report-worker:prod

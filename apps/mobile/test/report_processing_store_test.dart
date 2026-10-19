@@ -11,6 +11,12 @@ class FixtureApi extends ApiClient {
     setAccessToken('fixture');
   }
   int snapshots = 0;
+  bool acknowledged = false;
+  @override
+  Future<Map<String, dynamic>> post(String path, {Map<String, dynamic>? body, bool auth = true}) async {
+    acknowledged = true;
+    return {'data': {'acknowledged': true}};
+  }
   final events = StreamController<List<int>>();
   @override
   Future<Map<String, dynamic>> get(String path, {bool auth = true}) async {
@@ -66,6 +72,9 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 50));
       expect(store.reports['r']?['status'], 'ready');
       expect(store.readyCount, 1);
+      await store.acknowledge('r');
+      expect(api.acknowledged, isTrue);
+      expect(store.readyCount, 0);
       expect(api.snapshots, 1);
       store.stop();
       expect(store.reports, isEmpty);

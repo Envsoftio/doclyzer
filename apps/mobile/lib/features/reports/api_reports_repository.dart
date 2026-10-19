@@ -519,7 +519,14 @@ class ApiReportsRepository implements ReportsRepository {
     final path = force
         ? 'v1/reports/$reportId/retry?force=true'
         : 'v1/reports/$reportId/retry';
-    final data = await _client.post(path);
+    Map<String, dynamic> data;
+    try {
+      data = await _client.post(path);
+    } on ApiException catch (error) {
+      if (error.code != 'REPORT_ASYNC_RETRY_REQUIRED') rethrow;
+      await _client.post('v1/reports/processing/$reportId/retry');
+      return getReport(reportId);
+    }
     final d = data['data'] as Map<String, dynamic>;
     final labList = d['extractedLabValues'] as List<dynamic>? ?? [];
     final extractedLabValues = labList.map((e) {

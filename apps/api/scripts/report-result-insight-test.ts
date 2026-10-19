@@ -20,6 +20,7 @@ async function main() {
   });
   const rows = new Map<string, ReportResultInsightEntity>();
   const cacheRepo = {
+    manager: { query: async () => [{ name: 'Hb' }] },
     findOneBy: async ({
       reportId,
       cacheKey,
@@ -38,6 +39,7 @@ async function main() {
     value: '10',
     unit: 'g/dL',
     referenceRange: '12-16',
+    sampleDate: 'Synthetic private date must not be transmitted',
   };
   assert.equal(comparePrintedRange(result), 'below');
   assert.equal(comparePrintedRange({ ...result, value: '14' }), 'within');
@@ -107,7 +109,6 @@ async function main() {
         printedLabRange: '12-16',
         rangeStatus: 'below',
         labAbnormalFlag: null,
-        sampleDate: '',
       });
       return new Response(
         JSON.stringify({

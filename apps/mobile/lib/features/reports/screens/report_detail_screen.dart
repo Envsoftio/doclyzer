@@ -11,7 +11,6 @@ import 'health_history_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'processing_history_screen.dart';
 import 'result_insight_screen.dart';
-import 'result_correction_screen.dart';
 import 'trend_chart_screen.dart';
 
 enum _ReportDetailState { loading, loaded, error }
@@ -41,6 +40,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   Report? _report;
   String? _errorMessage;
   List<Profile> _profiles = [];
+  bool _acknowledging = false;
 
   void _onProcessingChanged() {
     if (mounted) _loadReport();
@@ -83,6 +83,19 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           _report = report;
           _state = _ReportDetailState.loaded;
         });
+        final store = ReportProcessingStore.instance;
+        final processing = store.reports[widget.reportId];
+        if (!_acknowledging && report.status == 'parsed' &&
+            processing?['acknowledgedAt'] == null) {
+          _acknowledging = true;
+          try {
+            await store.acknowledge(widget.reportId);
+          } catch (_) {
+            // A notification acknowledgement must not hide readable results.
+          } finally {
+            _acknowledging = false;
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -133,20 +146,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _openReview(ExtractedLabValue result) async {
-    await Navigator.of(context).push<Report>(
-      MaterialPageRoute(
-        builder: (_) => ResultCorrectionScreen(
-          reportId: widget.reportId,
-          result: result,
-          reportsRepository: widget.reportsRepository,
-          onViewOriginal: _openPdf,
-        ),
-      ),
-    );
-    if (mounted) await _loadReport();
   }
 
   List<ExtractedLabValue> _displayResults(Report report) {
@@ -335,7 +334,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       case 'parsed':
         return 'Parsed';
       case 'content_not_recognized':
-        return 'Not a lab report';
+        return 'Extraction incomplete';
       case 'unparsed':
         return 'Unparsed';
       case 'failed_transient':
@@ -368,30 +367,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       key: const Key('report-detail-scaffold'),
       appBar: AppBar(
         title: const Text('Report'),
-        actions: [
-          if (ReportProcessingStore.instance.reports[widget
-                  .reportId]?['status'] ==
-              'ready')
-            IconButton(
-              tooltip: 'Mark reviewed',
-              icon: const Icon(Icons.done_all),
-              onPressed: () async {
-                try {
-                  await ReportProcessingStore.instance.acknowledge(
-                    widget.reportId,
-                  );
-                } catch (_) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Could not mark reviewed. Try again.'),
-                      ),
-                    );
-                  }
-                }
-              },
-            ),
-        ],
         leading: IconButton(
           key: const Key('report-detail-back'),
           icon: const Icon(Icons.arrow_back),
@@ -516,7 +491,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       label: Text(
                         report.structuredReport?.extractionReview?.required ==
                                 true
-                            ? 'Needs review'
+                            ? 'Extraction incomplete'
                             : _statusLabel(report.status),
                       ),
                     ),
@@ -565,12 +540,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Check this report against the original',
+                      'We could not extract all results reliably',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Some results may be missing or uncertain. Review the original report before relying on this list.',
+                      'Automatic extraction was incomplete. The original report is available; no manual correction is required.',
                     ),
                     for (final reason
                         in report
@@ -614,9 +589,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   _ResultCard(
                     result: result,
                     onTap: () => _openResult(result),
-                    onReview: result.id == null
-                        ? null
-                        : () => _openReview(result),
                   ),
               ],
             ),
@@ -753,7 +725,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             ],
             if (report.status == 'content_not_recognized') ...[
               Text(
-                'This file does not appear to be a valid lab report. You can still keep and view the PDF.',
+                'We could not read all results reliably. Your original file is saved; no manual correction is required.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -913,11 +885,10 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _ResultCard extends StatelessWidget {
-  const _ResultCard({required this.result, required this.onTap, this.onReview});
+  const _ResultCard({required this.result, required this.onTap});
 
   final ExtractedLabValue result;
   final VoidCallback onTap;
-  final VoidCallback? onReview;
 
   @override
   Widget build(BuildContext context) {
@@ -979,7 +950,7 @@ class _ResultCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 if (result.reviewState == 'needs_review') ...[
                   const Text(
-                    'Needs review: test mapping, value, or unit may be uncertain.',
+                    'Automatic interpretation is unavailable for this test or unit.',
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -1032,19 +1003,6 @@ class _ResultCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (onReview != null) ...[
-                  const SizedBox(height: 8),
-                  TextButton.icon(
-                    key: Key('review-result-${result.id}'),
-                    onPressed: onReview,
-                    icon: const Icon(Icons.edit_outlined),
-                    label: Text(
-                      result.reviewVersion > 0
-                          ? 'Edit correction'
-                          : 'Review or correct',
-                    ),
-                  ),
-                ],
               ],
             ),
           ),

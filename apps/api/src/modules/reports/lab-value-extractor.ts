@@ -11,6 +11,11 @@ export interface ExtractedLabValue {
     method?: string;
     testCode?: string;
     sourceText?: string;
+    rawValue?: string;
+    reportedFlag?: string;
+    sourcePage?: string;
+    sourceRegion?: string;
+    extractionEngine?: string;
   };
 }
 

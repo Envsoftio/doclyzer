@@ -13,6 +13,8 @@ import 'auth_repository.dart';
 String _loginErrorMessage(Object error) {
   if (error is ApiException) {
     switch (error.code) {
+      case 'NETWORK_ERROR':
+        return 'Unable to reach the server. Check the API address and your connection, then try again.';
       case 'AUTH_INVALID_CREDENTIALS':
         return 'Invalid email or password. Please check your details and try again.';
       case 'AUTH_RATE_LIMITED':
@@ -32,7 +34,7 @@ String _loginErrorMessage(Object error) {
   if (error is SocketException ||
       error is TimeoutException ||
       error is HandshakeException) {
-    return 'Unable to reach the server. Check your internet connection and try again.';
+    return 'Unable to reach the server. Check the API address and your connection, then try again.';
   }
   if (error is FormatException) {
     return 'Something went wrong on our side. Please try again later.';
@@ -102,7 +104,7 @@ class ApiAuthRepository implements AuthRepository {
       'v1/auth/login',
       body: {'email': email.trim().toLowerCase(), 'password': password},
       auth: false,
-    );
+    ).timeout(const Duration(seconds: 15));
     final d = data['data'] as Map<String, dynamic>;
     final accessToken = d['accessToken'] as String;
     final refreshToken = d['refreshToken'] as String? ?? accessToken;
@@ -183,7 +185,7 @@ class ApiAuthRepository implements AuthRepository {
           'Accept': 'application/json',
         },
         body: jsonEncode({'refreshToken': refreshToken}),
-      );
+      ).timeout(const Duration(seconds: 15));
       if (res.statusCode < 200 || res.statusCode >= 300) {
         throw Exception('Refresh failed');
       }

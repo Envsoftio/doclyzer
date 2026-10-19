@@ -160,52 +160,30 @@ export class ReportProcessingController {
     await cancelReportProcessing(this.db, this.user(req), this.id(id), false);
     return this.status(req, id);
   }
-  @Post(':id/summary/retry') @HttpCode(202) async retrySummary(
+  @Post(':id/summary/retry') async retrySummary(
     @Req() req: Request,
     @Param('id') id: string,
   ) {
-    this.stream.assertEnabled();
-    this.auth.enforceRateLimit('report-summary-retry', this.user(req), 5);
-    if (!this.config.get<boolean>('reports.reportSummaryEnabled'))
-      throw new ServiceUnavailableException({
-        code: 'REPORT_SUMMARY_DISABLED',
-      });
     await this.status(req, id);
-    const [inbox] = await this.db.query(
-      `SELECT i.id FROM report_inbox i JOIN reports r ON r.id=i.report_id AND r.processing_generation=i.generation
-      WHERE r.id=$1 AND r.user_id=$2 AND r.processing_state='ready' AND r.deleted_at IS NULL`,
-      [id, this.user(req)],
-    );
-    if (!inbox) throw new BadRequestException({ code: 'REPORT_NOT_READY' });
-    await this.db.transaction(async (m) => {
-      await m.query(
-        `INSERT INTO report_delivery_intents(id,inbox_id,channel,target,expires_at) VALUES($1,$2,'summary','report',clock_timestamp()+interval '1 day')
-        ON CONFLICT(inbox_id,channel,target) DO UPDATE SET state='pending',attempts=0,available_at=clock_timestamp(),expires_at=clock_timestamp()+interval '1 day'
-        WHERE report_delivery_intents.state IN ('failed','accepted','skipped') OR (report_delivery_intents.state='pending' AND report_delivery_intents.available_at>clock_timestamp())`,
-        [randomUUID(), inbox.id],
-      );
-      await m.query(
-        "UPDATE reports SET summary_status='pending' WHERE id=$1 AND user_id=$2",
-        [id, this.user(req)],
-      );
+    throw new ServiceUnavailableException({
+      code: 'REPORT_SUMMARY_DISABLED_FOR_PRIVACY',
+      message: 'Report summaries are unavailable until a privacy-safe input is supported.',
     });
-    return { data: { summaryStatus: 'pending' } };
   }
   @Post(':id/acknowledge') async acknowledge(
     @Req() req: Request,
     @Param('id') id: string,
   ) {
     await this.status(req, id);
-    await this.db.transaction(async (m) => {
-      await m.query(
-        'UPDATE reports SET processing_acknowledged_at=clock_timestamp() WHERE id=$1 AND user_id=$2',
-        [id, this.user(req)],
-      );
-      await m.query(
-        'UPDATE report_inbox SET read_at=clock_timestamp() WHERE report_id=$1 AND user_id=$2 AND read_at IS NULL',
-        [id, this.user(req)],
-      );
-    });
+    await this.db.query(
+      `WITH acknowledged AS (
+        UPDATE reports SET processing_acknowledged_at=COALESCE(processing_acknowledged_at,clock_timestamp())
+        WHERE id=$1 AND user_id=$2 AND processing_state='ready' AND deleted_at IS NULL
+        RETURNING id,processing_generation
+      ) UPDATE report_inbox i SET read_at=COALESCE(i.read_at,clock_timestamp())
+        FROM acknowledged a WHERE i.report_id=a.id AND i.generation=a.processing_generation AND i.user_id=$2`,
+      [id, this.user(req)],
+    );
     return { data: { acknowledged: true } };
   }
   @Get('inbox') async inbox(@Req() req: Request) {

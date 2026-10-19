@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  ListObjectVersionsCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -59,16 +60,26 @@ export class B2FileStorageService implements FileStorageService {
     key: string,
     buffer: Buffer,
     contentType?: string,
+    options?: { singleVersion?: boolean },
   ): Promise<string> {
     try {
+      // Snapshot before PUT: never delete a version created by a later writer.
+      // Avatar callers serialize replacements with a database row lock.
+      const previous = options?.singleVersion
+        ? await this.objectVersions(key)
+        : [];
       await this.client.send(
         new PutObjectCommand({
           Bucket: this.bucket,
           Key: key,
           Body: buffer,
           ContentType: contentType ?? 'application/octet-stream',
+          ...(options?.singleVersion
+            ? { CacheControl: 'private, no-store' }
+            : {}),
         }),
       );
+      await this.deleteVersions(key, previous);
       return key;
     } catch (err) {
       this.logger.warn(
@@ -79,6 +90,46 @@ export class B2FileStorageService implements FileStorageService {
       throw new FileStorageException(
         FILE_STORAGE_UPLOAD_FAILED,
         'Failed to upload file to storage',
+      );
+    }
+  }
+
+  private async objectVersions(key: string): Promise<string[]> {
+    const versions: string[] = [];
+    let keyMarker: string | undefined;
+    let versionMarker: string | undefined;
+    do {
+      const page = await this.client.send(
+        new ListObjectVersionsCommand({
+          Bucket: this.bucket,
+          Prefix: key,
+          KeyMarker: keyMarker,
+          VersionIdMarker: versionMarker,
+        }),
+      );
+      for (const item of [
+        ...(page.Versions ?? []),
+        ...(page.DeleteMarkers ?? []),
+      ]) {
+        if (item.Key === key && item.VersionId) versions.push(item.VersionId);
+      }
+      if (!page.IsTruncated) break;
+      if (!page.NextKeyMarker)
+        throw new Error('Missing storage pagination marker');
+      keyMarker = page.NextKeyMarker;
+      versionMarker = page.NextVersionIdMarker;
+    } while (true);
+    return versions;
+  }
+
+  private async deleteVersions(key: string, versions: string[]): Promise<void> {
+    for (const version of versions) {
+      await this.client.send(
+        new DeleteObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+          VersionId: version,
+        }),
       );
     }
   }
@@ -116,8 +167,15 @@ export class B2FileStorageService implements FileStorageService {
     }
   }
 
-  async delete(key: string): Promise<void> {
+  async delete(
+    key: string,
+    options?: { allVersions?: boolean },
+  ): Promise<void> {
     try {
+      if (options?.allVersions) {
+        await this.deleteVersions(key, await this.objectVersions(key));
+        return;
+      }
       await this.client.send(
         new DeleteObjectCommand({
           Bucket: this.bucket,

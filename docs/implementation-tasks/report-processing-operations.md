@@ -143,3 +143,44 @@ The local emulator run on 2026-10-19 completed a 19-page, 6.9 MB PDF in 160
 seconds with the app backgrounded. It met the >120-second functional exercise;
 content review flagged 18 missing candidate rows. Staging contention, production
 proxy and device push checks remain open.
+
+## OCR escalation and validation
+
+The active path is native Docling followed by Unlimited OCR for unresolved pages.
+Surya and the serial RapidOCR/Tesseract fallbacks are no longer invoked. The
+large-report 70% acceptance shortcut is removed. Native page acceptance still
+uses detected table diagnostics; these cannot prove that all source rows were
+found. Independent dataset evaluation remains necessary.
+
+Unlimited runs one page at a time with gundam crops. Its HTML adapter preserves
+columns, explicit result flags, raw result text and page provenance. Paired
+percentage/absolute counts are separated only with explicit column context.
+Unknown layouts remain unresolved. The parser's coverage score measures detected
+candidates, not true document recall, and is not a calibrated confidence score.
+
+A complete visual reading is accepted only when it retains every extracted native
+observation without a conflicting signature. Current reconciliation includes
+names, values, units, ranges, methods, specimens and dates; differences in method
+wording can conservatively force review. Cells from different readings are never
+combined. Unresolved pages block publication and their native/visual evidence is
+retained in `reviewPages`. This does not introduce a user correction UI.
+
+Checkpoints use `staged_result.doclyzer_cascade[page]["unlimited-v1"]`; legacy
+engine keys remain readable but are never reused by the new cascade. Existing
+terminal-result retention applies. Logs contain routing metadata, not contents.
+
+Deployment instructions and limitations: `docker/unlimited/README.txt`.
+Docling service and principal engine packages are pinned in its Dockerfile.
+
+### Previous cascade emulator validation (historical, not Unlimited validation)
+
+Android emulator uploads of a synthetic native PDF and a rasterized table PDF
+both reached `ready` with six published results. The scanned run exercised
+Surya, RapidOCR and Tesseract, accepting the complete Surya reading after row
+corroboration: Glucose 90 mg/dL, Hemoglobin 13.5 g/dL, Creatinine 0.81 mg/dL,
+Platelet Count 250 10^3/µL, Calcium 9.2 mg/dL and Potassium 4.1 mmol/L.
+The installed app displayed the parsed results without review/correction controls.
+Earlier conflicting attempts published zero values. The final scanned cascade
+took approximately 113 seconds; cold inference was slower. This fixture does
+not establish accuracy across arbitrary reports. The earlier 19-page report was
+not successfully revalidated in this run.

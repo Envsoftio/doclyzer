@@ -112,7 +112,8 @@ export class OpenDataLoaderJsonParser {
           sampleDate: test.sampleDate ?? null,
           identityEvidence: {
             ...(section.heading && section.heading !== 'Other Tests'
-              ? { panelName: section.heading } : {}),
+              ? { panelName: section.heading }
+              : {}),
             ...test.identityEvidence,
           },
           ...(test.referenceRange
@@ -403,7 +404,10 @@ export class OpenDataLoaderJsonParser {
       let tableMapped = false;
       let currentSection = 'Other Tests';
       let columns: Partial<
-        Record<'name' | 'value' | 'unit' | 'range' | 'specimen' | 'method' | 'code', number>
+        Record<
+          'name' | 'value' | 'unit' | 'range' | 'specimen' | 'method' | 'code',
+          number
+        >
       > = {};
       for (const row of rows) {
         const cells = Array.isArray(row.cells)
@@ -435,11 +439,11 @@ export class OpenDataLoaderJsonParser {
                       ? 'method'
                       : /^(test code|assay code|loinc code)$/.test(label)
                         ? 'code'
-                  : /^(ref(?:erence)?(?: range| interval| values?)?|normal (?:range|interval|value(?:s)?)|bio(?:logical)? ref(?:erence)? (?:range|interval)|biological reference interval|reference limits)$/.test(
-                        label,
-                      )
-                    ? 'range'
-                    : null;
+                        : /^(ref(?:erence)?(?: range| interval| values?)?|normal (?:range|interval|value(?:s)?)|bio(?:logical)? ref(?:erence)? (?:range|interval)|biological reference interval|reference limits)$/.test(
+                              label,
+                            )
+                          ? 'range'
+                          : null;
           if (key) {
             if (detected[key] !== undefined) ambiguousHeader = true;
             detected[key] = index;
@@ -490,7 +494,11 @@ export class OpenDataLoaderJsonParser {
         const normalizedName = this.normalizeParameterName(
           this.cleanName(c1.split(/\bMethod\s*:/i)[0]),
         );
-        if (!this.isLikelyTestName(normalizedName)) {
+        if (/^(interpretation|comment|remarks?)$/i.test(normalizedName))
+          continue;
+        if (
+          !this.isLikelyTestName(normalizedName.replace(/\bmethod\b/gi, ''))
+        ) {
           if (c2) stats.candidateRows += 1;
           continue;
         }
@@ -509,13 +517,19 @@ export class OpenDataLoaderJsonParser {
         )
           continue;
         // A cell is one observation, not a free-form line with trailing numbers.
-        const cleanedValue = c2.replace(/(?<=\d)\s*[HL*]$/i, '').trim();
+        const flag =
+          c2.match(/^([HL])\s+(?=[<>≤≥+\-\d])/i)?.[1] ??
+          c2.match(/(?<=\d)\s*([HL*])$/i)?.[1];
+        const cleanedValue = c2
+          .replace(/^[HL]\s+(?=[<>≤≥+\-\d])/i, '')
+          .replace(/(?<=\d)\s*[HL*]$/i, '')
+          .trim();
         const numeric =
           /^(?:[<>]=?|[≤≥])?\s*[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\d+,\d+)$/.test(
             cleanedValue,
           );
         const qualitative =
-          /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale yellow|yellow|amber|straw|non[- ]?reactive|reactive|detected|not detected|no growth|sterile)$/i.test(
+          /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale yellow|yellow|amber|straw|non[- ]?reactive|reactive|detected|not detected|no growth|sterile|[ABO]|AB|(?:[ABO]|AB)\s*[+-]|(?:rh\s*)?(?:positive|negative)|["'](?:[ABO]|AB)["']|(?:present|positive)\s*\([+]{1,4}\))$/i.test(
             cleanedValue,
           );
         // Microscopy intervals, titers and graded positives are observed values,
@@ -530,26 +544,62 @@ export class OpenDataLoaderJsonParser {
           /^(?:(?:few|occasional|rare|moderate|many)(?:\s+[a-z][a-z .-]{0,50})?|growth of [a-z][a-z .-]{1,70})$/i.test(
             cleanedValue,
           );
-        if (!numeric && !qualitative && !nonScalar && !descriptive) continue;
+        const morphology =
+          /(?:morphology|parasites)$/i.test(normalizedName) &&
+          cleanedValue.length > 0 &&
+          cleanedValue.length <= 160 &&
+          /^[a-z][a-z ,().-]+$/i.test(cleanedValue);
+        if (
+          !numeric &&
+          !qualitative &&
+          !nonScalar &&
+          !descriptive &&
+          !morphology
+        )
+          continue;
         const value = cleanedValue;
         const isAbnormal =
-          !numeric || /^[<>≤≥]/.test(value) || /,/.test(value)
-            ? undefined
-            : this.evaluateAbnormal(value, c4);
+          flag && flag !== '*'
+            ? true
+            : !numeric || /^[<>≤≥]/.test(value) || /,/.test(value)
+              ? undefined
+              : this.evaluateAbnormal(value, c4);
         if (!sections.has(currentSection)) sections.set(currentSection, []);
         sections.get(currentSection)!.push({
           parameterName: normalizedName,
           value,
           identityEvidence: {
-            sourceText: texts.filter(Boolean).join(' | ').slice(0, 1000),
-            ...(columns.specimen !== undefined && texts[columns.specimen]?.trim()
-              ? { specimen: texts[columns.specimen].trim() } : {}),
+            sourceText: (typeof row.sourceText === 'string'
+              ? row.sourceText
+              : texts.filter(Boolean).join(' | ')
+            ).slice(0, 1000),
+            rawValue: c2,
+            ...(flag ? { reportedFlag: flag.toUpperCase() } : {}),
+            ...(table['page number'] != null
+              ? { sourcePage: String(table['page number']) }
+              : {}),
+            ...(table['bounding box']
+              ? { sourceRegion: JSON.stringify(table['bounding box']) }
+              : {}),
+            ...(table.extractionEngine
+              ? { extractionEngine: String(table.extractionEngine) }
+              : {}),
+            ...(columns.specimen !== undefined &&
+            texts[columns.specimen]?.trim()
+              ? { specimen: texts[columns.specimen].trim() }
+              : {}),
             ...(columns.code !== undefined && texts[columns.code]?.trim()
-              ? { testCode: texts[columns.code].trim() } : {}),
+              ? { testCode: texts[columns.code].trim() }
+              : {}),
             ...(columns.method !== undefined && texts[columns.method]?.trim()
-              ? { method: texts[columns.method].trim() } : {}),
+              ? { method: texts[columns.method].trim() }
+              : {}),
             ...(/\bMethod\s*:\s*([^|;]+)/i.test(sourceName)
-              ? { method: sourceName.match(/\bMethod\s*:\s*([^|;]+)/i)![1].trim() }
+              ? {
+                  method: sourceName
+                    .match(/\bMethod\s*:\s*([^|;]+)/i)![1]
+                    .trim(),
+                }
               : {}),
           },
           ...(c3 ? { unit: c3 } : {}),
@@ -746,6 +796,12 @@ export class OpenDataLoaderJsonParser {
       );
     }
 
+    if (stats.unmappedTables)
+      lowConfidenceReasons.push('Unmapped tables require review.');
+    if (stats.parsedRows < stats.candidateRows)
+      lowConfidenceReasons.push(
+        'Some detected result rows were not extracted.',
+      );
     if (stats.ambiguousHeaders)
       lowConfidenceReasons.push('Ambiguous result columns require review.');
 
@@ -1112,7 +1168,7 @@ export class OpenDataLoaderJsonParser {
     if ((n.match(/[A-Za-z]/g) ?? []).length < 2) return false;
     if ((n.match(/\s+/g) ?? []).length > 10) return false;
     if (/\|/.test(n)) return false;
-    if (/^[<>]?\s*[-+]?\d/.test(n)) return false;
+    if (/^[<>≤≥]/.test(n) || /^[-+]?\d+(?:[.,]\d+)?$/.test(n)) return false;
     if (
       /\b(department|test name|smart report|summary|suggestions|report generated|sample|customer|barcode|booking|order id|page \d|sin no|method|interpretation|reference|desirable|borderline|optimal|risk|first trimester|second trimester|third trimester|healthians|american diabetes association|end of report)\b/.test(
         l,
@@ -1176,7 +1232,7 @@ export class OpenDataLoaderJsonParser {
     const seen = new Set<string>();
     const out: ExtractedLabValue[] = [];
     for (const v of values) {
-      const key = `${v.parameterName.toLowerCase()}::${v.value.toLowerCase()}::${(v.unit ?? '').toLowerCase()}::${v.identityEvidence?.specimen?.toLowerCase() ?? ''}`;
+      const key = `${v.parameterName.toLowerCase()}::${v.value.toLowerCase()}::${v.unit ?? ''}::${v.identityEvidence?.specimen?.toLowerCase() ?? ''}`;
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(v);
@@ -1187,7 +1243,7 @@ export class OpenDataLoaderJsonParser {
   private compactLabValues(values: ExtractedLabValue[]): ExtractedLabValue[] {
     const bestByParamValue = new Map<string, ExtractedLabValue>();
     for (const row of values) {
-      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}::${row.identityEvidence?.specimen?.toLowerCase() ?? ''}`;
+      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}::${row.unit ?? ''}::${row.identityEvidence?.specimen?.toLowerCase() ?? ''}`;
       const current = bestByParamValue.get(key);
       if (!current) {
         bestByParamValue.set(key, row);
@@ -1209,7 +1265,7 @@ export class OpenDataLoaderJsonParser {
     const seen = new Set<string>();
     const out: StructuredSectionItemDto[] = [];
     for (const row of rows) {
-      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}::${(row.unit ?? '').toLowerCase()}::${(row.referenceRange ?? '').toLowerCase()}::${row.identityEvidence?.specimen?.toLowerCase() ?? ''}`;
+      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}::${row.unit ?? ''}::${(row.referenceRange ?? '').toLowerCase()}::${row.identityEvidence?.specimen?.toLowerCase() ?? ''}`;
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(row);

@@ -63,6 +63,8 @@ export default defineNuxtPlugin((app) => {
   app.$router.afterEach(sync)
   window.addEventListener('storage', sync)
   window.addEventListener('doclyzer-auth-change', sync)
-  window.addEventListener('online', () => { if (token) { stop(); void run(generation) } })
+  const reconcile = () => { if (token) { stop(); void run(generation) } }
+  window.addEventListener('online', reconcile)
+  window.addEventListener('doclyzer-report-acknowledged', reconcile)
   sync()
 })

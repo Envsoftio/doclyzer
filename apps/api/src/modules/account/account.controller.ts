@@ -5,7 +5,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Inject,
   Patch,
   Param,
   Post,
@@ -18,8 +17,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { extname } from 'path';
-import type { FileStorageService } from '../../common/storage/file-storage.interface';
-import { FILE_STORAGE } from '../../common/storage/storage.module';
 import type { Request } from 'express';
 import type { Express } from 'express';
 import type { RequestUser } from '../../modules/auth/auth.types';
@@ -50,7 +47,6 @@ export class AccountController {
   constructor(
     private readonly accountService: AccountService,
     private readonly authService: AuthService,
-    @Inject(FILE_STORAGE) private readonly fileStorage: FileStorageService,
   ) {}
 
   @Get(['restriction', 'restriction-status'])
@@ -177,18 +173,27 @@ export class AccountController {
       throw new BadRequestException('No file uploaded');
     this.authService.enforceRateLimit('avatar-upload', getClientIp(req), 10);
     const { id: userId } = req.user as RequestUser;
-    const rawExt = extname(file.originalname).toLowerCase();
-    const ext =
-      rawExt && ALLOWED_AVATAR_EXTENSIONS.includes(rawExt) ? rawExt : '.jpg';
-    const key = `avatars/${userId}${ext}`;
-    await this.fileStorage.upload(key, file.buffer, file.mimetype);
-    try {
-      const data = await this.accountService.updateAvatar(userId, key);
-      return successResponse(data, getCorrelationId(req));
-    } catch (e) {
-      await this.fileStorage.delete(key);
-      throw e;
-    }
+    const bytes = file.buffer;
+    const contentType = bytes
+      .subarray(0, 8)
+      .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+      ? 'image/png'
+      : bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+        ? 'image/jpeg'
+        : ['GIF87a', 'GIF89a'].includes(bytes.subarray(0, 6).toString('ascii'))
+          ? 'image/gif'
+          : bytes.subarray(0, 4).toString('ascii') === 'RIFF' &&
+              bytes.subarray(8, 12).toString('ascii') === 'WEBP'
+            ? 'image/webp'
+            : null;
+    if (!contentType)
+      throw new BadRequestException('Choose a JPEG, PNG, GIF or WebP image.');
+    const data = await this.accountService.updateAvatar(
+      userId,
+      file.buffer,
+      contentType,
+    );
+    return successResponse(data, getCorrelationId(req));
   }
 
   @Get('closure-request')

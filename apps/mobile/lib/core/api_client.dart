@@ -173,6 +173,10 @@ class ApiClient {
           ? MediaType('image', 'jpeg')
           : lower.endsWith('.png')
           ? MediaType('image', 'png')
+          : lower.endsWith('.webp')
+          ? MediaType('image', 'webp')
+          : lower.endsWith('.gif')
+          ? MediaType('image', 'gif')
           : lower.endsWith('.pdf')
           ? MediaType('application', 'pdf')
           : null;

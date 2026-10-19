@@ -3,11 +3,14 @@ import 'features/reports/screens/report_detail_screen.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'core/api_client.dart';
 import 'core/api_config.dart';
 import 'core/feedback/status_messenger.dart';
 import 'core/theme/app_theme.dart';
+import 'core/navigation/mobile_navigation_shell.dart';
 import 'core/token_storage.dart';
 import 'features/incidents/api_incident_repository.dart';
 import 'features/incidents/incident_repository.dart';
@@ -58,6 +61,8 @@ import 'features/support/api_support_repository.dart';
 import 'features/support/support_repository.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   runApp(const DoclyzerApp());
 }
 
@@ -128,6 +133,51 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
 
+  ThemeMode _themeMode = ThemeMode.system;
+  static const _appearanceStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+  bool _savingAppearance = false;
+
+  Future<void> _restoreAppearance() async {
+    try {
+      final saved = await _appearanceStorage.read(key: 'doclyzer_theme_mode');
+      if (!mounted) return;
+      setState(
+        () => _themeMode = ThemeMode.values.firstWhere(
+          (mode) => mode.name == saved,
+          orElse: () => ThemeMode.system,
+        ),
+      );
+    } catch (_) {
+      // Use the device appearance when preferences cannot be read.
+    }
+  }
+
+  Future<void> _changeAppearance(ThemeMode mode) async {
+    if (_savingAppearance) return;
+    setState(() {
+      _themeMode = mode;
+      _savingAppearance = true;
+    });
+    try {
+      await _appearanceStorage.write(
+        key: 'doclyzer_theme_mode',
+        value: mode.name,
+      );
+    } catch (_) {
+      _scaffoldMessengerKey.currentState?.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Appearance changed, but could not be saved for next time.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _savingAppearance = false);
+    }
+  }
+
   ApiClient? _apiClient;
   ApiAuthRepository? _authRepository;
   late final AccountRepository _accountRepository;
@@ -162,6 +212,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    unawaited(_restoreAppearance());
     WidgetsBinding.instance.addObserver(this);
     if (widget.authRepository != null) {
       final tokenStorage = TokenStorage();
@@ -465,11 +516,79 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     }
   }
 
+  static const _tabViews = [
+    _AuthView.home,
+    _AuthView.timeline,
+    _AuthView.profileList,
+    _AuthView.accountProfile,
+  ];
+  bool _openingTab = false;
+
+  Future<void> _selectTab(int index) async {
+    final destination = _tabViews[index];
+    if (_openingTab || destination == _authView) return;
+    if (destination == _AuthView.timeline ||
+        destination == _AuthView.profileList) {
+      _openingTab = true;
+      final origin = _authView;
+      try {
+        final restriction = await _restrictionRepository.getStatus();
+        if (!mounted || _authView != origin) return;
+        final action = destination == _AuthView.timeline
+            ? 'view_timeline'
+            : 'manage_profiles';
+        if (restriction.isRestricted &&
+            (restriction.restrictedActions?.isEmpty ?? true)) {
+          _showProfileLoadError(
+            'This action is temporarily unavailable while your account is under review.',
+          );
+          return;
+        }
+        if (restriction.isRestricted &&
+            (restriction.restrictedActions?.contains(action) ?? false)) {
+          _showProfileLoadError(
+            'This action is temporarily unavailable while your account is under review.',
+          );
+          return;
+        }
+        if (destination == _AuthView.timeline) {
+          final active = await _getActiveProfileOrNotify(forUpload: false);
+          if (!mounted || active == null || _authView != origin) return;
+          _timelineProfileId = active.id;
+          _timelineProfileName = active.name;
+        }
+      } catch (_) {
+        if (mounted) {
+          _showProfileLoadError(
+            'Unable to open this section. Please try again.',
+          );
+        }
+        return;
+      } finally {
+        _openingTab = false;
+      }
+    }
+    if (mounted) setState(() => _authView = destination);
+  }
+
+  Widget _buildNavigationShell(Widget screen) {
+    final selected = _tabViews.indexOf(_authView);
+    if (selected < 0) return screen;
+    return MobileNavigationShell(
+      selectedIndex: selected,
+      onDestinationSelected: _selectTab,
+      onBackToHome: () => setState(() => _authView = _AuthView.home),
+      child: screen,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_initialized) {
       return MaterialApp(
         theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: _themeMode,
         home: const Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
@@ -477,49 +596,72 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     return MaterialApp(
       title: 'Doclyzer',
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: _themeMode,
       scaffoldMessengerKey: _scaffoldMessengerKey,
       navigatorKey: _navigatorKey,
       builder: (context, child) => AnimatedBuilder(
         animation: ReportProcessingStore.instance,
         builder: (context, _) {
           final store = ReportProcessingStore.instance;
-          return Column(
-            children: [
-              if (store.readyCount > 0)
-                Material(
-                  color: const Color(0xffe6f4ee),
-                  child: SafeArea(
-                    bottom: false,
-                    child: ListTile(
-                      title: Text(
-                        '${store.readyCount} report(s) ready to review',
+          return AnnotatedRegion<SystemUiOverlayStyle>(
+            value: AppTheme.systemBars(Theme.of(context).brightness),
+            child: Column(
+              children: [
+                if (store.readyCount > 0)
+                  Material(
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    child: SafeArea(
+                      bottom: false,
+                      child: ListTile(
+                        title: Text('${store.readyCount} report(s) ready'),
+                        trailing: IconButton(
+                          tooltip: 'Dismiss ready notifications',
+                          icon: const Icon(Icons.close),
+                          onPressed: () async {
+                            final ids = store.reports.entries
+                                .where(
+                                  (e) =>
+                                      e.value['status'] == 'ready' &&
+                                      e.value['acknowledgedAt'] == null,
+                                )
+                                .map((e) => e.key)
+                                .toList();
+                            try {
+                              for (final id in ids) {
+                                await store.acknowledge(id);
+                              }
+                            } catch (_) {
+                              _scaffoldMessengerKey.currentState?.showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Could not dismiss notifications. Try again.',
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                        onTap: () {
+                          final ready = store.reports.values.firstWhere(
+                            (r) =>
+                                r['status'] == 'ready' &&
+                                r['acknowledgedAt'] == null,
+                          );
+                          _pushNotificationService.onReportOpen?.call(
+                            ready['reportId'] as String,
+                          );
+                        },
                       ),
-                      onTap: () {
-                        final ready = store.reports.values.firstWhere(
-                          (r) =>
-                              r['status'] == 'ready' &&
-                              r['acknowledgedAt'] == null,
-                        );
-                        _pushNotificationService.onReportOpen?.call(
-                          ready['reportId'] as String,
-                        );
-                      },
                     ),
                   ),
-                ),
-              if (store.connection == 'reconnecting')
-                const Material(
-                  child: SafeArea(
-                    bottom: false,
-                    child: Text('Report updates reconnecting…'),
-                  ),
-                ),
-              Expanded(child: child ?? const SizedBox.shrink()),
-            ],
+                Expanded(child: child ?? const SizedBox.shrink()),
+              ],
+            ),
           );
         },
       ),
-      home: switch (_authView) {
+      home: _buildNavigationShell(switch (_authView) {
         _AuthView.login => LoginScreen(
           onLogin: _login,
           onGoToSignup: () {
@@ -543,6 +685,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           },
         ),
         _AuthView.home => HomeScreen(
+          accountRepository: _accountRepository,
           reportsRepository: _reportsRepository,
           profilesRepository: _profilesRepository,
           billingRepository: _billingRepository,
@@ -597,6 +740,20 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           incidentStatus: _incidentStatus,
         ),
         _AuthView.accountProfile => AccountProfileScreen(
+          themeMode: _themeMode,
+          onThemeChanged: _savingAppearance ? null : _changeAppearance,
+          billingRepository: _billingRepository,
+          onGoToBilling: () => setState(() => _authView = _AuthView.billing),
+          onGoToReferrals: () =>
+              setState(() => _authView = _AuthView.referrals),
+          onGoToSessions: () =>
+              setState(() => _authView = _AuthView.sessionList),
+          onGoToNotifications: () =>
+              setState(() => _authView = _AuthView.communicationPreferences),
+          onGoToDataRights: () =>
+              setState(() => _authView = _AuthView.dataRights),
+          onLogout: _logout,
+          showBackButton: false,
           accountRepository: _accountRepository,
           restrictionRepository: _restrictionRepository,
           onBack: () {
@@ -622,10 +779,11 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           sessionsRepository: _sessionsRepository,
           onLogout: _logout,
           onBack: () {
-            setState(() => _authView = _AuthView.home);
+            setState(() => _authView = _AuthView.accountProfile);
           },
         ),
         _AuthView.profileList => ProfileListScreen(
+          showBackButton: false,
           profilesRepository: _profilesRepository,
           reportsRepository: _reportsRepository,
           onCreateProfile: () {
@@ -680,14 +838,14 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           communicationPreferencesRepository:
               _communicationPreferencesRepository,
           onBack: () {
-            setState(() => _authView = _AuthView.home);
+            setState(() => _authView = _AuthView.accountProfile);
           },
           supportRepository: _supportRepository,
         ),
         _AuthView.dataRights => DataRightsScreen(
           dataRightsRepository: _dataRightsRepository,
           onBack: () {
-            setState(() => _authView = _AuthView.home);
+            setState(() => _authView = _AuthView.accountProfile);
           },
           onAccountClosed: () async {
             await _logout();
@@ -712,6 +870,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         _AuthView.timeline =>
           _timelineProfileId != null
               ? TimelineScreen(
+                  showBackButton: false,
                   reportsRepository: _reportsRepository,
                   profilesRepository: _profilesRepository,
                   profileId: _timelineProfileId!,
@@ -731,7 +890,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           billingRepository: _billingRepository,
           incidentStatus: _incidentStatus,
           onBack: () {
-            setState(() => _authView = _AuthView.home);
+            setState(() => _authView = _AuthView.accountProfile);
           },
           onBuyCredits: () {
             setState(() => _authView = _AuthView.creditPackList);
@@ -743,7 +902,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         _AuthView.referrals => ReferralDashboardScreen(
           referralsRepository: _referralsRepository,
           onBack: () {
-            setState(() => _authView = _AuthView.home);
+            setState(() => _authView = _AuthView.accountProfile);
           },
         ),
         _AuthView.creditPackList => CreditPackListScreen(
@@ -768,7 +927,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           },
           supportRepository: _supportRepository,
         ),
-      },
+      }),
     );
   }
 }

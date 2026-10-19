@@ -53,7 +53,15 @@ class ReportProcessingStore extends ChangeNotifier {
   }
 
   Future<void> acknowledge(String id) async {
-    await _api?.post('v1/reports/processing/$id/acknowledge');
+    final api = _api;
+    if (api == null) throw StateError('Not signed in');
+    final epoch = _epoch;
+    await api.post('v1/reports/processing/$id/acknowledge');
+    if (epoch != _epoch) return;
+    if (reports[id] == null && _running) {
+      reconcile();
+      return;
+    }
     if (reports[id] != null) {
       reports[id]!['acknowledgedAt'] = DateTime.now().toIso8601String();
     }

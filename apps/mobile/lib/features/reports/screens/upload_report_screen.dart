@@ -620,7 +620,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     final processingInProgress =
         status == 'uploading' || status == 'queued' || status == 'parsing';
     final statusMessage = switch (status) {
-      'parsed' => 'Report parsed successfully. Review results and trends.',
+      'parsed' => 'Report parsed successfully. Results and trends are available.',
       'uploading' || 'queued' || 'parsing' =>
         'Your report is still being analyzed. Open it to check its status.',
       'failed_transient' =>

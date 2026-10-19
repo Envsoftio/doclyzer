@@ -2,9 +2,28 @@ Surya OCR integration
 ====================
 
 Routing
-- Digital PDFs: OpenDataLoader, then native Docling. Usable native lab tables
-  avoid OCR. Images (converted to PDF by the API) and insufficient native
-  extraction use Surya first, with Docling OCR as the availability fallback.
+- Background jobs durably checkpoint native Docling conversion first (OCR off).
+  Complete native pages retain embedded text. Unresolved pages are copied into
+  one-page PDFs and tried with Surya, RapidOCR, then Tesseract via Docling.
+- OCR pages keep one complete reading only when every row is corroborated by
+  another engine on test names, raw values, units, reference ranges and dates.
+  Different engines may corroborate different rows; cells are never mixed.
+  Tesseract breaks ties;
+  disagreement or missing rows blocks publication, without user correction.
+- Retry scope is a full page, preserving table headers/context. Cell crops and
+  mixed-cell reconstruction are not implemented. Completed engine/page outputs and native conversion are durably staged and
+  reused after worker restarts. Job attempts
+  and deadlines bound the work. Agreement is not proof of digit-level accuracy.
+- Logs REPORT_OCR_PAGE_STARTED / ATTEMPT / ACCEPTED and CASCADE_COMPLETE contain
+  page numbers, engine names and counts, not medical text.
+- The synchronous path also uses the cascade when native extraction fails.
+- Docling needs the fixed `tesseract-table` preset from docker-compose.yml
+  (Tesseract CLI, English, page segmentation mode 6, and a bounded wrapper
+  that removes long straight table rules from a temporary raster). Requests never switch
+  payload schemas after an engine error. Other deployments must register this
+  preset before enabling the cascade.
+- The CPU model uses one inference slot and four threads by default; set
+  SURYA_MODEL_THREADS on the model service to tune for available CPU capacity.
 - Surya is enabled by default. Set SURYA_OCR_ENABLED=false to roll back.
 - Surya 0.22.1 uses a separate, local llama.cpp model server. The model revision
   and llama.cpp revision are pinned in start_model.py and Dockerfile.
@@ -57,8 +76,8 @@ A High/Low token misplaced in an empty flag/unit pair is corrected with a warnin
 
 This is broader layout support, not universal report support. Multi-level merged
 headers, locale-specific numeric notation, unknown languages/headers and complex
-microbiology/narrative results can still require fallback and user review.
-The review workflow is a product requirement, not implemented by this adapter.
+microbiology/narrative results can still exhaust automatic fallback. Unresolved extraction is withheld rather
+than requiring user correction.
 Validate unseen laboratories and report categories before accuracy claims.
 
 The original 11-page digital report benchmark is private and is not committed.

@@ -1,9 +1,9 @@
 import { registerAs } from '@nestjs/config';
 
 export interface ReportsConfig {
-  suryaOcrEnabled: boolean;
-  suryaOcrBaseUrl: string;
-  suryaOcrTimeoutMs: number;
+  unlimitedOcrEnabled: boolean;
+  unlimitedOcrBaseUrl: string;
+  unlimitedOcrTimeoutMs: number;
   /** Enable/disable AI report summarisation. */
   reportSummaryEnabled: boolean;
   /** Provider type for summarisation (currently only 'http' supported). */
@@ -51,10 +51,10 @@ export interface ReportsConfig {
 export const reportsConfig = registerAs(
   'reports',
   (): ReportsConfig => ({
-    suryaOcrEnabled: process.env.SURYA_OCR_ENABLED !== 'false',
-    suryaOcrBaseUrl: process.env.SURYA_OCR_BASE_URL ?? 'http://127.0.0.1:5003',
-    suryaOcrTimeoutMs: parseInt(
-      process.env.SURYA_OCR_TIMEOUT_MS ?? '610000',
+    unlimitedOcrEnabled: process.env.UNLIMITED_OCR_ENABLED !== 'false',
+    unlimitedOcrBaseUrl: process.env.UNLIMITED_OCR_BASE_URL ?? 'http://127.0.0.1:5004',
+    unlimitedOcrTimeoutMs: parseInt(
+      process.env.UNLIMITED_OCR_TIMEOUT_MS ?? '610000',
       10,
     ),
     reportSummaryEnabled: process.env.REPORT_SUMMARY_ENABLED === 'true',

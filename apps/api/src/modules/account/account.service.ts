@@ -213,40 +213,61 @@ export class AccountService {
     userId: string,
     dto: UpdateAccountProfileDto,
   ): Promise<AccountProfile> {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException({
-        code: 'ACCOUNT_NOT_FOUND',
-        message: 'Account not found',
+    await this.userRepo.manager.transaction(async (manager) => {
+      const user = await manager.findOne(UserEntity, {
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
       });
-    }
-    if (dto.displayName !== undefined) user.displayName = dto.displayName;
-    if (dto.avatarUrl !== undefined) {
-      if (user.avatarUrl) {
-        await this.fileStorage.delete(user.avatarUrl);
+      if (!user)
+        throw new NotFoundException({
+          code: 'ACCOUNT_NOT_FOUND',
+          message: 'Account not found',
+        });
+      if (dto.displayName !== undefined) user.displayName = dto.displayName;
+      if (dto.avatarUrl !== undefined) {
+        if (user.avatarUrl)
+          await this.fileStorage.delete(user.avatarUrl, { allVersions: true });
+        user.avatarUrl = dto.avatarUrl;
       }
-      user.avatarUrl = dto.avatarUrl;
-    }
-    await this.userRepo.save(user);
+      await manager.save(UserEntity, user);
+    });
     return this.getProfile(userId);
   }
 
   async updateAvatar(
     userId: string,
-    avatarStorageKey: string,
+    buffer: Buffer,
+    contentType: string,
   ): Promise<AccountProfile> {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException({
-        code: 'ACCOUNT_NOT_FOUND',
-        message: 'Account not found',
+    // A stable key also handles changes between JPEG, PNG, GIF and WebP.
+    const defaultKey = `avatars/${userId}/photo`;
+    await this.userRepo.manager.transaction(async (manager) => {
+      const user = await manager.findOne(UserEntity, {
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
       });
-    }
-    if (user.avatarUrl) {
-      await this.fileStorage.delete(user.avatarUrl);
-    }
-    user.avatarUrl = avatarStorageKey;
-    await this.userRepo.save(user);
+      if (!user)
+        throw new NotFoundException({
+          code: 'ACCOUNT_NOT_FOUND',
+          message: 'Account not found',
+        });
+      // Keep existing avatar keys stable too; the content type comes from
+      // image bytes, not the old filename extension. No delete-after-write.
+      const legacyKeys = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].map(
+        (ext) => `avatars/${userId}${ext}`,
+      );
+      const key =
+        user.avatarUrl && legacyKeys.includes(user.avatarUrl)
+          ? user.avatarUrl
+          : defaultKey;
+      await this.fileStorage.upload(key, buffer, contentType, {
+        singleVersion: true,
+      });
+      user.avatarUrl = key;
+      await manager.save(UserEntity, user);
+    });
+    // Do not delete the stable key on a DB/response failure: it may already
+    // be the account's current photo. A retry safely replaces the same key.
     return this.getProfile(userId);
   }
 
@@ -338,7 +359,7 @@ export class AccountService {
 
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (user?.avatarUrl) {
-      await this.fileStorage.delete(user.avatarUrl);
+      await this.fileStorage.delete(user.avatarUrl, { allVersions: true });
     }
 
     const entity = this.closureRepo.create({

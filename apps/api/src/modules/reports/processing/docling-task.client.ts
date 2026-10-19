@@ -1,3 +1,4 @@
+import type { CascadeProgress, OcrOutput } from '../report-ocr-cascade';
 import { WebSocket } from 'undici';
 import { DataSource } from 'typeorm';
 import { isDoclingDocument } from '../docling-document-adapter';
@@ -36,14 +37,22 @@ export class DoclingTaskClient {
     bytes: Buffer,
     lease: ReportJobLease,
     signal: AbortSignal,
-  ): Promise<{ text: string; parsedJson: unknown }> {
+    nativeOnly = false,
+  ): Promise<{
+    text: string;
+    parsedJson: unknown;
+    nativeOnly?: boolean;
+    cascadeProgress?: CascadeProgress;
+  }> {
     const [job] = await this.db.query(
       'SELECT * FROM report_processing_jobs WHERE id=$1',
       [lease.jobId],
     );
     if (job.staged_result) return this.outputs(job.staged_result);
+    const instance =
+      this.settings.providerInstance + (nativeOnly ? ':native-v1' : '');
     let taskId: string | null = job.provider_task_id;
-    if (taskId && job.provider_instance_id !== this.settings.providerInstance) {
+    if (taskId && job.provider_instance_id !== instance) {
       await this.checkpoint(
         lease,
         'provider_task_id=NULL,provider_missing_count=0',
@@ -58,7 +67,7 @@ export class DoclingTaskClient {
       await this.checkpoint(
         lease,
         'submission_uncertain_at=clock_timestamp(),provider_instance_id=$3,provider_submission_count=provider_submission_count+1',
-        [this.settings.providerInstance],
+        [instance],
       );
       const form = new FormData();
       form.append(
@@ -69,7 +78,8 @@ export class DoclingTaskClient {
       form.append('to_formats', 'md');
       form.append('to_formats', 'json');
       form.append('from_formats', 'pdf');
-      form.append('do_ocr', 'true');
+      form.append('do_ocr', String(!nativeOnly));
+      form.append('ocr_preset', 'rapidocr');
       form.append('do_table_structure', 'true');
       form.append('table_mode', 'accurate');
       form.append('include_images', 'false');
@@ -126,7 +136,7 @@ export class DoclingTaskClient {
                 lease,
                 'provider_task_id=NULL,provider_missing_count=0',
               );
-              return this.convert(bytes, lease, signal);
+              return this.convert(bytes, lease, signal, nativeOnly);
             }
           }
           throw new ProcessingFailure('PROVIDER_UNAVAILABLE');
@@ -148,6 +158,7 @@ export class DoclingTaskClient {
             await this.checkpoint(lease, 'provider_task_id=NULL');
           throw new ProcessingFailure('PROVIDER_UNAVAILABLE');
         }
+        result.doclyzer_native_only = nativeOnly;
         const output = this.outputs(result);
         await this.checkpoint(lease, 'staged_result=$3::jsonb', [
           JSON.stringify(result),
@@ -169,9 +180,26 @@ export class DoclingTaskClient {
     }
     throw new ReportLeaseLostError();
   }
+  async saveCascadeCandidate(
+    lease: ReportJobLease,
+    page: number,
+    engine: 'unlimited-v1' | 'surya' | 'rapidocr' | 'tesseract',
+    output: OcrOutput,
+  ): Promise<void> {
+    await this.checkpoint(
+      lease,
+      `staged_result=jsonb_set(staged_result, '{doclyzer_cascade}',
+      COALESCE(staged_result->'doclyzer_cascade','{}'::jsonb) ||
+      jsonb_build_object($3::text, COALESCE(staged_result->'doclyzer_cascade'->$3::text,'{}'::jsonb) ||
+      jsonb_build_object($4::text,$5::jsonb)))`,
+      [String(page), engine, JSON.stringify(output)],
+    );
+  }
   private outputs(result: Record<string, unknown>): {
     text: string;
     parsedJson: unknown;
+    nativeOnly?: boolean;
+    cascadeProgress?: CascadeProgress;
   } {
     const document = result.document as Record<string, unknown> | undefined;
     if (
@@ -183,7 +211,12 @@ export class DoclingTaskClient {
       // Includes partial_success: never declare an incomplete conversion ready.
       throw new ProcessingFailure('INVALID_CONTENT', false);
     }
-    return { text: document.md_content, parsedJson: document.json_content };
+    return {
+      text: document.md_content,
+      parsedJson: document.json_content,
+      nativeOnly: result.doclyzer_native_only === true,
+      cascadeProgress: result.doclyzer_cascade as CascadeProgress | undefined,
+    };
   }
   private async request(
     path: string,

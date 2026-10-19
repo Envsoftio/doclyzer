@@ -43,11 +43,36 @@ export class LabDetailsExtractor {
   extractFromLines(lines: string[]): ExtractedLabDetails {
     if (lines.length === 0) return {};
 
-    const topLines = lines.slice(0, 40);
+    // Patient header contact fields must not be mistaken for lab contacts.
+    const patientHeader = lines.findIndex((line) =>
+      /^(?:Patient\s+)?Name\s*:/i.test(line),
+    );
+    const topLines = lines.slice(
+      0,
+      patientHeader >= 0 ? Math.min(patientHeader, 40) : 40,
+    );
     const full = topLines.join('\n');
 
     const labeled = this.extractLabeledFields(topLines);
-    const fallbackName = labeled.name ?? this.extractHeaderLabName(topLines);
+    const clientLab = lines
+      .map((line) => {
+        const cells = line.split('|').map(cleanFieldValue);
+        const index = cells.findIndex((cell) => /^client name$/i.test(cell));
+        const value =
+          index >= 0
+            ? cells[index + 1]
+            : line.match(/\bClient Name\s*:\s*([^|]+)/i)?.[1];
+        // A client may be a person. Accept only an explicit organization label.
+        return value &&
+          /\b(lab|laboratory|diagnostics?|pathology|hospital|clinic|Sterling\s+Accuris)\b/i.test(
+            value,
+          )
+          ? cleanFieldValue(value)
+          : undefined;
+      })
+      .find(Boolean);
+    const fallbackName =
+      labeled.name ?? clientLab ?? this.extractHeaderLabName(topLines);
     const fallbackAddress =
       labeled.address ?? this.extractAddressBlock(topLines);
 

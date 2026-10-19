@@ -86,7 +86,21 @@ flutter run -d emulator-5554  # Replace with your device ID
 
 # Or run on iOS simulator
 flutter run -d "iPhone 15"
+
+# Physical Android or iPhone on the same Wi-Fi as this computer:
+# Find this computer's LAN IP (macOS: ipconfig getifaddr en0).
+# Replace the example IP and device ID with your own values.
+flutter devices
+flutter run -d DEVICE_ID --dart-define=API_BASE_URL=http://192.168.1.28:4002
 ```
+
+For a physical device, open `http://YOUR_COMPUTER_LAN_IP:4002/v1/incidents/active`
+in its browser before signing in. If it does not respond, check that the API
+is running on port 4002 and that the computer firewall and Wi-Fi allow devices
+to reach each other. The local HTTP allowance is present in Android and iOS
+debug builds only; release builds should use an HTTPS API URL. A plain
+`flutter run` on a physical Android device uses the emulator address
+`10.0.2.2` and cannot reach the computer's API; pass `API_BASE_URL` each time.
 
 ## Running Everything in Parallel
 

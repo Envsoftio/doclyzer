@@ -1,6 +1,6 @@
 import unittest
 from html import escape
-from adapter import adapt
+from adapter import adapt, unit_markup
 
 HEADER = '<table><tr><th>Test Name</th><th>Result</th><th>Flag</th><th>Unit</th><th>Ref Range</th></tr></table>'
 
@@ -14,6 +14,12 @@ def rows(result):
     return [[c['content'] for c in row['cells']] for table in result['parsedJson']['kids'] if table['type'] == 'table' for row in table['rows'][1:]]
 
 class AdapterTests(unittest.TestCase):
+    def test_explicit_unit_typography_does_not_guess_digits(self):
+        self.assertEqual(unit_markup(r'10^3/\mu\text{L}'), '10^3/µL')
+        self.assertEqual(unit_markup(r'10^{3}/\mathrm{uL}'), '10^3/uL')
+        self.assertEqual(unit_markup('1043/uL'), '1043/uL')
+        self.assertEqual(unit_markup(r'\unknown{L}'), r'\unknown{L}')
+
     def test_detached_header_and_missing_empty_flag(self):
         out = run([block(HEADER), block('<table><tr><td>Glucose</td><td>84.2</td><td>mg/dL</td><td>70-100</td></tr></table>')])
         self.assertEqual(rows(out), [['Glucose', '84.2', '', 'mg/dL', '70-100']])

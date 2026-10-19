@@ -102,7 +102,7 @@ export class ReportWorkerService {
     let deadline: NodeJS.Timeout | undefined;
     try {
       const [row] = await this.db.query(
-        `SELECT r.*,j.deadline_at FROM reports r JOIN report_processing_jobs j ON j.report_id=r.id WHERE j.id=$1`,
+        `SELECT r.*,j.deadline_at,j.provider_task_id,j.staged_result,j.submission_uncertain_at FROM reports r JOIN report_processing_jobs j ON j.report_id=r.id WHERE j.id=$1`,
         [lease.jobId],
       );
       if (!row) throw new ReportLeaseLostError();
@@ -138,7 +138,24 @@ export class ReportWorkerService {
       } catch {
         throw new ProcessingFailure('INVALID_CONTENT', false);
       }
-      const result = await provider.convert(normalized.buffer, lease, signal);
+      // Native conversion remains durably checkpointed. OCR retries only unresolved pages.
+      const native = await provider.convert(
+        normalized.buffer,
+        lease,
+        signal,
+        true,
+      );
+      if (signal.aborted) throw new ReportLeaseLostError();
+      const result = await this.reports.extractWithOcrCascade(
+        normalized.buffer,
+        signal,
+        native,
+        {
+          progress: native.cascadeProgress,
+          save: (page, engine, output) =>
+            provider.saveCascadeCandidate(lease, page, engine, output),
+        },
+      );
       if (signal.aborted) throw new ReportLeaseLostError();
       await jobs.setStage(lease, 'normalizing');
       const prepared = await this.reports.prepareWorkerResult(

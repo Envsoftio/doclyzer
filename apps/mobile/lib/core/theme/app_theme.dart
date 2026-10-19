@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// App-wide spacing and layout constants for consistent mobile UX.
 abstract class AppSpacing {
@@ -17,19 +18,45 @@ abstract class AppSpacing {
 class AppTheme {
   static const Color _seedColor = Color(0xFF0A7C8C);
 
-  static ThemeData get light {
+  static ThemeData get light => _build(Brightness.light);
+  static ThemeData get dark => _build(Brightness.dark);
+
+  static SystemUiOverlayStyle systemBars(Brightness brightness) {
+    final dark = brightness == Brightness.dark;
+    return SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: brightness,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: dark
+          ? Brightness.light
+          : Brightness.dark,
+      systemNavigationBarContrastEnforced: true,
+    );
+  }
+
+  static ThemeData _build(Brightness brightness) {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: _seedColor,
-      brightness: Brightness.light,
-      primary: const Color(0xFF0A7C8C),
-      surface: Colors.white,
+      brightness: brightness,
+      primary: brightness == Brightness.light
+          ? _seedColor
+          : const Color(0xFF80D4DF),
     );
     return ThemeData(
       useMaterial3: true,
+      brightness: brightness,
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: colorScheme.surface,
+        indicatorColor: colorScheme.secondaryContainer,
+        elevation: 0,
+        height: 72,
+      ),
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colorScheme.surfaceContainerLow,
       appBarTheme: AppBarTheme(
-        centerTitle: true,
+        systemOverlayStyle: systemBars(brightness),
+        centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 1,
         backgroundColor: colorScheme.surface,

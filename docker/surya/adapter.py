@@ -44,6 +44,14 @@ def is_candidate(row):
             and any(any(ch.isalpha() for ch in c) and not VALUE.fullmatch(c) for c in row))
 
 
+def unit_markup(value):
+    """Decode explicit OCR math typography; never infer a missing digit or unit."""
+    value = re.sub(r'\\mu(?![A-Za-z])', 'µ', value)
+    value = re.sub(r'\\(?:text|mathrm)\{([A-Za-z0-9µμ/%^.+-]+)\}', r'\1', value)
+    value = re.sub(r'\^\{([+-]?\d+)\}', r'^\1', value)
+    return value
+
+
 def canonical_row(row, mapping, width, explicit, warnings):
     if len(row) != width:
         # Only reconstruct a missing blank flag in a detached table. Other
@@ -54,6 +62,7 @@ def canonical_row(row, mapping, width, explicit, warnings):
             warnings.append('ambiguous_row_width')
             return None
     values = [row[mapping[role]] if role in mapping else '' for role in ROLES]
+    values[3] = unit_markup(values[3])
     name, value, flag, unit, reference = values
     if not any(ch.isalpha() for ch in name) or not VALUE.fullmatch(value):
         warnings.append('unsupported_result_row')

@@ -13,6 +13,7 @@ class ProfileListScreen extends StatefulWidget {
     required this.onEditProfile,
     required this.onOpenProfileReports,
     required this.onBack,
+    this.showBackButton = true,
   });
 
   final ProfilesRepository profilesRepository;
@@ -21,6 +22,7 @@ class ProfileListScreen extends StatefulWidget {
   final void Function(Profile) onEditProfile;
   final void Function(Profile) onOpenProfileReports;
   final VoidCallback onBack;
+  final bool showBackButton;
 
   @override
   State<ProfileListScreen> createState() => _ProfileListScreenState();
@@ -113,11 +115,14 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Profiles'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: widget.onBack,
-        ),
+        leading: widget.showBackButton
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: widget.onBack,
+              )
+            : null,
         surfaceTintColor: Colors.transparent,
       ),
       body: SafeArea(

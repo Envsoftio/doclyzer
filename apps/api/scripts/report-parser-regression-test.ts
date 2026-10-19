@@ -16,6 +16,29 @@ const table = (rows: string[][]) => ({
     },
   ],
 });
+// Source flags and non-scalar observations must survive the shared parser.
+{
+  const fixture = table([
+    ['Test Name', 'Result', 'Unit', 'Reference Range'],
+    ['25-OH Vitamin D', 'L <20', 'ng/mL', '30 - 100'],
+    ['Triglycerides', 'H 168.0', 'mg/dL', '<150'],
+    ['ABO Type', '\"A\"', '', ''],
+    ['Urine Glucose', 'Present (+)', '', 'Absent'],
+    ['RBC Morphology', 'Normochromic Normocytic', '', ''],
+    ['Novel count', '2', '%', ''],
+    ['Novel count', '2', '/cmm', ''],
+  ]);
+  Object.assign(fixture.kids[0], { 'page number': 7, extractionEngine: 'unlimited-v1' });
+  const parsed = parser.parseWithDiagnostics(fixture);
+  assert.equal(parsed.extractedLabValues.length, 7);
+  assert.equal(parsed.extractedLabValues[0].value, '<20');
+  assert.equal(parsed.extractedLabValues[0].isAbnormal, true);
+  assert.equal(parsed.extractedLabValues[0].identityEvidence?.rawValue, 'L <20');
+  assert.equal(parsed.extractedLabValues[0].identityEvidence?.reportedFlag, 'L');
+  assert.equal(parsed.extractedLabValues[0].identityEvidence?.sourcePage, '7');
+  assert.equal(parsed.diagnostics.parsedRows, parsed.diagnostics.candidateRows);
+  console.log('PASS explicit flags, digit-leading analytes, blood group, morphology, graded qualitative values, distinct unit scales and source provenance');
+}
 const native = (rows: string[][]) => ({
   schema_name: 'DoclingDocument',
   texts: [],
@@ -429,7 +452,11 @@ async function checkPdfRouting() {
         parsePdf: () =>
           Promise.resolve({ text: 'Readable text', parsedJson: odlJson }),
       },
-      suryaOcrClient: { parsePdf: () => Promise.resolve(null) },
+      extractWithOcrCascade: async () => {
+        calls.push(true);
+        return { text: 'Glucose 90', parsedJson: doc };
+      },
+      unlimitedOcrClient: { parsePdf: () => Promise.resolve(null) },
       doclingOcrClient: {
         parsePdf: (_: Buffer, options: { forceOcr: boolean }) => {
           calls.push(options.forceOcr);

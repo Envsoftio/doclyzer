@@ -208,6 +208,23 @@ async function main() {
       new AbortController().signal,
     );
     assert.equal(submits, 1, 'staged result prevents resubmission');
+    await client.saveCascadeCandidate(lease, 1, 'surya', {
+      text: 'synthetic',
+      parsedJson: { type: 'document', kids: [] },
+    });
+    await client.saveCascadeCandidate(lease, 1, 'rapidocr', {
+      text: 'synthetic',
+      parsedJson: { type: 'document', kids: [] },
+    });
+    const resumedOcr = await client.convert(
+      Buffer.from('synthetic fixture'),
+      lease,
+      new AbortController().signal,
+    );
+    assert.deepEqual(
+      Object.keys(resumedOcr.cascadeProgress?.['1'] ?? {}).sort(),
+      ['rapidocr', 'surya'],
+    );
     await jobs.complete(lease, 'ready', async () => {});
     const replay = await streams.replay(user, snapshot.cursor);
     assert.equal(replay.reset, false);
@@ -421,6 +438,7 @@ async function main() {
           B2_REGION: 'test',
           DOCLING_OCR_BASE_URL: `http://127.0.0.1:${address.port}`,
           DOCLING_API_KEY: '',
+          UNLIMITED_OCR_ENABLED: 'false', // This suite exercises durable Docling recovery.
           REPORT_SUMMARY_ENABLED: 'false',
           REPORT_LAB_AI_FALLBACK_ENABLED: 'false',
           EMAIL_WORKER_ENABLED: 'false',

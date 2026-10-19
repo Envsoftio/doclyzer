@@ -23,6 +23,7 @@ class TimelineScreen extends StatefulWidget {
     required this.profilesRepository,
     required this.profileId,
     required this.onBack,
+    this.showBackButton = true,
     required this.sharingRepository,
     required this.profileName,
     required this.onUpgrade,
@@ -34,6 +35,7 @@ class TimelineScreen extends StatefulWidget {
   final ProfilesRepository profilesRepository;
   final String profileId;
   final VoidCallback onBack;
+  final bool showBackButton;
   final SharingRepository sharingRepository;
   final String profileName;
   final VoidCallback onUpgrade;
@@ -197,12 +199,15 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Reports'),
-        leading: IconButton(
-          key: const Key('timeline-back'),
-          icon: const Icon(Icons.arrow_back),
-          onPressed: widget.onBack,
-        ),
+        leading: widget.showBackButton
+            ? IconButton(
+                key: const Key('timeline-back'),
+                icon: const Icon(Icons.arrow_back),
+                onPressed: widget.onBack,
+              )
+            : null,
         actions: [
           IconButton(
             key: const Key('timeline-health-history-button'),
@@ -526,7 +531,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
       case 'parsed':
         return 'Parsed';
       case 'content_not_recognized':
-        return 'Not a lab report';
+        return 'Extraction incomplete';
       case 'unparsed':
         return 'Unparsed';
       case 'failed_transient':
