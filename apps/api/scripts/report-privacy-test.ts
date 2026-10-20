@@ -55,8 +55,6 @@ async function main() {
     for (const result of [
       { parameterName: 'Synthetic Person', value: '42' },
       { parameterName: 'Glucose', value: '5551234567' },
-      { parameterName: 'Glucose', value: '42', unit: 'Synthetic Address' },
-      { parameterName: 'Glucose', value: '42', referenceRange: 'Age 44' },
     ]) {
       let rejected = false;
       try {

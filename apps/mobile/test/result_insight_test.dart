@@ -214,4 +214,26 @@ void main() {
     await tester.tap(find.text('Check original report').first);
     expect(openedOriginal, isTrue);
   });
+
+  testWidgets('an unreviewed test explains why GPT cannot run', (tester) async {
+    var openedOriginal = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ResultInsightScreen(
+          result: hemoglobin,
+          loadInsight: () async => throw ApiException(
+            'RESULT_INSIGHT_TEST_UNREVIEWED',
+            'Test not reviewed',
+          ),
+          onViewTrend: () {},
+          onViewOriginal: () => openedOriginal = true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('has not been reviewed'), findsOneWidget);
+    expect(find.byKey(const Key('result-insight-retry')), findsNothing);
+    await tester.tap(find.text('Check original report').first);
+    expect(openedOriginal, isTrue);
+  });
 }

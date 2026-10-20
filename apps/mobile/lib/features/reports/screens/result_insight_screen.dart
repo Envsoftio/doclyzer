@@ -180,6 +180,14 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                       snapshot.error is ApiException &&
                       (snapshot.error as ApiException).code ==
                           'REPORT_RESULT_NOT_FOUND';
+                  final unreviewed =
+                      snapshot.error is ApiException &&
+                      (snapshot.error as ApiException).code ==
+                          'RESULT_INSIGHT_TEST_UNREVIEWED';
+                  final unsafeInput =
+                      snapshot.error is ApiException &&
+                      (snapshot.error as ApiException).code ==
+                          'RESULT_INSIGHT_UNSAFE_INPUT';
                   return _InsightSection(
                     icon: Icons.info_outline,
                     title: 'Explanation unavailable',
@@ -189,16 +197,21 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                         Text(
                           notSaved
                               ? 'This value could not be matched to a saved result. Check the original report or refresh this report.'
+                              : unreviewed
+                              ? 'This test has not been reviewed for AI explanations yet. Check the original report and discuss the result with your clinician.'
+                              : unsafeInput
+                              ? 'The extracted result is unclear, so it cannot be safely explained. Check the original report.'
                               : 'We could not load an explanation right now.',
                         ),
                         const SizedBox(height: 10),
-                        if (notSaved && widget.onViewOriginal != null)
+                        if ((notSaved || unreviewed || unsafeInput) &&
+                            widget.onViewOriginal != null)
                           OutlinedButton.icon(
                             onPressed: widget.onViewOriginal,
                             icon: const Icon(Icons.description_outlined),
                             label: const Text('Check original report'),
                           )
-                        else
+                        else if (!notSaved && !unreviewed && !unsafeInput)
                           OutlinedButton(
                             key: const Key('result-insight-retry'),
                             onPressed: _retry,

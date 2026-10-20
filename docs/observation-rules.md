@@ -8,6 +8,8 @@ Approved mappings live in `lab_tests`, `lab_test_aliases`, and `lab_unit_rules`.
 
 At read time, aliases that collide after normalization but point to different tests are excluded and their observations require review. There are no built-in test names or special-case identity rules in production. The approval process is the trust boundary: assigning two different analytes to the same canonical test will merge their histories. Reviewers must check analyte meaning before approving an alias, and correct mistaken rules before refreshing stored observations.
 
+On-demand AI explanations use the saved result's test label when no approved alias exists. They do not create or infer a canonical mapping. The explanation request includes a numeric value and only units or printed ranges that pass the input checks; unfamiliar optional fields are omitted and the range comparison stays unknown. A label or value that fails the input checks returns `RESULT_INSIGHT_UNSAFE_INPUT`. These checks reduce accidental disclosure but cannot prove that arbitrary extracted text contains no personal information, so source reports and extraction quality still need review.
+
 Example approval transaction, with placeholders to replace after review:
 
 ```sql

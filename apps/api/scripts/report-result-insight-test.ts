@@ -225,6 +225,45 @@ async function main() {
       usageRepo,
     );
     await assert.rejects(() => unconfigured.explain('report-3', result));
+
+    const unreviewedRepo = {
+      ...cacheRepo,
+      manager: { query: async () => [] },
+    } as unknown as Repository<ReportResultInsightEntity>;
+    const unreviewed = new ReportResultInsightService(
+      config,
+      unreviewedRepo,
+      usageRepo,
+    );
+    const callsBeforeUnreviewed = fetchCount;
+    global.fetch = async (_url, options) => {
+      fetchCount += 1;
+      const body = JSON.parse(options?.body as string) as { input: string };
+      assert.deepEqual(JSON.parse(body.input), {
+        testName: 'Vitamin D (25-OH)',
+        value: '10',
+        unit: '',
+        printedLabRange: '',
+        rangeStatus: 'unknown',
+        labAbnormalFlag: null,
+      });
+      return new Response(
+        JSON.stringify({ output_text: JSON.stringify(insight) }),
+      );
+    };
+    await unreviewed.explain('report-4', {
+      ...result,
+      parameterName: 'Vitamin D (25-OH)',
+      unit: 'unrecognized unit',
+      referenceRange: 'see report',
+    });
+    assert.equal(fetchCount, callsBeforeUnreviewed + 1);
+    await assert.rejects(
+      () => unreviewed.explain('report-4', { ...result, parameterName: 'Name: Jane Doe' }),
+      (error: { response?: { code?: string } }) =>
+        error.response?.code === 'RESULT_INSIGHT_UNSAFE_INPUT',
+    );
+    assert.equal(fetchCount, callsBeforeUnreviewed + 1);
   } finally {
     global.fetch = originalFetch;
   }

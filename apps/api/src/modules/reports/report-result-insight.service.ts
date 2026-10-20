@@ -90,8 +90,8 @@ export class ReportResultInsightService {
     const baseUrl =
       this.configService.get<string>('reports.labAiFallbackOpenaiBaseUrl') ||
       'https://api.openai.com/v1';
-    // Only an exact, approved catalog alias may supply a test name. Never send
-    // OCR labels, dates, identifiers, or arbitrary free-text fields to a model.
+    // Prefer a reviewed display name, but a saved result does not need a
+    // terminology mapping before it can receive an educational explanation.
     const aliases: Array<{ name: string }> =
       await this.insightRepo.manager.query(
         `SELECT DISTINCT t.display_name AS name FROM lab_test_aliases a
@@ -103,23 +103,32 @@ export class ReportResultInsightService {
       /^(?:%|(?:[fpnumkµμ]?g|mmol|mol|mEq|IU|U|ng|pg|fL|L|cells|10\^\d{1,2})(?:\/(?:dL|L|mL|uL|µL|μL|mm3|cmm))?)$/i;
     const range =
       /^(?:[<>≤≥]?\s*\d{1,5}(?:\.\d{1,6})?|\d{1,5}(?:\.\d{1,6})?\s*[-–]\s*\d{1,5}(?:\.\d{1,6})?)$/;
+    const savedName = result.parameterName.trim().replace(/\s+/g, ' ');
+    const safeName =
+      savedName.length <= 100 &&
+      /^[\p{L}\p{N}][\p{L}\p{N}\s().,+/%µμ^'’\-]{0,99}$/u.test(savedName) &&
+      !/\b(?:name|patient|person|address|phone|mobile|email|dob|date of birth|client)\b/i.test(savedName);
     if (
-      aliases.length !== 1 ||
+      !safeName ||
       !numeric.test(result.value.trim()) ||
-      (result.unit && !unit.test(result.unit.trim())) ||
-      (result.referenceRange && !range.test(result.referenceRange.trim()))
+      (aliases.length > 1)
     ) {
       throw new ServiceUnavailableException({
         code: 'RESULT_INSIGHT_UNSAFE_INPUT',
         message: 'This result cannot be safely sent for an explanation.',
       });
     }
+    const safeUnit = result.unit?.trim() ?? '';
+    const safeRange = result.referenceRange?.trim() ?? '';
     const input = {
-      testName: aliases[0].name,
+      testName: aliases.length === 1 ? aliases[0].name : savedName,
       value: result.value.trim(),
-      unit: (result.unit ?? '').trim(),
-      printedLabRange: (result.referenceRange ?? '').trim(),
-      rangeStatus: comparePrintedRange(result),
+      unit: unit.test(safeUnit) ? safeUnit : '',
+      printedLabRange: range.test(safeRange) ? safeRange : '',
+      rangeStatus:
+        unit.test(safeUnit) && range.test(safeRange)
+          ? comparePrintedRange(result)
+          : 'unknown',
       labAbnormalFlag:
         typeof result.isAbnormal === 'boolean' ? result.isAbnormal : null,
     };
