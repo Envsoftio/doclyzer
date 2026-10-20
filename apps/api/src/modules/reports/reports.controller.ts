@@ -27,6 +27,7 @@ import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
 import { AuthService } from '../auth/auth.service';
 import { ReportsService, type CorrectLabValueInput } from './reports.service';
+import { ReportVlShadowService } from './processing/report-vl-shadow.service';
 import { ReportResultInsightService } from './report-result-insight.service';
 import { selectStoredResult } from './report-result-selector';
 import { Logger } from '@nestjs/common';
@@ -54,6 +55,7 @@ export class ReportsController {
     private readonly reportsService: ReportsService,
     private readonly authService: AuthService,
     private readonly resultInsightService: ReportResultInsightService,
+    private readonly vlShadow: ReportVlShadowService,
   ) {}
 
   @Get('lab-trends')
@@ -215,6 +217,44 @@ export class ReportsController {
       reportId,
     );
     return successResponse({ attempts: data }, getCorrelationId(req));
+  }
+
+  @Get(':id/vl-review')
+  async getVlReview(@Param('id') reportId: string, @Req() req: Request): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    return successResponse(await this.vlShadow.get(userId, reportId), getCorrelationId(req));
+  }
+
+  @Patch(':id/vl-review/:candidateId')
+  async reviewVlCandidate(
+    @Param('id') reportId: string,
+    @Param('candidateId') candidateId: string,
+    @Body() body: { expectedVersion?: number; action?: string; sourceInspected?: boolean; testRaw?: string; resultRaw?: string | null; unitRaw?: string | null; rangeRaw?: string | null },
+    @Req() req: Request,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    return successResponse(await this.vlShadow.review(userId, reportId, candidateId, body), getCorrelationId(req));
+  }
+
+  @Post(':id/vl-review/missed')
+  async addMissedVlObservation(
+    @Param('id') reportId: string,
+    @Body() body: { expectedVersion?: number; sourceInspected?: boolean; page?: number; testRaw?: string; resultRaw?: string; unitRaw?: string | null; rangeRaw?: string | null },
+    @Req() req: Request,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    return successResponse(await this.vlShadow.addMissed(userId, reportId, body), getCorrelationId(req));
+  }
+
+  @Post(':id/vl-review/:candidateId/apply')
+  async applyVlReview(
+    @Param('id') reportId: string,
+    @Param('candidateId') candidateId: string,
+    @Body() body: { expectedVersion?: number },
+    @Req() req: Request,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    return successResponse(await this.vlShadow.applyReviewed(userId, reportId, candidateId, body?.expectedVersion as number), getCorrelationId(req));
   }
 
   @Get(':id/file')

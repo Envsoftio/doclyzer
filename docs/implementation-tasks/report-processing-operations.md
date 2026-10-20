@@ -8,7 +8,9 @@ performed during implementation.
 
 1. Back up PostgreSQL and verify object-store recovery access. Assign database,
    backend/on-call and mobile release owners; record actual RPO/RTO and workload.
-2. Apply the four additive processing migrations with acceptance/runtime off.
+2. For a production rollout, explicitly set `REPORT_ASYNC_RUNTIME_ENABLED=false`
+   and `REPORT_ASYNC_ACCEPTANCE_ENABLED=false`, then apply the four additive
+   processing migrations.
    Historical reports have generation zero. Claims constrain new async identities,
    not historical duplicate rows. Do not use TypeORM synchronize for these tables.
 3. Deploy compatible web/mobile clients and new API code to every replica. Configure
@@ -19,11 +21,12 @@ performed during implementation.
 4. Build `apps/api` once, then start independently with `npm run start:report-worker:prod` and
    `npm run start:report-dispatcher:prod` after API build. Set
    `REPORT_ASYNC_RUNTIME_ENABLED=true` and the appropriate process role. The
-   opt-in `docker-compose.processing.yml` runs compiled API/worker/dispatcher
-   entry points because `ts-node` exceeded the local dispatcher memory limit.
-   It is a local deployment template, not a hardened production image. Validate
-   it with Compose `config --quiet`.
-5. Set API runtime true, admission false. `/v1/health/report-processing` must show
+   default `docker-compose.yml` runs a build/migration job followed by the API,
+   worker, and dispatcher; all three are restartable services. It is a local
+   deployment template, not a hardened production image. Validate it with
+   Compose `config --quiet`.
+5. For a production rollout, set API runtime true, admission false. The local
+   Compose defaults enable both after B2 has been configured. `/v1/health/report-processing` must show
    both roles healthy; stale heartbeats older than 30 seconds fail readiness.
    Verify B2 GET/PUT/delete with a synthetic canary, provider auth and queue drain.
    Configure the SSE location from `docker/nginx/report-sse.conf` for the real
@@ -68,6 +71,25 @@ on deletion as defined by migrations. Idempotency and orphan tombstones are kept
 until account deletion; size them and approve a separate pruning policy before
 long-term scale. No cleanup deletes a live job lease. Backup retention also needs
 to comply with the product's deletion policy.
+
+## Legacy report source keys
+
+New report sources use `reports/<user-id>/<profile-id>/<report-id>.<extension>`.
+Objects uploaded by older async API versions may still be at
+`report-sources/v1/<intent-id>`. After deploying the new API, run from `apps/api`:
+
+```sh
+npm run reports:relocate-sources -- --limit=100
+npm run reports:relocate-sources -- --apply --limit=100
+```
+
+The first command only counts a batch. Repeat the second until it finds zero.
+Each report is copied and read back before its database key changes. The old
+upload intent remains as a cleanup obligation if the process stops after the
+database commit; the orphan sweeper removes every B2 version of that old key.
+Check that the remaining `reports.original_file_storage_key LIKE
+'report-sources/v1/%'` count is zero before considering the backfill complete.
+Run this against the same PostgreSQL database and B2 bucket as the deployed API.
 
 ## Monitoring and incident response
 
@@ -146,31 +168,19 @@ proxy and device push checks remain open.
 
 ## OCR escalation and validation
 
-The active path is native Docling followed by Unlimited OCR for unresolved pages.
-Surya and the serial RapidOCR/Tesseract fallbacks are no longer invoked. The
-large-report 70% acceptance shortcut is removed. Native page acceptance still
-uses detected table diagnostics; these cannot prove that all source rows were
-found. Independent dataset evaluation remains necessary.
+The active PDF path is native Docling followed by CPU PP-OCRv5 on unresolved pages.
+JPEG and PNG uploads go straight to PP-OCRv5 at their original pixel dimensions.
+Paddle returns aligned raw text, scores and polygons, with docling-parse native
+words in page coordinates. The shared geometry parser records candidates and
+unresolved rows for source review. Its unvalidated output is never silently
+substituted for a complete Docling table. A missing Paddle service is a provider
+failure and retries through the existing job lifecycle.
 
-Unlimited runs one page at a time with gundam crops. Its HTML adapter preserves
-columns, explicit result flags, raw result text and page provenance. Paired
-percentage/absolute counts are separated only with explicit column context.
-Unknown layouts remain unresolved. The parser's coverage score measures detected
-candidates, not true document recall, and is not a calibrated confidence score.
-
-A complete visual reading is accepted only when it retains every extracted native
-observation without a conflicting signature. Current reconciliation includes
-names, values, units, ranges, methods, specimens and dates; differences in method
-wording can conservatively force review. Cells from different readings are never
-combined. Unresolved pages block publication and their native/visual evidence is
-retained in `reviewPages`. This does not introduce a user correction UI.
-
-Checkpoints use `staged_result.doclyzer_cascade[page]["unlimited-v1"]`; legacy
-engine keys remain readable but are never reused by the new cascade. Existing
-terminal-result retention applies. Logs contain routing metadata, not contents.
-
-Deployment instructions and limitations: `docker/unlimited/README.txt`.
-Docling service and principal engine packages are pinned in its Dockerfile.
+The page checkpoint key is `staged_result.doclyzer_cascade[page]["paddleocr-v5"]`.
+The historical Surya and Unlimited keys are not reused. The source-based review
+UI can promote confirmed Paddle rows into report results one at a time. The
+PaddleOCR-VL service is optional and needs its own CPU model/backend; deployment
+measurements and limitations are recorded in the lab geometry pilot.
 
 ### Previous cascade emulator validation (historical, not Unlimited validation)
 

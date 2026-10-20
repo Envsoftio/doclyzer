@@ -103,7 +103,10 @@ const submitForm = async () => {
 
     const data = response.data
     persistTokens(data)
-    await router.push('/home')
+    const closure = await $fetch<{ data: { status: string | null } }>(`${baseApiUrl}/account/closure-request`, {
+      headers: { Authorization: `Bearer ${data.accessToken}` },
+    })
+    await router.push(closure.data.status === 'pending' || !config.public.consumerWebEnabled ? '/you/close-account' : '/home')
   } catch (error) {
     const { message, code } = extractFetchError(error)
     applyApiError(message, code)

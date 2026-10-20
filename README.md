@@ -32,17 +32,42 @@ cp .env.example .env
 # - Web: http://localhost:3005
 ```
 
-### 2. Start API + Database Stack with Docker Compose
+Set `B2_KEY_ID`, `B2_APPLICATION_KEY`, and `B2_BUCKET_NAME` in `.env`.
+Background report processing requires durable B2 storage.
+
+### 2. Start API, Worker, and Database Stack with Docker Compose
 
 ```bash
-# Start API + PostgreSQL (+ Redis dependencies)
-docker compose up -d api postgres
+# Build the API, apply migrations, and start the API, worker, dispatcher, and dependencies
+docker compose up -d
 
-# Verify services are running
+# Verify all services are running and processing is healthy
 docker compose ps
+curl http://localhost:4002/v1/health/report-processing
 ```
 
-### 3. Run the API (Backend)
+The health response should be `{"enabled":true,"healthy":true}`. Compose
+restarts the worker and dispatcher after a crash.
+
+Scanned PDF pages and original JPEG/PNG uploads use the CPU PaddleOCR service. Set a
+nonempty `LAB_OCR_API_KEY` in `.env`, then start the default Compose stack:
+
+```bash
+docker compose up -d --build
+```
+
+The worker checkpoints Paddle's aligned recognition text, scores, and polygons.
+Unresolved rows require source review. PaddleOCR-VL table review is optional;
+see [lab geometry pilot](docs/implementation-tasks/lab-geometry-pilot.md).
+
+After changing API source, recreate the build job and services to refresh
+their shared compiled code:
+
+```bash
+docker compose up -d --force-recreate api-build api report-worker report-dispatcher
+```
+
+### 3. Run the API outside Docker (Optional)
 
 ```bash
 cd apps/api
@@ -53,11 +78,12 @@ npm install
 # Run database migrations
 npm run migration:run
 
-# Start development server
-npm run start:dev
+# Run with REPORT_ASYNC_RUNTIME_ENABLED=true and the worker/dispatcher available
+REPORT_ASYNC_RUNTIME_ENABLED=true REPORT_ASYNC_ACCEPTANCE_ENABLED=true npm run start:dev
 ```
 
-Alternative: if `api` service is already started via compose in Step 2, API is available at **http://localhost:4002** without running these commands.
+The Compose API from Step 2 is already available at **http://localhost:4002**.
+Stop that API container before running a second server on the same port.
 
 ### 4. Run the Web App (Frontend)
 
@@ -104,19 +130,16 @@ debug builds only; release builds should use an HTTPS API URL. A plain
 
 ## Running Everything in Parallel
 
-Open separate terminal windows for each service:
+Open separate terminal windows for the backend stack and web client:
 
 ```bash
 # Terminal 1: API + Infra
 docker compose up
 
-# Terminal 2: API
-cd apps/api && npm install && npm run start:dev
-
-# Terminal 3: Web
+# Terminal 2: Web
 cd apps/web && npm install && npm run dev
 
-# Terminal 4: Mobile (if needed)
+# Terminal 3: Mobile (if needed)
 cd apps/mobile && flutter pub get && flutter run
 ```
 
@@ -191,8 +214,15 @@ BETTER_AUTH_SECRET=change-me-in-production
 BETTER_AUTH_URL=http://localhost:4002
 BETTER_AUTH_BASE_PATH=/v1/auth
 
-# Backblaze B2 Storage (optional)
-B2_DISABLED=true  # Set to false and configure B2_* vars for production
+# Backblaze B2 Storage (required for report processing)
+B2_DISABLED=false
+B2_KEY_ID=...
+B2_APPLICATION_KEY=...
+B2_BUCKET_NAME=...
+
+# Async processing is on in the default Compose stack
+REPORT_ASYNC_RUNTIME_ENABLED=true
+REPORT_ASYNC_ACCEPTANCE_ENABLED=true
 
 # Payment Gateway
 RAZORPAY_KEY_ID=rzp_test_xxxxx

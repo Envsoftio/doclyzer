@@ -1,6 +1,0 @@
-**
-!docker/
-!docker/unlimited/
-!docker/unlimited/requirements.txt
-!docker/unlimited/adapter.py
-!docker/unlimited/server.py

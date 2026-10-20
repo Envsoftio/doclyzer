@@ -45,6 +45,12 @@ export class InMemoryFileStorageService implements FileStorageService {
     return Promise.resolve();
   }
 
+  async deletePrefix(prefix: string): Promise<void> {
+    for (const key of this.store.keys()) {
+      if (key.startsWith(prefix)) this.store.delete(key);
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- in-memory stub ignores expiry
   async getSignedUrl(key: string, _expiresInSeconds?: number): Promise<string> {
     const buffer = this.store.get(key);

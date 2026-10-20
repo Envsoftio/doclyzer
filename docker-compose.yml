@@ -1,6 +1,24 @@
 name: doclyzer
 
 services:
+  api-build:
+    image: node:24-alpine
+    working_dir: /workspace/apps/api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-doclyzer}:${POSTGRES_PASSWORD:-doclyzer_dev_password}@postgres:5432/${POSTGRES_DB:-doclyzer}
+    command: sh -c "npm install && npm run build && npm run migration:run"
+    volumes:
+      - ./:/workspace
+      - api_node_modules:/workspace/apps/api/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - doclyzer_net
+
   api:
     image: node:24-alpine
     container_name: doclyzer-api
@@ -13,24 +31,90 @@ services:
       REDIS_PORT: 6379
       HOST: 0.0.0.0
       OPENDATALOADER_ENABLED: "false"
-      UNLIMITED_OCR_ENABLED: "${UNLIMITED_OCR_ENABLED:-true}"
-      UNLIMITED_OCR_BASE_URL: ${UNLIMITED_OCR_BASE_URL:-http://host.docker.internal:5004}
+      LAB_OCR_BASE_URL: http://paddleocr:5005
+      LAB_OCR_API_KEY: ${LAB_OCR_API_KEY:-}
       DOCLING_OCR_ENABLED: "true"
       DOCLING_OCR_BASE_URL: http://docling:5002
-    command: >
-      sh -c "npm install && npm run migration:run && npm run start:dev -- --host 0.0.0.0"
+      REPORT_ASYNC_RUNTIME_ENABLED: "${REPORT_ASYNC_RUNTIME_ENABLED:-true}"
+      REPORT_ASYNC_ACCEPTANCE_ENABLED: "${REPORT_ASYNC_ACCEPTANCE_ENABLED:-true}"
+      REPORT_PROCESS_ROLE: api
+    command: npm run start:prod
     ports:
       - "${PORT:-4002}:${PORT:-4002}"
     volumes:
       - ./:/workspace
       - api_node_modules:/workspace/apps/api/node_modules
     depends_on:
+      api-build:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
       docling:
         condition: service_healthy
+      paddleocr:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - doclyzer_net
+
+  report-worker:
+    image: node:24-alpine
+    working_dir: /workspace/apps/api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-doclyzer}:${POSTGRES_PASSWORD:-doclyzer_dev_password}@postgres:5432/${POSTGRES_DB:-doclyzer}
+      REPORT_ASYNC_RUNTIME_ENABLED: "true"
+      REPORT_ASYNC_ACCEPTANCE_ENABLED: "false"
+      REPORT_PROCESS_ROLE: worker
+      DOCLING_OCR_BASE_URL: http://docling:5002
+      LAB_OCR_BASE_URL: http://paddleocr:5005
+      LAB_OCR_API_KEY: ${LAB_OCR_API_KEY:-}
+      REPORT_WORKER_CONCURRENCY: "${REPORT_WORKER_CONCURRENCY:-1}"
+      NODE_ENV: production
+    command: npm run start:report-worker:prod
+    volumes:
+      - ./:/workspace
+      - api_node_modules:/workspace/apps/api/node_modules
+    depends_on:
+      api-build:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      docling:
+        condition: service_healthy
+      paddleocr:
+        condition: service_healthy
+    stop_grace_period: 45s
+    mem_limit: 1g
+    restart: unless-stopped
+    networks:
+      - doclyzer_net
+
+  report-dispatcher:
+    image: node:24-alpine
+    working_dir: /workspace/apps/api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-doclyzer}:${POSTGRES_PASSWORD:-doclyzer_dev_password}@postgres:5432/${POSTGRES_DB:-doclyzer}
+      REPORT_ASYNC_RUNTIME_ENABLED: "true"
+      REPORT_ASYNC_ACCEPTANCE_ENABLED: "false"
+      REPORT_PROCESS_ROLE: dispatcher
+      NODE_ENV: production
+    command: npm run start:report-dispatcher:prod
+    volumes:
+      - ./:/workspace
+      - api_node_modules:/workspace/apps/api/node_modules
+    depends_on:
+      api-build:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    stop_grace_period: 45s
+    mem_limit: 768m
     restart: unless-stopped
     networks:
       - doclyzer_net
@@ -64,6 +148,62 @@ services:
       timeout: 5s
       retries: 20
       start_period: 45s
+    networks:
+      - doclyzer_net
+
+  paddleocr:
+    build:
+      context: .
+      dockerfile: docker/paddleocr/Dockerfile
+    platform: linux/amd64
+    restart: unless-stopped
+    mem_limit: 5g
+    environment:
+      LAB_OCR_DPI: "${LAB_OCR_DPI:-300}"
+      LAB_OCR_API_KEY: ${LAB_OCR_API_KEY:-}
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      LAB_OCR_PAGE_TIMEOUT_SEC: "60"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import json,urllib.request,sys; sys.exit(0 if json.load(urllib.request.urlopen('http://127.0.0.1:5005/health',timeout=3))['ready'] else 1)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    networks:
+      - doclyzer_net
+
+  paddleocr-vl:
+    profiles: ["lab-vl"]
+    build:
+      context: .
+      dockerfile: docker/paddleocr-vl/Dockerfile
+    platform: linux/amd64
+    restart: unless-stopped
+    mem_limit: 2560m
+    environment:
+      LAB_VL_API_KEY: ${REPORT_VL_API_KEY:-}
+      LAB_VL_BACKEND_API_KEY: ${LAB_VL_BACKEND_API_KEY:-}
+      LAB_VL_LAYOUT_DIR: /models/PP-DocLayoutV3
+      LAB_VL_SERVER_URL: ${LAB_VL_SERVER_URL:-http://vl-llama:8080/v1}
+      LAB_VL_PAGE_TIMEOUT_SEC: "60"
+    volumes:
+      - ${LAB_VL_LAYOUT_MODEL_DIR:-./.local-models/paddleocr-vl/PP-DocLayoutV3}:/models/PP-DocLayoutV3:ro
+    depends_on:
+      vl-llama:
+        condition: service_healthy
+    networks:
+      - doclyzer_net
+
+  vl-llama:
+    profiles: ["lab-vl"]
+    image: ghcr.io/ggml-org/llama.cpp:server
+    restart: unless-stopped
+    mem_limit: 3g
+    command: ["-m", "/models/PaddleOCR-VL-1.6-GGUF.gguf", "--mmproj", "/models/PaddleOCR-VL-1.6-GGUF-mmproj.gguf", "--host", "0.0.0.0", "--port", "8080", "-t", "8", "-ngl", "0", "-c", "16384", "-np", "1", "--api-key", "${LAB_VL_BACKEND_API_KEY:-unset}"]
+    volumes:
+      - ${LAB_VL_GGUF_MODEL_DIR:-./.local-models/paddleocr-vl/gguf}:/models:ro
     networks:
       - doclyzer_net
 

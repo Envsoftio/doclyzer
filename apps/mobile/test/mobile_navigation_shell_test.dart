@@ -79,7 +79,7 @@ void main() {
       ),
     );
     expect(tester.takeException(), isNull);
-    expect(find.text('Account'), findsOneWidget);
+    expect(find.text('You'), findsOneWidget);
   });
 
   test('system bars use readable icons for both device themes', () {

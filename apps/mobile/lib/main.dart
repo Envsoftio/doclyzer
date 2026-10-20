@@ -43,6 +43,7 @@ import 'features/profiles/screens/profile_list_screen.dart';
 import 'features/reports/reports_repository.dart';
 import 'features/reports/api_reports_repository.dart';
 import 'features/reports/screens/timeline_screen.dart';
+import 'features/reports/screens/health_history_screen.dart';
 import 'features/reports/screens/upload_report_screen.dart';
 import 'features/referrals/api_referrals_repository.dart';
 import 'features/referrals/referrals_repository.dart';
@@ -68,6 +69,7 @@ void main() {
 
 enum _AuthView {
   login,
+  sessionUnavailable,
   signup,
   verification,
   home,
@@ -82,6 +84,7 @@ enum _AuthView {
   dataRights,
   uploadReport,
   timeline,
+  trends,
   billing,
   referrals,
   creditPackList,
@@ -179,6 +182,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   }
 
   ApiClient? _apiClient;
+  late final TokenStorage _tokenStorage;
   ApiAuthRepository? _authRepository;
   late final AccountRepository _accountRepository;
   late final ProfilesRepository _profilesRepository;
@@ -199,6 +203,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   _AuthView _authView = _AuthView.login;
   String? _prefillEmail;
   Profile? _editingProfile;
+  bool _uploadInFlight = false;
+  bool _hasInterruptedUpload = false;
+  _AuthView _profileListReturnView = _AuthView.home;
   String _activeProfileNameForUpload = '';
   String? _timelineProfileId;
   String? _timelineProfileName;
@@ -215,7 +222,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     unawaited(_restoreAppearance());
     WidgetsBinding.instance.addObserver(this);
     if (widget.authRepository != null) {
-      final tokenStorage = TokenStorage();
+      final tokenStorage = _tokenStorage = TokenStorage();
       _apiClient = ApiClient(
         baseUrl: apiBaseUrl,
         onRefreshToken: () async => null,
@@ -249,7 +256,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       setState(() => _initialized = true);
       _refreshIncidentStatus(force: true);
     } else {
-      final tokenStorage = TokenStorage();
+      final tokenStorage = _tokenStorage = TokenStorage();
       _apiClient = ApiClient(
         baseUrl: apiBaseUrl,
         onRefreshToken: () => _authRepository!.refreshTokens(),
@@ -263,7 +270,10 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           ApiCommunicationPreferencesRepository(_apiClient!);
       _dataRightsRepository = ApiDataRightsRepository(_apiClient!);
       _restrictionRepository = ApiRestrictionRepository(_apiClient!);
-      _reportsRepository = ApiReportsRepository(_apiClient!);
+      _reportsRepository = ApiReportsRepository(
+        _apiClient!,
+        tokenStorage: _tokenStorage,
+      );
       _sharingRepository =
           widget.sharingRepository ?? ApiSharingRepository(_apiClient!);
       _billingRepository =
@@ -331,16 +341,51 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   }
 
   Future<void> _initAuth() async {
-    final restored = await _authRepository!.restoreSession();
+    bool restored = false;
+    try {
+      restored = await _authRepository!.restoreSession();
+    } catch (_) {
+      // Secure storage can fail after a device restore; offer a fresh login.
+    }
     if (restored && mounted) {
-      _startReportServices();
+      ClosureRequest? closure;
+      try { closure = await _dataRightsRepository.getClosureRequest(); } catch (_) {}
+      final interrupted = await _readInterruptedUpload();
+      if (closure?.status != 'pending') _startReportServices();
       setState(() {
-        _authView = _AuthView.home;
+        _authView = closure?.status == 'pending' ? _AuthView.dataRights : _AuthView.home;
+        _hasInterruptedUpload = interrupted;
         _initialized = true;
       });
     } else if (mounted) {
-      setState(() => _initialized = true);
+      bool hasStoredSession = false;
+      try {
+        hasStoredSession = await _tokenStorage.hasTokens();
+      } catch (_) {
+        // A broken keychain/keystore must not trap the user on the splash.
+      }
+      if (mounted) {
+        setState(() {
+          _authView = hasStoredSession
+              ? _AuthView.sessionUnavailable
+              : _AuthView.login;
+          _initialized = true;
+        });
+      }
     }
+  }
+
+  Future<bool> _readInterruptedUpload() async {
+    try {
+      return await _tokenStorage.hasInterruptedReportUpload();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _retrySession() async {
+    setState(() => _initialized = false);
+    await _initAuth();
   }
 
   AuthRepository get _auth => _authRepository ?? widget.authRepository!;
@@ -406,9 +451,14 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
 
   Future<void> _login(String email, String password) async {
     await _auth.login(email: email, password: password);
-    _startReportServices();
+    final closure = await _dataRightsRepository.getClosureRequest();
+    final interrupted = await _readInterruptedUpload();
+    if (closure?.status != 'pending') _startReportServices();
     if (mounted) {
-      setState(() => _authView = _AuthView.home);
+      setState(() {
+        _authView = closure?.status == 'pending' ? _AuthView.dataRights : _AuthView.home;
+        _hasInterruptedUpload = interrupted;
+      });
     }
   }
 
@@ -419,7 +469,11 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     await _pushNotificationService.deactivateCurrentToken();
     await _auth.logout();
     if (mounted) {
-      setState(() => _authView = _AuthView.login);
+      setState(() {
+        _authView = _AuthView.login;
+        _hasInterruptedUpload = false;
+        _uploadInFlight = false;
+      });
     }
   }
 
@@ -519,7 +573,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   static const _tabViews = [
     _AuthView.home,
     _AuthView.timeline,
-    _AuthView.profileList,
+    _AuthView.trends,
     _AuthView.accountProfile,
   ];
   bool _openingTab = false;
@@ -527,16 +581,13 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   Future<void> _selectTab(int index) async {
     final destination = _tabViews[index];
     if (_openingTab || destination == _authView) return;
-    if (destination == _AuthView.timeline ||
-        destination == _AuthView.profileList) {
+    if (destination == _AuthView.timeline || destination == _AuthView.trends) {
       _openingTab = true;
       final origin = _authView;
       try {
         final restriction = await _restrictionRepository.getStatus();
         if (!mounted || _authView != origin) return;
-        final action = destination == _AuthView.timeline
-            ? 'view_timeline'
-            : 'manage_profiles';
+        const action = 'view_timeline';
         if (restriction.isRestricted &&
             (restriction.restrictedActions?.isEmpty ?? true)) {
           _showProfileLoadError(
@@ -551,12 +602,10 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           );
           return;
         }
-        if (destination == _AuthView.timeline) {
-          final active = await _getActiveProfileOrNotify(forUpload: false);
-          if (!mounted || active == null || _authView != origin) return;
-          _timelineProfileId = active.id;
-          _timelineProfileName = active.name;
-        }
+        final active = await _getActiveProfileOrNotify(forUpload: false);
+        if (!mounted || active == null || _authView != origin) return;
+        _timelineProfileId = active.id;
+        _timelineProfileName = active.name;
       } catch (_) {
         if (mounted) {
           _showProfileLoadError(
@@ -573,13 +622,49 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
 
   Widget _buildNavigationShell(Widget screen) {
     final selected = _tabViews.indexOf(_authView);
-    if (selected < 0) return screen;
+    if (selected < 0) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) _backFromSecondary();
+        },
+        child: screen,
+      );
+    }
     return MobileNavigationShell(
       selectedIndex: selected,
       onDestinationSelected: _selectTab,
       onBackToHome: () => setState(() => _authView = _AuthView.home),
       child: screen,
     );
+  }
+
+  void _backFromSecondary() {
+    if (_authView == _AuthView.uploadReport && _uploadInFlight) {
+      _scaffoldMessengerKey.currentState?.showSnackBar(
+        const SnackBar(
+          content: Text('Keep this screen open until the upload is accepted.'),
+        ),
+      );
+      return;
+    }
+    final target = switch (_authView) {
+      _AuthView.signup ||
+      _AuthView.verification ||
+      _AuthView.forgotPassword ||
+      _AuthView.resetPassword => _AuthView.login,
+      _AuthView.createProfile || _AuthView.editProfile => _AuthView.profileList,
+      _AuthView.creditPackList || _AuthView.planSelection => _AuthView.billing,
+      _AuthView.profileList => _profileListReturnView,
+      _AuthView.sessionList ||
+      _AuthView.communicationPreferences ||
+      _AuthView.dataRights ||
+      _AuthView.billing ||
+      _AuthView.referrals => _AuthView.accountProfile,
+      _AuthView.uploadReport => _AuthView.home,
+      _ => null,
+    };
+    if (target != null && mounted) setState(() => _authView = target);
   }
 
   @override
@@ -608,6 +693,32 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
             value: AppTheme.systemBars(Theme.of(context).brightness),
             child: Column(
               children: [
+                if (_hasInterruptedUpload && _authView == _AuthView.home)
+                  Material(
+                    color: Theme.of(context).colorScheme.tertiaryContainer,
+                    child: SafeArea(
+                      bottom: false,
+                      child: ListTile(
+                        title: const Text(
+                          'An upload may have been interrupted',
+                        ),
+                        subtitle: const Text(
+                          'Check Reports. If it is missing, add the same file again.',
+                        ),
+                        onTap: () => unawaited(_selectTab(1)),
+                        trailing: IconButton(
+                          tooltip: 'Dismiss upload notice',
+                          icon: const Icon(Icons.close),
+                          onPressed: () async {
+                            await _tokenStorage.clearInterruptedReportUpload();
+                            if (mounted) {
+                              setState(() => _hasInterruptedUpload = false);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
                 if (store.readyCount > 0)
                   Material(
                     color: Theme.of(context).colorScheme.secondaryContainer,
@@ -662,6 +773,36 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         },
       ),
       home: _buildNavigationShell(switch (_authView) {
+        _AuthView.sessionUnavailable => Scaffold(
+          appBar: AppBar(title: const Text('Connection unavailable')),
+          body: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.wifi_off_outlined, size: 48),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Your session could not be checked. Connect to the internet and try again.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: _retrySession,
+                      child: const Text('Try again'),
+                    ),
+                    TextButton(
+                      onPressed: _logout,
+                      child: const Text('Sign in with another account'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
         _AuthView.login => LoginScreen(
           onLogin: _login,
           onGoToSignup: () {
@@ -694,7 +835,10 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
             setState(() => _authView = _AuthView.accountProfile);
           },
           onGoToProfiles: () {
-            setState(() => _authView = _AuthView.profileList);
+            setState(() {
+              _profileListReturnView = _AuthView.home;
+              _authView = _AuthView.profileList;
+            });
           },
           onGoToSessions: () {
             setState(() => _authView = _AuthView.sessionList);
@@ -743,6 +887,10 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           themeMode: _themeMode,
           onThemeChanged: _savingAppearance ? null : _changeAppearance,
           billingRepository: _billingRepository,
+          onGoToProfiles: () => setState(() {
+            _profileListReturnView = _AuthView.accountProfile;
+            _authView = _AuthView.profileList;
+          }),
           onGoToBilling: () => setState(() => _authView = _AuthView.billing),
           onGoToReferrals: () =>
               setState(() => _authView = _AuthView.referrals),
@@ -806,7 +954,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
             });
           },
           onBack: () {
-            setState(() => _authView = _AuthView.home);
+            setState(() => _authView = _profileListReturnView);
           },
         ),
         _AuthView.createProfile => CreateEditProfileScreen(
@@ -850,14 +998,20 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           onAccountClosed: () async {
             await _logout();
           },
+          onAccountRestored: () async {
+            _startReportServices();
+            if (mounted) setState(() => _authView = _AuthView.home);
+          },
         ),
         _AuthView.uploadReport => UploadReportScreen(
           reportsRepository: _reportsRepository,
           profilesRepository: _profilesRepository,
           activeProfileName: _activeProfileNameForUpload,
           incidentStatus: _incidentStatus,
-          onBack: () {
-            setState(() => _authView = _AuthView.home);
+          onBack: _backFromSecondary,
+          onUploadBusyChanged: (busy) => _uploadInFlight = busy,
+          onUploadAccepted: () {
+            if (mounted) setState(() => _hasInterruptedUpload = false);
           },
           onComplete: () {
             setState(() => _authView = _AuthView.home);
@@ -884,6 +1038,15 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                     setState(() => _authView = _AuthView.billing);
                   },
                   supportRepository: _supportRepository,
+                )
+              : const Scaffold(body: Center(child: Text('No active profile'))),
+        _AuthView.trends =>
+          _timelineProfileId != null
+              ? HealthHistoryScreen(
+                  profileId: _timelineProfileId!,
+                  profileName: _timelineProfileName,
+                  reportsRepository: _reportsRepository,
+                  profilesRepository: _profilesRepository,
                 )
               : const Scaffold(body: Center(child: Text('No active profile'))),
         _AuthView.billing => EntitlementSummaryScreen(

@@ -183,7 +183,7 @@ export class DoclingTaskClient {
   async saveCascadeCandidate(
     lease: ReportJobLease,
     page: number,
-    engine: 'unlimited-v1' | 'surya' | 'rapidocr' | 'tesseract',
+    engine: 'paddleocr-v5',
     output: OcrOutput,
   ): Promise<void> {
     await this.checkpoint(

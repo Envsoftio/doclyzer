@@ -172,7 +172,10 @@ export class AuthService {
         });
       }
 
-      if (authenticatedUserId) {
+      const signingInUser = authenticatedUserId
+        ? await this.userRepo.findOne({ where: { id: authenticatedUserId } })
+        : null;
+      if (authenticatedUserId && !signingInUser?.deletionRequestedAt) {
         await this.referralsService.releasePendingInviteeBonusForUser({
           userId: authenticatedUserId,
           correlationId: `auth-login:${authenticatedUserId}`,
@@ -209,6 +212,28 @@ export class AuthService {
         status: HttpStatus.UNAUTHORIZED,
         code: 'AUTH_UNAUTHORIZED',
         message: 'Authentication required',
+      });
+    }
+  }
+
+  async verifyPasswordForUser(userId: string, password: string): Promise<void> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user || !password) {
+      throw new UnauthorizedException({
+        code: 'CLOSURE_REAUTH_FAILED',
+        message: 'Enter your current password',
+      });
+    }
+    try {
+      const auth = await this.betterAuthService.getAuth();
+      const result = await auth.api.signInEmail({
+        body: { email: user.email, password },
+      });
+      if (result?.user?.id !== userId) throw new Error('Account mismatch');
+    } catch {
+      throw new UnauthorizedException({
+        code: 'CLOSURE_REAUTH_FAILED',
+        message: 'Current password is incorrect',
       });
     }
   }

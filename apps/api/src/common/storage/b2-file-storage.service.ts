@@ -195,6 +195,42 @@ export class B2FileStorageService implements FileStorageService {
     }
   }
 
+  async deletePrefix(prefix: string): Promise<void> {
+    if (!prefix || !prefix.endsWith('/'))
+      throw new Error('Unsafe storage prefix');
+    let keyMarker: string | undefined;
+    let versionMarker: string | undefined;
+    do {
+      const page = await this.client.send(
+        new ListObjectVersionsCommand({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          KeyMarker: keyMarker,
+          VersionIdMarker: versionMarker,
+        }),
+      );
+      for (const item of [
+        ...(page.Versions ?? []),
+        ...(page.DeleteMarkers ?? []),
+      ]) {
+        if (item.Key?.startsWith(prefix) && item.VersionId) {
+          await this.client.send(
+            new DeleteObjectCommand({
+              Bucket: this.bucket,
+              Key: item.Key,
+              VersionId: item.VersionId,
+            }),
+          );
+        }
+      }
+      if (!page.IsTruncated) return;
+      if (!page.NextKeyMarker)
+        throw new Error('Missing storage pagination marker');
+      keyMarker = page.NextKeyMarker;
+      versionMarker = page.NextVersionIdMarker;
+    } while (true);
+  }
+
   async getSignedUrl(key: string, expiresInSeconds = 300): Promise<string> {
     try {
       const command = new GetObjectCommand({

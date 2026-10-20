@@ -51,6 +51,13 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 32, default: 'user' })
   role!: string;
 
+  @Column({
+    type: 'timestamptz',
+    name: 'deletion_requested_at',
+    nullable: true,
+  })
+  deletionRequestedAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

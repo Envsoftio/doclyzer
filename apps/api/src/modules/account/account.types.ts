@@ -22,8 +22,9 @@ export interface DataExportRequest {
 export interface ClosureRequest {
   requestId: string;
   userId: string;
-  status: 'pending' | 'completed';
+  status: 'pending' | 'restored' | 'completed';
   createdAt: string;
+  purgeAfterAt?: string;
   message: string;
 }
 

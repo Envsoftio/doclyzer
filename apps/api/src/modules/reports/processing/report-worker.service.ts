@@ -14,6 +14,7 @@ import {
 import { ReportAdmissionService } from './report-admission.service';
 import { DoclingTaskClient, ProcessingFailure } from './docling-task.client';
 import { processingSettings } from './processing-settings';
+import { ReportVlShadowService } from './report-vl-shadow.service';
 @Injectable()
 export class ReportWorkerService {
   private readonly log = new Logger(ReportWorkerService.name);
@@ -21,6 +22,7 @@ export class ReportWorkerService {
     private readonly db: DataSource,
     private readonly config: ConfigService,
     private readonly reports: ReportsService,
+    private readonly vlShadow: ReportVlShadowService,
     @Inject(FILE_STORAGE) private readonly storage: FileStorageService,
   ) {}
   async onModuleInit(): Promise<void> {
@@ -126,36 +128,48 @@ export class ReportWorkerService {
           row.content_type,
           settings.maxImagePixels,
         );
-        normalized = await this.reports.normalizeWorkerSource({
-          buffer: bytes,
-          originalname: row.original_file_name,
-          mimetype: row.content_type,
-          size: bytes.length,
-        });
-        const pdf = await PDFDocument.load(normalized.buffer);
-        if (pdf.getPageCount() > settings.maxPages)
-          throw new Error('PAGE_LIMIT');
+        if (row.content_type === 'image/jpeg' || row.content_type === 'image/png') {
+          normalized = {
+            buffer: bytes, originalname: row.original_file_name,
+            mimetype: row.content_type, size: bytes.length, source: 'image',
+          };
+        } else {
+          normalized = await this.reports.normalizeWorkerSource({
+            buffer: bytes,
+            originalname: row.original_file_name,
+            mimetype: row.content_type,
+            size: bytes.length,
+          });
+          const pdf = await PDFDocument.load(normalized.buffer);
+          if (pdf.getPageCount() > settings.maxPages)
+            throw new Error('PAGE_LIMIT');
+        }
       } catch {
         throw new ProcessingFailure('INVALID_CONTENT', false);
       }
-      // Native conversion remains durably checkpointed. OCR retries only unresolved pages.
-      const native = await provider.convert(
-        normalized.buffer,
-        lease,
-        signal,
-        true,
-      );
+      const result = normalized.source === 'image'
+        ? await this.reports.extractImageWithPaddle(
+            normalized.buffer,
+            normalized.mimetype as 'image/jpeg' | 'image/png',
+            signal,
+          )
+        : await (async () => {
+            // Native PDF conversion stays durably checkpointed.
+            const native = await provider.convert(normalized.buffer, lease, signal, true);
+            if (signal.aborted) throw new ReportLeaseLostError();
+            return this.reports.extractWithOcrCascade(
+              normalized.buffer, signal, native,
+              { progress: native.cascadeProgress,
+                save: (page, engine, output) =>
+                  provider.saveCascadeCandidate(lease, page, engine, output) },
+            );
+          })();
       if (signal.aborted) throw new ReportLeaseLostError();
-      const result = await this.reports.extractWithOcrCascade(
-        normalized.buffer,
-        signal,
-        native,
-        {
-          progress: native.cascadeProgress,
-          save: (page, engine, output) =>
-            provider.saveCascadeCandidate(lease, page, engine, output),
-        },
-      );
+      try {
+        await this.vlShadow.capture(lease.reportId, row.processing_generation, normalized.buffer, signal, result, normalized.mimetype);
+      } catch {
+        this.log.warn('REPORT_VL_SHADOW_CAPTURE_FAILED');
+      }
       if (signal.aborted) throw new ReportLeaseLostError();
       await jobs.setStage(lease, 'normalizing');
       const prepared = await this.reports.prepareWorkerResult(

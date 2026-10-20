@@ -3,7 +3,7 @@ import { PDFDocument } from 'pdf-lib';
 import { adaptDoclingDocument } from './docling-document-adapter';
 import { OpenDataLoaderJsonParser } from './opendataloader-json-parser';
 import { DoclingOcrClient } from './docling-ocr.client';
-import { UnlimitedOcrClient } from './unlimited-ocr.client';
+import { PaddleOcrClient } from './paddle-ocr.client';
 import { comparisonNotation } from './lab-method-notation';
 
 type Node = Record<string, unknown>;
@@ -12,15 +12,20 @@ export interface OcrOutput {
   parsedJson?: unknown;
   nativeOnly?: boolean;
 }
+export class OcrServiceUnavailableError extends Error {
+  constructor() {
+    super('Visual OCR service unavailable');
+  }
+}
 export type CascadeProgress = Record<
   string,
-  Partial<Record<'unlimited-v1', OcrOutput>>
+  Partial<Record<'paddleocr-v5', OcrOutput>>
 >;
 export interface CascadeCheckpoint {
   progress?: CascadeProgress;
   save?: (
     page: number,
-    engine: 'unlimited-v1',
+    engine: 'paddleocr-v5',
     output: OcrOutput,
   ) => Promise<void>;
 }
@@ -41,7 +46,7 @@ export class ReportOcrCascade {
   private readonly log = new Logger(ReportOcrCascade.name);
   constructor(
     private readonly docling: DoclingOcrClient,
-    private readonly unlimited: UnlimitedOcrClient,
+    private readonly paddle: PaddleOcrClient,
   ) {}
 
   private nodes(output: OcrOutput | null): Node[] {
@@ -75,7 +80,6 @@ export class ReportOcrCascade {
         if (index >= 0 && typeof cells[index + 1]?.content === 'string')
           add(cells[index + 1].content as string);
       }
-      // The Unlimited adapter preserves metadata tables as a text block.
       if (
         typeof node.content === 'string' &&
         /\bpatient information\b/i.test(node.content)
@@ -251,7 +255,7 @@ export class ReportOcrCascade {
         const [copied] = await part.copyPages(pdf, [index]);
         part.addPage(copied);
         const pageBytes = Buffer.from(await part.save());
-        const engine = 'unlimited-v1' as const;
+        const engine = 'paddleocr-v5' as const;
         const cached = checkpoint.progress?.[String(page)]?.[engine];
         this.log.log(
           JSON.stringify({
@@ -262,8 +266,11 @@ export class ReportOcrCascade {
           }),
         );
         const output =
-          cached ?? (await this.unlimited.parsePdf(pageBytes, signal));
+          cached ?? (await this.paddle.parsePdf(pageBytes, signal));
         signal.throwIfAborted();
+        // A missing OCR service is an infrastructure failure, not evidence that
+        // the uploaded document has unreadable or incomplete results.
+        if (!output) throw new OcrServiceUnavailableError();
         if (!cached && output?.parsedJson)
           await checkpoint.save?.(page, engine, output);
         const visualCandidate = this.candidate(engine, output);

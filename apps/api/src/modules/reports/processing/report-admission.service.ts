@@ -18,6 +18,7 @@ import {
   type ProcessingState,
 } from './report-processing.contract';
 import { appendReportEvent } from './report-event.store';
+import { reportSourceStorageKey } from './report-storage-key';
 
 export interface AdmissionPolicy {
   maxAttempts: number;
@@ -98,12 +99,17 @@ export class ReportAdmissionService {
 
     const intentId = randomUUID();
     const reportId = randomUUID();
-    const key = `report-sources/v1/${intentId}`;
+    const key = reportSourceStorageKey(
+      input.userId,
+      input.profileId,
+      reportId,
+      input.file.mimetype,
+    );
     await this.db.query(
       `INSERT INTO report_upload_intents
-      (id,storage_key,abandon_after,cleanup_after) VALUES
-      ($1,$2,clock_timestamp()+$3*interval '1 millisecond',clock_timestamp()+$3*interval '1 millisecond')`,
-      [intentId, key, this.policy.uploadDeadlineMs],
+      (id,user_id,storage_key,abandon_after,cleanup_after) VALUES
+      ($1,$2,$3,clock_timestamp()+$4*interval '1 millisecond',clock_timestamp()+$4*interval '1 millisecond')`,
+      [intentId, input.userId, key, this.policy.uploadDeadlineMs],
     );
     // No DB locks during storage I/O. On failure/timeout, keep the intent: the
     // upload may have succeeded despite response loss. The sweeper owns cleanup.
@@ -216,7 +222,7 @@ export class ReportAdmissionService {
       failed = 0;
     for (const intent of intents) {
       try {
-        await this.storage.delete(intent.storage_key);
+        await this.storage.delete(intent.storage_key, { allVersions: true });
         await this.db.query(
           `UPDATE report_upload_intents SET last_cleanup_at=clock_timestamp() WHERE id=$1`,
           [intent.id],
@@ -234,7 +240,7 @@ export class ReportAdmissionService {
     userId: string,
   ): Promise<void> {
     const [user] = await manager.query(
-      'SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE',
+      'SELECT id FROM users WHERE id=$1 AND deletion_requested_at IS NULL FOR NO KEY UPDATE',
       [userId],
     );
     if (!user) throw new NotFoundException();

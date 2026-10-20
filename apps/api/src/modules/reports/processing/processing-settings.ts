@@ -8,8 +8,8 @@ export function processingSettings(config: ConfigService) {
   };
   return {
     admission:
-      config.get('REPORT_ASYNC_ACCEPTANCE_ENABLED', 'false') === 'true',
-    runtime: config.get('REPORT_ASYNC_RUNTIME_ENABLED', 'false') === 'true',
+      config.get('REPORT_ASYNC_ACCEPTANCE_ENABLED', 'true') === 'true',
+    runtime: config.get('REPORT_ASYNC_RUNTIME_ENABLED', 'true') === 'true',
     role: config.get<string>('REPORT_PROCESS_ROLE', 'api'),
     policy: {
       maxAttempts: int('REPORT_MAX_ATTEMPTS', 3, 1, 10),

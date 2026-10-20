@@ -14,6 +14,7 @@ import { NotificationPipelineModule } from '../../common/notification-pipeline/n
 import { ReferralsModule } from '../referrals/referrals.module';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
+import { AccountDeletionCleanupService } from './account-deletion-cleanup.service';
 
 @Module({
   imports: [
@@ -33,6 +34,6 @@ import { AccountService } from './account.service';
     ReferralsModule,
   ],
   controllers: [AccountController],
-  providers: [AccountService],
+  providers: [AccountService, AccountDeletionCleanupService],
 })
 export class AccountModule {}

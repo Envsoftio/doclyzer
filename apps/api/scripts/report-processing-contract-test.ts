@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { ConfigService } from '@nestjs/config';
+import { processingSettings } from '../src/modules/reports/processing/processing-settings';
 import {
   acceptedSourceHash,
   assertProcessingTransition,
@@ -27,4 +29,15 @@ assert.throws(() => assertProcessingTransition('ready', 'processing'));
 assert.throws(() => assertProcessingTransition('failed', 'queued'));
 assert.equal(legacyReportStatus.ready, 'parsed');
 assert.equal(legacyReportStatus.retry_scheduled, 'failed_transient');
+const defaultSettings = processingSettings(new ConfigService({}));
+assert.equal(defaultSettings.runtime, true);
+assert.equal(defaultSettings.admission, true);
+const drainedSettings = processingSettings(
+  new ConfigService({
+    REPORT_ASYNC_RUNTIME_ENABLED: 'true',
+    REPORT_ASYNC_ACCEPTANCE_ENABLED: 'false',
+  }),
+);
+assert.equal(drainedSettings.runtime, true);
+assert.equal(drainedSettings.admission, false);
 console.log('Report processing contract tests passed');

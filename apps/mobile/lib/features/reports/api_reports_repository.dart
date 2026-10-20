@@ -1,14 +1,15 @@
 import 'dart:io';
-import 'dart:math';
 import 'package:crypto/crypto.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/api_client.dart';
+import '../../core/token_storage.dart';
 import 'reports_repository.dart';
 
 class ApiReportsRepository implements ReportsRepository {
-  ApiReportsRepository(this._client);
+  ApiReportsRepository(this._client, {TokenStorage? tokenStorage})
+    : _tokenStorage = tokenStorage ?? TokenStorage();
 
   final ApiClient _client;
+  final TokenStorage _tokenStorage;
   static final RegExp _rangeToken = RegExp(
     r'\b\d+(?:\.\d+)?\s*-\s*\d+(?:\.\d+)?\b',
   );
@@ -346,17 +347,13 @@ class ApiReportsRepository implements ReportsRepository {
         (p) => p['isActive'] == true,
       );
       final profileId = profile['id'] as String;
-      final hash = sha256
-          .convert(await File(filePath).readAsBytes())
+      final hash = (await sha256.bind(File(filePath).openRead()).first)
           .toString();
-      final storage = const FlutterSecureStorage();
-      final storageKey = 'report-upload:$profileId:$hash';
-      var key = await storage.read(key: storageKey);
-      key ??= List.generate(
-        24,
-        (_) => Random.secure().nextInt(256).toRadixString(16).padLeft(2, '0'),
-      ).join();
-      await storage.write(key: storageKey, value: key);
+      final key = await _tokenStorage.getOrCreateReportUploadKey(
+        profileId,
+        hash,
+      );
+      await _tokenStorage.markReportUploadStarted();
       late Map<String, dynamic> response;
       try {
         response = await _client.uploadFile(
@@ -368,7 +365,7 @@ class ApiReportsRepository implements ReportsRepository {
         );
       } on ApiException catch (error) {
         if (error.code == 'REPORT_IDEMPOTENCY_EXPIRED') {
-          await storage.delete(key: storageKey);
+          await _tokenStorage.clearReportUploadKey(profileId, hash);
         }
         rethrow;
       }
@@ -381,7 +378,7 @@ class ApiReportsRepository implements ReportsRepository {
         'needs_attention': 'content_not_recognized',
         'cancelled': 'unparsed',
       };
-      return UploadedReport(
+      final accepted = UploadedReport(
         reportId: d['reportId'] as String,
         profileId: d['profileId'] as String,
         fileName: d['fileName'] as String,
@@ -389,6 +386,8 @@ class ApiReportsRepository implements ReportsRepository {
         sizeBytes: d['sizeBytes'] as int,
         status: legacy[d['status']] ?? d['status'] as String,
       );
+      await _tokenStorage.clearInterruptedReportUpload();
+      return accepted;
     }
     final queryParams = forceUploadAnyway
         ? <String, String>{'duplicateAction': 'upload_anyway'}

@@ -22,5 +22,7 @@ apps/mobile/build/
 .claude/
 .cline/
 apps/mobile/pubspec.lock
-docker/surya/__pycache__
+**/__pycache__/
+*.pyc
 .env
+.local-models/

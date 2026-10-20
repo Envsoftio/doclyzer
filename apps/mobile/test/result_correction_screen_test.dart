@@ -44,6 +44,19 @@ class _Corrections extends Fake implements ReportsRepository {
 
 class _ReportWithCorrection extends _Corrections {
   @override
+  Future<ResultInsight> getResultInsight(
+    String reportId,
+    ExtractedLabValue result,
+  ) async => const ResultInsight(
+    testExplanation: '',
+    resultExplanation: '',
+    possibleSignificance: '',
+    lifestyleConsiderations: [],
+    suggestedFollowup: '',
+    dataUncertainties: [],
+  );
+
+  @override
   Future<Report> getReport(String reportId) async => Report(
     id: reportId,
     profileId: 'profile',
@@ -111,11 +124,18 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.byKey(const Key('review-result-row')),
+      find.byKey(const Key('lab-row-Hb')),
       250,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.byKey(const Key('review-result-row')));
+    await tester.tap(find.byKey(const Key('lab-row-Hb')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('result-insight-review')),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('result-insight-review')));
     await tester.pumpAndSettle();
     expect(find.byType(ResultCorrectionScreen), findsOneWidget);
   });

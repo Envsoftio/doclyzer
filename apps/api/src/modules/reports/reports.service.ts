@@ -1,5 +1,6 @@
 import {
   ReportOcrCascade,
+  OcrServiceUnavailableError,
   type OcrOutput,
   type CascadeCheckpoint,
 } from './report-ocr-cascade';
@@ -30,7 +31,7 @@ import { ReportResultInsightEntity } from '../../database/entities/report-result
 import { ProfilesService } from '../profiles/profiles.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
-import { UnlimitedOcrClient } from './unlimited-ocr.client';
+import { PaddleOcrClient } from './paddle-ocr.client';
 import { DoclingOcrClient } from './docling-ocr.client';
 import { ImageToPdfService } from './image-to-pdf.service';
 import { buildLabTrends, type TrendParameter } from './lab-trend-builder';
@@ -237,7 +238,7 @@ export class ReportsService {
     private readonly usageLimitsService: UsageLimitsService,
     private readonly openDataLoaderClient: OpenDataLoaderClient,
     private readonly doclingOcrClient: DoclingOcrClient,
-    private readonly unlimitedOcrClient: UnlimitedOcrClient,
+    private readonly paddleOcrClient: PaddleOcrClient,
     private readonly reportLabAiFallbackService: ReportLabAiFallbackService,
     private readonly notificationPipeline: NotificationPipelineService,
     private readonly imageToPdfService: ImageToPdfService,
@@ -282,7 +283,7 @@ export class ReportsService {
     options?: { duplicateAction?: 'upload_anyway' },
     correlationId?: string,
   ): Promise<UploadReportResult> {
-    if (process.env.REPORT_ASYNC_RUNTIME_ENABLED === 'true')
+    if (process.env.REPORT_ASYNC_RUNTIME_ENABLED !== 'false')
       throw new ConflictException({
         code: 'REPORT_CLIENT_UPGRADE_REQUIRED',
         message:
@@ -873,7 +874,7 @@ export class ReportsService {
         where: { id: reportId, userId, deletedAt: IsNull() },
         lock: { mode: 'pessimistic_write' },
       });
-      if (!report || report.status !== 'parsed')
+      if (!report)
         throw new ReportNotFoundException();
       const labRepo = manager.getRepository(ReportLabValueEntity);
       const row = await labRepo.findOne({
@@ -881,6 +882,8 @@ export class ReportsService {
         lock: { mode: 'pessimistic_write' },
       });
       if (!row) throw new ReportNotFoundException();
+      if (report.status !== 'parsed' && row.extractionSource !== 'paddleocr_vl_review')
+        throw new ReportNotFoundException();
       if (row.reviewVersion !== input.expectedVersion) {
         throw new ConflictException({
           code: 'REPORT_RESULT_VERSION_CONFLICT',
@@ -1148,7 +1151,7 @@ export class ReportsService {
     const entity = await this.getActiveReportOrThrow(userId, reportId);
     if (
       entity.processingGeneration > 0 ||
-      process.env.REPORT_ASYNC_RUNTIME_ENABLED === 'true'
+      process.env.REPORT_ASYNC_RUNTIME_ENABLED !== 'false'
     )
       throw new ConflictException({
         code: 'REPORT_ASYNC_RETRY_REQUIRED',
@@ -1407,12 +1410,31 @@ export class ReportsService {
     initial?: OcrOutput,
     checkpoint?: CascadeCheckpoint,
   ) {
-    return new ReportOcrCascade(this.doclingOcrClient, this.unlimitedOcrClient).run(
+    return new ReportOcrCascade(this.doclingOcrClient, this.paddleOcrClient).run(
       buffer,
       signal,
       initial,
       checkpoint,
     );
+  }
+
+  async extractImageWithPaddle(
+    buffer: Buffer,
+    contentType: 'image/jpeg' | 'image/png',
+    signal: AbortSignal,
+  ): Promise<OcrOutput & { parsedJson: unknown }> {
+    const visual = await this.paddleOcrClient.parseImage(buffer, contentType, signal);
+    signal.throwIfAborted();
+    if (!visual) throw new OcrServiceUnavailableError();
+    return {
+      text: visual.text,
+      parsedJson: {
+        type: 'document', kids: [], ocrVerificationFailed: true,
+        unresolvedPages: [1],
+        reviewPages: { '1': { native: { text: '', parsedJson: { type: 'document', kids: [] } },
+          visual, reason: 'source_review_required' } },
+      },
+    };
   }
 
   private async parseWithPreferredOcr(buffer: Buffer) {

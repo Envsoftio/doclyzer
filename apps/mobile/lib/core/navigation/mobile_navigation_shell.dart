@@ -38,14 +38,14 @@ class MobileNavigationShell extends StatelessWidget {
             label: 'Reports',
           ),
           NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people_rounded),
-            label: 'Profiles',
+            icon: Icon(Icons.show_chart_outlined),
+            selectedIcon: Icon(Icons.show_chart_rounded),
+            label: 'Trends',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person_rounded),
-            label: 'Account',
+            label: 'You',
           ),
         ],
       ),

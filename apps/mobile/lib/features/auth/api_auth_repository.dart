@@ -1,11 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:http/http.dart' as http;
-
 import '../../core/api_client.dart';
-import '../../core/api_config.dart';
 import '../../core/token_storage.dart';
 import 'auth_repository.dart';
 
@@ -100,11 +96,13 @@ class ApiAuthRepository implements AuthRepository {
   }
 
   Future<LoginResult> _loginImpl(String email, String password) async {
-    final data = await _client.post(
-      'v1/auth/login',
-      body: {'email': email.trim().toLowerCase(), 'password': password},
-      auth: false,
-    ).timeout(const Duration(seconds: 15));
+    final data = await _client
+        .post(
+          'v1/auth/login',
+          body: {'email': email.trim().toLowerCase(), 'password': password},
+          auth: false,
+        )
+        .timeout(const Duration(seconds: 15));
     final d = data['data'] as Map<String, dynamic>;
     final accessToken = d['accessToken'] as String;
     final refreshToken = d['refreshToken'] as String? ?? accessToken;
@@ -122,7 +120,9 @@ class ApiAuthRepository implements AuthRepository {
   @override
   Future<void> logout() async {
     try {
-      await _client.post('v1/auth/logout', auth: true);
+      await _client
+          .post('v1/auth/logout', auth: true)
+          .timeout(const Duration(seconds: 8));
     } catch (_) {
       // ignore
     } finally {
@@ -169,27 +169,26 @@ class ApiAuthRepository implements AuthRepository {
     final refreshToken = await _tokenStorage.getRefreshToken();
     if (accessToken == null || refreshToken == null) return false;
     _client.setAccessToken(accessToken);
-    return true;
+    // A token in secure storage is not proof that its server session still exists.
+    try {
+      return await refreshTokens() != null;
+    } on ApiException {
+      return false;
+    }
   }
 
-  /// Called by ApiClient on 401 to refresh tokens. Uses direct HTTP to avoid retry loop.
+  /// Called by ApiClient on 401. The unauthenticated request cannot retry itself.
   Future<String?> refreshTokens() async {
     final refreshToken = await _tokenStorage.getRefreshToken();
     if (refreshToken == null) return null;
     try {
-      final base = apiBaseUrl.endsWith('/') ? apiBaseUrl : '$apiBaseUrl/';
-      final res = await http.post(
-        Uri.parse('${base}v1/auth/refresh'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({'refreshToken': refreshToken}),
-      ).timeout(const Duration(seconds: 15));
-      if (res.statusCode < 200 || res.statusCode >= 300) {
-        throw Exception('Refresh failed');
-      }
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      final data = await _client
+          .post(
+            'v1/auth/refresh',
+            body: {'refreshToken': refreshToken},
+            auth: false,
+          )
+          .timeout(const Duration(seconds: 15));
       final d = data['data'] as Map<String, dynamic>;
       final newAccess = d['accessToken'] as String;
       final newRefresh = d['refreshToken'] as String? ?? newAccess;
@@ -197,11 +196,20 @@ class ApiAuthRepository implements AuthRepository {
         accessToken: newAccess,
         refreshToken: newRefresh,
       );
+      _client.setAccessToken(newAccess);
       return newAccess;
+    } on ApiException catch (error) {
+      if (error.code == 'AUTH_UNAUTHORIZED' ||
+          error.code == 'AUTH_SESSION_REVOKED') {
+        await _tokenStorage.clear();
+        _client.clearAccessToken();
+        return null;
+      }
+      throw ApiException('NETWORK_ERROR', 'Session validation is unavailable.');
     } catch (_) {
-      await _tokenStorage.clear();
-      _client.clearAccessToken();
-      return null;
+      // Offline startup and transient server failures must not destroy a
+      // session that may still be valid when connectivity returns.
+      throw ApiException('NETWORK_ERROR', 'Session validation is unavailable.');
     }
   }
 }

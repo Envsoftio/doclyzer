@@ -26,6 +26,9 @@ export class ClosureRequestEntity {
   @Column({ type: 'text', nullable: true })
   message!: string | null;
 
+  @Column({ type: 'timestamptz', name: 'purge_after_at', nullable: true })
+  purgeAfterAt!: Date | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }

@@ -1,9 +1,9 @@
 import { registerAs } from '@nestjs/config';
 
 export interface ReportsConfig {
-  unlimitedOcrEnabled: boolean;
-  unlimitedOcrBaseUrl: string;
-  unlimitedOcrTimeoutMs: number;
+  paddleOcrBaseUrl: string;
+  paddleOcrApiKey: string;
+  paddleOcrTimeoutMs: number;
   /** Enable/disable AI report summarisation. */
   reportSummaryEnabled: boolean;
   /** Provider type for summarisation (currently only 'http' supported). */
@@ -51,10 +51,10 @@ export interface ReportsConfig {
 export const reportsConfig = registerAs(
   'reports',
   (): ReportsConfig => ({
-    unlimitedOcrEnabled: process.env.UNLIMITED_OCR_ENABLED !== 'false',
-    unlimitedOcrBaseUrl: process.env.UNLIMITED_OCR_BASE_URL ?? 'http://127.0.0.1:5004',
-    unlimitedOcrTimeoutMs: parseInt(
-      process.env.UNLIMITED_OCR_TIMEOUT_MS ?? '610000',
+    paddleOcrBaseUrl: process.env.LAB_OCR_BASE_URL ?? 'http://127.0.0.1:5005',
+    paddleOcrApiKey: process.env.LAB_OCR_API_KEY ?? '',
+    paddleOcrTimeoutMs: parseInt(
+      process.env.LAB_OCR_TIMEOUT_MS ?? '65000',
       10,
     ),
     reportSummaryEnabled: process.env.REPORT_SUMMARY_ENABLED === 'true',

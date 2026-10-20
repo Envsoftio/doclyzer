@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
 import { Repository } from 'typeorm';
@@ -9,6 +15,7 @@ import { ClosureRequestEntity } from '../../database/entities/closure-request.en
 import { ProfileEntity } from '../../database/entities/profile.entity';
 import { ConsentRecordEntity } from '../../database/entities/consent-record.entity';
 import { UserEntity } from '../../database/entities/user.entity';
+import { ReportEntity } from '../../database/entities/report.entity';
 import { AuthService } from '../auth/auth.service';
 import { AccountOverrideService } from '../audit-incident/account-override.service';
 import { NotificationPipelineService } from '../../common/notification-pipeline/notification-pipeline.service';
@@ -356,28 +363,48 @@ export class AccountService {
     correlationId: string,
   ): Promise<ClosureRequest> {
     if (!dto.confirmClosure) throw new ClosureConfirmationRequiredException();
+    await this.authService.verifyPasswordForUser(userId, dto.password);
 
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (user?.avatarUrl) {
-      await this.fileStorage.delete(user.avatarUrl, { allVersions: true });
-    }
-
-    const entity = this.closureRepo.create({
-      userId,
-      status: 'completed',
-      message:
-        'Your account is scheduled for closure. You will lose access to all data.',
+    const saved = await this.userRepo.manager.transaction(async (manager) => {
+      const user = await manager.findOne(UserEntity, {
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user) throw new NotFoundException('Account not found');
+      if (user.role === 'superadmin') {
+        throw new ConflictException(
+          'Superadmin accounts cannot be deleted here',
+        );
+      }
+      const existing = await manager.findOne(ClosureRequestEntity, {
+        where: { userId, status: 'pending' },
+        order: { createdAt: 'DESC' },
+      });
+      if (existing) return existing;
+      const now = new Date();
+      user.deletionRequestedAt = now;
+      await manager.save(UserEntity, user);
+      // A closed account's existing share links must stop working immediately.
+      await manager.query(
+        'UPDATE share_links SET is_active = false, expires_at = $1 WHERE user_id = $2 AND is_active = true',
+        [now, userId],
+      );
+      return manager.save(
+        ClosureRequestEntity,
+        manager.create(ClosureRequestEntity, {
+          userId,
+          status: 'pending',
+          purgeAfterAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+          message:
+            'Account access is disabled. Sign in to restore within 30 days.',
+        }),
+      );
     });
-    const saved = await this.closureRepo.save(entity);
-    if (user) {
-      user.avatarUrl = null;
-      await this.userRepo.save(user);
-    }
     await this.authService.revokeAllSessionsForUser(userId);
 
     this.logger.log(
       JSON.stringify({
-        action: 'CLOSURE_COMPLETED',
+        action: 'CLOSURE_REQUESTED',
         requestId: saved.id,
         correlationId,
       }),
@@ -411,6 +438,184 @@ export class AccountService {
     return this.toClosureDto(entity);
   }
 
+  async restoreClosure(userId: string): Promise<ClosureRequest> {
+    const restored = await this.userRepo.manager.transaction(
+      async (manager) => {
+        const user = await manager.findOne(UserEntity, {
+          where: { id: userId },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!user) throw new NotFoundException('Account not found');
+        const request = await manager.findOne(ClosureRequestEntity, {
+          where: { userId, status: 'pending' },
+          order: { createdAt: 'DESC' },
+        });
+        if (
+          !request ||
+          !request.purgeAfterAt ||
+          request.purgeAfterAt <= new Date()
+        ) {
+          throw new ConflictException('The restoration period has ended');
+        }
+        user.deletionRequestedAt = null;
+        request.status = 'restored';
+        request.message = 'Your account has been restored.';
+        await manager.save(UserEntity, user);
+        return manager.save(ClosureRequestEntity, request);
+      },
+    );
+    return this.toClosureDto(restored);
+  }
+
+  async purgeExpiredClosures(): Promise<number> {
+    const due = await this.closureRepo
+      .createQueryBuilder('c')
+      .select(['c.id', 'c.userId'])
+      .where('c.status = :status AND c.purgeAfterAt <= :now', {
+        status: 'pending',
+        now: new Date(),
+      })
+      .orderBy('c.purgeAfterAt', 'ASC')
+      .take(20)
+      .getMany();
+    let purged = 0;
+    for (const candidate of due) {
+      try {
+        await this.userRepo.manager.transaction(async (manager) => {
+          const user = await manager.findOne(UserEntity, {
+            where: { id: candidate.userId },
+            lock: { mode: 'pessimistic_write' },
+          });
+          if (!user?.deletionRequestedAt) return;
+          const closure = await manager.findOne(ClosureRequestEntity, {
+            where: { userId: user.id, status: 'pending' },
+            order: { createdAt: 'DESC' },
+          });
+          if (!closure?.purgeAfterAt || closure.purgeAfterAt > new Date())
+            return;
+          // B2 versions and delete markers are removed before the database owner.
+          // A failure rolls back the transaction, so the next sweep can retry.
+          await this.fileStorage.deletePrefix(`reports/${user.id}/`);
+          await this.fileStorage.deletePrefix(`avatars/${user.id}/`);
+          for (const extension of ['.jpg', '.jpeg', '.png', '.gif', '.webp']) {
+            await this.fileStorage.delete(`avatars/${user.id}${extension}`, {
+              allVersions: true,
+            });
+          }
+          if (
+            user.avatarUrl &&
+            !user.avatarUrl.startsWith(`avatars/${user.id}/`)
+          ) {
+            await this.fileStorage.delete(user.avatarUrl, {
+              allVersions: true,
+            });
+          }
+          // Older async report sources used report-sources/v1/<intent> outside
+          // the account prefix; keep explicit cleanup for those legacy keys.
+          const reports = await manager.find(ReportEntity, {
+            where: { userId: user.id },
+            select: ['id', 'originalFileStorageKey'],
+          });
+          for (const report of reports) {
+            if (
+              !report.originalFileStorageKey.startsWith(`reports/${user.id}/`)
+            ) {
+              await this.fileStorage.delete(report.originalFileStorageKey, {
+                allVersions: true,
+              });
+            }
+          }
+          const intents: Array<{ storage_key: string }> = await manager.query(
+            'SELECT storage_key FROM report_upload_intents WHERE user_id = $1',
+            [user.id],
+          );
+          for (const intent of intents) {
+            await this.fileStorage.delete(intent.storage_key, {
+              allVersions: true,
+            });
+          }
+          await manager.query(
+            'DELETE FROM report_upload_intents WHERE user_id = $1',
+            [user.id],
+          );
+          // These operational rows use SET NULL rather than CASCADE, or carry
+          // the account ID in metadata. Remove account-specific records first.
+          await manager.query(
+            'DELETE FROM billing_provider_events WHERE order_id IN (SELECT id FROM orders WHERE user_id = $1)',
+            [user.id],
+          );
+          await manager.query(
+            'DELETE FROM promo_lifecycle_events WHERE user_id = $1 OR order_id IN (SELECT id FROM orders WHERE user_id = $1)',
+            [user.id],
+          );
+          await manager.query(
+            'DELETE FROM push_delivery_events WHERE user_id = $1',
+            [user.id],
+          );
+          await manager.query(
+            'DELETE FROM referral_audit_events WHERE actor_user_id = $1 OR referral_log_id IN (SELECT id FROM referral_logs WHERE referrer_user_id = $1 OR invitee_user_id = $1) OR reward_event_id IN (SELECT id FROM referral_reward_events WHERE beneficiary_user_id = $1)',
+            [user.id],
+          );
+          await manager.query(
+            'DELETE FROM gift_voucher_events WHERE actor_user_id = $1',
+            [user.id],
+          );
+          await manager.query(
+            'DELETE FROM report_operator_actions WHERE report_id IN (SELECT id FROM reports WHERE user_id = $1)',
+            [user.id],
+          );
+          await manager.query(
+            "DELETE FROM suspicious_activity_queue_items WHERE target_id = $1 AND target_type = 'user'",
+            [user.id],
+          );
+          await manager.query(
+            "DELETE FROM email_delivery_events WHERE metadata->>'userId' = $1 OR metadata->>'recipientUserId' = $1 OR metadata->>'queueItemId' IN (SELECT id::text FROM email_queue_items WHERE metadata->>'userId' = $1 OR metadata->>'recipientUserId' = $1)",
+            [user.id],
+          );
+          await manager.query(
+            "DELETE FROM email_queue_items WHERE metadata->>'userId' = $1 OR metadata->>'recipientUserId' = $1",
+            [user.id],
+          );
+          await manager.query(
+            'INSERT INTO account_deletion_records(user_id,email,requested_at) VALUES ($1,$2,$3) ON CONFLICT (user_id) DO NOTHING',
+            [user.id, user.email, user.deletionRequestedAt],
+          );
+          await manager.delete(UserEntity, user.id);
+          purged++;
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Account purge failed for userId=${candidate.userId}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+    return purged;
+  }
+
+  async listDeletionRecords(): Promise<
+    Array<{
+      userId: string;
+      email: string;
+      requestedAt: string;
+      purgedAt: string;
+    }>
+  > {
+    const rows: Array<{
+      user_id: string;
+      email: string;
+      requested_at: Date;
+      purged_at: Date;
+    }> = await this.userRepo.query(
+      'SELECT user_id, email, requested_at, purged_at FROM account_deletion_records ORDER BY purged_at DESC',
+    );
+    return rows.map((row) => ({
+      userId: row.user_id,
+      email: row.email,
+      requestedAt: row.requested_at.toISOString(),
+      purgedAt: row.purged_at.toISOString(),
+    }));
+  }
+
   private toExportDto(e: DataExportRequestEntity): DataExportRequest {
     return {
       requestId: e.id,
@@ -427,8 +632,9 @@ export class AccountService {
     return {
       requestId: e.id,
       userId: e.userId,
-      status: e.status as 'pending' | 'completed',
+      status: e.status as 'pending' | 'restored' | 'completed',
       createdAt: e.createdAt.toISOString(),
+      purgeAfterAt: e.purgeAfterAt?.toISOString(),
       message: e.message ?? '',
     };
   }

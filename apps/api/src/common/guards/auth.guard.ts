@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type { Request } from 'express';
 import { Repository } from 'typeorm';
 import { RestrictionEntity } from '../../database/entities/restriction.entity';
+import { UserEntity } from '../../database/entities/user.entity';
 import {
   ACCOUNT_SUSPENDED,
   ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS,
@@ -32,6 +33,8 @@ export class AuthGuard implements CanActivate {
     private readonly betterAuthService: BetterAuthService,
     @InjectRepository(RestrictionEntity)
     private readonly restrictionRepo: Repository<RestrictionEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -65,6 +68,22 @@ export class AuthGuard implements CanActivate {
       (req as Request & { user: { id: string } }).user = { id: result.user.id };
       (req as Request & { currentSessionId?: string }).currentSessionId =
         result.session.id;
+      const user = await this.userRepo.findOne({
+        where: { id: result.user.id },
+      });
+      if (
+        user?.deletionRequestedAt &&
+        ![
+          'AccountController.getClosureRequest',
+          'AccountController.restoreClosure',
+          'AuthController.logout',
+        ].includes(handlerKey)
+      ) {
+        throw new ForbiddenException({
+          code: 'ACCOUNT_PENDING_DELETION',
+          message: 'Your account is pending deletion. Restore it to continue.',
+        });
+      }
       await this.enforceAccountSuspension(
         req,
         result.user.id,
@@ -83,7 +102,11 @@ export class AuthGuard implements CanActivate {
           });
         }
       }
-      if (err instanceof UnauthorizedException) throw err;
+      if (
+        err instanceof UnauthorizedException ||
+        err instanceof ForbiddenException
+      )
+        throw err;
       throw new UnauthorizedException({
         code: 'AUTH_UNAUTHORIZED',
         message: 'Authentication required',
@@ -105,7 +128,15 @@ export class AuthGuard implements CanActivate {
     handlerKey: string,
     revokedCodeAllowed: boolean,
   ): Promise<void> {
-    if (revokedCodeAllowed || handlerName === 'getRestrictionStatus') {
+    if (
+      revokedCodeAllowed ||
+      handlerName === 'getRestrictionStatus' ||
+      [
+        'AccountController.createClosureRequest',
+        'AccountController.getClosureRequest',
+        'AccountController.restoreClosure',
+      ].includes(handlerKey)
+    ) {
       return;
     }
     const restriction = await this.restrictionRepo.findOne({

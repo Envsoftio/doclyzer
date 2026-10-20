@@ -21,6 +21,7 @@ class AccountProfileScreen extends StatefulWidget {
     this.onThemeChanged,
     this.billingRepository,
     this.onGoToBilling,
+    this.onGoToProfiles,
     this.onGoToReferrals,
     this.onGoToSessions,
     this.onGoToNotifications,
@@ -37,6 +38,7 @@ class AccountProfileScreen extends StatefulWidget {
   final ValueChanged<ThemeMode>? onThemeChanged;
   final BillingRepository? billingRepository;
   final VoidCallback? onGoToBilling;
+  final VoidCallback? onGoToProfiles;
   final VoidCallback? onGoToReferrals;
   final VoidCallback? onGoToSessions;
   final VoidCallback? onGoToNotifications;
@@ -340,6 +342,20 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
         Card(
           child: Column(
             children: [
+              if (widget.onGoToProfiles != null) ...[
+                ListTile(
+                  key: const Key('account-family-profiles'),
+                  leading: Icon(
+                    Icons.people_outline,
+                    color: theme.colorScheme.primary,
+                  ),
+                  title: const Text('Family profiles'),
+                  subtitle: const Text('Switch or manage profiles'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: widget.onGoToProfiles,
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+              ],
               if (widget.onGoToBilling != null)
                 FutureBuilder<EntitlementSummary>(
                   future: _entitlement,

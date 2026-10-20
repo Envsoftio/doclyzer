@@ -16,8 +16,9 @@ class ApiDataRightsRepository implements DataRightsRepository {
   @override
   Future<DataExportRequest> getExportRequest(String requestId) async {
     try {
-      final data =
-          await _client.get('v1/account/data-export-requests/$requestId');
+      final data = await _client.get(
+        'v1/account/data-export-requests/$requestId',
+      );
       final d = data['data'] as Map<String, dynamic>;
       return _exportFromJson(d);
     } on ApiException catch (e) {
@@ -31,11 +32,12 @@ class ApiDataRightsRepository implements DataRightsRepository {
   @override
   Future<ClosureRequest> createClosureRequest({
     required bool confirmClosure,
+    required String password,
   }) async {
     try {
       final data = await _client.post(
         'v1/account/closure-requests',
-        body: {'confirmClosure': confirmClosure},
+        body: {'confirmClosure': confirmClosure, 'password': password},
       );
       final d = data['data'] as Map<String, dynamic>;
       return _closureFromJson(d);
@@ -44,6 +46,9 @@ class ApiDataRightsRepository implements DataRightsRepository {
         throw const DataRightsException(
           'confirmClosure must be true to proceed',
         );
+      }
+      if (e.code == 'CLOSURE_REAUTH_FAILED') {
+        throw const DataRightsException('Current password is incorrect.');
       }
       rethrow;
     }
@@ -56,6 +61,12 @@ class ApiDataRightsRepository implements DataRightsRepository {
     final request = wrapper['request'];
     if (request == null) return null;
     return _closureFromJson(request as Map<String, dynamic>);
+  }
+
+  @override
+  Future<ClosureRequest> restoreClosure() async {
+    final data = await _client.post('v1/account/closure-request/restore');
+    return _closureFromJson(data['data'] as Map<String, dynamic>);
   }
 
   DataExportRequest _exportFromJson(Map<String, dynamic> json) {
@@ -77,6 +88,7 @@ class ApiDataRightsRepository implements DataRightsRepository {
       status: json['status'] as String,
       createdAt: json['createdAt'] as String,
       message: json['message'] as String,
+      purgeAfterAt: json['purgeAfterAt'] as String?,
     );
   }
 }

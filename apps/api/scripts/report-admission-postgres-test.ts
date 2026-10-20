@@ -50,6 +50,7 @@ async function main() {
     async delete(key) {
       await rm(path(key), { force: true });
     },
+    async deletePrefix() {},
     async get(key) {
       return readFile(path(key));
     },
@@ -83,7 +84,7 @@ async function main() {
     abandon_after=now()-interval '1 hour',cleanup_after=now()-interval '1 hour' WHERE state <> 'accepted'`);
   const q = db.createQueryRunner();
   try {
-    await db.query(`CREATE TABLE users(id uuid PRIMARY KEY);
+    await db.query(`CREATE TABLE users(id uuid PRIMARY KEY,deletion_requested_at timestamptz);
       CREATE TABLE profiles(id uuid PRIMARY KEY,user_id uuid NOT NULL);
       CREATE TABLE plans(id uuid PRIMARY KEY,limits jsonb NOT NULL);
       CREATE TABLE user_entitlements(user_id uuid PRIMARY KEY,plan_id uuid NOT NULL);
@@ -97,6 +98,7 @@ async function main() {
     await migration.down(q);
     await migration.up(q);
     await new CreateReportJobExecutions1730818000000().up(q);
+    await db.query('ALTER TABLE report_upload_intents ADD COLUMN user_id uuid');
     await db.query(
       'CREATE TABLE report_lab_values (id uuid PRIMARY KEY,report_id uuid,review_version integer NOT NULL DEFAULT 0)',
     );
@@ -137,6 +139,10 @@ async function main() {
     const [accepted] = await db.query('SELECT * FROM reports WHERE id=$1', [
       first.reportId,
     ]);
+    assert.equal(
+      accepted.original_file_storage_key,
+      `reports/${user}/${profile}/${first.reportId}.pdf`,
+    );
     assert.deepEqual(
       await storage.get(accepted.original_file_storage_key),
       Buffer.from('one'),

@@ -4,6 +4,7 @@ import {
 } from './processing/report-operations.controller';
 import { ReportProcessingController } from './processing/report-processing.controller';
 import { ReportWorkerService } from './processing/report-worker.service';
+import { ReportVlShadowService } from './processing/report-vl-shadow.service';
 import { ReportDispatcherService } from './processing/report-dispatcher.service';
 import { ReportStreamService } from './processing/report-stream.service';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -29,7 +30,7 @@ import { OpenDataLoaderClient } from './opendataloader.client';
 import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
 import { ReportResultInsightService } from './report-result-insight.service';
 import { ImageToPdfService } from './image-to-pdf.service';
-import { UnlimitedOcrClient } from './unlimited-ocr.client';
+import { PaddleOcrClient } from './paddle-ocr.client';
 import { DoclingOcrClient } from './docling-ocr.client';
 
 @Module({
@@ -57,6 +58,7 @@ import { DoclingOcrClient } from './docling-ocr.client';
     ReportsController,
   ],
   providers: [
+    ReportVlShadowService,
     ReportsService,
     ReportWorkerService,
     ReportDispatcherService,
@@ -65,7 +67,7 @@ import { DoclingOcrClient } from './docling-ocr.client';
     ReportSummaryService,
     OpenDataLoaderClient,
     DoclingOcrClient,
-    UnlimitedOcrClient,
+    PaddleOcrClient,
     ReportLabAiFallbackService,
     ReportResultInsightService,
     ImageToPdfService,

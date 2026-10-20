@@ -13,6 +13,9 @@ export class CreateDataExportRequestDto {}
 export class CreateClosureRequestDto {
   @IsBoolean()
   confirmClosure!: boolean;
+
+  @IsString()
+  password!: string;
 }
 
 /** Only null is allowed to clear avatar; use POST /account/avatar to upload */

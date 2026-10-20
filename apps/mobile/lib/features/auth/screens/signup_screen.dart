@@ -73,7 +73,7 @@ class _SignupScreenState extends State<SignupScreen> {
         _error = error.message;
         _isLoading = false;
       });
-    } catch (e, _) {
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _error = e is Exception ? e.toString() : 'Unable to create account';

@@ -47,7 +47,7 @@ We process your report and profile data only as necessary to provide the Service
 
 - Your data is stored on secure servers. We use industry-standard measures to protect data in transit and at rest (e.g. encryption, access controls).
 - If we use third-party service providers (e.g. cloud hosting, analytics), we require them to protect your information under contract.
-- We retain your data for as long as your account is active or as needed to provide the Service. After account closure, we may retain certain data as required by law or for legitimate purposes (e.g. dispute resolution); see "Your rights" for deletion.
+- When you request account deletion, access and share links stop immediately. You can sign in and restore your account for 30 days. After that, we delete account data and uploaded files from active storage. A basic record of your account ID, email, request date, and deletion date remains for superadmin review. Independent payment and tamper-evident security audit records may remain where required. See [Delete your account](/delete-account).
 
 ---
 
@@ -82,7 +82,7 @@ Depending on your location, you may have the right to:
 - **Withdraw consent:** Where we rely on consent, you may withdraw it at any time.
 - **Complain:** Lodge a complaint with a supervisory authority (e.g. in the EU, your local data protection authority).
 
-To exercise these rights, contact us at [privacy@doclyzer.com or your contact email]. We will respond within the time required by applicable law (e.g. 30 days under GDPR). Account closure can often be done in-app; we will describe retention and deletion in our response.
+To exercise these rights, contact us at vishnu@envsoft.io. We will respond within the time required by applicable law. You can request account deletion in the app or web account settings.
 
 **India:** We respect the requirements of applicable Indian data protection and IT laws.  
 **EU/EEA/UK:** We process personal data in accordance with the GDPR and UK GDPR where applicable.  

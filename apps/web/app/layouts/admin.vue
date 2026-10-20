@@ -16,6 +16,7 @@ function handleLogout() {
 const navItems = [
   { label: 'Dashboard', icon: 'dashboard', href: '/admin/dashboard', group: 'Workspace' },
   { label: 'Users', icon: 'users', href: '/admin/users', group: 'Manage' },
+  { label: 'Deleted accounts', icon: 'users', href: '/admin/deleted-accounts', group: 'Manage' },
   { label: 'Files', icon: 'files', href: '/admin/files', group: 'Manage' },
   { label: 'Billing', icon: 'billing', href: '/admin/billing', group: 'Manage' },
   { label: 'Risk', icon: 'risk', href: '/admin/risk', group: 'Operations' },

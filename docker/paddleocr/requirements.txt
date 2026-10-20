@@ -1,0 +1,8 @@
+paddlepaddle==3.1.1
+paddleocr==3.2.0
+docling-parse==7.22.3
+docling-core==2.102.0
+PyMuPDF==1.27.2.2
+fastapi==0.115.12
+uvicorn==0.34.2
+Pillow==12.1.1

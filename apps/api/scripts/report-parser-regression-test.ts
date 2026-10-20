@@ -95,7 +95,7 @@ const table = (rows: string[][]) => ({
   ]);
   Object.assign(fixture.kids[0], {
     'page number': 7,
-    extractionEngine: 'unlimited-v1',
+    extractionEngine: 'paddleocr-v5',
   });
   const parsed = parser.parseWithDiagnostics(fixture);
   assert.equal(parsed.extractedLabValues.length, 7);
@@ -567,7 +567,7 @@ async function checkPdfRouting() {
         calls.push(true);
         return { text: 'Glucose 90', parsedJson: doc };
       },
-      unlimitedOcrClient: { parsePdf: () => Promise.resolve(null) },
+      paddleOcrClient: { parsePdf: () => Promise.resolve(null) },
       doclingOcrClient: {
         parsePdf: (_: Buffer, options: { forceOcr: boolean }) => {
           calls.push(options.forceOcr);

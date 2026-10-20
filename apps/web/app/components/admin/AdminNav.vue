@@ -4,6 +4,7 @@ const route = useRoute()
 const navItems = [
   { label: 'Dashboard', icon: '📊', href: '/admin/dashboard' },
   { label: 'Users', icon: '🧑‍💼', href: '/admin/users' },
+  { label: 'Deleted accounts', icon: '🗑️', href: '/admin/deleted-accounts' },
   { label: 'Files', icon: '📁', href: '/admin/files' },
   { label: 'Billing', icon: '💳', href: '/admin/billing' },
   { label: 'Risk', icon: '🚨', href: '/admin/risk' },

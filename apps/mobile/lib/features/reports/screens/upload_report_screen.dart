@@ -15,7 +15,16 @@ import '../reports_repository.dart';
 import 'pdf_viewer_screen.dart';
 import 'report_detail_screen.dart';
 
-enum _UploadState { idle, uploading, reading, success, error, duplicate, limit }
+enum _UploadState {
+  idle,
+  selected,
+  uploading,
+  reading,
+  success,
+  error,
+  duplicate,
+  limit,
+}
 
 class UploadReportScreen extends StatefulWidget {
   const UploadReportScreen({
@@ -25,6 +34,8 @@ class UploadReportScreen extends StatefulWidget {
     required this.activeProfileName,
     required this.onBack,
     required this.onComplete,
+    this.onUploadBusyChanged,
+    this.onUploadAccepted,
     this.incidentStatus,
     this.onUpgrade,
     required this.supportRepository,
@@ -38,6 +49,8 @@ class UploadReportScreen extends StatefulWidget {
   final String activeProfileName;
   final VoidCallback onBack;
   final VoidCallback onComplete;
+  final ValueChanged<bool>? onUploadBusyChanged;
+  final VoidCallback? onUploadAccepted;
   final VoidCallback? onUpgrade;
   final PublicIncidentStatus? incidentStatus;
   final SupportRepository supportRepository;
@@ -66,6 +79,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   String? _errorMessage;
   UploadedReport? _result;
   String? _pendingDuplicatePath;
+  String? _selectedPath;
   Map<String, dynamic>? _existingReport;
   String? _limitMessage;
   String? _limitUpgradeHint;
@@ -111,6 +125,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   void initState() {
     super.initState();
     ReportProcessingStore.instance.addListener(_onProcessingChanged);
+    // Android can kill the activity while the camera or photo picker is open.
+    _recoverLostImage();
     if (widget.initialReport != null) {
       _result = widget.initialReport;
       _state = _UploadState.success;
@@ -123,23 +139,67 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   }
 
   Future<void> _pickAndUpload() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: _allowedUploadExtensions,
-    );
-    if (result == null || result.files.isEmpty || !mounted) return;
-
-    final path = result.files.single.path;
-    await _uploadFromPath(path);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: _allowedUploadExtensions,
+      );
+      if (result == null || result.files.isEmpty || !mounted) return;
+      _selectPath(result.files.single.path);
+    } catch (_) {
+      _showPickerError('Could not open files. Check access and try again.');
+    }
   }
 
   Future<void> _captureAndUpload() async {
-    final captured = await _imagePicker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 95,
-    );
-    if (captured == null || !mounted) return;
-    await _uploadFromPath(captured.path);
+    await _pickImage(ImageSource.camera);
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final image = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 95,
+      );
+      if (image != null && mounted) _selectPath(image.path);
+    } catch (_) {
+      _showPickerError(
+        'Could not open camera or photos. Check permission and try again.',
+      );
+    }
+  }
+
+  Future<void> _recoverLostImage() async {
+    if (widget.initialReport != null) return;
+    try {
+      final lost = await _imagePicker.retrieveLostData();
+      if (!mounted || lost.isEmpty) return;
+      final image = lost.files?.firstOrNull;
+      if (image != null) _selectPath(image.path);
+    } catch (_) {
+      // The user can choose the file again if recovery is unavailable.
+    }
+  }
+
+  void _showPickerError(String message) {
+    if (!mounted) return;
+    setState(() {
+      _state = _UploadState.error;
+      _errorMessage = message;
+    });
+  }
+
+  void _selectPath(String? path) {
+    if (!mounted) return;
+    if (path == null || path.isEmpty) {
+      _showPickerError('Could not access selected file.');
+      return;
+    }
+    setState(() {
+      _selectedPath = path;
+      _state = _UploadState.selected;
+      _errorMessage = null;
+    });
   }
 
   Future<void> _uploadFromPath(String? path) async {
@@ -157,14 +217,17 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       _state = _UploadState.uploading;
       _errorMessage = null;
     });
+    widget.onUploadBusyChanged?.call(true);
 
     try {
       final report = await widget.reportsRepository.uploadReport(path);
+      widget.onUploadAccepted?.call();
       if (mounted) {
         setState(() {
           _state = _UploadState.success;
           _result = report;
           _pendingDuplicatePath = null;
+          _selectedPath = null;
           _existingReport = null;
           if (_isParseFailureStatus(report.status)) {
             _supportContext = buildSupportRequestContext(
@@ -213,7 +276,9 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       if (mounted) {
         setState(() {
           _state = _UploadState.error;
-          _errorMessage = e.message;
+          _errorMessage = e.code == 'NETWORK_ERROR'
+              ? 'Connection lost. The upload may have reached the server. Retry the same file safely.'
+              : e.message;
           _supportContext = buildSupportRequestContext(
             actionType: SupportActionType.reportUpload,
             apiException: e,
@@ -232,6 +297,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           _supportErrorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
+    } finally {
+      widget.onUploadBusyChanged?.call(false);
     }
   }
 
@@ -278,12 +345,14 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       _state = _UploadState.uploading;
       _errorMessage = null;
     });
+    widget.onUploadBusyChanged?.call(true);
     try {
       final report = await widget.reportsRepository.uploadReport(
         path,
         forceUploadAnyway: true,
       );
       if (mounted) {
+        widget.onUploadAccepted?.call();
         setState(() {
           _state = _UploadState.success;
           _result = report;
@@ -298,6 +367,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
+    } finally {
+      widget.onUploadBusyChanged?.call(false);
     }
   }
 
@@ -352,7 +423,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         title: const Text('Upload Report'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: widget.onBack,
+          onPressed: _state == _UploadState.uploading ? null : widget.onBack,
         ),
       ),
       body: SafeArea(
@@ -372,9 +443,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
               const SizedBox(height: 24),
               switch (_state) {
                 _UploadState.idle => _buildIdle(),
-                _UploadState.uploading => _buildProgress(
-                  'Uploading report…',
-                ),
+                _UploadState.selected => _buildSelected(),
+                _UploadState.uploading => _buildProgress('Uploading report…'),
                 _UploadState.reading => _buildProgress('Reading report…'),
                 _UploadState.success =>
                   _isParseFailure() ? _buildParseFailure() : _buildSuccess(),
@@ -401,6 +471,12 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
+          onPressed: () => _pickImage(ImageSource.gallery),
+          icon: const Icon(Icons.photo_library_outlined),
+          label: const Text('Choose Photo'),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
           key: const Key('upload-report-camera'),
           onPressed: _captureAndUpload,
           icon: const Icon(Icons.photo_camera_outlined),
@@ -413,6 +489,39 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSelected() {
+    final path = _selectedPath;
+    if (path == null) return _buildIdle();
+    final fileName = path.split(RegExp(r'[/\\]')).last;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Check your report',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 12),
+        ListTile(
+          leading: const Icon(Icons.description_outlined),
+          title: Text(fileName),
+          subtitle: Text('For ${widget.activeProfileName}'),
+        ),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: () => _uploadFromPath(path),
+          child: const Text('Add report'),
+        ),
+        TextButton(
+          onPressed: () => setState(() {
+            _selectedPath = null;
+            _state = _UploadState.idle;
+          }),
+          child: const Text('Choose a different file'),
         ),
       ],
     );
@@ -620,7 +729,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     final processingInProgress =
         status == 'uploading' || status == 'queued' || status == 'parsing';
     final statusMessage = switch (status) {
-      'parsed' => 'Report parsed successfully. Results and trends are available.',
+      'parsed' =>
+        'Report parsed successfully. Results and trends are available.',
       'uploading' || 'queued' || 'parsing' =>
         'Your report is still being analyzed. Open it to check its status.',
       'failed_transient' =>
@@ -798,14 +908,21 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         const SizedBox(height: 16),
         Text(_errorMessage ?? 'Upload failed', key: const Key('upload-error')),
         const SizedBox(height: 24),
-        FilledButton(
-          onPressed: () {
-            setState(() {
-              _state = _UploadState.idle;
-              _errorMessage = null;
-            });
-          },
-          child: const Text('Try Again'),
+        if (_selectedPath != null)
+          FilledButton(
+            key: const Key('upload-retry-same-file'),
+            onPressed: () => _uploadFromPath(_selectedPath),
+            child: const Text('Retry same file'),
+          ),
+        TextButton(
+          onPressed: () => setState(() {
+            _selectedPath = null;
+            _state = _UploadState.idle;
+            _errorMessage = null;
+          }),
+          child: Text(
+            _selectedPath == null ? 'Try again' : 'Choose another file',
+          ),
         ),
         if (_supportContext != null) ...[
           const SizedBox(height: 8),

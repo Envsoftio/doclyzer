@@ -25,6 +25,7 @@ class ClosureRequest {
     required this.status,
     required this.createdAt,
     required this.message,
+    this.purgeAfterAt,
   });
 
   final String requestId;
@@ -32,6 +33,7 @@ class ClosureRequest {
   final String status;
   final String createdAt;
   final String message;
+  final String? purgeAfterAt;
 }
 
 class DataRightsException implements Exception {
@@ -48,7 +50,13 @@ abstract class DataRightsRepository {
 
   Future<DataExportRequest> getExportRequest(String requestId);
 
-  Future<ClosureRequest> createClosureRequest({required bool confirmClosure});
+  Future<ClosureRequest> createClosureRequest({
+    required bool confirmClosure,
+    required String password,
+  });
 
   Future<ClosureRequest?> getClosureRequest();
+
+  Future<ClosureRequest> restoreClosure() =>
+      throw const DataRightsException('Restoration is unavailable.');
 }

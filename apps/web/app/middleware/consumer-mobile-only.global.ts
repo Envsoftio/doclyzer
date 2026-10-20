@@ -3,6 +3,8 @@
 export default defineNuxtRouteMiddleware((to) => {
   const enabled = useRuntimeConfig().public.consumerWebEnabled
   if (enabled) return
+  // Account deletion and restoration must remain accessible from a browser.
+  if (to.path === '/login' || to.path === '/you/close-account') return
   if (import.meta.client) {
     sessionStorage.removeItem('doclyzerConsumerAccessToken')
     sessionStorage.removeItem('doclyzerConsumerRefreshToken')

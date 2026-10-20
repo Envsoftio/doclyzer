@@ -13,12 +13,14 @@ class ResultInsightScreen extends StatefulWidget {
     required this.loadInsight,
     required this.onViewTrend,
     this.onViewOriginal,
+    this.onReviewResult,
   });
 
   final ExtractedLabValue result;
   final Future<ResultInsight> Function() loadInsight;
   final VoidCallback onViewTrend;
   final VoidCallback? onViewOriginal;
+  final VoidCallback? onReviewResult;
 
   @override
   State<ResultInsightScreen> createState() => _ResultInsightScreenState();
@@ -299,6 +301,15 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                 onPressed: widget.onViewOriginal,
                 icon: const Icon(Icons.description_outlined),
                 label: const Text('Check original report'),
+              ),
+            ],
+            if (widget.onReviewResult != null) ...[
+              const SizedBox(height: 8),
+              TextButton.icon(
+                key: const Key('result-insight-review'),
+                onPressed: widget.onReviewResult,
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Review or correct result'),
               ),
             ],
             const SizedBox(height: 16),

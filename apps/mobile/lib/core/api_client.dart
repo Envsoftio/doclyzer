@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -17,6 +18,7 @@ class ApiClient {
   final Future<void> Function()? onUnauthorized;
 
   String? _accessToken;
+  Future<String?>? _refreshInFlight;
 
   String? get accessToken => _accessToken;
 
@@ -187,8 +189,10 @@ class ApiClient {
           contentType: contentType,
         ),
       );
-      final streamed = await request.send();
-      final res = await http.Response.fromStream(streamed);
+      final streamed = await request.send().timeout(const Duration(minutes: 5));
+      final res = await http.Response.fromStream(
+        streamed,
+      ).timeout(const Duration(minutes: 5));
       return _handleResponse(res);
     }, auth);
   }
@@ -218,6 +222,7 @@ class ApiClient {
   }
 
   Future<T> _requestWithRefresh<T>(Future<T> Function() fn, bool auth) async {
+    final requestToken = _accessToken;
     try {
       return await fn();
     } on SocketException {
@@ -230,18 +235,47 @@ class ApiClient {
         'NETWORK_ERROR',
         'Cannot connect to server. Please check your internet or API server.',
       );
+    } on TimeoutException {
+      throw ApiException(
+        'NETWORK_ERROR',
+        'The request timed out. Check your connection and try again.',
+      );
     } on ApiException catch (e) {
-      if (auth && e.code == 'AUTH_UNAUTHORIZED') {
-        final newToken = await onRefreshToken();
+      if (auth &&
+          (e.code == 'AUTH_UNAUTHORIZED' || e.code == 'AUTH_SESSION_REVOKED')) {
+        // Concurrent requests must share one refresh. The backend may rotate
+        // the session token, making a second refresh with the old token fail.
+        final newToken = _accessToken != requestToken && _accessToken != null
+            ? _accessToken
+            : await _refreshOnce();
         if (newToken != null) {
           _accessToken = newToken;
-          return await fn();
+          try {
+            return await fn();
+          } on ApiException catch (retryError) {
+            if (retryError.code != 'AUTH_UNAUTHORIZED' &&
+                retryError.code != 'AUTH_SESSION_REVOKED') {
+              rethrow;
+            }
+          }
         }
         if (onUnauthorized != null) {
           await onUnauthorized!();
         }
       }
       rethrow;
+    }
+  }
+
+  Future<String?> _refreshOnce() async {
+    final current = _refreshInFlight;
+    if (current != null) return current;
+    final refresh = onRefreshToken();
+    _refreshInFlight = refresh;
+    try {
+      return await refresh;
+    } finally {
+      if (identical(_refreshInFlight, refresh)) _refreshInFlight = null;
     }
   }
 

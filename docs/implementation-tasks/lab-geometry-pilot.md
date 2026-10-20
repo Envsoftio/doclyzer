@@ -1,0 +1,77 @@
+# CPU lab geometry pilot
+
+## Existing flow inspected
+
+- `POST /reports` accepts PDF, JPEG and PNG, stores the original, and creates an asynchronous job. `GET /reports/:id/file` serves the original under report access control.
+- The worker normalizes images to PDF, checks page count, calls Docling native conversion, then runs the report OCR cascade. The cascade compares reconstructed Docling tables and calls PP-OCRv5 for unresolved pages. `OpenDataLoaderJsonParser` and `LabValueExtractor` construct observations; `ReportsService.prepareWorkerResult` persists them. The current row parser is separate from the geometry pilot.
+- The worker defaults to one concurrent job, has a 30 minute job deadline, and checkpoints Docling tasks. Current Docling requests enable table reconstruction. The configured Docling container limit is **6 GB**; the separate PaddleOCR baseline has a **5 GB** limit and a 60-second page deadline.
+- The web report page opens the original and supports corrections to name, value, unit, range and date. Mobile has an original PDF viewer, an extraction review notice and corrections. Neither viewer currently has source overlays, crop comparison, adding missed observations, or explicit source confirmation.
+- Report lab values have `review_state`, `review_version`, `source_snapshot`, and correction records. The new candidate/ledger shape is not yet stored in the report database or served by an authenticated endpoint.
+- The existing Docling image pins `docling-serve==1.37.0`, `docling-slim==2.140.0`, `docling-core==2.102.0`, `docling-parse==7.22.3`, `docling-ibm-models==4.0.3`, and `onnxruntime==1.31.0`. The Docling OCR default is RapidOCR; Tesseract is installed through the container distribution and uses the `tesseract-table` preset. The exact RapidOCR runtime version was not measured here. The former Unlimited OCR image is a separate PyTorch service, not PaddleOCR.
+- No real report fixture, annotation, or cached PaddleOCR output was found in the repository. Existing parser and worker tests are synthetic/contract tests. The user shared an AI Studio task with a real report, inspected below; its patient data must remain outside the repository.
+
+## AI Studio comparison (2026-10-21)
+
+- The shared task `https://aistudio.baidu.com/paddleocr/task/file/t-149a1135dd8d` selected **PaddleOCR-VL-1.6** with JSON output. Its `table` block contains a hematology table with 20 result rows and separate value, unit, reference interval, and method columns. This is useful reference output, but no manually checked annotation or local accuracy measurement has been completed.
+- **PaddleOCR-VL-1.6 is not PP-OCRv5 mobile OCR.** The former combines layout detection and vision-language recognition to generate table structure. The pilot's pinned PaddleOCR 3.2.0 and `PP-OCRv5_mobile_det`/`PP-OCRv5_mobile_rec` cannot reproduce the same model output by changing parser rules. The official [PaddleOCR-VL guide](https://github.com/PaddlePaddle/PaddleOCR/blob/main/docs/version3.x/pipeline_usage/PaddleOCR-VL.en.md) explicitly distinguishes the full pipeline from its VLM component and documents local x64 CPU inference with PaddlePaddle 3.2.1 or later plus `paddleocr[doc-parser]`.
+- The AI Studio JSON provides a table-level polygon and HTML cells; it does not by itself give original-image polygons for each result cell. Treat the table as a candidate source. Field-level source mapping and independent verification are still needed for review and eligibility.
+- On the AI Studio image copied only to a private temporary path, the amd64 mobile OCR baseline (under x86 emulation on this host) returned 144 recognized text tokens and no native PDF words, as expected for a photo. The current geometry parser produced **zero** candidates, 64 unresolved ledger rows, and an incomplete page. This is a direct failure to match the shared example; changing the model/pipeline is necessary before considering application integration. The source image and raw output were not added to the repository.
+- On this Apple Silicon Docker host, the built ARM64 `paddlepaddle==3.1.1` and a disposable `3.2.1` test segfaulted during `PaddleOCR.predict()` on a synthetic page. Native word extraction and mocked service contract tests passed. The same mobile OCR image built for amd64 completed a synthetic page under x86 emulation with six OCR tokens and six native words. This is a local ARM64 runtime failure, not evidence that the VL model fails. Neither real-page latency nor peak memory has been established.
+- To target AI Studio parity, add a separately versioned **full PaddleOCR-VL-1.6 CPU experiment**, run the same private report through it, compare all 20 rows against a manual annotation, and measure per-page time and peak container memory under the 5 GB limit. Only then choose whether to replace or supplement the raw OCR baseline. Do not turn the AI Studio table HTML directly into auto-approved values.
+
+## Pilot modules
+
+- `geometry/evidence.ts` defines top-left original-page polygons, provenance, a working-to-original affine transform, and adapters for aligned Paddle `rec_texts`/`rec_scores`/`rec_polys`, native positioned words, and Tesseract TSV. It rejects mismatched Paddle arrays. Native text has null confidence.
+- `geometry/lab-parser.ts` keeps rows and result columns separate. It requires explicit headers or a template with at least two anchors. It does not zip label/value lists, move decimals, infer units from plausibility, or mark candidates verified. Unknown names survive. The ledger records unresolved and missing rows. Full-page review remains necessary because the row detector can miss a region.
+- `geometry/validation.ts` computes shadow machine eligibility only when the caller supplies source quality, context, unique association, parsing profile, normalization and verification facts. It cannot authorize release and leaves the observation in `needs_review`.
+- `geometry/evaluation.ts` matches by document, page, panel, row, result column, date and specimen. It reports wrong values and units, pairing errors, eligible errors, coverage, review rate, failures and timeouts, and latency and container-memory fields when supplied.
+- `docker/paddleocr` adds a separate CPU image with PaddlePaddle 3.1.1, PaddleOCR 3.2.0, docling-parse 7.22.3, the `PP-OCRv5_mobile_det` and `PP-OCRv5_mobile_rec` inference weights, and Tesseract. The page endpoint renders at configurable 300 DPI, emits raw aligned OCR arrays and native words, and supervises each primary extraction in a killable child process. Field verification uses Tesseract TSV with a five-second subprocess deadline. The service is in the `lab-geometry` Compose profile and requires `LAB_OCR_API_KEY`.
+- `scripts/report-geometry-extract.ts` is a private shadow driver for PDF/JPG/PNG. It sends one PDF page at a time to the CPU service, retains native and Paddle evidence separately, parses Paddle geometry, and rereads up to five result fields per page. It returns explicit incomplete pages on failures and keeps automatic release disabled. This driver does not update production reports.
+
+The local pilot is enabled only by `REPORT_GEOMETRY_SHADOW_ENABLED=true` for its command. It has **no production automatic release**, no application worker hook, and no source-confirmation API. The current production extraction behavior is unchanged. Enabling the flag does not integrate the pilot with uploads.
+
+## Run with private, reviewed evidence
+
+The input manifest is JSON with `pages` (the `PageEvidence` type), `expectedPageIds`, and optional `templates`. Each page must include all expected source tokens and stable source/render references. Keep raw OCR output separately; `raw_output_ref` points to it. The output contains machine candidates, source token IDs and polygons, unresolved rows, and page completeness status. It contains patient data, so run it in an approved environment and keep the output private.
+
+```sh
+cd apps/api
+npx ts-node scripts/report-geometry-test.ts
+REPORT_GEOMETRY_SHADOW_ENABLED=true npx ts-node scripts/report-geometry-run.ts /private/path/evidence.json /private/path/review.json
+npx ts-node scripts/report-geometry-evaluate.ts /private/path/reviewed-cases.json
+```
+
+For live CPU shadow extraction, set a private `LAB_OCR_API_KEY`, build and start the profile with `docker compose --profile lab-geometry up -d paddleocr`, and run the driver from a container on `doclyzer_net` with `LAB_OCR_BASE_URL=http://paddleocr:5005` and the same key:
+
+```sh
+REPORT_GEOMETRY_SHADOW_ENABLED=true npx ts-node scripts/report-geometry-extract.ts /workspace/private/report.pdf /workspace/private/review.json
+```
+
+The driver writes source evidence and readings into the review JSON with mode 0600. Keep report files and review output outside the repository and limit access to the approved reviewer environment. The 30-second page deadline is experimental; model startup may exhaust it. Service failures leave the page partial.
+
+The annotation format is `EvaluationCase[]` in `geometry/evaluation.ts`. Each truth row records occurrence, page, panel, row, result column, date, specimen, printed test, result, unit, range and flag. Record every page's timeout and failure, including pages with no predictions. Latency and peak container bytes must come from measurements, not process RSS estimates.
+
+## Required work before application use
+
+1. Build and run the new image, test its pinned PaddleOCR and docling-parse calls on a checked page, and record exact runtime versions, cold-start and warm latency, container peak memory, and timeout behavior. Its mobile models are an initial baseline chosen because this checkout had no installed Paddle weights; the user-reported AI Studio run used PaddleOCR-VL-1.6. A text layer does not suppress OCR in the shadow driver. Do not use unverified table HTML for automatic pairing or release.
+2. Persist the source evidence, render and crop references, candidate revisions, ledger and page inventory behind report access control. Add source-based confirmation and missed-observation endpoints. Keep reviewer edits separate from predictions.
+3. Add full-page overlays and field/row crops to the existing web/mobile viewers; show conflicts and specific review reasons. Add unreadable and clearer-upload actions.
+4. Verify the native/Paddle/Tesseract geometry transforms on real source pages and record peak container memory. The current verification budget is five crops and five seconds per page; ensure all needed fields are covered before evaluating any automatic gate. Evaluate Docling `do_cell_matching=false` separately if the pinned API supports it.
+5. Manually annotate the reported cached page if it becomes available, then 12 additional difficult pages. A single wrong decimal or pairing among eligible predictions rejects the gate. Measure eligible coverage as well as errors; synthetic passing tests are not accuracy evidence.
+
+This is a shadow extraction pilot, **not a completed production extraction pipeline**. Its largest known gaps are no native-versus-OCR region selector or photo perspective correction, no persistence/review UI, no real-report validation, and no measured CPU latency or 5 GB memory result. The new image has not yet been validated on an annotated lab report.
+
+## PaddleOCR-VL-1.6 shadow integration (2026-10-21)
+
+The section above describes the original mobile OCR geometry pilot. The newer VL experiment and integration are separate:
+
+- `docker/paddleocr-vl` pins PaddlePaddle 3.2.1 and PaddleOCR 3.6.0. It runs the full PaddleOCR-VL-1.6 layout pipeline on CPU with an internal llama.cpp GGUF recognition backend, one page per request, 10 MB and 25 MP limits, a 60-second killable child, and no access logs. Direct Paddle recognition exceeded a 5 GB Docker container limit during model load. The official [GGUF weights](https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.6-GGUF) are kept outside the repository.
+- On one private 1200×1600 photo, the eight-thread llama.cpp backend plus x86 Paddle layout client took **39.056 seconds** and returned a table with 20 result rows matching the visible AI Studio output. The Paddle client cgroup peak was **1,199,820,800 bytes** and the separately sampled native host llama RSS was about **2.28 GB**. They are not a combined peak measurement. Two-thread and four-thread timings were 120.14 and 65.927 seconds. This is one unannotated sample under mixed host/container execution, not an accuracy, Docker deployment, or 60-second SLA claim.
+- A live POST through the new x86 Docker HTTP service to the local authenticated eight-thread CPU llama server returned HTTP 200 in **44.814 seconds** on that same private photo. Its cgroup memory peak was **1,313,824,768 bytes**. The returned result had 13 blocks, two table blocks, and 20 review candidates under the app parser. This verifies the wrapper on one sample below the approved 60-second page deadline; it does not measure the Compose llama container or worst-case latency.
+- The normal worker sends original JPEG/PNG bytes directly to PP-OCRv5 and calls it on unresolved PDF pages. The service returns aligned raw text, scores, and polygons; geometry candidates and the unresolved-row ledger are stored in `report_vl_shadows` for review. Image uploads no longer require image-to-PDF conversion or a Docling run. `REPORT_VL_SHADOW_ENABLED=true` additionally calls PaddleOCR-VL for table predictions. The flag defaults off because the full two-container Docker CPU run exceeded the approved 60-second deadline on this Apple Silicon host twice.
+- `GET /reports/:id/vl-review`, `PATCH /reports/:id/vl-review/:candidateId`, `POST /reports/:id/vl-review/missed`, and `POST /reports/:id/vl-review/:candidateId/apply` require report ownership. The viewer asks for source inspection before recording a decision and only an explicit confirmed/corrected/added decision can be applied to ordinary report results. This is a human release path; automatic clinical release remains disabled. Image overlays show a PP-OCRv5 row polygon or a VL table box. PDF sources open in the existing page viewer without a candidate overlay.
+- Table parsing accepts a single explicit result column, preserves empty printed results for review, and skips a label-only section heading. It refuses spans and ambiguous headings. The private real output produced 20 candidates in the parser contract test. No patient data or raw model output is committed.
+
+To run the opt-in VL stack, place `PP-DocLayoutV3` and the official `PaddleOCR-VL-1.6-GGUF.gguf` plus `PaddleOCR-VL-1.6-GGUF-mmproj.gguf` under the configured read-only model directories, set separate random `REPORT_VL_API_KEY` and `LAB_VL_BACKEND_API_KEY`, set `REPORT_VL_SHADOW_ENABLED=true`, apply migrations, then start the `lab-vl` Compose profile. On this Mac, a native host llama backend with Docker Paddle completed one page in 44.814 seconds; the all-Docker profile timed out at 60 seconds, so this profile is not yet validated for the approved deadline. The default stack runs PP-OCRv5 without VL.
+
+Outstanding before wider rollout: end-to-end database worker test, at least 12 manually annotated difficult pages with decimal and pairing checks, coordinate validation for table overlays, clearer-upload action, and measured combined CPU deployment memory/latency. The existing geometry pilot's native-word evidence, targeted Tesseract rereads and completeness gate have not yet been wired into VL observations; therefore no VL candidate is machine eligible.

@@ -32,6 +32,7 @@ import {
 import { AccountService } from './account.service';
 import { ExportRequestNotFoundException } from './account.types';
 import { AuthService } from '../auth/auth.service';
+import { SuperadminGuard } from '../auth/superadmin.guard';
 
 const ALLOWED_AVATAR_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
 
@@ -132,6 +133,12 @@ export class AccountController {
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     const correlationId = getCorrelationId(req);
+    this.authService.enforceRateLimit(
+      'account-closure',
+      userId,
+      5,
+      15 * 60 * 1000,
+    );
     const data = await this.accountService.createClosureRequest(
       userId,
       body,
@@ -204,5 +211,20 @@ export class AccountController {
       { status: data?.status ?? null, request: data },
       getCorrelationId(req),
     );
+  }
+
+  @Post('closure-request/restore')
+  @HttpCode(HttpStatus.OK)
+  async restoreClosure(@Req() req: Request): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.accountService.restoreClosure(userId);
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Get('deletion-records')
+  @UseGuards(SuperadminGuard)
+  async listDeletionRecords(@Req() req: Request): Promise<object> {
+    const data = await this.accountService.listDeletionRecords();
+    return successResponse(data, getCorrelationId(req));
   }
 }

@@ -1,4 +1,5 @@
 import { CompleteReportProcessingRuntime1730818100000 } from './1730818100000-CompleteReportProcessingRuntime';
+import { AccountDeletionLifecycle1730818300000 } from './1730818300000-AccountDeletionLifecycle';
 import { RepairReportProviderSubmissionCount1730818200000 } from './1730818200000-RepairReportProviderSubmissionCount';
 import { CreateReportJobExecutions1730818000000 } from './1730818000000-CreateReportJobExecutions';
 import { CreateReportUploadIntents1730817900000 } from './1730817900000-CreateReportUploadIntents';
@@ -53,6 +54,7 @@ import { AddReportResultCorrections1730817400000 } from './1730817400000-AddRepo
 import { CompleteObservationContract1730817500000 } from './1730817500000-CompleteObservationContract';
 import { CreateObservationRules1730817600000 } from './1730817600000-CreateObservationRules';
 import { AddObservationIdentityEvidence1730817700000 } from './1730817700000-AddObservationIdentityEvidence';
+import { CreateReportVlShadows1730818400000 } from './1730818400000-CreateReportVlShadows';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -110,4 +112,6 @@ export const migrations = [
   CreateReportJobExecutions1730818000000,
   CompleteReportProcessingRuntime1730818100000,
   RepairReportProviderSubmissionCount1730818200000,
+  AccountDeletionLifecycle1730818300000,
+  CreateReportVlShadows1730818400000,
 ];

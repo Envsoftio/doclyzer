@@ -119,6 +119,9 @@ async function main() {
     async delete(k) {
       bytes.delete(k);
     },
+    async deletePrefix(prefix) {
+      for (const key of bytes.keys()) if (key.startsWith(prefix)) bytes.delete(key);
+    },
     async getSignedUrl() {
       return '';
     },
@@ -208,11 +211,7 @@ async function main() {
       new AbortController().signal,
     );
     assert.equal(submits, 1, 'staged result prevents resubmission');
-    await client.saveCascadeCandidate(lease, 1, 'surya', {
-      text: 'synthetic',
-      parsedJson: { type: 'document', kids: [] },
-    });
-    await client.saveCascadeCandidate(lease, 1, 'rapidocr', {
+    await client.saveCascadeCandidate(lease, 1, 'paddleocr-v5', {
       text: 'synthetic',
       parsedJson: { type: 'document', kids: [] },
     });
@@ -223,7 +222,7 @@ async function main() {
     );
     assert.deepEqual(
       Object.keys(resumedOcr.cascadeProgress?.['1'] ?? {}).sort(),
-      ['rapidocr', 'surya'],
+      ['paddleocr-v5'],
     );
     await jobs.complete(lease, 'ready', async () => {});
     const replay = await streams.replay(user, snapshot.cursor);
@@ -438,7 +437,6 @@ async function main() {
           B2_REGION: 'test',
           DOCLING_OCR_BASE_URL: `http://127.0.0.1:${address.port}`,
           DOCLING_API_KEY: '',
-          UNLIMITED_OCR_ENABLED: 'false', // This suite exercises durable Docling recovery.
           REPORT_SUMMARY_ENABLED: 'false',
           REPORT_LAB_AI_FALLBACK_ENABLED: 'false',
           EMAIL_WORKER_ENABLED: 'false',

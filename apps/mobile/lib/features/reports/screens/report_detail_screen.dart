@@ -11,6 +11,7 @@ import 'health_history_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'processing_history_screen.dart';
 import 'result_insight_screen.dart';
+import 'result_correction_screen.dart';
 import 'trend_chart_screen.dart';
 
 enum _ReportDetailState { loading, loaded, error }
@@ -85,7 +86,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         });
         final store = ReportProcessingStore.instance;
         final processing = store.reports[widget.reportId];
-        if (!_acknowledging && report.status == 'parsed' &&
+        if (!_acknowledging &&
+            report.status == 'parsed' &&
             processing?['acknowledgedAt'] == null) {
           _acknowledging = true;
           try {
@@ -143,6 +145,23 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           ),
           onViewTrend: () => _openTrendChart(result.parameterName, result.unit),
           onViewOriginal: _openPdf,
+          onReviewResult: result.id == null
+              ? null
+              : () async {
+                  final updated = await Navigator.of(ctx).push<Report>(
+                    MaterialPageRoute<Report>(
+                      builder: (_) => ResultCorrectionScreen(
+                        reportId: widget.reportId,
+                        result: result,
+                        reportsRepository: widget.reportsRepository,
+                        onViewOriginal: _openPdf,
+                      ),
+                    ),
+                  );
+                  if (updated == null) return;
+                  if (ctx.mounted) Navigator.of(ctx).pop();
+                  if (mounted) await _loadReport();
+                },
         ),
       ),
     );
@@ -586,10 +605,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               key: const Key('report-detail-lab-values'),
               children: [
                 for (final result in results)
-                  _ResultCard(
-                    result: result,
-                    onTap: () => _openResult(result),
-                  ),
+                  _ResultCard(result: result, onTap: () => _openResult(result)),
               ],
             ),
           ],
