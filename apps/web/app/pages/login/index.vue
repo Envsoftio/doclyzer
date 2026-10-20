@@ -6,6 +6,8 @@ import { useRouter } from '#app'
 const config = useRuntimeConfig()
 const baseApiUrl = config.public.apiBaseUrl.replace(/\/+$/, '')
 const router = useRouter()
+const route = useRoute()
+const consumerToken = useState<string>('consumer-token', () => '')
 
 type FormErrors = {
   email?: string
@@ -70,10 +72,12 @@ const applyApiError = (message: string, code?: string) => {
   }
 }
 
-const persistTokens = (tokens: { accessToken: string }) => {
+const persistTokens = (tokens: { accessToken: string; refreshToken?: string }) => {
   if (!process.client) return
   window.localStorage.removeItem('doclyzerAuthTokens')
   window.sessionStorage.setItem('doclyzerConsumerAccessToken', tokens.accessToken)
+  consumerToken.value = tokens.accessToken
+  if (tokens.refreshToken) window.sessionStorage.setItem('doclyzerConsumerRefreshToken', tokens.refreshToken)
 }
 
 const submitForm = async () => {
@@ -99,7 +103,7 @@ const submitForm = async () => {
 
     const data = response.data
     persistTokens(data)
-    await router.push('/reports')
+    await router.push('/home')
   } catch (error) {
     const { message, code } = extractFetchError(error)
     applyApiError(message, code)
@@ -115,14 +119,15 @@ const submitForm = async () => {
       <p class="eyebrow">Welcome back</p>
       <h1>Sign in to Doclyzer</h1>
       <p>
-        Enter the email and password you used during registration. Tokens from this login are
-        kept for this browser session so you can view your reports.
+        Enter the email and password you used during registration to view your reports.
       </p>
     </section>
 
     <div v-if="generalError" class="alert error" role="alert">
       {{ generalError }}
     </div>
+    <p v-if="route.query.expired" role="status" class="alert error">Your session expired. Sign in again.</p>
+    <p v-if="route.query.registered" role="status" class="alert">Account created. Sign in to continue.</p>
 
     <form class="login-form" @submit.prevent="submitForm" novalidate>
       <label class="form-control">
@@ -166,6 +171,7 @@ const submitForm = async () => {
     <p class="support-note">
       Need to create an account? <NuxtLink to="/register">Register</NuxtLink>.
     </p>
+    <p class="support-note"><NuxtLink to="/forgot-password">Forgot password?</NuxtLink></p>
     <p class="support-note">
       <NuxtLink to="/">Back to home</NuxtLink>
     </p>
