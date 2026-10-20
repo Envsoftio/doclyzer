@@ -5,6 +5,10 @@ import { OpenDataLoaderJsonParser } from '../src/modules/reports/opendataloader-
 import { DoclingOcrClient } from '../src/modules/reports/docling-ocr.client';
 import { adaptDoclingDocument } from '../src/modules/reports/docling-document-adapter';
 import { LabValueExtractor } from '../src/modules/reports/lab-value-extractor';
+import {
+  comparisonNotation,
+  splitAssayAnnotation,
+} from '../src/modules/reports/lab-method-notation';
 
 const parser = new OpenDataLoaderJsonParser();
 const table = (rows: string[][]) => ({
@@ -16,6 +20,67 @@ const table = (rows: string[][]) => ({
     },
   ],
 });
+{
+  const parsed = parser.parseWithDiagnostics(
+    table([
+      ['Test', 'Result', 'Unit', 'Reference Range'],
+      ['Vitamin B12CLIA', '< 148', 'pg/mL', '187–833'],
+      ['Urine Glucose', 'Present (+)', '', 'Absent'],
+      ['GOD-POD', '', '', ''],
+      ['Unknown analyte Unknown assay', '2', 'mg/dL', '1–3'],
+    ]),
+  );
+  assert.deepEqual(
+    parsed.extractedLabValues.map((r) => r.parameterName),
+    ['Vitamin B12', 'Urine Glucose', 'Unknown analyte Unknown assay'],
+  );
+  assert.equal(parsed.extractedLabValues[0].identityEvidence?.method, 'CLIA');
+  assert.equal(
+    parsed.extractedLabValues[1].identityEvidence?.method,
+    'GOD-POD',
+  );
+  assert.match(
+    parsed.extractedLabValues[1].identityEvidence?.sourceText ?? '',
+    /GOD-POD/,
+  );
+  assert.equal(parsed.diagnostics.candidateRows, 3);
+  assert.deepEqual(splitAssayAnnotation('CLIA'), { name: 'CLIA' });
+  assert.equal(
+    comparisonNotation('Children :>16 Adult : 20–50'),
+    comparisonNotation('Children:>16Adult:20-50'),
+  );
+  for (const [a, b] of [
+    ['1 20', '120'],
+    ['1.20', '120'],
+    ['<5', '>5'],
+    ['1,5', '1.5'],
+  ])
+    assert.notEqual(comparisonNotation(a), comparisonNotation(b));
+  const conflict = parser.parseWithDiagnostics(
+    table([
+      ['Test', 'Result', 'Method'],
+      ['Vitamin B12 CLIA', '148', 'Enzymatic'],
+    ]),
+  );
+  assert.equal(conflict.diagnostics.candidateRows, 1);
+  assert.equal(conflict.diagnostics.parsedRows, 0);
+  const distinctMethods = parser.parse(
+    table([
+      ['Test', 'Result', 'Unit', 'Reference Range'],
+      ['Vitamin B12 CLIA', '148', 'pg/mL', '187-833'],
+      ['Vitamin B12 Method: Enzymatic', '148', 'pg/mL', '187-833'],
+      ['Vitamin B12 CLIA', '148', 'pg/mL', '200-900'],
+    ]),
+  );
+  assert.equal(
+    distinctMethods.extractedLabValues.length,
+    3,
+    'Moving methods out of names must not merge different assays or reference intervals',
+  );
+  console.log(
+    'PASS assay separation, continuation provenance, unknown suffix preservation, numeric-safe notation and conflicting methods',
+  );
+}
 // Source flags and non-scalar observations must survive the shared parser.
 {
   const fixture = table([
@@ -28,16 +93,27 @@ const table = (rows: string[][]) => ({
     ['Novel count', '2', '%', ''],
     ['Novel count', '2', '/cmm', ''],
   ]);
-  Object.assign(fixture.kids[0], { 'page number': 7, extractionEngine: 'unlimited-v1' });
+  Object.assign(fixture.kids[0], {
+    'page number': 7,
+    extractionEngine: 'unlimited-v1',
+  });
   const parsed = parser.parseWithDiagnostics(fixture);
   assert.equal(parsed.extractedLabValues.length, 7);
   assert.equal(parsed.extractedLabValues[0].value, '<20');
   assert.equal(parsed.extractedLabValues[0].isAbnormal, true);
-  assert.equal(parsed.extractedLabValues[0].identityEvidence?.rawValue, 'L <20');
-  assert.equal(parsed.extractedLabValues[0].identityEvidence?.reportedFlag, 'L');
+  assert.equal(
+    parsed.extractedLabValues[0].identityEvidence?.rawValue,
+    'L <20',
+  );
+  assert.equal(
+    parsed.extractedLabValues[0].identityEvidence?.reportedFlag,
+    'L',
+  );
   assert.equal(parsed.extractedLabValues[0].identityEvidence?.sourcePage, '7');
   assert.equal(parsed.diagnostics.parsedRows, parsed.diagnostics.candidateRows);
-  console.log('PASS explicit flags, digit-leading analytes, blood group, morphology, graded qualitative values, distinct unit scales and source provenance');
+  console.log(
+    'PASS explicit flags, digit-leading analytes, blood group, morphology, graded qualitative values, distinct unit scales and source provenance',
+  );
 }
 const native = (rows: string[][]) => ({
   schema_name: 'DoclingDocument',
@@ -97,7 +173,10 @@ check(
     assert.equal(rows[0].parameterName, 'Creatinine');
     assert.equal(rows[0].unit, 'mg/dL');
     assert.equal(rows[0].identityEvidence?.method, 'Enzymatic');
-    assert.match(rows[0].identityEvidence?.sourceText ?? '', /Creatinine Method : Enzymatic/);
+    assert.match(
+      rows[0].identityEvidence?.sourceText ?? '',
+      /Creatinine Method : Enzymatic/,
+    );
   },
 );
 check('Interpretation tables do not become patient observations', () => {
@@ -168,41 +247,73 @@ check('Unseen test names are extracted from mapped result columns', () => {
     ],
   );
 });
-check('Explicit identity evidence is preserved without a test vocabulary', () => {
-  const row = parser.parse(table([
-    ['Test Name', 'Result', 'Unit', 'Specimen', 'Method', 'Test Code'],
-    ['Unseen Panel', '', '', '', '', ''],
-    ['Novel marker ZX-47', '2.4', 'ng/mL', 'Serum', 'Immunoassay', 'ZX47'],
-  ])).extractedLabValues[0];
-  assert.deepEqual(
-    [row.identityEvidence?.panelName, row.identityEvidence?.specimen,
-      row.identityEvidence?.method, row.identityEvidence?.testCode],
-    ['Unseen Panel', 'Serum', 'Immunoassay', 'ZX47'],
-  );
-  assert.match(row.identityEvidence?.sourceText ?? '', /Novel marker ZX-47/);
-});
+check(
+  'Explicit identity evidence is preserved without a test vocabulary',
+  () => {
+    const row = parser.parse(
+      table([
+        ['Test Name', 'Result', 'Unit', 'Specimen', 'Method', 'Test Code'],
+        ['Unseen Panel', '', '', '', '', ''],
+        ['Novel marker ZX-47', '2.4', 'ng/mL', 'Serum', 'Immunoassay', 'ZX47'],
+      ]),
+    ).extractedLabValues[0];
+    assert.deepEqual(
+      [
+        row.identityEvidence?.panelName,
+        row.identityEvidence?.specimen,
+        row.identityEvidence?.method,
+        row.identityEvidence?.testCode,
+      ],
+      ['Unseen Panel', 'Serum', 'Immunoassay', 'ZX47'],
+    );
+    assert.match(row.identityEvidence?.sourceText ?? '', /Novel marker ZX-47/);
+  },
+);
 check('Distinct explicit specimens survive deduplication', () => {
-  const rows = parser.parse(table([
-    ['Test Name', 'Result', 'Unit', 'Specimen'],
-    ['Novel marker ZX-47', '2.4', 'ng/mL', 'Serum'],
-    ['Novel marker ZX-47', '2.4', 'ng/mL', 'Urine'],
-  ])).extractedLabValues;
-  assert.deepEqual(rows.map((row) => row.identityEvidence?.specimen), ['Serum', 'Urine']);
+  const rows = parser.parse(
+    table([
+      ['Test Name', 'Result', 'Unit', 'Specimen'],
+      ['Novel marker ZX-47', '2.4', 'ng/mL', 'Serum'],
+      ['Novel marker ZX-47', '2.4', 'ng/mL', 'Urine'],
+    ]),
+  ).extractedLabValues;
+  assert.deepEqual(
+    rows.map((row) => row.identityEvidence?.specimen),
+    ['Serum', 'Urine'],
+  );
 });
-check('Merged extractors retain distinct specimens without duplicating unknown context', () => {
-  const service = ReportsService.prototype as unknown as {
-    selectBestLabValues: (parsed: object[], transcript: object[]) => Array<{
-      identityEvidence?: { specimen?: string };
-    }>;
-  };
-  const base = { parameterName: 'Novel marker ZX-47', value: '2.4', unit: 'ng/mL',
-    sampleDate: null, referenceRange: null, isAbnormal: null };
-  const rows = service.selectBestLabValues([
-    { ...base, identityEvidence: { specimen: 'Serum' } },
-    { ...base, identityEvidence: { specimen: 'Urine' } },
-  ], [{ ...base }]);
-  assert.deepEqual(rows.map((row) => row.identityEvidence?.specimen), ['Serum', 'Urine']);
-});
+check(
+  'Merged extractors retain distinct specimens without duplicating unknown context',
+  () => {
+    const service = ReportsService.prototype as unknown as {
+      selectBestLabValues: (
+        parsed: object[],
+        transcript: object[],
+      ) => Array<{
+        identityEvidence?: { specimen?: string };
+      }>;
+    };
+    const base = {
+      parameterName: 'Novel marker ZX-47',
+      value: '2.4',
+      unit: 'ng/mL',
+      sampleDate: null,
+      referenceRange: null,
+      isAbnormal: null,
+    };
+    const rows = service.selectBestLabValues(
+      [
+        { ...base, identityEvidence: { specimen: 'Serum' } },
+        { ...base, identityEvidence: { specimen: 'Urine' } },
+      ],
+      [{ ...base }],
+    );
+    assert.deepEqual(
+      rows.map((row) => row.identityEvidence?.specimen),
+      ['Serum', 'Urine'],
+    );
+  },
+);
 check(
   'Text fallback keeps unseen names, qualifiers, and decimal notation',
   () => {

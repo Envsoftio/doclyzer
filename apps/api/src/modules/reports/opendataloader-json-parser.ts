@@ -8,6 +8,11 @@ import type {
 } from './reports.service';
 import { adaptDoclingDocument } from './docling-document-adapter';
 import { LabDetailsExtractor } from './lab-details-extractor';
+import {
+  comparisonNotation,
+  isAssayAnnotation,
+  splitAssayAnnotation,
+} from './lab-method-notation';
 
 interface FlatNode {
   type: string;
@@ -126,7 +131,7 @@ export class OpenDataLoaderJsonParser {
       }
     }
 
-    const deduped = this.compactLabValues(this.deduplicate(extractedLabValues));
+    const deduped = this.deduplicate(extractedLabValues);
     const diagnostics = this.buildDiagnostics({
       stats,
       extractedRows: deduped.length,
@@ -402,6 +407,7 @@ export class OpenDataLoaderJsonParser {
         : [];
       if (rows.length === 0) continue;
       let tableMapped = false;
+      let precedingObservation: StructuredSectionItemDto | undefined;
       let currentSection = 'Other Tests';
       let columns: Partial<
         Record<
@@ -457,11 +463,14 @@ export class OpenDataLoaderJsonParser {
           if (ambiguousHeader)
             stats.ambiguousHeaders = (stats.ambiguousHeaders ?? 0) + 1;
           columns = ambiguousHeader ? {} : detected;
+          precedingObservation = undefined;
           stats.mappedTables = (stats.mappedTables ?? 0) + 1;
           continue;
         }
         // Do not guess column order on headerless or ambiguous tables.
         if (columns.name === undefined || columns.value === undefined) continue;
+        const previousObservation = precedingObservation;
+        precedingObservation = undefined;
         let c1 = texts[columns.name] ?? '';
         const sourceName = c1;
         const methodFragments = texts.filter(
@@ -486,13 +495,56 @@ export class OpenDataLoaderJsonParser {
           columns.unit === undefined ? '' : (texts[columns.unit] ?? '');
         const c4 =
           columns.range === undefined ? '' : (texts[columns.range] ?? '');
+        // A standalone recognized assay line belongs only to the immediately
+        // preceding observation. Never turn it into a section or a new result.
+        if (
+          !c2 &&
+          !c3 &&
+          !c4 &&
+          isAssayAnnotation(c1) &&
+          previousObservation &&
+          texts.every(
+            (text, index) => index === columns.name || !text.trim(),
+          ) &&
+          !cells.some((cell) => cell.ambiguous === true)
+        ) {
+          const evidence = previousObservation.identityEvidence ?? {};
+          if (
+            !evidence.method ||
+            comparisonNotation(evidence.method) === comparisonNotation(c1)
+          ) {
+            previousObservation.identityEvidence = {
+              ...evidence,
+              method: c1.trim(),
+              sourceText: `${evidence.sourceText ?? ''} | ${c1}`.slice(0, 1000),
+            };
+            precedingObservation = previousObservation;
+            continue;
+          }
+          stats.candidateRows += 1;
+          precedingObservation = undefined;
+          continue;
+        }
+        precedingObservation = undefined;
         // Do not reinterpret a method description as a test name.
         if (/^\s*:/.test(c1)) {
           stats.candidateRows += 1;
           continue;
         }
+        const annotation = splitAssayAnnotation(c1);
+        const columnMethod =
+          columns.method === undefined ? '' : texts[columns.method]?.trim();
+        if (
+          annotation.method &&
+          columnMethod &&
+          comparisonNotation(annotation.method) !==
+            comparisonNotation(columnMethod)
+        ) {
+          stats.candidateRows += 1;
+          continue;
+        }
         const normalizedName = this.normalizeParameterName(
-          this.cleanName(c1.split(/\bMethod\s*:/i)[0]),
+          this.cleanName(annotation.name),
         );
         if (/^(interpretation|comment|remarks?)$/i.test(normalizedName))
           continue;
@@ -594,6 +646,7 @@ export class OpenDataLoaderJsonParser {
             ...(columns.method !== undefined && texts[columns.method]?.trim()
               ? { method: texts[columns.method].trim() }
               : {}),
+            ...(annotation.method ? { method: annotation.method } : {}),
             ...(/\bMethod\s*:\s*([^|;]+)/i.test(sourceName)
               ? {
                   method: sourceName
@@ -606,6 +659,7 @@ export class OpenDataLoaderJsonParser {
           ...(c4 ? { referenceRange: c4 } : {}),
           ...(typeof isAbnormal === 'boolean' ? { isAbnormal } : {}),
         });
+        precedingObservation = sections.get(currentSection)!.at(-1);
         stats.parsedRows += 1;
       }
       if (!tableMapped && rows.length > 1)
@@ -1232,31 +1286,12 @@ export class OpenDataLoaderJsonParser {
     const seen = new Set<string>();
     const out: ExtractedLabValue[] = [];
     for (const v of values) {
-      const key = `${v.parameterName.toLowerCase()}::${v.value.toLowerCase()}::${v.unit ?? ''}::${v.identityEvidence?.specimen?.toLowerCase() ?? ''}`;
+      const key = this.observationKey(v);
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(v);
     }
     return out;
-  }
-
-  private compactLabValues(values: ExtractedLabValue[]): ExtractedLabValue[] {
-    const bestByParamValue = new Map<string, ExtractedLabValue>();
-    for (const row of values) {
-      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}::${row.unit ?? ''}::${row.identityEvidence?.specimen?.toLowerCase() ?? ''}`;
-      const current = bestByParamValue.get(key);
-      if (!current) {
-        bestByParamValue.set(key, row);
-        continue;
-      }
-      const currentScore =
-        (current.unit ? 1 : 0) + (current.referenceRange ? 1 : 0);
-      const nextScore = (row.unit ? 1 : 0) + (row.referenceRange ? 1 : 0);
-      if (nextScore > currentScore) {
-        bestByParamValue.set(key, row);
-      }
-    }
-    return Array.from(bestByParamValue.values());
   }
 
   private deduplicateRows(
@@ -1265,11 +1300,26 @@ export class OpenDataLoaderJsonParser {
     const seen = new Set<string>();
     const out: StructuredSectionItemDto[] = [];
     for (const row of rows) {
-      const key = `${row.parameterName.toLowerCase()}::${row.value.toLowerCase()}::${row.unit ?? ''}::${(row.referenceRange ?? '').toLowerCase()}::${row.identityEvidence?.specimen?.toLowerCase() ?? ''}`;
+      const key = this.observationKey(row);
       if (seen.has(key)) continue;
       seen.add(key);
       out.push(row);
     }
     return out;
+  }
+
+  private observationKey(
+    row: StructuredSectionItemDto | ExtractedLabValue,
+  ): string {
+    return JSON.stringify([
+      row.parameterName.toLowerCase(),
+      row.value.toLowerCase(),
+      row.unit ?? '',
+      row.referenceRange ?? '',
+      row.sampleDate ?? '',
+      row.identityEvidence?.specimen?.toLowerCase() ?? '',
+      comparisonNotation(row.identityEvidence?.method ?? ''),
+      row.identityEvidence?.testCode ?? '',
+    ]);
   }
 }

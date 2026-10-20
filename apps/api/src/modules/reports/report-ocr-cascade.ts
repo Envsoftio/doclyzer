@@ -4,6 +4,7 @@ import { adaptDoclingDocument } from './docling-document-adapter';
 import { OpenDataLoaderJsonParser } from './opendataloader-json-parser';
 import { DoclingOcrClient } from './docling-ocr.client';
 import { UnlimitedOcrClient } from './unlimited-ocr.client';
+import { comparisonNotation } from './lab-method-notation';
 
 type Node = Record<string, unknown>;
 export interface OcrOutput {
@@ -31,6 +32,7 @@ type Candidate = {
   signatures: string[];
   rows: number;
   candidates: number;
+  patientNames: string[];
 };
 
 /** Retry whole pages, not detached cells: retain units, headers and specimen context. */
@@ -47,6 +49,44 @@ export class ReportOcrCascade {
       | { kids?: Node[] }
       | undefined;
     return Array.isArray(doc?.kids) ? doc.kids : [];
+  }
+  private patientNames(nodes: Node[]): string[] {
+    const names = new Set<string>();
+    const add = (text: string) => {
+      const name = text
+        .replace(/^\s*:\s*/, '')
+        .split(/\s+(?:Lab\s*Id|Sex\/Age|Registration)\b/i)[0]
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
+      if (name && /[a-z]/i.test(name)) names.add(name);
+    };
+    for (const node of nodes) {
+      const metadataTable =
+        Array.isArray(node.rows) &&
+        /\b(patient information|patient name|patient id|lab id|date of birth|sex\/age)\b/i.test(
+          JSON.stringify(node.rows),
+        );
+      for (const row of metadataTable ? (node.rows as Node[]) : []) {
+        const cells = Array.isArray(row.cells) ? (row.cells as Node[]) : [];
+        const index = cells.findIndex((c) =>
+          /^(?:patient\s+)?name\s*:?\s*$/i.test(String(c.content ?? '')),
+        );
+        if (index >= 0 && typeof cells[index + 1]?.content === 'string')
+          add(cells[index + 1].content as string);
+      }
+      // The Unlimited adapter preserves metadata tables as a text block.
+      if (
+        typeof node.content === 'string' &&
+        /\bpatient information\b/i.test(node.content)
+      ) {
+        const match = node.content.match(
+          /\bName\s*:\s*(.+?)(?=\s+(?:Lab\s*Id|Sex\/Age|Registration)\b|$)/i,
+        );
+        if (match) add(match[1]);
+      }
+    }
+    return [...names].sort();
   }
   private candidate(
     engine: string,
@@ -80,10 +120,10 @@ export class ReportOcrCascade {
         label(row.parameterName),
         row.value.trim(),
         unitNotation(row.unit),
-        (row.referenceRange ?? '').trim().replace(/\s*([<>≤≥=–-])\s*/g, '$1'),
+        comparisonNotation(row.referenceRange ?? ''),
         row.sampleDate ?? '',
         label(row.identityEvidence?.specimen),
-        label(row.identityEvidence?.method),
+        comparisonNotation(row.identityEvidence?.method ?? ''),
         label(row.identityEvidence?.testCode),
       ])
       .map((row) => JSON.stringify(row))
@@ -103,6 +143,7 @@ export class ReportOcrCascade {
         parsed.extractedLabValues.length > 0,
       rows: parsed.extractedLabValues.length,
       candidates: d.candidateRows,
+      patientNames: this.patientNames(nodes),
     };
   }
   private pageOutput(
@@ -137,6 +178,7 @@ export class ReportOcrCascade {
     visual: Candidate | null,
   ): Candidate | null {
     if (!visual?.complete) return null;
+    if (this.patientIdentityConflict(native, visual)) return null;
     // Native readings may be incomplete, but every extracted native observation
     // must survive unchanged. Never let a larger OCR row count hide a conflict.
     const counts = new Map<string, number>();
@@ -148,6 +190,19 @@ export class ReportOcrCascade {
       counts.set(signature, available - 1);
     }
     return visual;
+  }
+
+  private patientIdentityConflict(
+    native: Candidate | null,
+    visual: Candidate | null,
+  ): boolean {
+    const n = native?.patientNames ?? [];
+    const v = visual?.patientNames ?? [];
+    return (
+      n.length > 1 ||
+      v.length > 1 ||
+      (n.length === 1 && (v.length !== 1 || n[0] !== v[0]))
+    );
   }
 
   async run(
@@ -215,9 +270,11 @@ export class ReportOcrCascade {
         chosen = this.reconcile(nativeCandidate, visualCandidate);
         const reason = !output
           ? 'visual_unavailable'
-          : !visualCandidate?.complete
-            ? 'visual_incomplete'
-            : 'native_visual_conflict';
+          : this.patientIdentityConflict(nativeCandidate, visualCandidate)
+            ? 'patient_identity_conflict'
+            : !visualCandidate?.complete
+              ? 'visual_incomplete'
+              : 'native_visual_conflict';
         this.log.log(
           JSON.stringify({
             action: 'REPORT_OCR_PAGE_ATTEMPT',

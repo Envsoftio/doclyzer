@@ -32,6 +32,89 @@ const noDocling = {
   },
 } as unknown as DoclingOcrClient;
 async function main() {
+  // Exercise the actual reconciliation gate, with fabricated non-patient data.
+  const single = await PDFDocument.create();
+  single.addPage();
+  const singleBytes = Buffer.from(await single.save());
+  const evidence = (
+    method: string,
+    range: string,
+    patient: string,
+    value = '90',
+    unit = 'mg/dL',
+  ) => ({
+    text: 'fixture',
+    parsedJson: {
+      type: 'document',
+      kids: [
+        {
+          type: 'text',
+          content: `Patient Information Name : ${patient} Lab Id : SYNTHETIC`,
+          'page number': 1,
+        },
+        {
+          type: 'table',
+          'page number': 1,
+          rows: [
+            ['Test', 'Result', 'Unit', 'Reference Range'],
+            [`Glucose ${method}`, value, unit, range],
+          ].map((row) => ({ cells: row.map((content) => ({ content })) })),
+        },
+      ] as Record<string, unknown>[],
+    },
+  });
+  for (const scenario of [
+    'formatting',
+    'method',
+    'reference',
+    'value',
+    'unit',
+    'patient',
+    'missing-patient',
+  ]) {
+    const native = evidence(
+      'Calculated',
+      'Children :>16 Adult : 20–50',
+      'Example Person',
+    );
+    // An unknown table requires visual verification.
+    native.parsedJson.kids.push({
+      type: 'table',
+      'page number': 1,
+      rows: [
+        { cells: [{ content: 'unknown header' }] },
+        { cells: [{ content: 'unknown data' }] },
+      ],
+    });
+    const visual = evidence(
+      scenario === 'method' ? 'CLIA' : 'Calculated',
+      scenario === 'reference'
+        ? 'Children:<16Adult:20-50'
+        : 'Children:>16Adult:20-50',
+      scenario === 'patient' ? 'Example Persom' : 'Example Person',
+      scenario === 'value' ? '9.0' : '90',
+      scenario === 'unit' ? 'mmol/L' : 'mg/dL',
+    );
+    if (scenario === 'missing-patient') visual.parsedJson.kids.shift();
+    const result = await new ReportOcrCascade(noDocling, {
+      parsePdf: async () => visual,
+    } as unknown as UnlimitedOcrClient).run(
+      singleBytes,
+      new AbortController().signal,
+      { ...native, nativeOnly: true },
+    );
+    const data = result.parsedJson as {
+      unresolvedPages: number[];
+      reviewPages: Record<string, { reason: string }>;
+    };
+    assert.deepEqual(
+      data.unresolvedPages,
+      scenario === 'formatting' ? [] : [1],
+      scenario,
+    );
+    if (scenario.includes('patient'))
+      assert.equal(data.reviewPages['1'].reason, 'patient_identity_conflict');
+  }
   const pdf = await PDFDocument.create();
   for (let i = 0; i < 5; i++) pdf.addPage();
   const bytes = Buffer.from(await pdf.save());
