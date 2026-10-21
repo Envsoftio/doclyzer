@@ -385,6 +385,7 @@ class ApiReportsRepository implements ReportsRepository {
         contentType: d['contentType'] as String,
         sizeBytes: d['sizeBytes'] as int,
         status: legacy[d['status']] ?? d['status'] as String,
+        reused: d['reused'] == true,
       );
       await _tokenStorage.clearInterruptedReportUpload();
       return accepted;
@@ -556,6 +557,76 @@ class ApiReportsRepository implements ReportsRepository {
   @override
   Future<List<int>> getReportFile(String reportId) async {
     return _client.getBytes('v1/reports/$reportId/file');
+  }
+
+  @override
+  Future<ReportReview> getReportReview(String reportId) async {
+    final response = await _client.get(
+      'v1/reports/${Uri.encodeComponent(reportId)}/vl-review',
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    final candidates = (data['candidates'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(
+          (row) => ReportReviewCandidate(
+            id: row['id'] as String,
+            page: (row['page'] as num?)?.toInt() ?? 0,
+            testRaw: row['testRaw'] as String? ?? '',
+            resultRaw: row['resultRaw'] as String?,
+            unitRaw: row['unitRaw'] as String?,
+            rangeRaw: row['rangeRaw'] as String?,
+            reviewReasons: (row['reviewReasons'] as List<dynamic>? ?? const [])
+                .whereType<String>()
+                .toList(),
+          ),
+        )
+        .toList();
+    final applied = data['applied'] as Map<String, dynamic>? ?? const {};
+    return ReportReview(
+      candidates: candidates,
+      applied: applied.keys.toSet(),
+      reviewVersion: (data['reviewVersion'] as num?)?.toInt() ?? 0,
+      partial: data['status'] == 'partial',
+    );
+  }
+
+  @override
+  Future<int> reviewReportCandidate(
+    String reportId,
+    String candidateId, {
+    required int expectedVersion,
+    required String action,
+    required String testRaw,
+    required String? resultRaw,
+    String? unitRaw,
+    String? rangeRaw,
+  }) async {
+    final response = await _client.patch(
+      'v1/reports/${Uri.encodeComponent(reportId)}/vl-review/${Uri.encodeComponent(candidateId)}',
+      body: {
+        'expectedVersion': expectedVersion,
+        'action': action,
+        'sourceInspected': true,
+        'testRaw': testRaw,
+        'resultRaw': resultRaw,
+        'unitRaw': unitRaw,
+        'rangeRaw': rangeRaw,
+      },
+    );
+    return ((response['data'] as Map<String, dynamic>)['reviewVersion'] as num)
+        .toInt();
+  }
+
+  @override
+  Future<void> applyReviewedCandidate(
+    String reportId,
+    String candidateId, {
+    required int expectedVersion,
+  }) async {
+    await _client.post(
+      'v1/reports/${Uri.encodeComponent(reportId)}/vl-review/${Uri.encodeComponent(candidateId)}/apply',
+      body: {'expectedVersion': expectedVersion},
+    );
   }
 
   @override

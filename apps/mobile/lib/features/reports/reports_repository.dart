@@ -7,6 +7,7 @@ class UploadedReport {
     required this.contentType,
     required this.sizeBytes,
     required this.status,
+    this.reused = false,
   });
 
   final String reportId;
@@ -15,6 +16,7 @@ class UploadedReport {
   final String contentType;
   final int sizeBytes;
   final String status;
+  final bool reused;
 }
 
 /// A single extracted lab value (parameter name, value, unit, date).
@@ -287,6 +289,40 @@ class ProcessingAttempt {
   final DateTime attemptedAt;
 }
 
+class ReportReviewCandidate {
+  const ReportReviewCandidate({
+    required this.id,
+    required this.page,
+    required this.testRaw,
+    required this.resultRaw,
+    this.unitRaw,
+    this.rangeRaw,
+    this.reviewReasons = const [],
+  });
+
+  final String id;
+  final int page;
+  final String testRaw;
+  final String? resultRaw;
+  final String? unitRaw;
+  final String? rangeRaw;
+  final List<String> reviewReasons;
+}
+
+class ReportReview {
+  const ReportReview({
+    required this.candidates,
+    required this.applied,
+    required this.reviewVersion,
+    required this.partial,
+  });
+
+  final List<ReportReviewCandidate> candidates;
+  final Set<String> applied;
+  final int reviewVersion;
+  final bool partial;
+}
+
 abstract class ReportsRepository {
   /// Upload a report file. Returns metadata including reportId and status.
   /// When [forceUploadAnyway] is true, bypasses duplicate check (use after user chooses "Upload anyway").
@@ -327,8 +363,30 @@ abstract class ReportsRepository {
   /// Mark report as kept (unparsed) when user chooses "Keep file anyway".
   Future<Report> keepFile(String reportId);
 
-  /// Fetch original file bytes for viewing (PDF).
+  /// Fetch original PDF or image bytes for viewing.
   Future<List<int>> getReportFile(String reportId);
+
+  /// Fetch OCR suggestions. Suggestions are not report results until reviewed.
+  Future<ReportReview> getReportReview(String reportId);
+
+  /// Save a decision after inspecting the source. Returns the next review version.
+  Future<int> reviewReportCandidate(
+    String reportId,
+    String candidateId, {
+    required int expectedVersion,
+    required String action,
+    required String testRaw,
+    required String? resultRaw,
+    String? unitRaw,
+    String? rangeRaw,
+  });
+
+  /// Publish one source-confirmed result to the report.
+  Future<void> applyReviewedCandidate(
+    String reportId,
+    String candidateId, {
+    required int expectedVersion,
+  });
 
   /// Fetch lab trend data for a profile, optionally filtered by parameterName.
   Future<LabTrendsResult> getLabTrends(

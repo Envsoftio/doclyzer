@@ -10,6 +10,22 @@ class _Reports extends Fake implements ReportsRepository {
   String status = 'parsed';
 
   @override
+  Future<ReportReview> getReportReview(String reportId) async =>
+      const ReportReview(
+        candidates: [
+          ReportReviewCandidate(
+            id: 'p0-t1000-r0',
+            page: 0,
+            testRaw: 'Haemoglobin',
+            resultRaw: '12.4',
+          ),
+        ],
+        applied: {},
+        reviewVersion: 0,
+        partial: false,
+      );
+
+  @override
   Future<Report> getReport(String reportId) async {
     requestedReportId = reportId;
     return Report(
@@ -67,6 +83,32 @@ void main() {
     expect(find.text('Blood test results are ready.'), findsOneWidget);
   });
 
+  testWidgets('reused upload identifies the existing report', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UploadReportScreen(
+          reportsRepository: _Reports(),
+          profilesRepository: _Profiles(),
+          supportRepository: _Support(),
+          activeProfileName: 'Me',
+          onBack: () {},
+          onComplete: () {},
+          initialReport: const UploadedReport(
+            reportId: 'report-1',
+            profileId: 'profile-1',
+            fileName: 'lab.jpeg',
+            contentType: 'image/jpeg',
+            sizeBytes: 100,
+            status: 'parsed',
+            reused: true,
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Report already in Me'), findsOneWidget);
+    expect(find.text('Report added to Me'), findsNothing);
+  });
+
   testWidgets('processing report can refresh into results', (tester) async {
     final reports = _Reports()..status = 'parsing';
     await tester.pumpWidget(
@@ -100,5 +142,41 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('report-detail-check-status')), findsNothing);
     expect(find.text('Blood test results are ready.'), findsOneWidget);
+  });
+
+  testWidgets('unreadable image status opens detected row review', (
+    tester,
+  ) async {
+    final reports = _Reports()..status = 'content_not_recognized';
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UploadReportScreen(
+          reportsRepository: reports,
+          profilesRepository: _Profiles(),
+          supportRepository: _Support(),
+          activeProfileName: 'Me',
+          onBack: () {},
+          onComplete: () {},
+          initialReport: const UploadedReport(
+            reportId: 'report-1',
+            profileId: 'profile-1',
+            fileName: 'lab.jpeg',
+            contentType: 'image/jpeg',
+            sizeBytes: 100,
+            status: 'content_not_recognized',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Review detected results'), findsOneWidget);
+    expect(find.textContaining('valid lab report'), findsNothing);
+    await tester.tap(find.byKey(const Key('parse-failure-review-results')));
+    await tester.pumpAndSettle();
+    expect(find.text('Haemoglobin'), findsOneWidget);
+    expect(
+      find.byKey(const Key('review-candidate-p0-t1000-r0')),
+      findsOneWidget,
+    );
   });
 }

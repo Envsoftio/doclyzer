@@ -32,6 +32,7 @@ import { ProfilesService } from '../profiles/profiles.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
 import { PaddleOcrClient } from './paddle-ocr.client';
+import { extractAutoImageLabRows, type AutoImageLabRow } from './geometry/image-auto-parser';
 import { DoclingOcrClient } from './docling-ocr.client';
 import { ImageToPdfService } from './image-to-pdf.service';
 import { buildLabTrends, type TrendParameter } from './lab-trend-builder';
@@ -602,7 +603,14 @@ export class ReportsService {
     opendataloaderJson: unknown,
   ) {
     const status: ReportStatus = 'parsed';
-    const parsedFromJson = opendataloaderJson
+    const autoImageRows = source === 'image'
+      ? ((opendataloaderJson as { autoImageLabRows?: AutoImageLabRow[] } | null)?.autoImageLabRows ?? [])
+      : [];
+    const autoLabValues: StructuredReportLabInput[] = autoImageRows.map((row) => ({
+      parameterName: row.parameterName, value: row.value, unit: row.unit,
+      sampleDate: null, referenceRange: row.referenceRange, isAbnormal: null,
+    }));
+    const parsedFromJson = opendataloaderJson && !autoLabValues.length
       ? await this.extractLabValuesFromOdlJsonWithFallback({
           opendataloaderJson,
           reportId,
@@ -619,14 +627,14 @@ export class ReportsService {
     const jsonLabValues = this.filterNoisyLabValues(
       parsedFromJson?.extractedLabValues ?? [],
     );
-    let labValues =
-      parsedFromJson?.hasMappedLabTables ||
-      (source === 'image' && jsonLabValues.length > 0)
+    let labValues = autoLabValues.length
+      ? autoLabValues
+      : parsedFromJson?.hasMappedLabTables || (source === 'image' && jsonLabValues.length > 0)
         ? jsonLabValues
         : this.selectBestLabValues(jsonLabValues, transcriptLabValues);
-    const extractionSource =
-      parsedFromJson?.hasMappedLabTables ||
-      (source === 'image' && jsonLabValues.length > 0)
+    const extractionSource = autoLabValues.length
+      ? 'paddleocr_geometry'
+      : parsedFromJson?.hasMappedLabTables || (source === 'image' && jsonLabValues.length > 0)
         ? 'odl_json'
         : jsonLabValues.length > 0 && transcriptLabValues.length > 0
           ? 'merged_extractors'
@@ -639,7 +647,7 @@ export class ReportsService {
       status,
       transcript,
       labValues,
-      parsedFromJson?.extractionReview.required ?? true,
+      autoLabValues.length ? false : (parsedFromJson?.extractionReview.required ?? true),
     );
     const preserveDetailsForReview =
       finalStatus === 'content_not_recognized' &&
@@ -659,12 +667,12 @@ export class ReportsService {
         null,
         finalStatus === 'parsed' ? labValues : [],
       ).sections;
-      structuredReport.extractionReview = parsedFromJson?.extractionReview ?? {
-        required: true,
-        candidateRows: 0,
-        parsedRows: labValues.length,
-        reasons: ['Results came from text without verifiable table coverage.'],
-      };
+      structuredReport.extractionReview = autoLabValues.length
+        ? { required: false, candidateRows: labValues.length, parsedRows: labValues.length, reasons: [] }
+        : parsedFromJson?.extractionReview ?? {
+            required: true, candidateRows: 0, parsedRows: labValues.length,
+            reasons: ['Results came from text without verifiable table coverage.'],
+          };
     }
 
     const persistedLabValues = finalStatus === 'parsed' ? labValues : [];
@@ -1426,13 +1434,21 @@ export class ReportsService {
     const visual = await this.paddleOcrClient.parseImage(buffer, contentType, signal);
     signal.throwIfAborted();
     if (!visual) throw new OcrServiceUnavailableError();
+    let autoImageLabRows: AutoImageLabRow[] = [];
+    try {
+      autoImageLabRows = extractAutoImageLabRows(visual.parsedJson.paddlePage);
+    } catch {
+      this.logger.warn('REPORT_IMAGE_GEOMETRY_AUTO_PARSE_FAILED');
+    }
+    const autoEligible = autoImageLabRows.length > 0;
     return {
       text: visual.text,
       parsedJson: {
-        type: 'document', kids: [], ocrVerificationFailed: true,
-        unresolvedPages: [1],
+        type: 'document', kids: [], ocrVerificationFailed: !autoEligible,
+        autoImageLabRows,
+        unresolvedPages: autoEligible ? [] : [1],
         reviewPages: { '1': { native: { text: '', parsedJson: { type: 'document', kids: [] } },
-          visual, reason: 'source_review_required' } },
+          visual, reason: autoEligible ? 'geometry_auto_eligible' : 'source_review_required' } },
       },
     };
   }

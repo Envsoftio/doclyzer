@@ -12,6 +12,7 @@ import 'pdf_viewer_screen.dart';
 import 'processing_history_screen.dart';
 import 'result_insight_screen.dart';
 import 'result_correction_screen.dart';
+import 'report_review_screen.dart';
 import 'trend_chart_screen.dart';
 
 enum _ReportDetailState { loading, loaded, error }
@@ -196,6 +197,21 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _openReview() async {
+    final report = _report;
+    if (report == null) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ReportReviewScreen(
+          reportsRepository: widget.reportsRepository,
+          reportId: report.id,
+          fileName: report.originalFileName,
+        ),
+      ),
+    );
+    if (mounted) await _loadReport();
   }
 
   void _openParsedReportReader() {
@@ -564,7 +580,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Automatic extraction was incomplete. The original report is available; no manual correction is required.',
+                      'Automatic extraction was incomplete. Check detected rows against the original report before saving them.',
                     ),
                     for (final reason
                         in report
@@ -588,14 +604,18 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           if (results.isNotEmpty) ...[
             const SizedBox(height: 24),
             Text(
-              'Your results',
+              report.status == 'content_not_recognized'
+                  ? 'Verified results'
+                  : 'Your results',
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             Text(
-              'Tap a result to understand what the test measures.',
+              report.status == 'content_not_recognized'
+                  ? 'These rows were checked against the original. Other rows may still need review.'
+                  : 'Tap a result to understand what the test measures.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -741,7 +761,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             ],
             if (report.status == 'content_not_recognized') ...[
               Text(
-                'We could not read all results reliably. Your original file is saved; no manual correction is required.',
+                'Some results need a check against the original report. You can review the detected rows below.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -758,17 +778,30 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               ),
               const SizedBox(height: 8),
             ],
-            FilledButton(
-              key: const Key('report-detail-retry'),
-              onPressed: _onRetryParse,
-              child: const Text('Retry'),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton(
-              key: const Key('report-detail-keep-file'),
-              onPressed: _onKeepFile,
-              child: const Text('Keep file anyway'),
-            ),
+            if (report.status == 'content_not_recognized' ||
+                report.status == 'unparsed') ...[
+              FilledButton.icon(
+                key: const Key('report-detail-review-results'),
+                onPressed: _openReview,
+                icon: const Icon(Icons.fact_check_outlined),
+                label: const Text('Review detected results'),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (report.status != 'content_not_recognized' || results.isEmpty)
+              FilledButton(
+                key: const Key('report-detail-retry'),
+                onPressed: _onRetryParse,
+                child: const Text('Retry'),
+              ),
+            if (report.status != 'content_not_recognized') ...[
+              const SizedBox(height: 8),
+              OutlinedButton(
+                key: const Key('report-detail-keep-file'),
+                onPressed: _onKeepFile,
+                child: const Text('Keep file anyway'),
+              ),
+            ],
           ],
           if (report.structuredReport != null &&
               (report.structuredReport!.sections.isNotEmpty ||

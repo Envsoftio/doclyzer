@@ -31,6 +31,27 @@ async function main() {
   assert.equal(calls, 1, 'Paddle page checkpoint reused');
   const unavailable = new ReportOcrCascade(noDocling, { parsePdf: async () => null } as unknown as PaddleOcrClient);
   await assert.rejects(unavailable.run(bytes, new AbortController().signal, native), OcrServiceUnavailableError);
+  const longPdf = await PDFDocument.create();
+  for (let page = 0; page < 4; page++) longPdf.addPage();
+  let pageAttempt = 0;
+  const isolatedFailure = new ReportOcrCascade(noDocling, {
+    parsePdf: async () => (++pageAttempt === 2 ? null : visual),
+  } as unknown as PaddleOcrClient);
+  const partial = await isolatedFailure.run(
+    Buffer.from(await longPdf.save()), new AbortController().signal, native,
+  );
+  assert.equal(pageAttempt, 4, 'later pages still run after one unavailable page');
+  assert.equal((partial.parsedJson as { reviewPages: Record<string, { reason: string }> }).reviewPages['2'].reason,
+    'visual_unavailable');
+  let unavailableCalls = 0;
+  const broadFailure = new ReportOcrCascade(noDocling, {
+    parsePdf: async () => { unavailableCalls++; return null; },
+  } as unknown as PaddleOcrClient);
+  await assert.rejects(
+    broadFailure.run(Buffer.from(await longPdf.save()), new AbortController().signal, native),
+    OcrServiceUnavailableError,
+  );
+  assert.equal(unavailableCalls, 3, 'broad outage stops before the fourth page');
   const aborted = new AbortController();
   aborted.abort();
   await assert.rejects(cascade.run(bytes, aborted.signal, native));

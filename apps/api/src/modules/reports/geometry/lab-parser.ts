@@ -188,6 +188,12 @@ function headerRole(s: string): Role | null {
   if (FLAG.test(s)) return 'flag';
   return null;
 }
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
 function columnsFromHeader(
   row: EvidenceToken[],
   width: number,
@@ -272,28 +278,100 @@ export function recoverStaggeredReviewCandidates(
   )
     .map((row) => ({
       tokens: row,
-      top: Math.min(...row.map((t) => bounds(t.polygon_original).top)),
+      cy: median(row.map((t) => bounds(t.polygon_original).cy)),
     }))
-    .sort((a, b) => a.top - b.top);
-  const valueTokens = body.filter((token) => {
-    const x = bounds(token.polygon_original).cx;
-    return x >= testRight && x < resultRight;
-  });
-  const candidates: LabCandidate[] = [];
-  for (let i = 0; i < testRows.length; i++) {
-    const row = testRows[i];
-    const nextTop = testRows[i + 1]?.top ?? page.height;
-    const values = valueTokens.filter((token) => {
-      const top = bounds(token.polygon_original).top;
-      return top >= row.top - 4 && top < nextTop - 2;
-    });
-    if (!values.length || LABEL.test(text(row.tokens))) continue;
-    const value = text(
-      values.sort(
-        (a, b) =>
-          bounds(a.polygon_original).left - bounds(b.polygon_original).left,
-      ),
+    .filter((row) => !LABEL.test(text(row.tokens)))
+    .sort((a, b) => a.cy - b.cy);
+  const valueTokens = body
+    .filter((token) => {
+      const x = bounds(token.polygon_original).cx;
+      return (
+        x >= testRight &&
+        x < resultRight &&
+        !['missing', 'unparsed'].includes(classify(token.text_raw).kind)
+      );
+    })
+    .sort(
+      (a, b) => bounds(a.polygon_original).cy - bounds(b.polygon_original).cy,
     );
+  if (!testRows.length || !valueTokens.length) return [];
+  // A page with more rows than this needs source inspection. Keep the review
+  // fallback bounded even if an OCR service returns pathological output.
+  if (testRows.length > 400 || valueTokens.length > 400) return [];
+
+  // A photographed page can tilt the result column above or below the test
+  // column. Align the two ordered columns with a measured vertical offset;
+  // raw top-to-top windows can attach every result to the preceding test.
+  const pitches = testRows.slice(1).map((row, i) => row.cy - testRows[i].cy);
+  const pitch = pitches.length ? median(pitches) : 24;
+  const nearestOffsets = valueTokens.map((value) => {
+    const cy = bounds(value.polygon_original).cy;
+    const nearest = testRows.reduce((best, row) =>
+      Math.abs(cy - row.cy) < Math.abs(cy - best.cy) ? row : best,
+    );
+    return cy - nearest.cy;
+  });
+  const offset = median(nearestOffsets);
+  const tolerance = Math.max(10, Math.min(32, pitch * 0.48));
+  type Match = {
+    count: number;
+    error: number;
+    step: 'label' | 'value' | 'pair' | null;
+  };
+  const empty = (): Match => ({ count: 0, error: 0, step: null });
+  const alignment = Array.from({ length: testRows.length + 1 }, () =>
+    Array.from({ length: valueTokens.length + 1 }, empty),
+  );
+  for (let label = testRows.length - 1; label >= 0; label--) {
+    for (let value = valueTokens.length - 1; value >= 0; value--) {
+      const skipLabel = alignment[label + 1][value];
+      const skipValue = alignment[label][value + 1];
+      let best: Match =
+        skipLabel.count > skipValue.count ||
+        (skipLabel.count === skipValue.count &&
+          skipLabel.error <= skipValue.error)
+          ? { ...skipLabel, step: 'label' }
+          : { ...skipValue, step: 'value' };
+      const error = Math.abs(
+        bounds(valueTokens[value].polygon_original).cy -
+          testRows[label].cy -
+          offset,
+      );
+      if (error <= tolerance) {
+        const tail = alignment[label + 1][value + 1];
+        const candidate: Match = {
+          count: tail.count + 1,
+          error: tail.error + error,
+          step: 'pair',
+        };
+        if (
+          candidate.count > best.count ||
+          (candidate.count === best.count && candidate.error < best.error)
+        )
+          best = candidate;
+      }
+      alignment[label][value] = best;
+    }
+  }
+  const pairs: Array<[number, number]> = [];
+  for (
+    let label = 0, value = 0;
+    label < testRows.length && value < valueTokens.length;
+  ) {
+    const step = alignment[label][value].step;
+    if (step === 'pair') {
+      pairs.push([label, value]);
+      label++;
+      value++;
+    } else if (step === 'label') label++;
+    else if (step === 'value') value++;
+    else break;
+  }
+  const candidates: LabCandidate[] = [];
+  for (const [i, valueIndex] of pairs) {
+    const row = testRows[i];
+    const values = [valueTokens[valueIndex]];
+    const value = text(values);
     const parsed = classify(value);
     candidates.push({
       id: `${page.document_id}:${page.page_id}:staggered:${i}`,

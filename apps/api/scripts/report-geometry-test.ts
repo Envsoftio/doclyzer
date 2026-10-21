@@ -16,6 +16,7 @@ import {
 } from '../src/modules/reports/geometry/lab-parser';
 import { evaluate } from '../src/modules/reports/geometry/evaluation';
 import { validateCandidate } from '../src/modules/reports/geometry/validation';
+import { extractAutoImageLabRows } from '../src/modules/reports/geometry/image-auto-parser';
 
 function tok(
   id: string,
@@ -68,6 +69,55 @@ function parse(tokens: EvidenceToken[]) {
   return parseGeometry([page([...head, ...tokens])], ['p1']);
 }
 {
+  const names = ['Marker A', 'Marker B', 'Marker C', 'Marker D', 'Marker E'];
+  const values = ['12.4', '4.4', '40.3', '92.1', '28.3'];
+  const tokens = [
+    tok('test-header', 'Test Name', 20, 70),
+    tok('result-header', 'Obtained Value', 180, 50),
+    tok('unit-header', 'Units Bio.Ref. Intervals', 340, 35),
+    ...names.flatMap((name, index) => [
+      tok(`name-${index}`, name, 20, 100 + index * 30),
+      tok(`value-${index}`, values[index], 180, 112 + index * 30),
+    ]),
+  ];
+  const paddle = {
+    page_width: 600,
+    page_height: 800,
+    dpi: 72,
+    native_words: [],
+    model_version: 'synthetic',
+    paddleocr_version: 'synthetic',
+    docling_parse_version: 'synthetic',
+    paddle: {
+      rec_texts: tokens.map((t) => t.text_raw),
+      rec_scores: tokens.map(() => 0.99),
+      rec_polys: tokens.map((t) => t.polygon_original),
+    },
+  };
+  assert.deepEqual(
+    extractAutoImageLabRows(paddle).map((row) => [
+      row.parameterName,
+      row.value,
+    ]),
+    names.map((name, index) => [name, values[index]]),
+  );
+  paddle.paddle.rec_scores[4] = 0.6;
+  assert.deepEqual(
+    extractAutoImageLabRows(paddle),
+    [],
+    'low-confidence row stays in review',
+  );
+  paddle.paddle.rec_scores[4] = 0.99;
+  paddle.paddle.rec_texts.push('75');
+  paddle.paddle.rec_scores.push(0.99);
+  paddle.paddle.rec_polys.push(tok('extra', '75', 180, 172).polygon_original);
+  assert.deepEqual(
+    extractAutoImageLabRows(paddle),
+    [],
+    'unpaired result stays in review',
+  );
+}
+{
   const evidence = page([
     tok('unit-head', 'Units Bio.Ref. Intervals', 300, 35),
     tok('result-head', 'Obtained Value', 180, 50),
@@ -100,6 +150,74 @@ function parse(tokens: EvidenceToken[]) {
       ]),
     ),
     [],
+  );
+}
+{
+  // A photographed table tilts the value column above the test column.
+  // Any label-only panel heading or footer must not consume a result.
+  const evidenceFor = (
+    heading: string,
+    names: [string, string, string],
+    results: [string, string, string],
+  ) =>
+    page([
+      tok('unit-head', 'Units Bio.Ref. Intervals', 340, 35),
+      tok('result-head', 'Obtained Value', 200, 48),
+      tok('test-head', 'Test Name', 20, 62),
+      tok('panel', heading, 20, 100),
+      tok('test-a', names[0], 20, 132),
+      tok('value-a', results[0], 200, 119),
+      tok('test-b', names[1], 20, 160),
+      tok('value-b', results[1], 200, 147),
+      tok('test-c', names[2], 20, 190),
+      tok('value-c', results[2], 200, 177),
+      tok('remarks', 'Laboratory comment', 20, 223),
+      tok('remarks-text', 'Result rechecked and verified', 200, 210),
+    ]);
+  const examples: Array<{
+    heading: string;
+    names: [string, string, string];
+    results: [string, string, string];
+  }> = [
+    {
+      heading: 'Complete Blood Count (CBC)',
+      names: ['Haemoglobin', 'RBC Count', 'Platelet Count'],
+      results: ['12.4', '4.4', '70'],
+    },
+    {
+      heading: 'Lipid Profile',
+      names: ['Total Cholesterol', 'HDL Cholesterol', 'Triglycerides'],
+      results: ['182', '42', '136'],
+    },
+    {
+      heading: 'Unfamiliar Panel Name',
+      names: ['Marker A', 'Marker B', 'Marker C'],
+      results: ['8.1', '2.3', '91'],
+    },
+  ];
+  for (const { heading, names, results } of examples) {
+    assert.deepEqual(
+      recoverStaggeredReviewCandidates(
+        evidenceFor(heading, names, results),
+      ).map((row) => [row.testRaw, row.resultRaw]),
+      names.map((name, i) => [name, results[i]]),
+    );
+  }
+  const cbc = examples[0];
+  const missingValue = page(
+    evidenceFor(cbc.heading, cbc.names, cbc.results).tokens.filter(
+      (token) => token.token_id !== 'value-b',
+    ),
+  );
+  assert.deepEqual(
+    recoverStaggeredReviewCandidates(missingValue).map((row) => [
+      row.testRaw,
+      row.resultRaw,
+    ]),
+    [
+      ['Haemoglobin', '12.4'],
+      ['Platelet Count', '70'],
+    ],
   );
 }
 {

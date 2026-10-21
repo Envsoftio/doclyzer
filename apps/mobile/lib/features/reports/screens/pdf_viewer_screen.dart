@@ -5,7 +5,7 @@ import 'package:pdfx/pdfx.dart';
 
 import '../reports_repository.dart';
 
-/// Displays a report PDF fetched from the API.
+/// Displays an original report PDF or image fetched from the API.
 class PdfViewerScreen extends StatefulWidget {
   const PdfViewerScreen({
     super.key,
@@ -13,12 +13,14 @@ class PdfViewerScreen extends StatefulWidget {
     required this.reportId,
     required this.fileName,
     required this.onBack,
+    this.reviewMode = false,
   });
 
   final ReportsRepository reportsRepository;
   final String reportId;
   final String fileName;
   final VoidCallback onBack;
+  final bool reviewMode;
 
   @override
   State<PdfViewerScreen> createState() => _PdfViewerScreenState();
@@ -26,19 +28,41 @@ class PdfViewerScreen extends StatefulWidget {
 
 class _PdfViewerScreenState extends State<PdfViewerScreen> {
   PdfControllerPinch? _controller;
+  Uint8List? _imageBytes;
   String? _errorMessage;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadPdf();
+    _loadReport();
   }
 
-  Future<void> _loadPdf() async {
+  Future<void> _loadReport() async {
     try {
-      final bytes = await widget.reportsRepository.getReportFile(widget.reportId);
+      final bytes = await widget.reportsRepository.getReportFile(
+        widget.reportId,
+      );
       if (!mounted) return;
+      final isJpeg =
+          bytes.length >= 3 &&
+          bytes[0] == 0xff &&
+          bytes[1] == 0xd8 &&
+          bytes[2] == 0xff;
+      final isPng =
+          bytes.length >= 8 &&
+          bytes[0] == 0x89 &&
+          bytes[1] == 0x50 &&
+          bytes[2] == 0x4e &&
+          bytes[3] == 0x47;
+      if (isJpeg || isPng) {
+        setState(() {
+          _imageBytes = Uint8List.fromList(bytes);
+          _loading = false;
+          _errorMessage = null;
+        });
+        return;
+      }
       final doc = await PdfDocument.openData(Uint8List.fromList(bytes));
       if (!mounted) return;
       setState(() {
@@ -75,7 +99,23 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           onPressed: widget.onBack,
         ),
       ),
-      body: _buildBody(),
+      body: Column(
+        children: [
+          Expanded(child: _buildBody()),
+          if (widget.reviewMode && !_loading && _errorMessage == null)
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: FilledButton(
+                  key: const Key('original-inspected'),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('I inspected the original'),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -88,7 +128,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('Loading PDF…'),
+            Text('Loading report…'),
           ],
         ),
       );
@@ -113,20 +153,23 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
-              FilledButton(
-                onPressed: widget.onBack,
-                child: const Text('Back'),
-              ),
+              FilledButton(onPressed: widget.onBack, child: const Text('Back')),
             ],
           ),
         ),
       );
     }
     final ctrl = _controller;
+    final imageBytes = _imageBytes;
+    if (imageBytes != null) {
+      return InteractiveViewer(
+        key: const Key('image-viewer-screen'),
+        minScale: 0.5,
+        maxScale: 6,
+        child: Center(child: Image.memory(imageBytes, fit: BoxFit.contain)),
+      );
+    }
     if (ctrl == null) return const SizedBox.shrink();
-    return PdfViewPinch(
-      key: const Key('pdf-viewer-screen'),
-      controller: ctrl,
-    );
+    return PdfViewPinch(key: const Key('pdf-viewer-screen'), controller: ctrl);
   }
 }

@@ -252,7 +252,8 @@ export class ReportVlShadowService {
         await runner.commitTransaction();
         return { labValueId: applied[candidateId], reviewVersion: row.review_version };
       }
-      if (!['ready', 'needs_attention', 'failed'].includes(row.processing_state) && row.report_status !== 'parsed') throw new ConflictException('Report processing is not finished');
+      const keptAfterReview = row.processing_state === 'cancelled' && row.report_status === 'content_not_recognized';
+      if (!['ready', 'needs_attention', 'failed'].includes(row.processing_state) && !keptAfterReview && row.report_status !== 'parsed') throw new ConflictException('Report processing is not finished');
       const review = (row.reviews as Record<string, Review>)[candidateId];
       if (!review || !review.sourceInspected || review.action === 'unreadable' || !review.testRaw || !review.resultRaw)
         throw new BadRequestException('Source-confirmed result required');

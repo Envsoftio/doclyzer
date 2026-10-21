@@ -14,6 +14,7 @@ import '../../profiles/profiles_repository.dart';
 import '../reports_repository.dart';
 import 'pdf_viewer_screen.dart';
 import 'report_detail_screen.dart';
+import 'report_review_screen.dart';
 
 enum _UploadState {
   idle,
@@ -78,6 +79,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   _UploadState _state = _UploadState.idle;
   String? _errorMessage;
   UploadedReport? _result;
+  int _verifiedResultCount = 0;
   String? _pendingDuplicatePath;
   String? _selectedPath;
   Map<String, dynamic>? _existingReport;
@@ -111,6 +113,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         contentType: result.contentType,
         sizeBytes: result.sizeBytes,
         status: status,
+        reused: result.reused,
       ),
     );
   }
@@ -216,6 +219,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     setState(() {
       _state = _UploadState.uploading;
       _errorMessage = null;
+      _verifiedResultCount = 0;
     });
     widget.onUploadBusyChanged?.call(true);
 
@@ -323,6 +327,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             contentType: report.contentType,
             sizeBytes: report.sizeBytes,
             status: report.status,
+            reused: true,
           );
           _pendingDuplicatePath = null;
           _existingReport = null;
@@ -344,6 +349,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     setState(() {
       _state = _UploadState.uploading;
       _errorMessage = null;
+      _verifiedResultCount = 0;
     });
     widget.onUploadBusyChanged?.call(true);
     try {
@@ -554,7 +560,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       return 'Processing stopped before it finished. Your file is saved. Tap Retry to try again.';
     }
     if (status == 'content_not_recognized') {
-      return 'This doesn\'t look like a valid lab report. Your file is saved.';
+      return 'Some results need review. Your original report is saved.';
     }
     return 'We couldn\'t read this format. Your file is saved.';
   }
@@ -648,6 +654,44 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         ),
       ),
     );
+    try {
+      final refreshed = await widget.reportsRepository.getReport(
+        report.reportId,
+      );
+      if (mounted) {
+        setState(
+          () => _verifiedResultCount = refreshed.extractedLabValues.length,
+        );
+      }
+    } catch (_) {
+      // The report detail screen handles refresh errors itself.
+    }
+  }
+
+  Future<void> _onReviewReport() async {
+    final report = _result;
+    if (report == null) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ReportReviewScreen(
+          reportsRepository: widget.reportsRepository,
+          reportId: report.reportId,
+          fileName: report.fileName,
+        ),
+      ),
+    );
+    try {
+      final refreshed = await widget.reportsRepository.getReport(
+        report.reportId,
+      );
+      if (mounted) {
+        setState(
+          () => _verifiedResultCount = refreshed.extractedLabValues.length,
+        );
+      }
+    } catch (_) {
+      // The review screen shows save errors; a refresh can be retried later.
+    }
   }
 
   Widget _buildParseFailure() {
@@ -669,12 +713,19 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         if (_result?.status == 'content_not_recognized') ...[
           const SizedBox(height: 8),
           Text(
-            'Upload a diagnostic lab report PDF that includes test names and values.',
+            'Check detected results against the original report before saving them.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
+          if (_verifiedResultCount > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              '$_verifiedResultCount verified result${_verifiedResultCount == 1 ? '' : 's'} saved.',
+              textAlign: TextAlign.center,
+            ),
+          ],
         ],
         if (_errorMessage case final err?) ...[
           const SizedBox(height: 8),
@@ -686,10 +737,24 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           ),
         ],
         const SizedBox(height: 24),
+        if (_result?.status == 'content_not_recognized') ...[
+          FilledButton(
+            key: const Key('parse-failure-review-results'),
+            onPressed: _verifiedResultCount > 0
+                ? _onViewReport
+                : _onReviewReport,
+            child: Text(
+              _verifiedResultCount > 0
+                  ? 'View verified results'
+                  : 'Review detected results',
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
         FilledButton(
           key: const Key('view-pdf-button'),
           onPressed: _onViewPdf,
-          child: const Text('View PDF'),
+          child: const Text('View original report'),
         ),
         const SizedBox(height: 8),
         FilledButton(
@@ -697,12 +762,14 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           onPressed: _onRetry,
           child: const Text('Retry'),
         ),
-        const SizedBox(height: 8),
-        OutlinedButton(
-          key: const Key('parse-failure-keep-file'),
-          onPressed: _onKeepFile,
-          child: const Text('Keep file anyway'),
-        ),
+        if (_result?.status != 'content_not_recognized') ...[
+          const SizedBox(height: 8),
+          OutlinedButton(
+            key: const Key('parse-failure-keep-file'),
+            onPressed: _onKeepFile,
+            child: const Text('Keep file anyway'),
+          ),
+        ],
         if (_supportContext != null) ...[
           const SizedBox(height: 8),
           TextButton(
@@ -747,7 +814,9 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Report added to ${widget.activeProfileName}',
+          r?.reused == true
+              ? 'Report already in ${widget.activeProfileName}'
+              : 'Report added to ${widget.activeProfileName}',
           style: Theme.of(context).textTheme.titleMedium,
         ),
         if (r != null)
