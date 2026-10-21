@@ -52,6 +52,7 @@ import { LabValueExtractor } from './lab-value-extractor';
 import { LabDetailsExtractor } from './lab-details-extractor';
 import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
 import { ReportRangeSuggestionService, safeRawRange, validSuggestedRange, type RangeSuggestion } from './report-range-suggestion.service';
+import { ReportValueSuggestionService, isUnclearResultValue, type ParsedResultValue } from './report-value-suggestion.service';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { summarizeReportCollectionDate } from './report-collection-date';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
@@ -196,6 +197,7 @@ interface StructuredReportLabInput {
   isAbnormal: boolean | null;
   identityEvidence?: Record<string, string>;
   originalReferenceRange?: string;
+  originalValue?: string;
 }
 
 interface SelectedOdlLabOutput {
@@ -248,6 +250,7 @@ export class ReportsService {
     private readonly paddleOcrClient: PaddleOcrClient,
     private readonly reportLabAiFallbackService: ReportLabAiFallbackService,
     private readonly rangeSuggestionService: ReportRangeSuggestionService,
+    private readonly valueSuggestionService: ReportValueSuggestionService,
     private readonly notificationPipeline: NotificationPipelineService,
     private readonly imageToPdfService: ImageToPdfService,
     private readonly referralsService: ReferralsService,
@@ -292,6 +295,44 @@ export class ReportsService {
       value.isAbnormal = null;
     }
     return usage;
+  }
+
+  private async resolveUnclearValues(values: StructuredReportLabInput[]): Promise<void> {
+    const context: ParsedResultValue[] = values.map((row) => ({
+      parameterName: row.parameterName,
+      value: row.value,
+      unit: row.unit,
+      referenceRange: row.originalReferenceRange ?? row.referenceRange,
+    }));
+    for (let start = 0; start < values.length; start += 4) {
+      await Promise.all(values.slice(start, start + 4).map(async (row, offset) => {
+        if (!isUnclearResultValue(row.value)) return;
+        const suggested = await this.valueSuggestionService.suggest(
+          context[start + offset], context,
+        );
+        if (!suggested) return;
+        row.originalValue = row.value;
+        row.value = suggested;
+        row.isAbnormal ??= this.evaluateAbnormalFromReference(suggested, row.referenceRange);
+      }));
+    }
+  }
+
+  private labSourceSnapshot(value: StructuredReportLabInput): Record<string, unknown> | null {
+    if (!value.originalReferenceRange && !value.originalValue) return null;
+    return {
+      parameterName: value.parameterName,
+      value: value.originalValue ?? value.value,
+      unit: value.unit,
+      sampleDate: value.sampleDate,
+      referenceRange: value.originalReferenceRange ?? value.referenceRange,
+      ...(value.originalReferenceRange
+        ? { originalReferenceRange: value.originalReferenceRange, rangeSource: 'ai_suggestion' }
+        : {}),
+      ...(value.originalValue
+        ? { originalValue: value.originalValue, valueSource: 'ai_suggestion' }
+        : {}),
+    };
   }
 
   private throwIfAlreadyParsed(status: string): void {
@@ -468,6 +509,7 @@ export class ReportsService {
     const deferredRangeUsage = finalStatus === 'parsed'
       ? await this.resolveUnclearRanges(labValues, userId, reportId, true)
       : [];
+    if (finalStatus === 'parsed') await this.resolveUnclearValues(labValues);
     const preserveDetailsForReview =
       finalStatus === 'content_not_recognized' &&
       labValues.length > 0 &&
@@ -590,7 +632,7 @@ export class ReportsService {
           parameterName: lv.parameterName,
           originalParameterName: lv.parameterName,
           value: lv.value,
-          rawResult: lv.value,
+          rawResult: lv.originalValue ?? lv.value,
           unit: lv.unit ?? null,
           originalUnit: lv.unit ?? null,
           sampleDate: lv.sampleDate ?? null,
@@ -598,9 +640,7 @@ export class ReportsService {
           collectionDateSource: lv.sampleDate ? 'extracted' : 'unknown',
           extractionSource,
           referenceRange: lv.referenceRange ?? null,
-          sourceSnapshot: lv.originalReferenceRange
-            ? { parameterName: lv.parameterName, value: lv.value, unit: lv.unit, sampleDate: lv.sampleDate, referenceRange: lv.originalReferenceRange, originalReferenceRange: lv.originalReferenceRange, rangeSource: 'ai_suggestion' }
-            : null,
+          sourceSnapshot: this.labSourceSnapshot(lv),
           identityEvidence: this.withLabIdentityEvidence(lv, structuredReport),
           ...normalizeObservation(
             {
@@ -610,7 +650,7 @@ export class ReportsService {
             },
             observationRules,
           ),
-          ...(lv.originalReferenceRange ? { reviewState: 'needs_review' } : {}),
+          ...(lv.originalReferenceRange || lv.originalValue || isUnclearResultValue(lv.value) ? { reviewState: 'needs_review' } : {}),
           sortOrder: i,
         }),
       );
@@ -730,6 +770,7 @@ export class ReportsService {
     );
     if (finalStatus === 'parsed')
       await this.resolveUnclearRanges(labValues, userId, reportId);
+    if (finalStatus === 'parsed') await this.resolveUnclearValues(labValues);
     const preserveDetailsForReview =
       finalStatus === 'content_not_recognized' &&
       labValues.length > 0 &&
@@ -791,7 +832,7 @@ export class ReportsService {
             parameterName: lv.parameterName,
             originalParameterName: lv.parameterName,
             value: lv.value,
-            rawResult: lv.value,
+            rawResult: lv.originalValue ?? lv.value,
             unit: lv.unit ?? null,
             originalUnit: lv.unit ?? null,
             sampleDate: lv.sampleDate ?? null,
@@ -799,9 +840,7 @@ export class ReportsService {
             collectionDateSource: lv.sampleDate ? 'extracted' : 'unknown',
             extractionSource,
             referenceRange: lv.referenceRange ?? null,
-            sourceSnapshot: lv.originalReferenceRange
-              ? { parameterName: lv.parameterName, value: lv.value, unit: lv.unit, sampleDate: lv.sampleDate, referenceRange: lv.originalReferenceRange, originalReferenceRange: lv.originalReferenceRange, rangeSource: 'ai_suggestion' }
-              : null,
+            sourceSnapshot: this.labSourceSnapshot(lv),
             identityEvidence: this.withLabIdentityEvidence(
               lv,
               structuredReport,
@@ -814,7 +853,7 @@ export class ReportsService {
               },
               observationRules,
             ),
-            ...(lv.originalReferenceRange ? { reviewState: 'needs_review' } : {}),
+            ...(lv.originalReferenceRange || lv.originalValue || isUnclearResultValue(lv.value) ? { reviewState: 'needs_review' } : {}),
             sortOrder: i,
           }),
         );
@@ -1313,6 +1352,8 @@ export class ReportsService {
     );
     if (finalStatus === 'parsed')
       await this.resolveUnclearRanges(dedupedRetryLabValues, userId, entity.id);
+    if (finalStatus === 'parsed')
+      await this.resolveUnclearValues(dedupedRetryLabValues);
     if (finalStatus === 'parsed') {
       this.logger.log(
         JSON.stringify({
@@ -1406,7 +1447,7 @@ export class ReportsService {
               parameterName: lv.parameterName,
               originalParameterName: lv.parameterName,
               value: lv.value,
-              rawResult: lv.value,
+              rawResult: lv.originalValue ?? lv.value,
               unit: lv.unit ?? null,
               originalUnit: lv.unit ?? null,
               sampleDate: lv.sampleDate ?? null,
@@ -1414,9 +1455,7 @@ export class ReportsService {
               collectionDateSource: lv.sampleDate ? 'extracted' : 'unknown',
               extractionSource: retryExtractionSource,
               referenceRange: lv.referenceRange ?? null,
-              sourceSnapshot: lv.originalReferenceRange
-                ? { parameterName: lv.parameterName, value: lv.value, unit: lv.unit, sampleDate: lv.sampleDate, referenceRange: lv.originalReferenceRange, originalReferenceRange: lv.originalReferenceRange, rangeSource: 'ai_suggestion' }
-                : null,
+              sourceSnapshot: this.labSourceSnapshot(lv),
               identityEvidence: this.withLabIdentityEvidence(
                 lv,
                 retryStructuredReport,
@@ -1429,7 +1468,7 @@ export class ReportsService {
                 },
                 observationRules,
               ),
-              ...(lv.originalReferenceRange ? { reviewState: 'needs_review' } : {}),
+              ...(lv.originalReferenceRange || lv.originalValue || isUnclearResultValue(lv.value) ? { reviewState: 'needs_review' } : {}),
               sortOrder: i,
             }),
           ),

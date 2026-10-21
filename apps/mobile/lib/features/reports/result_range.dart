@@ -2,6 +2,31 @@ import 'reports_repository.dart';
 
 enum RangePosition { below, within, above, unknown }
 
+/// Selects a single explicitly printed preferred category from a complete
+/// categorical lab range. Never supplies a population range from test knowledge.
+String? preferredPrintedRange(String raw) {
+  final normalized = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+  final category = RegExp(
+    r'(?:Adult\s+)?(?:Desirable|Normal|Optimal|Borderline|Very High|High|Low)\s*:\s*(?:<=|>=|<|>|≤|≥)?\s*\d{1,5}(?:\.\d{1,6})?(?:\s*[-–—]\s*\d{1,5}(?:\.\d{1,6})?)?',
+    caseSensitive: false,
+  );
+  final matches = category.allMatches(normalized).toList();
+  if (matches.isEmpty || matches.length > 5) return null;
+  if (normalized.replaceAll(category, '').trim().isNotEmpty) return null;
+  final preferred = matches.where((match) {
+    return RegExp(
+      r'\b(?:Desirable|Normal|Optimal)\b',
+      caseSensitive: false,
+    ).hasMatch(match.group(0)!);
+  }).toList();
+  if (preferred.length != 1) return null;
+  final candidate = preferred.single.group(0)!.split(':').last.trim();
+  final numeric = RegExp(
+    r'^(?:(?:<=|>=|<|>|≤|≥)\s*-?\d{1,5}(?:\.\d{1,6})?|-?\d{1,5}(?:\.\d{1,6})?\s*[-–—]\s*-?\d{1,5}(?:\.\d{1,6})?)$',
+  );
+  return numeric.hasMatch(candidate) ? candidate : null;
+}
+
 String unavailableRangeReason(ExtractedLabValue result) {
   if (result.parameterName.trim().isEmpty) {
     return 'The test name is missing from the extracted result.';
@@ -37,7 +62,10 @@ RangePosition compareWithPrintedRange(ExtractedLabValue result) {
   final value = RegExp(r'^-?\d+(?:\.\d+)?$').hasMatch(rawValue)
       ? double.tryParse(rawValue)
       : null;
-  final range = result.referenceRange?.trim();
+  final rawRange = result.referenceRange?.trim();
+  final range = rawRange == null
+      ? null
+      : preferredPrintedRange(rawRange) ?? rawRange;
   if (result.parameterName.trim().isEmpty ||
       result.unit?.trim().isNotEmpty != true ||
       value == null ||

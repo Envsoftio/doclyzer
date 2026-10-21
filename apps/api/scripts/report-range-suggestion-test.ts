@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { ConfigService } from '@nestjs/config';
 import {
   ReportRangeSuggestionService,
+  preferredPrintedRange,
   safeRawRange,
 } from '../src/modules/reports/report-range-suggestion.service';
 import { ReportsService } from '../src/modules/reports/reports.service';
@@ -16,6 +17,20 @@ async function main() {
   assert.equal(
     safeRawRange('Adult Desirable: <200 Borderline: 200-239 High: >239'),
     'Adult Desirable: <200 Borderline: 200-239 High: >239',
+  );
+  assert.equal(
+    preferredPrintedRange(
+      'Adult Desirable: <200 Borderline: 200-239 High: >239',
+    ),
+    '<200',
+  );
+  assert.equal(
+    preferredPrintedRange('Normal: <161 High: 161-199 Very High: 200-499'),
+    '<161',
+  );
+  assert.equal(
+    preferredPrintedRange('Normal: <161 Desirable: <150 High: >199'),
+    null,
   );
   for (const raw of [
     null,

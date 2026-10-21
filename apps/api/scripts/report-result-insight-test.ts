@@ -80,6 +80,24 @@ async function main() {
     'unknown',
   );
   assert.equal(
+    comparePrintedRange({
+      ...result,
+      parameterName: 'Total Cholesterol',
+      value: '172',
+      unit: 'mg/dL',
+      referenceRange: 'Adult Desirable: <200 Borderline: 200-239 High: >239',
+    }),
+    'within',
+  );
+  assert.equal(
+    comparePrintedRange({
+      ...result,
+      value: '172',
+      referenceRange: 'Normal: <161 Desirable: <150 High: >199',
+    }),
+    'unknown',
+  );
+  assert.equal(
     selectStoredResult(
       [{ ...result, unit: '12-16', referenceRange: undefined }],
       { parameterName: ' Hb ', value: '10', unit: '' },
@@ -133,6 +151,7 @@ async function main() {
         value: '10',
         unit: 'g/dL',
         printedLabRange: '12-16',
+        printedRangeCategories: '',
         rangeStatus: 'below',
         labAbnormalFlag: null,
       });
@@ -278,6 +297,7 @@ async function main() {
         value: '10',
         unit: '',
         printedLabRange: '',
+        printedRangeCategories: '',
         rangeStatus: 'unknown',
         labAbnormalFlag: null,
       });
@@ -292,6 +312,26 @@ async function main() {
       referenceRange: 'see report',
     });
     assert.equal(fetchCount, callsBeforeUnreviewed + 1);
+    global.fetch = async (_url, options) => {
+      const body = JSON.parse(options?.body as string) as { input: string };
+      const input = JSON.parse(body.input) as Record<string, unknown>;
+      assert.equal(input.printedLabRange, '<200');
+      assert.equal(
+        input.printedRangeCategories,
+        'Adult Desirable: <200 Borderline: 200-239 High: >239',
+      );
+      assert.equal(input.rangeStatus, 'within');
+      return new Response(
+        JSON.stringify({ output_text: JSON.stringify(insight) }),
+      );
+    };
+    await service.explain('report-categorical', {
+      ...result,
+      parameterName: 'Total Cholesterol',
+      value: '172',
+      unit: 'mg/dL',
+      referenceRange: 'Adult Desirable: <200 Borderline: 200-239 High: >239',
+    });
     await assert.rejects(
       () =>
         unreviewed.explain('report-4', {

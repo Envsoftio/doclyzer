@@ -30,6 +30,7 @@ import { OpenDataLoaderClient } from './opendataloader.client';
 import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
 import { ReportResultInsightService } from './report-result-insight.service';
 import { ReportRangeSuggestionService } from './report-range-suggestion.service';
+import { ReportValueSuggestionService } from './report-value-suggestion.service';
 import { ImageToPdfService } from './image-to-pdf.service';
 import { PaddleOcrClient } from './paddle-ocr.client';
 import { DoclingOcrClient } from './docling-ocr.client';
@@ -72,6 +73,7 @@ import { DoclingOcrClient } from './docling-ocr.client';
     ReportLabAiFallbackService,
     ReportResultInsightService,
     ReportRangeSuggestionService,
+    ReportValueSuggestionService,
     ImageToPdfService,
   ],
   exports: [ReportWorkerService, ReportDispatcherService],

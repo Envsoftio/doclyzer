@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/profiles/profiles_repository.dart';
@@ -8,6 +10,7 @@ import 'package:mobile/features/support/support_repository.dart';
 class _Reports extends Fake implements ReportsRepository {
   String? requestedReportId;
   String status = 'parsed';
+  Completer<Report>? pendingReport;
 
   @override
   Future<ReportReview> getReportReview(String reportId) async =>
@@ -28,6 +31,7 @@ class _Reports extends Fake implements ReportsRepository {
   @override
   Future<Report> getReport(String reportId) async {
     requestedReportId = reportId;
+    if (pendingReport case final pending?) return pending.future;
     return Report(
       id: reportId,
       profileId: 'profile-1',
@@ -49,6 +53,48 @@ class _Profiles extends Fake implements ProfilesRepository {
 class _Support extends Fake implements SupportRepository {}
 
 void main() {
+  testWidgets(
+    'a stalled View results load shows a retry instead of waiting forever',
+    (tester) async {
+      final reports = _Reports()..pendingReport = Completer<Report>();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UploadReportScreen(
+            reportsRepository: reports,
+            profilesRepository: _Profiles(),
+            supportRepository: _Support(),
+            activeProfileName: 'Me',
+            onBack: () {},
+            onComplete: () {},
+            initialReport: const UploadedReport(
+              reportId: 'report-1',
+              profileId: 'profile-1',
+              fileName: 'blood-test.pdf',
+              contentType: 'application/pdf',
+              sizeBytes: 100,
+              status: 'parsed',
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const Key('upload-view-results')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Loading report results…'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 21));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('report-detail-error')), findsOneWidget);
+      expect(find.textContaining('longer than expected'), findsOneWidget);
+
+      reports.pendingReport = null;
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('report-detail-scaffold')), findsOneWidget);
+      expect(find.text('Blood test results are ready.'), findsOneWidget);
+    },
+  );
+
   testWidgets('upload success opens the uploaded report in one tap', (
     tester,
   ) async {

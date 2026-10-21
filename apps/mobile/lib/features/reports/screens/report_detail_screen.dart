@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../report_processing_store.dart';
 import 'package:flutter/material.dart';
 
@@ -16,6 +18,8 @@ import 'report_review_screen.dart';
 import 'trend_chart_screen.dart';
 
 enum _ReportDetailState { loading, loaded, error }
+
+enum _ReportAction { attempts, compare, reassign }
 
 class ReportDetailScreen extends StatefulWidget {
   const ReportDetailScreen({
@@ -94,7 +98,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       _errorMessage = null;
     });
     try {
-      final report = await widget.reportsRepository.getReport(widget.reportId);
+      final report = await widget.reportsRepository
+          .getReport(widget.reportId)
+          .timeout(const Duration(seconds: 20));
       if (mounted && version == _loadVersion) {
         setState(() {
           _report = report;
@@ -125,7 +131,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               ? _ReportDetailState.error
               : _ReportDetailState.loaded;
           _refreshing = false;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = e is TimeoutException
+              ? 'The report is taking longer than expected to load. Check your connection and try again.'
+              : e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -245,6 +253,36 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
+  void _onReportAction(_ReportAction action) {
+    final report = _report;
+    if (report == null) return;
+    switch (action) {
+      case _ReportAction.attempts:
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => ProcessingHistoryScreen(
+              reportId: report.id,
+              reportsRepository: widget.reportsRepository,
+            ),
+          ),
+        );
+      case _ReportAction.compare:
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => HealthHistoryScreen(
+              profileId: widget.profileId,
+              reportsRepository: widget.reportsRepository,
+              profilesRepository: widget.profilesRepository,
+            ),
+          ),
+        );
+      case _ReportAction.reassign:
+        _showReassignDialog();
+    }
+  }
+
   Future<void> _onRetryParse() async {
     if (_report == null || _state == _ReportDetailState.loading) return;
     setState(() {
@@ -289,12 +327,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         targetProfileId,
       );
       if (mounted) widget.onBack();
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() {
           _state = _ReportDetailState.loaded;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = null;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not reassign report. Try again.'),
+          ),
+        );
       }
     }
   }
@@ -333,12 +376,15 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         const SnackBar(content: Text('Report moved to recycle bin')),
       );
       widget.onBack();
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
       setState(() {
         _state = _ReportDetailState.loaded;
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _errorMessage = null;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not delete report. Try again.')),
+      );
     }
   }
 
@@ -428,6 +474,51 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: widget.onBack,
         ),
+        actions: [
+          if (_report != null && _state == _ReportDetailState.loaded) ...[
+            IconButton(
+              key: const Key('report-detail-delete'),
+              tooltip: 'Delete report',
+              onPressed: _onDeleteReport,
+              icon: Icon(
+                Icons.delete_outline,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            PopupMenuButton<_ReportAction>(
+              key: const Key('report-detail-more-actions'),
+              tooltip: 'More report actions',
+              onSelected: _onReportAction,
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: _ReportAction.attempts,
+                  child: ListTile(
+                    leading: Icon(Icons.history),
+                    title: Text('Attempt history'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: _ReportAction.compare,
+                  child: ListTile(
+                    leading: Icon(Icons.show_chart),
+                    title: Text('Compare reports'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                if (_profiles.any((p) => p.id != _report!.profileId))
+                  const PopupMenuItem(
+                    value: _ReportAction.reassign,
+                    child: ListTile(
+                      leading: Icon(Icons.swap_horiz),
+                      title: Text('Reassign to profile'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
       ),
       body: Column(
         children: [
@@ -482,7 +573,14 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     if (_state == _ReportDetailState.loading) {
       return const Center(
         key: Key('report-detail-loading'),
-        child: CircularProgressIndicator(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 20),
+            Text('Loading report results…', textAlign: TextAlign.center),
+          ],
+        ),
       );
     }
     if (_state == _ReportDetailState.error) {
@@ -581,6 +679,22 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            key: const Key('report-detail-view-pdf'),
+            onPressed: _openPdf,
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            label: const Text('View original'),
+          ),
+          if (report.parsedTranscript?.trim().isNotEmpty == true) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              key: const Key('report-detail-open-parsed-reader'),
+              onPressed: _openParsedReportReader,
+              icon: const Icon(Icons.menu_book_outlined),
+              label: const Text('Read parsed report'),
+            ),
+          ],
           if (report.status == 'uploading' ||
               report.status == 'queued' ||
               report.status == 'parsing') ...[
@@ -699,86 +813,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 ),
               ),
             ),
-          ],
-          const SizedBox(height: 16),
-          _SectionCard(
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                FilledButton.icon(
-                  key: const Key('report-detail-view-pdf'),
-                  onPressed: _openPdf,
-                  icon: const Icon(Icons.picture_as_pdf),
-                  label: const Text('View original'),
-                ),
-                OutlinedButton.icon(
-                  key: const Key('report-detail-view-attempts'),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => ProcessingHistoryScreen(
-                        reportId: report.id,
-                        reportsRepository: widget.reportsRepository,
-                      ),
-                    ),
-                  ),
-                  icon: const Icon(Icons.history),
-                  label: const Text('Attempt history'),
-                ),
-                OutlinedButton.icon(
-                  key: const Key('report-detail-health-history'),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => HealthHistoryScreen(
-                        profileId: widget.profileId,
-                        reportsRepository: widget.reportsRepository,
-                        profilesRepository: widget.profilesRepository,
-                      ),
-                    ),
-                  ),
-                  icon: const Icon(Icons.show_chart),
-                  label: const Text('Compare reports'),
-                ),
-                OutlinedButton.icon(
-                  key: const Key('report-detail-delete'),
-                  onPressed: _onDeleteReport,
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('Delete'),
-                ),
-                if (report.parsedTranscript != null &&
-                    report.parsedTranscript!.trim().isNotEmpty)
-                  FilledButton.tonalIcon(
-                    key: const Key('report-detail-open-parsed-reader'),
-                    onPressed: _openParsedReportReader,
-                    icon: const Icon(Icons.menu_book_outlined),
-                    label: const Text('Read Parsed Report'),
-                  ),
-              ],
-            ),
-          ),
-          if (_profiles.where((p) => p.id != widget.profileId).isNotEmpty) ...[
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              key: const Key('report-detail-reassign'),
-              onPressed: _showReassignDialog,
-              icon: const Icon(Icons.swap_horiz),
-              label: const Text('Reassign to profile'),
-            ),
-            if (_errorMessage != null &&
-                report.status != 'unparsed' &&
-                report.status != 'content_not_recognized' &&
-                report.status != 'failed_transient' &&
-                report.status != 'failed_terminal') ...[
-              const SizedBox(height: 8),
-              Text(
-                _errorMessage!,
-                key: const Key('report-detail-reassign-error'),
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-                textAlign: TextAlign.center,
-              ),
-            ],
           ],
           if (report.status == 'unparsed' ||
               report.status == 'content_not_recognized' ||
@@ -1031,9 +1065,12 @@ class _ResultCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 if (result.reviewState == 'needs_review') ...[
                   Text(
-                    result.sourceSnapshot?['rangeSource'] == 'ai_suggestion'
-                        ? 'Range interpreted by AI during processing. Check the original report.'
-                        : 'Automatic interpretation is unavailable for this test or unit.',
+                    result.reviewVersion == 0 &&
+                            result.sourceSnapshot?['valueSource'] == 'ai_suggestion'
+                        ? 'Value checked by AI during processing. Original OCR: ${result.sourceSnapshot?['originalValue']}. Confirm it against the report.'
+                        : result.sourceSnapshot?['rangeSource'] == 'ai_suggestion'
+                            ? 'Range interpreted by AI during processing. Check the original report.'
+                            : 'Check this result against the original report before relying on it.',
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -1080,6 +1117,26 @@ class _ResultCard extends StatelessWidget {
                       ),
                   ],
                 ),
+                if (position == RangePosition.unknown) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    unavailableRangeReason(result),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+                if (position != RangePosition.unknown &&
+                    preferredPrintedRange(result.referenceRange ?? '') !=
+                        null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Compared with the preferred category printed by the lab; confirm it applies to you.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 10),
                 Text(
                   'Understand this result  →',

@@ -96,6 +96,67 @@ void main() {
     );
   });
 
+  test('explicit preferred categories can be compared without guessing', () {
+    const cholesterol = ExtractedLabValue(
+      parameterName: 'Total Cholesterol',
+      value: '172',
+      unit: 'mg/dL',
+      referenceRange: 'Adult Desirable: <200 Borderline: 200-239 High: >239',
+    );
+    expect(compareWithPrintedRange(cholesterol), RangePosition.within);
+    expect(
+      compareWithPrintedRange(
+        const ExtractedLabValue(
+          parameterName: 'Triglycerides',
+          value: '77.1',
+          unit: 'mg/dL',
+          referenceRange: 'Normal: <161 High: 161-199 Very High: 200-499',
+        ),
+      ),
+      RangePosition.within,
+    );
+    expect(
+      preferredPrintedRange('Normal: <161 Desirable: <150 High: >199'),
+      isNull,
+    );
+    expect(
+      compareWithPrintedRange(
+        const ExtractedLabValue(
+          parameterName: 'Total Cholesterol',
+          value: '172',
+          unit: 'mg/dL',
+          referenceRange: 'Adult Desirable: <200 High: >239',
+          isAbnormal: true,
+        ),
+      ),
+      RangePosition.unknown,
+    );
+  });
+
+  testWidgets(
+    'conflicting saved flag explains why a preferred range is unclear',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ResultInsightScreen(
+            result: const ExtractedLabValue(
+              parameterName: 'Triglycerides',
+              value: '77.1',
+              unit: 'mg/dL',
+              referenceRange: 'Normal: <161 High: 161-199 Very High: 200-499',
+              isAbnormal: true,
+            ),
+            loadInsight: () async => insight,
+            onViewTrend: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('lab flag conflicts'), findsOneWidget);
+      expect(find.textContaining('This comparison uses'), findsNothing);
+    },
+  );
+
   test('display dates use DD-MMM-YYYY without shifting date-only values', () {
     expect(AppDateFormat.fromRaw('2026-10-17'), '17-Oct-2026');
     expect(AppDateFormat.date(DateTime(2026, 1, 2)), '02-Jan-2026');

@@ -51,6 +51,16 @@ function categoryCandidates(raw: string): string[] {
   return candidates.every(validSuggestedRange) ? candidates : [];
 }
 
+export function preferredPrintedRange(raw: string): string | null {
+  if (categoryCandidates(raw).length === 0) return null;
+  const preferred = raw.match(
+    /(?:Adult\s+)?(?:Desirable|Normal|Optimal)\s*:\s*((?:<=|>=|<|>|≤|≥)?\s*\d{1,5}(?:\.\d{1,6})?(?:\s*[-–—]\s*\d{1,5}(?:\.\d{1,6})?)?)/gi,
+  );
+  if (preferred?.length !== 1) return null;
+  const range = preferred[0].split(':')[1].trim();
+  return validSuggestedRange(range) ? range : null;
+}
+
 export function validSuggestedRange(value: unknown): boolean {
   if (typeof value !== 'string' || value.length > 64) return false;
   const number = '-?\\d{1,5}(?:\\.\\d{1,6})?';

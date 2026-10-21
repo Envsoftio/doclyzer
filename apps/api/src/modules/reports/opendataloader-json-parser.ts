@@ -593,6 +593,12 @@ export class OpenDataLoaderJsonParser {
           /^(?:[<>]=?|[≤≥])?\s*[-+]?(?:(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|\d+,\d+)$/.test(
             cleanedValue,
           );
+        // Keep short numeric OCR lookalikes so the processing fallback can
+        // check them; do not turn them into numbers here.
+        const unclearNumeric =
+          !numeric &&
+          /^(?:[<>]=?|[≤≥])?\s*[-+]?[\dOoIl][\dOoIl.,]{0,30}$/.test(cleanedValue) &&
+          /\d/.test(cleanedValue);
         const qualitative =
           /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale yellow|yellow|amber|straw|non[- ]?reactive|reactive|detected|not detected|no growth|sterile|[ABO]|AB|(?:[ABO]|AB)\s*[+-]|(?:rh\s*)?(?:positive|negative)|["'](?:[ABO]|AB)["']|(?:present|positive)\s*\([+]{1,4}\))$/i.test(
             cleanedValue,
@@ -616,6 +622,7 @@ export class OpenDataLoaderJsonParser {
           /^[a-z][a-z ,().-]+$/i.test(cleanedValue);
         if (
           !numeric &&
+          !unclearNumeric &&
           !qualitative &&
           !nonScalar &&
           !descriptive &&
@@ -626,7 +633,7 @@ export class OpenDataLoaderJsonParser {
         const isAbnormal =
           flag && flag !== '*'
             ? true
-            : !numeric || /^[<>≤≥]/.test(value) || /,/.test(value)
+            : !numeric || unclearNumeric || /^[<>≤≥]/.test(value) || /,/.test(value)
               ? undefined
               : this.evaluateAbnormal(value, c4);
         if (!sections.has(currentSection)) sections.set(currentSection, []);

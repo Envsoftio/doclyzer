@@ -138,6 +138,17 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                     ),
                     const SizedBox(height: 10),
                   ],
+                  if (position != RangePosition.unknown &&
+                      preferredPrintedRange(result.referenceRange ?? '') !=
+                          null) ...[
+                    Text(
+                      'This comparison uses the preferred category printed by the lab. Check that the category applies to you.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   if (result.sourceSnapshot?['rangeSource'] ==
                       'ai_suggestion') ...[
                     Text(
