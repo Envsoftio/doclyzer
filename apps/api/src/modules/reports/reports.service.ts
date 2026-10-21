@@ -15,6 +15,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { createHash, randomUUID } from 'node:crypto';
 import { In, IsNull, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
 import { isUUID } from 'class-validator';
@@ -32,7 +33,10 @@ import { ProfilesService } from '../profiles/profiles.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
 import { PaddleOcrClient } from './paddle-ocr.client';
-import { extractAutoImageLabRows, type AutoImageLabRow } from './geometry/image-auto-parser';
+import {
+  extractAutoImageLabRows,
+  type AutoImageLabRow,
+} from './geometry/image-auto-parser';
 import { DoclingOcrClient } from './docling-ocr.client';
 import { ImageToPdfService } from './image-to-pdf.service';
 import { buildLabTrends, type TrendParameter } from './lab-trend-builder';
@@ -244,6 +248,7 @@ export class ReportsService {
     private readonly notificationPipeline: NotificationPipelineService,
     private readonly imageToPdfService: ImageToPdfService,
     private readonly referralsService: ReferralsService,
+    private readonly configService: ConfigService,
   ) {
     this.labExtractor = new LabValueExtractor();
   }
@@ -284,7 +289,9 @@ export class ReportsService {
     options?: { duplicateAction?: 'upload_anyway' },
     correlationId?: string,
   ): Promise<UploadReportResult> {
-    if (process.env.REPORT_ASYNC_RUNTIME_ENABLED !== 'false')
+    if (
+      this.configService.get<string>('REPORT_ASYNC_RUNTIME_ENABLED') !== 'false'
+    )
       throw new ConflictException({
         code: 'REPORT_CLIENT_UPGRADE_REQUIRED',
         message:
@@ -603,21 +610,39 @@ export class ReportsService {
     opendataloaderJson: unknown,
   ) {
     const status: ReportStatus = 'parsed';
-    const autoImageRows = source === 'image'
-      ? ((opendataloaderJson as { autoImageLabRows?: AutoImageLabRow[] } | null)?.autoImageLabRows ?? [])
-      : [];
-    const autoLabValues: StructuredReportLabInput[] = autoImageRows.map((row) => ({
-      parameterName: row.parameterName, value: row.value, unit: row.unit,
-      sampleDate: null, referenceRange: row.referenceRange, isAbnormal: null,
+    const autoImageRows =
+      source === 'image'
+        ? ((
+            opendataloaderJson as {
+              autoImageLabRows?: AutoImageLabRow[];
+            } | null
+          )?.autoImageLabRows ?? [])
+        : [];
+    const autoPdfRows =
+      source === 'pdf'
+        ? ((opendataloaderJson as { autoPdfLabRows?: AutoImageLabRow[] } | null)
+            ?.autoPdfLabRows ?? [])
+        : [];
+    const autoLabValues: StructuredReportLabInput[] = [
+      ...autoImageRows,
+      ...autoPdfRows,
+    ].map((row) => ({
+      parameterName: row.parameterName,
+      value: row.value,
+      unit: row.unit,
+      sampleDate: null,
+      referenceRange: row.referenceRange,
+      isAbnormal: null,
     }));
-    const parsedFromJson = opendataloaderJson && !autoLabValues.length
-      ? await this.extractLabValuesFromOdlJsonWithFallback({
-          opendataloaderJson,
-          reportId,
-          trigger: 'upload',
-          transcript,
-        })
-      : null;
+    const parsedFromJson =
+      opendataloaderJson && !autoLabValues.length
+        ? await this.extractLabValuesFromOdlJsonWithFallback({
+            opendataloaderJson,
+            reportId,
+            trigger: 'upload',
+            transcript,
+          })
+        : null;
     const transcriptLabValuesRaw = transcript
       ? this.toStructuredLabInputs(this.labExtractor.extract(transcript))
       : [];
@@ -629,12 +654,14 @@ export class ReportsService {
     );
     let labValues = autoLabValues.length
       ? autoLabValues
-      : parsedFromJson?.hasMappedLabTables || (source === 'image' && jsonLabValues.length > 0)
+      : parsedFromJson?.hasMappedLabTables ||
+          (source === 'image' && jsonLabValues.length > 0)
         ? jsonLabValues
         : this.selectBestLabValues(jsonLabValues, transcriptLabValues);
     const extractionSource = autoLabValues.length
       ? 'paddleocr_geometry'
-      : parsedFromJson?.hasMappedLabTables || (source === 'image' && jsonLabValues.length > 0)
+      : parsedFromJson?.hasMappedLabTables ||
+          (source === 'image' && jsonLabValues.length > 0)
         ? 'odl_json'
         : jsonLabValues.length > 0 && transcriptLabValues.length > 0
           ? 'merged_extractors'
@@ -647,7 +674,9 @@ export class ReportsService {
       status,
       transcript,
       labValues,
-      autoLabValues.length ? false : (parsedFromJson?.extractionReview.required ?? true),
+      autoLabValues.length
+        ? false
+        : (parsedFromJson?.extractionReview.required ?? true),
     );
     const preserveDetailsForReview =
       finalStatus === 'content_not_recognized' &&
@@ -668,11 +697,20 @@ export class ReportsService {
         finalStatus === 'parsed' ? labValues : [],
       ).sections;
       structuredReport.extractionReview = autoLabValues.length
-        ? { required: false, candidateRows: labValues.length, parsedRows: labValues.length, reasons: [] }
-        : parsedFromJson?.extractionReview ?? {
-            required: true, candidateRows: 0, parsedRows: labValues.length,
-            reasons: ['Results came from text without verifiable table coverage.'],
-          };
+        ? {
+            required: false,
+            candidateRows: labValues.length,
+            parsedRows: labValues.length,
+            reasons: [],
+          }
+        : (parsedFromJson?.extractionReview ?? {
+            required: true,
+            candidateRows: 0,
+            parsedRows: labValues.length,
+            reasons: [
+              'Results came from text without verifiable table coverage.',
+            ],
+          });
     }
 
     const persistedLabValues = finalStatus === 'parsed' ? labValues : [];
@@ -882,15 +920,17 @@ export class ReportsService {
         where: { id: reportId, userId, deletedAt: IsNull() },
         lock: { mode: 'pessimistic_write' },
       });
-      if (!report)
-        throw new ReportNotFoundException();
+      if (!report) throw new ReportNotFoundException();
       const labRepo = manager.getRepository(ReportLabValueEntity);
       const row = await labRepo.findOne({
         where: { id: labValueId, reportId },
         lock: { mode: 'pessimistic_write' },
       });
       if (!row) throw new ReportNotFoundException();
-      if (report.status !== 'parsed' && row.extractionSource !== 'paddleocr_vl_review')
+      if (
+        report.status !== 'parsed' &&
+        row.extractionSource !== 'paddleocr_vl_review'
+      )
         throw new ReportNotFoundException();
       if (row.reviewVersion !== input.expectedVersion) {
         throw new ConflictException({
@@ -1159,7 +1199,7 @@ export class ReportsService {
     const entity = await this.getActiveReportOrThrow(userId, reportId);
     if (
       entity.processingGeneration > 0 ||
-      process.env.REPORT_ASYNC_RUNTIME_ENABLED !== 'false'
+      this.configService.get<string>('REPORT_ASYNC_RUNTIME_ENABLED') !== 'false'
     )
       throw new ConflictException({
         code: 'REPORT_ASYNC_RETRY_REQUIRED',
@@ -1418,12 +1458,10 @@ export class ReportsService {
     initial?: OcrOutput,
     checkpoint?: CascadeCheckpoint,
   ) {
-    return new ReportOcrCascade(this.doclingOcrClient, this.paddleOcrClient).run(
-      buffer,
-      signal,
-      initial,
-      checkpoint,
-    );
+    return new ReportOcrCascade(
+      this.doclingOcrClient,
+      this.paddleOcrClient,
+    ).run(buffer, signal, initial, checkpoint);
   }
 
   async extractImageWithPaddle(
@@ -1431,7 +1469,11 @@ export class ReportsService {
     contentType: 'image/jpeg' | 'image/png',
     signal: AbortSignal,
   ): Promise<OcrOutput & { parsedJson: unknown }> {
-    const visual = await this.paddleOcrClient.parseImage(buffer, contentType, signal);
+    const visual = await this.paddleOcrClient.parseImage(
+      buffer,
+      contentType,
+      signal,
+    );
     signal.throwIfAborted();
     if (!visual) throw new OcrServiceUnavailableError();
     let autoImageLabRows: AutoImageLabRow[] = [];
@@ -1444,11 +1486,20 @@ export class ReportsService {
     return {
       text: visual.text,
       parsedJson: {
-        type: 'document', kids: [], ocrVerificationFailed: !autoEligible,
+        type: 'document',
+        kids: [],
+        ocrVerificationFailed: !autoEligible,
         autoImageLabRows,
         unresolvedPages: autoEligible ? [] : [1],
-        reviewPages: { '1': { native: { text: '', parsedJson: { type: 'document', kids: [] } },
-          visual, reason: autoEligible ? 'geometry_auto_eligible' : 'source_review_required' } },
+        reviewPages: {
+          '1': {
+            native: { text: '', parsedJson: { type: 'document', kids: [] } },
+            visual,
+            reason: autoEligible
+              ? 'geometry_auto_eligible'
+              : 'source_review_required',
+          },
+        },
       },
     };
   }
@@ -1993,7 +2044,8 @@ export class ReportsService {
     transcript: string | null,
   ): StructuredReportDto {
     const fromTranscript = this.extractPatientDetails(transcript);
-    const labFromTranscript = this.labDetailsExtractor.extractFromTranscript(transcript);
+    const labFromTranscript =
+      this.labDetailsExtractor.extractFromTranscript(transcript);
     const baseRaw = structuredReport.patientDetails ?? {};
     const base: StructuredPatientDetailsDto = {
       ...(baseRaw.name && !baseRaw.name.startsWith('#/')
@@ -2016,7 +2068,12 @@ export class ReportsService {
     return {
       ...structuredReport,
       ...(this.hasLabDetails(labFromTranscript)
-        ? { labDetails: { ...structuredReport.labDetails, ...labFromTranscript } }
+        ? {
+            labDetails: {
+              ...structuredReport.labDetails,
+              ...labFromTranscript,
+            },
+          }
         : {}),
       patientDetails: {
         ...base,
@@ -2742,14 +2799,24 @@ export class ReportsService {
       return undefined;
     };
     const name =
-      lines.map(line => line.match(/^(?:\|\s*)?(?:Patient\s+)?Name\s*(?:\|\s*)?:\s*([^|]+?)(?=\||\s+(?:Client|Ref(?:erred)?|Sex|Age|Registration|Lab\s+Id)\b|$)/i)?.[1]?.trim()).find(Boolean) ??
+      lines
+        .map((line) =>
+          line
+            .match(
+              /^(?:\|\s*)?(?:Patient\s+)?Name\s*(?:\|\s*)?:\s*([^|]+?)(?=\||\s+(?:Client|Ref(?:erred)?|Sex|Age|Registration|Lab\s+Id)\b|$)/i,
+            )?.[1]
+            ?.trim(),
+        )
+        .find(Boolean) ??
       read(
         /Patient Name\s*:\s*([^|]+?)(?:\s{2,}|Age\/Gender|Barcode|Order Id|$)/i,
       ) ??
       readNextLineValue(/^patient name$/i) ??
       read(/\bDear\s+([A-Za-z][A-Za-z ]{1,60})[,!]/i);
     const ageGender =
-      lines.find(line => /\b(?:Sex\s*\/\s*Age|Age\s*\/\s*Sex)\b/i.test(line)) ??
+      lines.find((line) =>
+        /\b(?:Sex\s*\/\s*Age|Age\s*\/\s*Sex)\b/i.test(line),
+      ) ??
       read(/Age\/Gender\s*:\s*([^|]+?)(?:\s{2,}|Order Id|$)/i) ??
       readNextLineValue(/^age\/gender$/i) ??
       read(
@@ -2764,7 +2831,9 @@ export class ReportsService {
       readNextLineValue(/^booking id$/i) ??
       readNextLineValue(/^lab accession id$/i);
     const sampleCollectionDate =
-      read(/Collected\s+(?:On|Date)\s*:\s*(\d{1,2}[-/](?:[A-Za-z]{3}|\d{1,2})[-/]\d{4})/i) ??
+      read(
+        /Collected\s+(?:On|Date)\s*:\s*(\d{1,2}[-/](?:[A-Za-z]{3}|\d{1,2})[-/]\d{4})/i,
+      ) ??
       read(
         /Sample Collection Date\s*:\s*([0-9]{1,2}\/[A-Za-z]{3}\/[0-9]{4})/i,
       ) ??

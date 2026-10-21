@@ -61,36 +61,48 @@ class _Profiles extends Fake implements ProfilesRepository {
 }
 
 void main() {
-  testWidgets('long lab data fits a narrow report detail screen', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(320, 700);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  for (final width in [320.0, 375.0, 430.0]) {
+    for (final textScale in [1.0, 2.0]) {
+      testWidgets('long lab data fits ${width.toInt()}px at ${textScale}x text', (
+        tester,
+      ) async {
+        tester.view.physicalSize = Size(width, 700);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: ReportDetailScreen(
-          reportsRepository: _Reports(),
-          profilesRepository: _Profiles(),
-          reportId: 'report',
-          profileId: 'profile',
-          onBack: () {},
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(
-      find.byKey(const Key('report-detail-lab-values')),
-    );
-    await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MediaQuery(
+              data: MediaQueryData(
+                size: Size(width, 700),
+                textScaler: TextScaler.linear(textScale),
+              ),
+              child: ReportDetailScreen(
+                reportsRepository: _Reports(),
+                profilesRepository: _Profiles(),
+                reportId: 'report',
+                profileId: 'profile',
+                onBack: () {},
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(
+          find.byKey(const Key('report-detail-lab-values')),
+        );
+        await tester.pumpAndSettle();
 
-    expect(tester.takeException(), isNull);
-    expect(find.text('Range unclear'), findsOneWidget);
-    await tester.tap(find.text('Range unclear'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('result-insight-hero')), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+        expect(tester.takeException(), isNull);
+        expect(find.text('Range unclear'), findsOneWidget);
+        await tester.ensureVisible(find.text('Range unclear'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Range unclear'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('result-insight-hero')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
 }

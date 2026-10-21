@@ -53,17 +53,19 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
     try {
       await widget.dataRightsRepository.restoreClosure();
       if (widget.onAccountRestored != null) await widget.onAccountRestored!();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _closureRequest = null;
           _closureLoading = false;
         });
+      }
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _closureLoading = false;
           _closureError = error.toString();
         });
+      }
     }
   }
 

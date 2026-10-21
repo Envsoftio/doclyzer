@@ -1025,11 +1025,13 @@ class _ResultCard extends StatelessWidget {
                             color: palette.foreground,
                           ),
                           const SizedBox(width: 5),
-                          Text(
-                            status,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: palette.foreground,
-                              fontWeight: FontWeight.w700,
+                          Flexible(
+                            child: Text(
+                              status,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: palette.foreground,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ],

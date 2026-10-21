@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../shared/app_date_format.dart';
 
 import '../sessions_repository.dart';
@@ -114,60 +115,117 @@ class _SessionListScreenState extends State<SessionListScreen> {
                       ),
                     ),
                   Expanded(
-                    child: ListView.builder(
+                    child: ListView.separated(
                       itemCount: _sessions.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: AppSpacing.md),
                       itemBuilder: (context, index) {
                         final session = _sessions[index];
+                        final colors = Theme.of(context).colorScheme;
+                        final textTheme = Theme.of(context).textTheme;
                         return Card(
                           key: Key('session-item-${session.sessionId}'),
+                          color: session.isCurrent
+                              ? colors.primaryContainer.withValues(alpha: 0.35)
+                              : colors.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppSpacing.cardRadius,
+                            ),
+                            side: BorderSide(
+                              color: session.isCurrent
+                                  ? colors.primary.withValues(alpha: 0.4)
+                                  : colors.outlineVariant,
+                            ),
+                          ),
                           child: Padding(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(AppSpacing.md),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (session.isCurrent)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Chip(
-                                      label: const Text('Current'),
-                                      key: Key(
-                                        'session-current-${session.sessionId}',
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: colors.primary.withValues(
+                                          alpha: 0.10,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        Icons.devices_outlined,
+                                        color: colors.primary,
                                       ),
                                     ),
-                                  ),
+                                    const SizedBox(width: AppSpacing.md),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            session.isCurrent
+                                                ? 'This device'
+                                                : 'Signed-in device',
+                                            style: textTheme.titleMedium,
+                                          ),
+                                          if (session.isCurrent) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Current session',
+                                              key: Key(
+                                                'session-current-${session.sessionId}',
+                                              ),
+                                              style: textTheme.labelMedium
+                                                  ?.copyWith(
+                                                    color: colors.primary,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: AppSpacing.md),
                                 Text(
-                                  session.userAgent,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  session.userAgent.isEmpty
+                                      ? 'Unknown device'
+                                      : session.userAgent,
+                                  style: textTheme.bodyMedium,
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  'IP address: ${session.ip.isEmpty ? 'Unknown' : session.ip}',
+                                  style: textTheme.bodySmall,
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  session.ip,
-                                  style: Theme.of(context).textTheme.bodySmall,
+                                  'Signed in: ${AppDateFormat.dateTimeFromRawWithRelative(session.createdAt)}',
+                                  style: textTheme.bodySmall,
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  AppDateFormat.dateTimeFromRawWithRelative(
-                                    session.createdAt,
-                                  ),
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                                const SizedBox(height: 8),
-                                TextButton(
-                                  key: Key(
-                                    'session-revoke-${session.sessionId}',
-                                  ),
-                                  onPressed: () => _showRevokeConfirm(session),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Theme.of(
-                                      context,
-                                    ).colorScheme.error,
-                                  ),
-                                  child: Text(
-                                    session.isCurrent
-                                        ? 'Revoke (Logout)'
-                                        : 'Revoke',
+                                const Divider(height: AppSpacing.lg),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton.icon(
+                                    key: Key(
+                                      'session-revoke-${session.sessionId}',
+                                    ),
+                                    onPressed: () =>
+                                        _showRevokeConfirm(session),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: colors.error,
+                                    ),
+                                    icon: const Icon(Icons.logout, size: 18),
+                                    label: Text(
+                                      session.isCurrent
+                                          ? 'Revoke and log out'
+                                          : 'Revoke session',
+                                    ),
                                   ),
                                 ),
                               ],

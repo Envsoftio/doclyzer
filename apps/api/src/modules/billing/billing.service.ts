@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { createHash, randomUUID } from 'node:crypto';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
@@ -196,8 +197,7 @@ type PromoFinancialAnalyticsSummary = Pick<
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
   private readonly EXPORT_ROW_CAP = 1000;
-  private readonly PROMO_RESERVATION_TIMEOUT_MINUTES =
-    this.resolvePromoReservationTimeoutMinutes();
+  private readonly PROMO_RESERVATION_TIMEOUT_MINUTES: number;
 
   constructor(
     @InjectRepository(BillingProviderEventEntity)
@@ -221,7 +221,11 @@ export class BillingService {
     private readonly entitlementsService: EntitlementsService,
     private readonly referralsService: ReferralsService,
     private readonly notificationPipeline: NotificationPipelineService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.PROMO_RESERVATION_TIMEOUT_MINUTES =
+      this.resolvePromoReservationTimeoutMinutes();
+  }
 
   async listCreditPacks(): Promise<CreditPackResponseDto[]> {
     const packs = await this.creditPackRepo.find({
@@ -2607,7 +2611,9 @@ export class BillingService {
   }
 
   private resolvePromoReservationTimeoutMinutes(): number {
-    const raw = process.env.BILLING_PROMO_RESERVATION_TIMEOUT_MINUTES;
+    const raw = this.configService.get<string>(
+      'BILLING_PROMO_RESERVATION_TIMEOUT_MINUTES',
+    );
     const parsed = raw ? parseInt(raw, 10) : NaN;
     if (Number.isFinite(parsed) && parsed > 0) {
       return parsed;

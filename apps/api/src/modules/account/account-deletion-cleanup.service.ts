@@ -4,6 +4,7 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AccountService } from './account.service';
 
 @Injectable()
@@ -13,14 +14,14 @@ export class AccountDeletionCleanupService
   private readonly logger = new Logger(AccountDeletionCleanupService.name);
   private timer: NodeJS.Timeout | null = null;
 
-  constructor(private readonly accounts: AccountService) {}
+  constructor(
+    private readonly accounts: AccountService,
+    private readonly configService: ConfigService,
+  ) {}
 
   onModuleInit(): void {
-    if (
-      process.env.REPORT_PROCESS_ROLE &&
-      process.env.REPORT_PROCESS_ROLE !== 'api'
-    )
-      return;
+    const role = this.configService.get<string>('REPORT_PROCESS_ROLE');
+    if (role && role !== 'api') return;
     this.timer = setInterval(() => void this.run(), 60 * 60 * 1000);
     this.timer.unref?.();
     void this.run();

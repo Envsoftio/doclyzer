@@ -5,6 +5,8 @@ import { OpenDataLoaderJsonParser } from './opendataloader-json-parser';
 import { DoclingOcrClient } from './docling-ocr.client';
 import { PaddleOcrClient } from './paddle-ocr.client';
 import { comparisonNotation } from './lab-method-notation';
+import { extractPdfResultColumn } from './pdf-result-column';
+import type { PaddlePageOutput } from './paddle-ocr.client';
 
 type Node = Record<string, unknown>;
 export interface OcrOutput {
@@ -235,6 +237,7 @@ export class ReportOcrCascade {
       string,
       { native: OcrOutput; visual: OcrOutput | null; reason: string }
     > = {};
+    const visualPages: Array<PaddlePageOutput | null> = [];
     for (let index = 0; index < count; index++) {
       signal.throwIfAborted();
       const page = index + 1;
@@ -249,6 +252,7 @@ export class ReportOcrCascade {
         nativeCandidate.candidates === 0 &&
         !nativeCandidate.nodes.some((n) => n.type === 'table') &&
         nativePage.text.trim().length > 80 &&
+        !/[\uE000-\uF8FF]/u.test(nativePage.text) &&
         !/\b(result|observed value|investigation|analyte|test name)\b/i.test(
           nativePage.text,
         );
@@ -270,6 +274,7 @@ export class ReportOcrCascade {
         );
         const output =
           cached ?? (await this.paddle.parsePdf(pageBytes, signal));
+        visualPages.push(output as PaddlePageOutput | null);
         signal.throwIfAborted();
         if (!output) {
           unavailablePages++;
@@ -315,6 +320,7 @@ export class ReportOcrCascade {
           };
         signal.throwIfAborted();
       }
+      else visualPages.push(null);
       if (!chosen) {
         failedPages.push(page);
         // Preserve source evidence for review without publishing partial rows.
@@ -341,6 +347,21 @@ export class ReportOcrCascade {
     // was recovered. Isolated failures remain explicit review pages.
     if (unavailablePages > 0 && successfulVisualPages === 0)
       throw new OcrServiceUnavailableError();
+    // A document with a visibly headed result column can contain legitimate
+    // blank interim rows and explanatory charts. Verify its actual printed
+    // observations directly against page OCR before requiring manual review.
+    const autoPdfLabRows = failedPages.length === count
+      ? extractPdfResultColumn(visualPages)
+      : [];
+    if (autoPdfLabRows.length) {
+      return {
+        text: visualPages.map((page) => page?.text ?? '').join('\n\n'),
+        parsedJson: {
+          type: 'document', kids: [], autoPdfLabRows,
+          ocrVerificationFailed: false, unresolvedPages: [], reviewPages,
+        },
+      };
+    }
     this.log.log(
       JSON.stringify({
         action: 'REPORT_OCR_CASCADE_COMPLETE',

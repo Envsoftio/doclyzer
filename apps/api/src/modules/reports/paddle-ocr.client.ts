@@ -43,13 +43,20 @@ export class PaddleOcrClient {
     if (!base || !key || buffer.length > 10 * 1024 * 1024) return null;
     const dispatcher = new Agent({ headersTimeout: timeout, bodyTimeout: timeout });
     try {
-      const response = await fetch(`${base.replace(/\/+$/, '')}/v1/extract/page`, {
-        method: 'POST',
-        headers: { 'content-type': contentType, 'x-api-key': key },
-        body: new Uint8Array(buffer),
-        signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(timeout)]) : AbortSignal.timeout(timeout),
-        dispatcher,
-      } as RequestInit & { dispatcher: Agent });
+      let response: Response | null = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        response = await fetch(`${base.replace(/\/+$/, '')}/v1/extract/page`, {
+          method: 'POST',
+          headers: { 'content-type': contentType, 'x-api-key': key },
+          body: new Uint8Array(buffer),
+          signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(timeout)]) : AbortSignal.timeout(timeout),
+          dispatcher,
+        } as RequestInit & { dispatcher: Agent });
+        if (response.ok || ![502, 503, 504].includes(response.status)) break;
+        this.log.warn(`PADDLE_OCR_PAGE_RETRY status=${response.status}`);
+        await response.body?.cancel();
+      }
+      if (!response) return null;
       if (!response.ok) {
         this.log.warn(`PADDLE_OCR_PAGE_FAILED status=${response.status}`);
         return null;

@@ -4,6 +4,7 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { redactSecrets } from '../../common/redact-secrets';
 import { ReportsService } from './reports.service';
 
@@ -15,10 +16,14 @@ export class ReportsRecycleBinCleanupService
   private timer: NodeJS.Timeout | null = null;
   private static readonly RUN_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
-  constructor(private readonly reportsService: ReportsService) {}
+  constructor(
+    private readonly reportsService: ReportsService,
+    private readonly configService: ConfigService,
+  ) {}
 
   onModuleInit(): void {
-    if (process.env.REPORT_PROCESS_ROLE && process.env.REPORT_PROCESS_ROLE !== 'api') return;
+    const role = this.configService.get<string>('REPORT_PROCESS_ROLE');
+    if (role && role !== 'api') return;
     this.timer = setInterval(() => {
       void this.runOnce();
     }, ReportsRecycleBinCleanupService.RUN_INTERVAL_MS);
