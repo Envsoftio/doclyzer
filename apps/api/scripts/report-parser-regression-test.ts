@@ -543,6 +543,58 @@ check('Unmapped tables are reported alongside mapped lab rows', () => {
   assert.equal(result.extractedLabValues.length, 1);
   assert.equal(result.diagnostics.hasUnmappedTables, true);
 });
+check('Patient metadata tables do not force review of complete lab results', () => {
+  const result = parser.parseWithDiagnostics({
+    type: 'document',
+    kids: [
+      table([
+        ['Test Name', 'Result', 'Unit'],
+        ['Glucose', '90', 'mg/dL'],
+      ]).kids[0],
+      table([
+        ['Patient Name', 'Example Person'],
+        ['Age', '42'],
+        ['Lab ID', 'ABC123'],
+      ]).kids[0],
+    ],
+  });
+  assert.equal(result.extractedLabValues.length, 1);
+  assert.equal(result.diagnostics.hasUnmappedTables, false);
+  assert.equal(result.diagnostics.parsedRows, result.diagnostics.candidateRows);
+});
+check('Merged panel titles and reference tables do not create missing results', () => {
+  const panel = 'Complete Blood Count,Sample TypeWHOLE BLOOD';
+  const merged = {
+    type: 'table',
+    rows: [
+      { cells: ['Test Name', 'Result', 'Unit'].map((content) => ({ content })) },
+      { cells: Array.from({ length: 3 }, () => ({ content: panel, ambiguous: true })) },
+      { cells: ['Haemoglobin', '13.3', 'g/dL'].map((content) => ({ content })) },
+    ],
+  };
+  const reference = [
+    table([
+      ['eGFR Range', 'Stage', 'Interpretation'],
+      ['60-89', 'G2', 'Mildly decreased'],
+    ]).kids[0],
+    table([
+      ['Peak Name', 'Retention Time(s)', 'Area', 'Result (Area %)'],
+      ['HbA0', '87.2', '141714', '92.1'],
+    ]).kids[0],
+    table([
+      ['Ist Trimester', '0.18 -2.99'],
+      ['2nd Trimester', '0.11 -3.98'],
+    ]).kids[0],
+  ];
+  const result = parser.parseWithDiagnostics({
+    type: 'document',
+    kids: [merged, ...reference],
+  });
+  assert.equal(result.extractedLabValues.length, 1);
+  assert.equal(result.diagnostics.candidateRows, 1);
+  assert.equal(result.diagnostics.parsedRows, 1);
+  assert.equal(result.diagnostics.hasUnmappedTables, false);
+});
 console.log(`${checks} report parser regression checks passed.`);
 
 async function checkPdfRouting() {
@@ -567,7 +619,10 @@ async function checkPdfRouting() {
         calls.push(true);
         return { text: 'Glucose 90', parsedJson: doc };
       },
-      paddleOcrClient: { parsePdf: () => Promise.resolve(null) },
+      extractImageWithPaddle: () => {
+        calls.push(true);
+        return Promise.resolve({ text: 'Glucose 90', parsedJson: doc });
+      },
       doclingOcrClient: {
         parsePdf: (_: Buffer, options: { forceOcr: boolean }) => {
           calls.push(options.forceOcr);
@@ -581,6 +636,7 @@ async function checkPdfRouting() {
       trigger: string,
       id: string,
       source?: string,
+      imageInput?: { buffer: Buffer; contentType: 'image/png' },
     ): Promise<unknown>;
   };
   await service.parseReportBuffer(Buffer.from('test'), 'upload', 'synthetic');
@@ -600,6 +656,7 @@ async function checkPdfRouting() {
     'upload',
     'synthetic',
     'image',
+    { buffer: Buffer.from('test'), contentType: 'image/png' },
   );
   assert.deepEqual(calls, [false, true], 'Images still require OCR');
   const normalize = (

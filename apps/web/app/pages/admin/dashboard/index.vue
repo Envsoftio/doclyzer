@@ -119,7 +119,7 @@ function formatCount(value: unknown): string {
 }
 
 function formatUsd(value: unknown): string {
-  return typeof value === 'number' ? `$${value.toFixed(4)}` : '-'
+  return typeof value === 'number' ? `$${value.toFixed(8)}` : '-'
 }
 
 function resolveAccountWorkbenchLink(): string {
@@ -247,17 +247,19 @@ onMounted(loadData)
 
       <div class="section insight-usage-section">
         <div class="section-title">
-          Result explanation spend
+          Result AI spend
           <span class="section-link">Usage is event-level; cost is estimated from configured model rates</span>
         </div>
         <div class="card-row">
           <div class="metric-card metric-card--accent"><div class="metric-label">Requests</div><div class="metric-value">{{ formatCount(insightUsage?.totals?.requests) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.providerCalls) }} provider calls</div></div>
           <div class="metric-card"><div class="metric-label">Estimated OpenAI cost</div><div class="metric-value">{{ formatUsd(insightUsage?.totals?.estimatedCostUsd) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.totalTokens) }} tokens</div></div>
+          <div class="metric-card"><div class="metric-label">Unclear range checks</div><div class="metric-value">{{ formatCount(insightUsage?.totals?.rangeRequests) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.rangeTokens) }} tokens</div></div>
+          <div class="metric-card"><div class="metric-label">Estimated range cost</div><div class="metric-value">{{ formatUsd(insightUsage?.totals?.rangeCostUsd) }}</div></div>
         </div>
         <div class="table-wrap">
-          <table class="table"><thead><tr><th>User</th><th>Requests</th><th>Provider calls</th><th>Tokens</th><th>Est. cost</th></tr></thead><tbody>
-            <tr v-for="row in insightUsage?.users ?? []" :key="row.userId"><td><strong>{{ row.displayName || 'Unnamed' }}</strong><br><span class="list-meta">{{ row.email }}</span></td><td>{{ row.requests }}</td><td>{{ row.providerCalls }}</td><td>{{ row.totalTokens }}</td><td>{{ formatUsd(row.estimatedCostUsd) }}</td></tr>
-            <tr v-if="!(insightUsage?.users?.length)"><td colspan="5" class="empty-cell">No result explanations in this period.</td></tr>
+          <table class="table"><thead><tr><th>User</th><th>Requests</th><th>Provider calls</th><th>Tokens</th><th>Est. cost</th><th>Range checks</th><th>Range cost</th></tr></thead><tbody>
+            <tr v-for="row in insightUsage?.users ?? []" :key="row.userId"><td><strong>{{ row.displayName || 'Unnamed' }}</strong><br><span class="list-meta">{{ row.email }}</span></td><td>{{ row.requests }}</td><td>{{ row.providerCalls }}</td><td>{{ row.totalTokens }}</td><td>{{ formatUsd(row.estimatedCostUsd) }}</td><td>{{ row.rangeRequests }}</td><td>{{ formatUsd(row.rangeCostUsd) }}</td></tr>
+            <tr v-if="!(insightUsage?.users?.length)"><td colspan="7" class="empty-cell">No result AI usage in this period.</td></tr>
           </tbody></table>
         </div>
       </div>

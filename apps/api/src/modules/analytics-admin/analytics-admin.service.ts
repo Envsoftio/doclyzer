@@ -104,9 +104,12 @@ export class AnalyticsAdminService {
       .addSelect('COUNT(*)', 'requests').addSelect('COUNT(*) FILTER (WHERE u.cache_hit = false)', 'providerCalls')
       .addSelect('COALESCE(SUM(u.input_tokens), 0)', 'inputTokens').addSelect('COALESCE(SUM(u.output_tokens), 0)', 'outputTokens')
       .addSelect('COALESCE(SUM(u.total_tokens), 0)', 'totalTokens').addSelect('COALESCE(SUM(u.estimated_cost_usd), 0)', 'estimatedCostUsd')
+      .addSelect("COUNT(*) FILTER (WHERE u.cache_key LIKE 'range:%')", 'rangeRequests')
+      .addSelect("COALESCE(SUM(u.total_tokens) FILTER (WHERE u.cache_key LIKE 'range:%'), 0)", 'rangeTokens')
+      .addSelect("COALESCE(SUM(u.estimated_cost_usd) FILTER (WHERE u.cache_key LIKE 'range:%'), 0)", 'rangeCostUsd')
       .leftJoin(UserEntity, 'usr', 'usr.id = u.user_id').where('u.created_at >= :start AND u.created_at <= :end', { start: new Date(query.startDate), end: new Date(query.endDate) })
       .groupBy('u.user_id').addGroupBy('usr.email').addGroupBy('usr.display_name').orderBy('"estimatedCostUsd"', 'DESC').getRawMany();
-    return { users: rows.map((r) => ({ ...r, requests: Number(r.requests), providerCalls: Number(r.providerCalls), inputTokens: Number(r.inputTokens), outputTokens: Number(r.outputTokens), totalTokens: Number(r.totalTokens), estimatedCostUsd: Number(r.estimatedCostUsd) })), totals: rows.reduce((a, r) => ({ requests: a.requests + Number(r.requests), providerCalls: a.providerCalls + Number(r.providerCalls), totalTokens: a.totalTokens + Number(r.totalTokens), estimatedCostUsd: a.estimatedCostUsd + Number(r.estimatedCostUsd) }), { requests: 0, providerCalls: 0, totalTokens: 0, estimatedCostUsd: 0 }) };
+    return { users: rows.map((r) => ({ ...r, requests: Number(r.requests), providerCalls: Number(r.providerCalls), inputTokens: Number(r.inputTokens), outputTokens: Number(r.outputTokens), totalTokens: Number(r.totalTokens), estimatedCostUsd: Number(r.estimatedCostUsd), rangeRequests: Number(r.rangeRequests), rangeTokens: Number(r.rangeTokens), rangeCostUsd: Number(r.rangeCostUsd) })), totals: rows.reduce((a, r) => ({ requests: a.requests + Number(r.requests), providerCalls: a.providerCalls + Number(r.providerCalls), totalTokens: a.totalTokens + Number(r.totalTokens), estimatedCostUsd: a.estimatedCostUsd + Number(r.estimatedCostUsd), rangeRequests: a.rangeRequests + Number(r.rangeRequests), rangeTokens: a.rangeTokens + Number(r.rangeTokens), rangeCostUsd: a.rangeCostUsd + Number(r.rangeCostUsd) }), { requests: 0, providerCalls: 0, totalTokens: 0, estimatedCostUsd: 0, rangeRequests: 0, rangeTokens: 0, rangeCostUsd: 0 }) };
   }
 
   async getCoreProductAnalytics(input: {

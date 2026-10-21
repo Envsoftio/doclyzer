@@ -169,12 +169,12 @@ export class ReportWorkerService {
             signal,
           )
         : await (async () => {
-            // Native PDF conversion stays durably checkpointed.
-            const native = await provider.convert(normalized.buffer, lease, signal, true);
+            // Match the Docling playground's full-document OCR and table pass.
+            const converted = await provider.convert(normalized.buffer, lease, signal);
             if (signal.aborted) throw new ReportLeaseLostError();
-            const progress = await provider.loadCascadeProgress(lease, native.cascadeProgress);
+            const progress = await provider.loadCascadeProgress(lease, converted.cascadeProgress);
             return this.reports.extractWithOcrCascade(
-              normalized.buffer, signal, native,
+              normalized.buffer, signal, converted,
               { progress,
                 save: (page, engine, output) =>
                   provider.saveCascadeCandidate(lease, page, engine, output) },
@@ -193,6 +193,7 @@ export class ReportWorkerService {
         normalized.source,
         result.text,
         result.parsedJson,
+        row.user_id,
       );
       if (signal.aborted) throw new ReportLeaseLostError();
       await jobs.complete(lease, prepared.outcome, prepared.persist);

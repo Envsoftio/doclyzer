@@ -48,15 +48,23 @@ export class DoclingTaskClient {
       'SELECT * FROM report_processing_jobs WHERE id=$1',
       [lease.jobId],
     );
-    if (job.staged_result) return this.outputs(job.staged_result);
     const instance =
-      this.settings.providerInstance + (nativeOnly ? ':native-v1' : '');
-    let taskId: string | null = job.provider_task_id;
-    if (taskId && job.provider_instance_id !== instance) {
+      this.settings.providerInstance +
+      (nativeOnly ? ':native-v1' : ':auto-tableformer-v1');
+    if (job.staged_result && job.provider_instance_id === instance)
+      return this.outputs(job.staged_result);
+    if (job.staged_result && job.provider_instance_id !== instance)
       await this.checkpoint(
         lease,
-        'provider_task_id=NULL,provider_missing_count=0',
+        'staged_result=NULL,provider_task_id=NULL,provider_missing_count=0',
       );
+    let taskId: string | null = job.provider_task_id;
+    if (taskId && job.provider_instance_id !== instance) {
+      if (!job.staged_result)
+        await this.checkpoint(
+          lease,
+          'provider_task_id=NULL,provider_missing_count=0',
+        );
       taskId = null;
     }
     if (!taskId) {
@@ -78,12 +86,17 @@ export class DoclingTaskClient {
       form.append('to_formats', 'md');
       form.append('to_formats', 'json');
       form.append('from_formats', 'pdf');
+      form.append('pipeline', 'standard');
       form.append('do_ocr', String(!nativeOnly));
-      form.append('ocr_preset', 'rapidocr');
+      form.append('force_ocr', 'false');
+      form.append('ocr_preset', 'auto');
+      form.append('pdf_backend', 'docling_parse');
       form.append('do_table_structure', 'true');
+      form.append('table_structure_preset', 'tableformer_v1_accurate');
       form.append('table_mode', 'accurate');
+      form.append('table_cell_matching', 'true');
       form.append('include_images', 'false');
-      form.append('abort_on_error', 'true');
+      form.append('abort_on_error', 'false');
       form.append(
         'document_timeout',
         String(
@@ -183,7 +196,7 @@ export class DoclingTaskClient {
   async saveCascadeCandidate(
     lease: ReportJobLease,
     page: number,
-    engine: 'paddleocr-v5',
+    engine: 'docling-tesseract',
     output: OcrOutput,
   ): Promise<void> {
     const result = await this.db.query(
@@ -202,13 +215,17 @@ export class DoclingTaskClient {
     lease: ReportJobLease,
     legacy?: CascadeProgress,
   ): Promise<CascadeProgress> {
-    const rows: { page_number: number; engine: 'paddleocr-v5'; output: OcrOutput }[] =
-      await this.db.query(
-        `SELECT c.page_number,c.engine,c.output FROM report_ocr_page_checkpoints c
+    const rows: {
+      page_number: number;
+      engine: 'docling-tesseract';
+      output: OcrOutput;
+    }[] = await this.db.query(
+      `SELECT c.page_number,c.engine,c.output FROM report_ocr_page_checkpoints c
          JOIN report_processing_jobs j ON j.id=c.job_id
-         WHERE j.id=$1 AND j.lease_token=$2 AND j.state='leased'`,
-        [lease.jobId, lease.token],
-      );
+         WHERE j.id=$1 AND j.lease_token=$2 AND j.state='leased'
+           AND c.engine='docling-tesseract'`,
+      [lease.jobId, lease.token],
+    );
     const progress: CascadeProgress = { ...legacy };
     for (const row of rows)
       progress[String(row.page_number)] = {

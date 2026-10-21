@@ -222,7 +222,7 @@ async function main() {
       new AbortController().signal,
     );
     assert.equal(submits, 1, 'staged result prevents resubmission');
-    await client.saveCascadeCandidate(lease, 1, 'paddleocr-v5', {
+    await client.saveCascadeCandidate(lease, 1, 'docling-tesseract', {
       text: 'synthetic',
       parsedJson: { type: 'document', kids: [] },
     });
@@ -234,7 +234,7 @@ async function main() {
     const resumedProgress = await client.loadCascadeProgress(lease, resumedOcr.cascadeProgress);
     assert.deepEqual(
       Object.keys(resumedProgress['1'] ?? {}).sort(),
-      ['paddleocr-v5'],
+      ['docling-tesseract'],
     );
     const [afterPage] = await db.query('SELECT staged_result FROM report_processing_jobs WHERE id=$1', [lease.jobId]);
     assert.deepEqual(afterPage.staged_result, checkpoint.staged_result,

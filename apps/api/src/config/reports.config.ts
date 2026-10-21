@@ -79,7 +79,7 @@ export const reportsConfig = registerAs(
       process.env.DOCLING_OCR_TIMEOUT_MS ?? '180000',
       10,
     ),
-    doclingOcrEngine: process.env.DOCLING_OCR_ENGINE ?? 'rapidocr',
+    doclingOcrEngine: process.env.DOCLING_OCR_ENGINE ?? 'auto',
     doclingOcrLanguages:
       process.env.DOCLING_OCR_LANGUAGES?.trim() ||
       (process.env.DOCLING_OCR_ENGINE?.startsWith('tesser') ? 'eng' : ''),

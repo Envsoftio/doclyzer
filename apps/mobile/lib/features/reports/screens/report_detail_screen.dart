@@ -43,9 +43,18 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   String? _errorMessage;
   List<Profile> _profiles = [];
   bool _acknowledging = false;
+  bool _refreshing = false;
+  String? _processingState;
+  int _loadVersion = 0;
 
   void _onProcessingChanged() {
-    if (mounted) _loadReport();
+    if (!mounted) return;
+    final processing = ReportProcessingStore.instance.reports[widget.reportId];
+    if (processing == null) return;
+    final state = '${processing['version']}|${processing['status']}';
+    if (state == _processingState) return;
+    _processingState = state;
+    _loadReport();
   }
 
   @override
@@ -58,6 +67,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   void initState() {
     super.initState();
     ReportProcessingStore.instance.addListener(_onProcessingChanged);
+    final processing = ReportProcessingStore.instance.reports[widget.reportId];
+    if (processing != null) {
+      _processingState = '${processing['version']}|${processing['status']}';
+    }
     _loadReport();
     _loadProfiles();
   }
@@ -74,22 +87,27 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   }
 
   Future<void> _loadReport() async {
+    final version = ++_loadVersion;
     setState(() {
-      _state = _ReportDetailState.loading;
+      if (_report == null) _state = _ReportDetailState.loading;
+      _refreshing = _report != null;
       _errorMessage = null;
     });
     try {
       final report = await widget.reportsRepository.getReport(widget.reportId);
-      if (mounted) {
+      if (mounted && version == _loadVersion) {
         setState(() {
           _report = report;
           _state = _ReportDetailState.loaded;
+          _refreshing = false;
         });
         final store = ReportProcessingStore.instance;
         final processing = store.reports[widget.reportId];
         if (!_acknowledging &&
             report.status == 'parsed' &&
-            processing?['acknowledgedAt'] == null) {
+            processing != null &&
+            processing['status'] == 'ready' &&
+            processing['acknowledgedAt'] == null) {
           _acknowledging = true;
           try {
             await store.acknowledge(widget.reportId);
@@ -101,9 +119,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         }
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && version == _loadVersion) {
         setState(() {
-          _state = _ReportDetailState.error;
+          _state = _report == null
+              ? _ReportDetailState.error
+              : _ReportDetailState.loaded;
+          _refreshing = false;
           _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
@@ -410,6 +431,17 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       ),
       body: Column(
         children: [
+          if (_refreshing)
+            const LinearProgressIndicator(key: Key('report-detail-refreshing')),
+          if (_errorMessage != null && _report != null)
+            MaterialBanner(
+              content: const Text(
+                'Could not refresh this report. Showing the last loaded result.',
+              ),
+              actions: [
+                TextButton(onPressed: _loadReport, child: const Text('Retry')),
+              ],
+            ),
           if (_report?.summaryStatus == 'failed')
             TextButton(
               onPressed: () async {
@@ -998,8 +1030,10 @@ class _ResultCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 if (result.reviewState == 'needs_review') ...[
-                  const Text(
-                    'Automatic interpretation is unavailable for this test or unit.',
+                  Text(
+                    result.sourceSnapshot?['rangeSource'] == 'ai_suggestion'
+                        ? 'Range interpreted by AI during processing. Check the original report.'
+                        : 'Automatic interpretation is unavailable for this test or unit.',
                   ),
                   const SizedBox(height: 8),
                 ],

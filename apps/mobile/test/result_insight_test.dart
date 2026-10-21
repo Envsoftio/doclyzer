@@ -25,6 +25,41 @@ void main() {
 
   test('plain values use only the printed range', () {
     expect(compareWithPrintedRange(hemoglobin), RangePosition.below);
+    for (final range in ['12 to 16', '12—16', '≥12']) {
+      expect(
+        compareWithPrintedRange(
+          ExtractedLabValue(
+            parameterName: 'Hb',
+            value: '10',
+            unit: 'g/dL',
+            referenceRange: range,
+          ),
+        ),
+        RangePosition.below,
+      );
+    }
+    expect(
+      compareWithPrintedRange(
+        const ExtractedLabValue(
+          parameterName: 'Hb',
+          value: '10',
+          unit: 'g/dL',
+          referenceRange: '<=10',
+        ),
+      ),
+      RangePosition.within,
+    );
+    expect(
+      compareWithPrintedRange(
+        const ExtractedLabValue(
+          parameterName: 'Hb',
+          value: '10',
+          unit: 'g/dL',
+          referenceRange: '<10',
+        ),
+      ),
+      RangePosition.above,
+    );
     expect(
       compareWithPrintedRange(
         const ExtractedLabValue(
@@ -46,6 +81,18 @@ void main() {
         ),
       ),
       RangePosition.unknown,
+    );
+    expect(
+      unavailableRangeReason(
+        const ExtractedLabValue(
+          parameterName: 'Hb',
+          value: '14',
+          unit: 'g/dL',
+          referenceRange: '12–16',
+          isAbnormal: true,
+        ),
+      ),
+      contains('flag conflicts'),
     );
   });
 
@@ -185,6 +232,32 @@ void main() {
     await tester.tap(find.byKey(const Key('result-insight-retry')));
     await tester.pumpAndSettle();
     expect(find.text('What this test measures'), findsOneWidget);
+  });
+
+  testWidgets('processing range suggestion shows its printed source', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ResultInsightScreen(
+          result: const ExtractedLabValue(
+            parameterName: 'Hb',
+            value: '10',
+            unit: 'g/dL',
+            referenceRange: '12-16',
+            sourceSnapshot: {
+              'rangeSource': 'ai_suggestion',
+              'originalReferenceRange': '12-l6',
+            },
+          ),
+          loadInsight: () async => insight,
+          onViewTrend: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('AI read this range as 12-16'), findsOneWidget);
+    expect(find.textContaining('Printed text: 12-l6'), findsOneWidget);
   });
 
   testWidgets('a missing saved result offers the original report', (

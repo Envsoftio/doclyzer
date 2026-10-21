@@ -12,6 +12,22 @@ String unavailableRangeReason(ExtractedLabValue result) {
   if (result.unit?.trim().isNotEmpty != true) {
     return 'The unit is missing, so the value cannot be compared confidently.';
   }
+  if (double.tryParse(result.value.trim()) == null) {
+    return 'The extracted value is not a plain number. Check it in the original report.';
+  }
+  if (result.isAbnormal != null) {
+    final withoutFlag = ExtractedLabValue(
+      parameterName: result.parameterName,
+      value: result.value,
+      unit: result.unit,
+      referenceRange: result.referenceRange,
+    );
+    final position = compareWithPrintedRange(withoutFlag);
+    if (position != RangePosition.unknown &&
+        result.isAbnormal != (position != RangePosition.within)) {
+      return 'The lab flag conflicts with the printed range. Check the original report.';
+    }
+  }
   return 'The extracted value, printed range, or lab flag needs checking in the original report.';
 }
 
@@ -30,24 +46,41 @@ RangePosition compareWithPrintedRange(ExtractedLabValue result) {
       range.isEmpty) {
     return RangePosition.unknown;
   }
-  final match = RegExp(
-    r'^\s*(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)\s*$',
+  final interval = RegExp(
+    r'^\s*(-?\d+(?:\.\d+)?)\s*(?:[-–—]|to)\s*(-?\d+(?:\.\d+)?)\s*$',
+    caseSensitive: false,
   ).firstMatch(range);
-  if (match == null) return RangePosition.unknown;
-  final low = double.tryParse(match.group(1)!);
-  final high = double.tryParse(match.group(2)!);
-  if (low == null ||
-      high == null ||
-      !low.isFinite ||
-      !high.isFinite ||
-      low > high) {
-    return RangePosition.unknown;
+  RangePosition position;
+  if (interval != null) {
+    final low = double.tryParse(interval.group(1)!);
+    final high = double.tryParse(interval.group(2)!);
+    if (low == null ||
+        high == null ||
+        !low.isFinite ||
+        !high.isFinite ||
+        low > high) {
+      return RangePosition.unknown;
+    }
+    position = value < low
+        ? RangePosition.below
+        : value > high
+        ? RangePosition.above
+        : RangePosition.within;
+  } else {
+    final limit = RegExp(
+      r'^\s*(<=|>=|<|>|≤|≥)\s*(-?\d+(?:\.\d+)?)\s*$',
+    ).firstMatch(range);
+    if (limit == null) return RangePosition.unknown;
+    final bound = double.tryParse(limit.group(2)!);
+    if (bound == null || !bound.isFinite) return RangePosition.unknown;
+    position = switch (limit.group(1)!) {
+      '<' => value < bound ? RangePosition.within : RangePosition.above,
+      '<=' ||
+      '≤' => value <= bound ? RangePosition.within : RangePosition.above,
+      '>' => value > bound ? RangePosition.within : RangePosition.below,
+      _ => value >= bound ? RangePosition.within : RangePosition.below,
+    };
   }
-  final position = value < low
-      ? RangePosition.below
-      : value > high
-      ? RangePosition.above
-      : RangePosition.within;
   if (result.isAbnormal != null &&
       result.isAbnormal != (position != RangePosition.within)) {
     return RangePosition.unknown;

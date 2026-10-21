@@ -6,7 +6,7 @@ import { redactSecrets } from '../../common/redact-secrets';
 interface DoclingOptions {
   doOcr?: boolean;
   forceOcr?: boolean;
-  engine?: 'rapidocr' | 'tesseract';
+  engine?: 'auto' | 'rapidocr' | 'tesseract';
   signal?: AbortSignal;
 }
 
@@ -39,7 +39,7 @@ export class DoclingOcrClient {
     const ocrEngine =
       options?.engine ??
       this.configService.get<string>('reports.doclingOcrEngine') ??
-      'rapidocr';
+      'auto';
     const languages = (
       (options?.engine
         ? ''
@@ -74,9 +74,13 @@ export class DoclingOcrClient {
             { name: 'to_formats', value: 'md' },
             { name: 'to_formats', value: 'json' },
             { name: 'from_formats', value: 'pdf' },
+            { name: 'pipeline', value: 'standard' },
             { name: 'do_ocr', value: String(options?.doOcr !== false) },
+            { name: 'pdf_backend', value: 'docling_parse' },
             { name: 'do_table_structure', value: 'true' },
+            { name: 'table_structure_preset', value: 'tableformer_v1_accurate' },
             { name: 'table_mode', value: 'accurate' },
+            { name: 'table_cell_matching', value: 'true' },
             {
               name: 'force_ocr',
               value: options?.forceOcr ? 'true' : 'false',

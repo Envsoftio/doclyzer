@@ -51,6 +51,7 @@ import {
 import { LabValueExtractor } from './lab-value-extractor';
 import { LabDetailsExtractor } from './lab-details-extractor';
 import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
+import { ReportRangeSuggestionService, safeRawRange, validSuggestedRange, type RangeSuggestion } from './report-range-suggestion.service';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { summarizeReportCollectionDate } from './report-collection-date';
 import { ReportFileUnavailableException } from './exceptions/report-file-unavailable.exception';
@@ -194,6 +195,7 @@ interface StructuredReportLabInput {
   referenceRange: string | null;
   isAbnormal: boolean | null;
   identityEvidence?: Record<string, string>;
+  originalReferenceRange?: string;
 }
 
 interface SelectedOdlLabOutput {
@@ -245,6 +247,7 @@ export class ReportsService {
     private readonly doclingOcrClient: DoclingOcrClient,
     private readonly paddleOcrClient: PaddleOcrClient,
     private readonly reportLabAiFallbackService: ReportLabAiFallbackService,
+    private readonly rangeSuggestionService: ReportRangeSuggestionService,
     private readonly notificationPipeline: NotificationPipelineService,
     private readonly imageToPdfService: ImageToPdfService,
     private readonly referralsService: ReferralsService,
@@ -256,6 +259,40 @@ export class ReportsService {
   private readonly labExtractor: LabValueExtractor;
   private readonly labDetailsExtractor = new LabDetailsExtractor();
   private readonly odlJsonParser = new OpenDataLoaderJsonParser();
+
+  private async resolveUnclearRanges(
+    values: StructuredReportLabInput[],
+    userId: string | undefined,
+    reportId: string,
+    deferUsage = false,
+  ): Promise<Array<{ raw: string; result: RangeSuggestion }>> {
+    if (!userId) return [];
+    const candidates = [...new Set(values.map((value) => value.referenceRange?.trim() ?? ''))]
+      .filter((range) => safeRawRange(range) != null && !validSuggestedRange(range))
+      .slice(0, 20);
+    const resolved = new Map<string, string>();
+    const usage: Array<{ raw: string; result: RangeSuggestion }> = [];
+    for (let i = 0; i < candidates.length; i += 4) {
+      await Promise.all(candidates.slice(i, i + 4).map(async (raw) => {
+        try {
+          const result = await this.rangeSuggestionService.suggest(raw, userId, reportId, deferUsage);
+          if (result.providerCalled) usage.push({ raw, result });
+          if (result.suggestedRange) resolved.set(raw, result.suggestedRange);
+        } catch {
+          this.logger.warn('Range suggestion unavailable during processing');
+        }
+      }));
+    }
+    for (const value of values) {
+      const raw = value.referenceRange?.trim() ?? '';
+      const suggestion = resolved.get(raw);
+      if (!suggestion) continue;
+      value.originalReferenceRange = raw;
+      value.referenceRange = suggestion;
+      value.isAbnormal = null;
+    }
+    return usage;
+  }
 
   private throwIfAlreadyParsed(status: string): void {
     if (status === 'parsed') {
@@ -384,6 +421,9 @@ export class ReportsService {
         'upload',
         reportId,
         normalizedFile.source,
+        file.mimetype === 'image/jpeg' || file.mimetype === 'image/png'
+          ? { buffer: file.buffer, contentType: file.mimetype }
+          : undefined,
       );
 
     const parsedFromJson = opendataloaderJson
@@ -425,6 +465,9 @@ export class ReportsService {
       labValues,
       parsedFromJson?.extractionReview.required ?? true,
     );
+    const deferredRangeUsage = finalStatus === 'parsed'
+      ? await this.resolveUnclearRanges(labValues, userId, reportId, true)
+      : [];
     const preserveDetailsForReview =
       finalStatus === 'content_not_recognized' &&
       labValues.length > 0 &&
@@ -537,6 +580,8 @@ export class ReportsService {
       }
       throw err;
     }
+    await Promise.all(deferredRangeUsage.map(({ raw, result }) =>
+      this.rangeSuggestionService.recordUsage(raw, userId, reportId, result)));
 
     if (persistedLabValues.length > 0) {
       const labEntities = persistedLabValues.map((lv, i) =>
@@ -553,6 +598,9 @@ export class ReportsService {
           collectionDateSource: lv.sampleDate ? 'extracted' : 'unknown',
           extractionSource,
           referenceRange: lv.referenceRange ?? null,
+          sourceSnapshot: lv.originalReferenceRange
+            ? { parameterName: lv.parameterName, value: lv.value, unit: lv.unit, sampleDate: lv.sampleDate, referenceRange: lv.originalReferenceRange, originalReferenceRange: lv.originalReferenceRange, rangeSource: 'ai_suggestion' }
+            : null,
           identityEvidence: this.withLabIdentityEvidence(lv, structuredReport),
           ...normalizeObservation(
             {
@@ -562,6 +610,7 @@ export class ReportsService {
             },
             observationRules,
           ),
+          ...(lv.originalReferenceRange ? { reviewState: 'needs_review' } : {}),
           sortOrder: i,
         }),
       );
@@ -608,6 +657,7 @@ export class ReportsService {
     source: ReportInputSource,
     transcript: string,
     opendataloaderJson: unknown,
+    userId?: string,
   ) {
     const status: ReportStatus = 'parsed';
     const autoImageRows =
@@ -678,6 +728,8 @@ export class ReportsService {
         ? false
         : (parsedFromJson?.extractionReview.required ?? true),
     );
+    if (finalStatus === 'parsed')
+      await this.resolveUnclearRanges(labValues, userId, reportId);
     const preserveDetailsForReview =
       finalStatus === 'content_not_recognized' &&
       labValues.length > 0 &&
@@ -747,6 +799,9 @@ export class ReportsService {
             collectionDateSource: lv.sampleDate ? 'extracted' : 'unknown',
             extractionSource,
             referenceRange: lv.referenceRange ?? null,
+            sourceSnapshot: lv.originalReferenceRange
+              ? { parameterName: lv.parameterName, value: lv.value, unit: lv.unit, sampleDate: lv.sampleDate, referenceRange: lv.originalReferenceRange, originalReferenceRange: lv.originalReferenceRange, rangeSource: 'ai_suggestion' }
+              : null,
             identityEvidence: this.withLabIdentityEvidence(
               lv,
               structuredReport,
@@ -759,6 +814,7 @@ export class ReportsService {
               },
               observationRules,
             ),
+            ...(lv.originalReferenceRange ? { reviewState: 'needs_review' } : {}),
             sortOrder: i,
           }),
         );
@@ -1255,6 +1311,8 @@ export class ReportsService {
       dedupedRetryLabValues,
       retryFromJson?.extractionReview.required ?? true,
     );
+    if (finalStatus === 'parsed')
+      await this.resolveUnclearRanges(dedupedRetryLabValues, userId, entity.id);
     if (finalStatus === 'parsed') {
       this.logger.log(
         JSON.stringify({
@@ -1356,6 +1414,9 @@ export class ReportsService {
               collectionDateSource: lv.sampleDate ? 'extracted' : 'unknown',
               extractionSource: retryExtractionSource,
               referenceRange: lv.referenceRange ?? null,
+              sourceSnapshot: lv.originalReferenceRange
+                ? { parameterName: lv.parameterName, value: lv.value, unit: lv.unit, sampleDate: lv.sampleDate, referenceRange: lv.originalReferenceRange, originalReferenceRange: lv.originalReferenceRange, rangeSource: 'ai_suggestion' }
+                : null,
               identityEvidence: this.withLabIdentityEvidence(
                 lv,
                 retryStructuredReport,
@@ -1368,6 +1429,7 @@ export class ReportsService {
                 },
                 observationRules,
               ),
+              ...(lv.originalReferenceRange ? { reviewState: 'needs_review' } : {}),
               sortOrder: i,
             }),
           ),
@@ -1458,10 +1520,9 @@ export class ReportsService {
     initial?: OcrOutput,
     checkpoint?: CascadeCheckpoint,
   ) {
-    return new ReportOcrCascade(
-      this.doclingOcrClient,
-      this.paddleOcrClient,
-    ).run(buffer, signal, initial, checkpoint);
+    return new ReportOcrCascade(this.doclingOcrClient).run(
+      buffer, signal, initial, checkpoint,
+    );
   }
 
   async extractImageWithPaddle(
@@ -1513,17 +1574,26 @@ export class ReportsService {
     trigger: 'upload' | 'retry',
     reportId: string,
     source: ReportInputSource = 'pdf',
+    imageInput?: {
+      buffer: Buffer;
+      contentType: 'image/jpeg' | 'image/png';
+    },
   ): Promise<ParsedBufferResult> {
     if (source === 'image') {
-      const doclingAttempt = await this.parseWithPreferredOcr(buffer);
-      const bestEval = this.evaluateParsedTranscript(doclingAttempt?.text);
+      if (!imageInput) throw new Error('Original image required for PaddleOCR');
+      const paddleAttempt = await this.extractImageWithPaddle(
+        imageInput.buffer,
+        imageInput.contentType,
+        AbortSignal.timeout(1800000),
+      );
+      const bestEval = this.evaluateParsedTranscript(paddleAttempt.text);
       const status = bestEval.ok ? 'parsed' : 'failed_transient';
       this.logParseQuality(trigger, reportId, bestEval.text, status);
       return {
         status,
         transcript: bestEval.text,
-        ...(doclingAttempt?.parsedJson
-          ? { opendataloaderJson: doclingAttempt.parsedJson }
+        ...(paddleAttempt.parsedJson
+          ? { opendataloaderJson: paddleAttempt.parsedJson }
           : {}),
       };
     }

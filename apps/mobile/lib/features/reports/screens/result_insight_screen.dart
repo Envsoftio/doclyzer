@@ -138,6 +138,17 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                     ),
                     const SizedBox(height: 10),
                   ],
+                  if (result.sourceSnapshot?['rangeSource'] ==
+                      'ai_suggestion') ...[
+                    Text(
+                      'AI read this range as ${result.referenceRange}. Printed text: ${result.sourceSnapshot?['originalReferenceRange']}. Check the original report before relying on this comparison.',
+                      key: const Key('result-range-suggestion'),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   _ResultFact(
                     label: 'Lab range',
                     value: result.referenceRange?.trim().isNotEmpty == true

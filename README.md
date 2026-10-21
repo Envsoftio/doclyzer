@@ -49,15 +49,19 @@ curl http://localhost:4002/v1/health/report-processing
 The health response should be `{"enabled":true,"healthy":true}`. Compose
 restarts the worker and dispatcher after a crash.
 
-Scanned PDF pages and original JPEG/PNG uploads use the CPU PaddleOCR service. Set a
+For PDFs, the worker runs Docling's full-document `auto` OCR pass with the
+accurate TableFormer preset and table cell matching. It uses page-level
+Tesseract only when the full-document result is incomplete, and accepts those
+rows only when existing observations survive unchanged. Unresolved PDF pages
+require review; original JPEG/PNG uploads use PaddleOCR. Set a
 nonempty `LAB_OCR_API_KEY` in `.env`, then start the default Compose stack:
 
 ```bash
 docker compose up -d --build
 ```
 
-The worker checkpoints Paddle's aligned recognition text, scores, and polygons.
-Unresolved rows require source review. PaddleOCR-VL table review is optional;
+The worker checkpoints Docling conversion and fallback results. Unresolved rows
+require source review. PaddleOCR-VL table review is optional;
 see [lab geometry pilot](docs/implementation-tasks/lab-geometry-pilot.md).
 
 After changing API source, recreate the build job and services to refresh

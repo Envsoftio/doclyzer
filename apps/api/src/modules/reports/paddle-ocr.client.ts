@@ -28,15 +28,11 @@ export class PaddleOcrClient {
   private readonly log = new Logger(PaddleOcrClient.name);
   constructor(private readonly config: ConfigService) {}
 
-  async parsePdf(buffer: Buffer, signal?: AbortSignal): Promise<PaddlePageOutput | null> {
-    return this.extract(buffer, 'application/pdf', signal);
-  }
-
   async parseImage(buffer: Buffer, contentType: 'image/jpeg' | 'image/png', signal?: AbortSignal): Promise<PaddlePageOutput | null> {
     return this.extract(buffer, contentType, signal);
   }
 
-  private async extract(buffer: Buffer, contentType: 'application/pdf' | 'image/jpeg' | 'image/png', signal?: AbortSignal): Promise<PaddlePageOutput | null> {
+  private async extract(buffer: Buffer, contentType: 'image/jpeg' | 'image/png', signal?: AbortSignal): Promise<PaddlePageOutput | null> {
     const base = this.config.get<string>('reports.paddleOcrBaseUrl');
     const key = this.config.get<string>('reports.paddleOcrApiKey');
     const timeout = this.config.get<number>('reports.paddleOcrTimeoutMs') ?? 130000;

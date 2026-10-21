@@ -469,6 +469,19 @@ export class OpenDataLoaderJsonParser {
         }
         // Do not guess column order on headerless or ambiguous tables.
         if (columns.name === undefined || columns.value === undefined) continue;
+        // Docling repeats a merged panel heading into every table cell. It is
+        // not a result row even though its copy occupies the result column.
+        const nonempty = texts.map((text) => text.trim()).filter(Boolean);
+        if (
+          nonempty.length > 1 &&
+          nonempty.every((text) => text === nonempty[0]) &&
+          /\bsample\s*type/i.test(nonempty[0]) &&
+          cells.some((cell) => cell.ambiguous === true)
+        ) {
+          precedingObservation = undefined;
+          currentSection = this.cleanHeading(nonempty[0]);
+          continue;
+        }
         const previousObservation = precedingObservation;
         precedingObservation = undefined;
         let c1 = texts[columns.name] ?? '';
@@ -662,7 +675,12 @@ export class OpenDataLoaderJsonParser {
         precedingObservation = sections.get(currentSection)!.at(-1);
         stats.parsedRows += 1;
       }
-      if (!tableMapped && rows.length > 1)
+      if (
+        !tableMapped &&
+        rows.length > 1 &&
+        !this.isPatientMetadataTable(rows) &&
+        !this.isReferenceOnlyTable(rows)
+      )
         stats.unmappedTables = (stats.unmappedTables ?? 0) + 1;
     }
 
@@ -675,6 +693,55 @@ export class OpenDataLoaderJsonParser {
         .filter((s) => s.tests.length > 0),
       stats,
     };
+  }
+
+  private isPatientMetadataTable(rows: Record<string, unknown>[]): boolean {
+    const labels = rows
+      .map((row) =>
+        Array.isArray(row.cells)
+          ? this.readCellText((row.cells as Record<string, unknown>[])[0] ?? {})
+              .replace(/[:：]$/, '')
+              .trim()
+              .toLowerCase()
+          : '',
+      )
+      .filter(Boolean);
+    return (
+      labels.length > 0 &&
+      labels.every((label) =>
+        /^(?:patient (?:information|name|id|age|gender|sex)|name|age|gender|sex|date of birth|dob|lab id|registration(?: no| number)?|booking id|order id|accession(?: no| number| id)?|specimen|sample (?:id|type|collected|collection date)|collection date|collected (?:on|date)|report (?:date|id|number)|referr?ed by|doctor|physician)$/i.test(
+          label,
+        ),
+      )
+    );
+  }
+
+  private isReferenceOnlyTable(rows: Record<string, unknown>[]): boolean {
+    const texts = rows.map((row) =>
+      Array.isArray(row.cells)
+        ? (row.cells as Record<string, unknown>[]).map((cell) =>
+            this.readCellText(cell).trim(),
+          )
+        : [],
+    );
+    const header = texts[0].join(' ').toLowerCase();
+    if (/\binterpretation\b/.test(header) && /\b(stage|range)\b/.test(header))
+      return true;
+    if (
+      /\bpeak name\b/.test(header) &&
+      /\bretention time\b/.test(header) &&
+      /\barea\b/.test(header)
+    )
+      return true;
+    const labels = texts.map((row) => row[0]?.toLowerCase() ?? '').filter(Boolean);
+    return (
+      labels.length >= 2 &&
+      labels.every((label) =>
+        /^(?:non[- ]diabetic|increased risk|in diabetics\s*:|excellent control|fair to good control|unsatisfactory control|poor control|(?:1st|ist|2nd|3rd|first|second|third) trimester)$/i.test(
+          label,
+        ),
+      )
+    );
   }
 
   private collectTables(node: unknown, out: Record<string, unknown>[]): void {

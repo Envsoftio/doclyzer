@@ -3,10 +3,7 @@ import { PDFDocument } from 'pdf-lib';
 import { adaptDoclingDocument } from './docling-document-adapter';
 import { OpenDataLoaderJsonParser } from './opendataloader-json-parser';
 import { DoclingOcrClient } from './docling-ocr.client';
-import { PaddleOcrClient } from './paddle-ocr.client';
 import { comparisonNotation } from './lab-method-notation';
-import { extractPdfResultColumn } from './pdf-result-column';
-import type { PaddlePageOutput } from './paddle-ocr.client';
 
 type Node = Record<string, unknown>;
 export interface OcrOutput {
@@ -21,13 +18,13 @@ export class OcrServiceUnavailableError extends Error {
 }
 export type CascadeProgress = Record<
   string,
-  Partial<Record<'paddleocr-v5', OcrOutput>>
+  Partial<Record<'docling-tesseract', OcrOutput>>
 >;
 export interface CascadeCheckpoint {
   progress?: CascadeProgress;
   save?: (
     page: number,
-    engine: 'paddleocr-v5',
+    engine: 'docling-tesseract',
     output: OcrOutput,
   ) => Promise<void>;
 }
@@ -46,10 +43,7 @@ type Candidate = {
 export class ReportOcrCascade {
   private readonly parser = new OpenDataLoaderJsonParser();
   private readonly log = new Logger(ReportOcrCascade.name);
-  constructor(
-    private readonly docling: DoclingOcrClient,
-    private readonly paddle: PaddleOcrClient,
-  ) {}
+  constructor(private readonly docling: DoclingOcrClient) {}
 
   private nodes(output: OcrOutput | null): Node[] {
     const doc = adaptDoclingDocument(output?.parsedJson) as
@@ -176,7 +170,13 @@ export class ReportOcrCascade {
               : '',
         )
         .join('\n'),
-      parsedJson: { type: 'document', kids },
+      parsedJson: {
+        type: 'document',
+        kids,
+        extractionIncomplete: Boolean(
+          (output?.parsedJson as Node | undefined)?.extractionIncomplete,
+        ),
+      },
     };
   }
   private reconcile(
@@ -211,6 +211,20 @@ export class ReportOcrCascade {
     );
   }
 
+  private isPeakAnalysisTable(node: Node): boolean {
+    if (node.type !== 'table' || !Array.isArray(node.rows)) return false;
+    const firstRow = node.rows[0] as { cells?: Array<{ content?: string }> };
+    const header = (firstRow?.cells ?? [])
+      .map((cell) => cell.content ?? '')
+      .join(' ')
+      .toLowerCase();
+    return (
+      /\bpeak name\b/.test(header) &&
+      /\bretention time\b/.test(header) &&
+      /\barea\b/.test(header)
+    );
+  }
+
   async run(
     bytes: Buffer,
     signal: AbortSignal,
@@ -220,24 +234,28 @@ export class ReportOcrCascade {
     signal.throwIfAborted();
     const pdf = await PDFDocument.load(bytes);
     const count = pdf.getPageCount();
-    const native = initial?.nativeOnly
+    const native: OcrOutput | null = initial?.parsedJson
       ? initial
       : await this.docling.parsePdf(bytes, {
-          doOcr: false,
+          doOcr: true,
           forceOcr: false,
           signal,
         });
     const accepted: Node[] = [];
     const transcripts: string[] = [];
     const failedPages: number[] = [];
-    let successfulVisualPages = 0;
+    let successfulOcrPages = 0;
     let unavailablePages = 0;
     let consecutiveUnavailable = 0;
     const reviewPages: Record<
       string,
-      { native: OcrOutput; visual: OcrOutput | null; reason: string }
+      {
+        native: OcrOutput;
+        visual: OcrOutput | null;
+        tesseract?: OcrOutput | null;
+        reason: string;
+      }
     > = {};
-    const visualPages: Array<PaddlePageOutput | null> = [];
     for (let index = 0; index < count; index++) {
       signal.throwIfAborted();
       const page = index + 1;
@@ -250,77 +268,111 @@ export class ReportOcrCascade {
         nativeCandidate.nodes.length > 0 &&
         nativeCandidate.rows === 0 &&
         nativeCandidate.candidates === 0 &&
-        !nativeCandidate.nodes.some((n) => n.type === 'table') &&
+        nativeCandidate.nodes.every(
+          (node) => node.type !== 'table' || this.isPeakAnalysisTable(node),
+        ) &&
         nativePage.text.trim().length > 80 &&
         !/[\uE000-\uF8FF]/u.test(nativePage.text) &&
-        !/\b(result|observed value|investigation|analyte|test name)\b/i.test(
+        (!/\b(result|observed value|investigation|analyte|test name)\b/i.test(
           nativePage.text,
-        );
+        ) ||
+          nativeCandidate.nodes.some((node) =>
+            this.isPeakAnalysisTable(node),
+          ));
       if (!chosen && supplementary) chosen = nativeCandidate;
-      if (!chosen) {
+      // A complete full-document Docling result already has the playground's
+      // OCR and table structure. Keep page OCR for incomplete output, or for
+      // older native-only checkpoints that have not seen an OCR pass.
+      if (!supplementary && (!chosen || native?.nativeOnly)) {
         const part = await PDFDocument.create();
         const [copied] = await part.copyPages(pdf, [index]);
         part.addPage(copied);
         const pageBytes = Buffer.from(await part.save());
-        const engine = 'paddleocr-v5' as const;
-        const cached = checkpoint.progress?.[String(page)]?.[engine];
-        this.log.log(
-          JSON.stringify({
-            action: 'REPORT_OCR_PAGE_STARTED',
-            page,
-            engine,
-            cached: Boolean(cached),
-          }),
-        );
-        const output =
-          cached ?? (await this.paddle.parsePdf(pageBytes, signal));
-        visualPages.push(output as PaddlePageOutput | null);
+        const tesseractEngine = 'docling-tesseract' as const;
+        const cachedTesseract =
+          checkpoint.progress?.[String(page)]?.[tesseractEngine];
+        const tesseract =
+          cachedTesseract ??
+          (await this.docling.parsePdf(pageBytes, {
+            doOcr: true,
+            forceOcr: true,
+            engine: 'tesseract',
+            signal,
+          }));
         signal.throwIfAborted();
-        if (!output) {
-          unavailablePages++;
-          consecutiveUnavailable++;
-          // Do not spend a 100-page budget waiting on an unavailable service.
-          if (consecutiveUnavailable >= 3) throw new OcrServiceUnavailableError();
-        } else {
-          successfulVisualPages++;
-          consecutiveUnavailable = 0;
-        }
-        if (!cached && output?.parsedJson)
-          await checkpoint.save?.(page, engine, output);
-        const visualCandidate = this.candidate(engine, output);
-        chosen = this.reconcile(nativeCandidate, visualCandidate);
-        const reviewOnlyEvidence = Boolean(
-          (output?.parsedJson as { paddlePage?: unknown } | undefined)
-            ?.paddlePage,
+        if (!cachedTesseract && tesseract?.parsedJson)
+          await checkpoint.save?.(page, tesseractEngine, tesseract);
+        const tesseractPage = tesseract
+          ? this.pageOutput(tesseract, 1, 1)
+          : null;
+        const tesseractCandidate = this.reconcile(
+          nativeCandidate,
+          this.candidate(tesseractEngine, tesseractPage),
         );
-        const reason = !output
-          ? 'visual_unavailable'
-          : this.patientIdentityConflict(nativeCandidate, visualCandidate)
-            ? 'patient_identity_conflict'
-            : reviewOnlyEvidence
-              ? 'review_only_evidence'
-              : !visualCandidate?.complete
-                ? 'visual_incomplete'
-                : 'native_visual_conflict';
+        if (
+          tesseractCandidate &&
+          (!chosen || tesseractCandidate.rows > chosen.rows)
+        )
+          chosen = tesseractCandidate;
         this.log.log(
           JSON.stringify({
             action: 'REPORT_OCR_PAGE_ATTEMPT',
             page,
-            engine,
-            rows: visualCandidate?.rows ?? 0,
-            complete: visualCandidate?.complete ?? false,
-            ...(chosen ? {} : { reason }),
+            engine: tesseractEngine,
+            accepted: chosen?.engine === tesseractEngine,
           }),
         );
-        if (!chosen)
-          reviewPages[String(page)] = {
-            native: nativePage,
-            visual: output,
-            reason,
-          };
-        signal.throwIfAborted();
+        if (chosen) {
+          const selected = chosen;
+          if (selected.engine === tesseractEngine) {
+            successfulOcrPages++;
+            consecutiveUnavailable = 0;
+          }
+          accepted.push(
+            ...selected.nodes.map((node) => ({
+              ...node,
+              'page number': page,
+              extractionEngine: selected.engine,
+            })),
+          );
+          transcripts.push(selected.output.text);
+          this.log.log(
+            JSON.stringify({
+              action: 'REPORT_OCR_PAGE_ACCEPTED',
+              page,
+              engine: selected.engine,
+            }),
+          );
+          continue;
+        }
+        if (!tesseract) {
+          unavailablePages++;
+          consecutiveUnavailable++;
+          // Do not spend a 100-page budget waiting on an unavailable service.
+          if (consecutiveUnavailable >= 3)
+            throw new OcrServiceUnavailableError();
+        } else {
+          successfulOcrPages++;
+          consecutiveUnavailable = 0;
+        }
+        const rawTesseractCandidate = this.candidate(
+          tesseractEngine,
+          tesseractPage,
+        );
+        const reason = !tesseract
+          ? 'visual_unavailable'
+          : this.patientIdentityConflict(nativeCandidate, rawTesseractCandidate)
+            ? 'patient_identity_conflict'
+            : !rawTesseractCandidate?.complete
+              ? 'visual_incomplete'
+              : 'native_visual_conflict';
+        reviewPages[String(page)] = {
+          native: nativePage,
+          visual: tesseractPage,
+          tesseract: tesseractPage,
+          reason,
+        };
       }
-      else visualPages.push(null);
       if (!chosen) {
         failedPages.push(page);
         // Preserve source evidence for review without publishing partial rows.
@@ -343,25 +395,10 @@ export class ReportOcrCascade {
       );
       transcripts.push(chosen.output.text);
     }
-    // A missing OCR service is an infrastructure failure when no visual page
+    // A missing OCR service is an infrastructure failure when no OCR page
     // was recovered. Isolated failures remain explicit review pages.
-    if (unavailablePages > 0 && successfulVisualPages === 0)
+    if (unavailablePages > 0 && successfulOcrPages === 0)
       throw new OcrServiceUnavailableError();
-    // A document with a visibly headed result column can contain legitimate
-    // blank interim rows and explanatory charts. Verify its actual printed
-    // observations directly against page OCR before requiring manual review.
-    const autoPdfLabRows = failedPages.length === count
-      ? extractPdfResultColumn(visualPages)
-      : [];
-    if (autoPdfLabRows.length) {
-      return {
-        text: visualPages.map((page) => page?.text ?? '').join('\n\n'),
-        parsedJson: {
-          type: 'document', kids: [], autoPdfLabRows,
-          ocrVerificationFailed: false, unresolvedPages: [], reviewPages,
-        },
-      };
-    }
     this.log.log(
       JSON.stringify({
         action: 'REPORT_OCR_CASCADE_COMPLETE',

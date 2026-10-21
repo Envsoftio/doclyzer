@@ -29,6 +29,7 @@ import { ReportSummaryService } from './report-summary/report-summary.service';
 import { OpenDataLoaderClient } from './opendataloader.client';
 import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
 import { ReportResultInsightService } from './report-result-insight.service';
+import { ReportRangeSuggestionService } from './report-range-suggestion.service';
 import { ImageToPdfService } from './image-to-pdf.service';
 import { PaddleOcrClient } from './paddle-ocr.client';
 import { DoclingOcrClient } from './docling-ocr.client';
@@ -70,6 +71,7 @@ import { DoclingOcrClient } from './docling-ocr.client';
     PaddleOcrClient,
     ReportLabAiFallbackService,
     ReportResultInsightService,
+    ReportRangeSuggestionService,
     ImageToPdfService,
   ],
   exports: [ReportWorkerService, ReportDispatcherService],

@@ -32,7 +32,9 @@ async function main() {
       rows.set(`${row.reportId}:${row.cacheKey}`, row);
     },
   } as unknown as Repository<ReportResultInsightEntity>;
-  const usageRepo = { insert: async () => undefined } as unknown as Repository<ReportResultInsightUsageEntity>;
+  const usageRepo = {
+    insert: async () => undefined,
+  } as unknown as Repository<ReportResultInsightUsageEntity>;
   const service = new ReportResultInsightService(config, cacheRepo, usageRepo);
   const result = {
     parameterName: 'Hb',
@@ -51,6 +53,30 @@ async function main() {
   assert.equal(comparePrintedRange({ ...result, unit: undefined }), 'unknown');
   assert.equal(
     comparePrintedRange({ ...result, referenceRange: '<16' }),
+    'within',
+  );
+  assert.equal(
+    comparePrintedRange({ ...result, referenceRange: '<=10' }),
+    'within',
+  );
+  assert.equal(
+    comparePrintedRange({ ...result, referenceRange: '<10' }),
+    'above',
+  );
+  assert.equal(
+    comparePrintedRange({ ...result, referenceRange: '≥12' }),
+    'below',
+  );
+  assert.equal(
+    comparePrintedRange({ ...result, referenceRange: '12 to 16' }),
+    'below',
+  );
+  assert.equal(
+    comparePrintedRange({ ...result, referenceRange: '12—16' }),
+    'below',
+  );
+  assert.equal(
+    comparePrintedRange({ ...result, referenceRange: 'see report' }),
     'unknown',
   );
   assert.equal(
@@ -208,13 +234,21 @@ async function main() {
       );
     };
     assert.deepEqual(
-      await serviceWithFailingUsage.explain('report-usage-failure', result, 'user-1'),
+      await serviceWithFailingUsage.explain(
+        'report-usage-failure',
+        result,
+        'user-1',
+      ),
       insight,
       'a usage write failure must not hide a generated explanation',
     );
     assert.equal(usageWrites, 1);
     assert.deepEqual(
-      await serviceWithFailingUsage.explain('report-usage-failure', result, 'user-1'),
+      await serviceWithFailingUsage.explain(
+        'report-usage-failure',
+        result,
+        'user-1',
+      ),
       insight,
       'the saved explanation must remain available',
     );
@@ -259,7 +293,11 @@ async function main() {
     });
     assert.equal(fetchCount, callsBeforeUnreviewed + 1);
     await assert.rejects(
-      () => unreviewed.explain('report-4', { ...result, parameterName: 'Name: Jane Doe' }),
+      () =>
+        unreviewed.explain('report-4', {
+          ...result,
+          parameterName: 'Name: Jane Doe',
+        }),
       (error: { response?: { code?: string } }) =>
         error.response?.code === 'RESULT_INSIGHT_UNSAFE_INPUT',
     );

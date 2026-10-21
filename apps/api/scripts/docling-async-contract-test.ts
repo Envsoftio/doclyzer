@@ -25,7 +25,15 @@ async function main() {
   );
   form.append('to_formats', 'md');
   form.append('to_formats', 'json');
-  form.append('do_ocr', 'false');
+  form.append('pipeline', 'standard');
+  form.append('do_ocr', 'true');
+  form.append('force_ocr', 'false');
+  form.append('ocr_preset', 'auto');
+  form.append('pdf_backend', 'docling_parse');
+  form.append('do_table_structure', 'true');
+  form.append('table_structure_preset', 'tableformer_v1_accurate');
+  form.append('table_mode', 'accurate');
+  form.append('table_cell_matching', 'true');
   form.append('include_images', 'false');
   const started = Date.now();
   const submit = await fetch(`${base}/v1/convert/file/async`, {
