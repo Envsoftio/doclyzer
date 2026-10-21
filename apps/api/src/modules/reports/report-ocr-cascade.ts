@@ -228,6 +228,9 @@ export class ReportOcrCascade {
     const accepted: Node[] = [];
     const transcripts: string[] = [];
     const failedPages: number[] = [];
+    let successfulVisualPages = 0;
+    let unavailablePages = 0;
+    let consecutiveUnavailable = 0;
     const reviewPages: Record<
       string,
       { native: OcrOutput; visual: OcrOutput | null; reason: string }
@@ -268,20 +271,32 @@ export class ReportOcrCascade {
         const output =
           cached ?? (await this.paddle.parsePdf(pageBytes, signal));
         signal.throwIfAborted();
-        // A missing OCR service is an infrastructure failure, not evidence that
-        // the uploaded document has unreadable or incomplete results.
-        if (!output) throw new OcrServiceUnavailableError();
+        if (!output) {
+          unavailablePages++;
+          consecutiveUnavailable++;
+          // Do not spend a 100-page budget waiting on an unavailable service.
+          if (consecutiveUnavailable >= 3) throw new OcrServiceUnavailableError();
+        } else {
+          successfulVisualPages++;
+          consecutiveUnavailable = 0;
+        }
         if (!cached && output?.parsedJson)
           await checkpoint.save?.(page, engine, output);
         const visualCandidate = this.candidate(engine, output);
         chosen = this.reconcile(nativeCandidate, visualCandidate);
+        const reviewOnlyEvidence = Boolean(
+          (output?.parsedJson as { paddlePage?: unknown } | undefined)
+            ?.paddlePage,
+        );
         const reason = !output
           ? 'visual_unavailable'
           : this.patientIdentityConflict(nativeCandidate, visualCandidate)
             ? 'patient_identity_conflict'
-            : !visualCandidate?.complete
-              ? 'visual_incomplete'
-              : 'native_visual_conflict';
+            : reviewOnlyEvidence
+              ? 'review_only_evidence'
+              : !visualCandidate?.complete
+                ? 'visual_incomplete'
+                : 'native_visual_conflict';
         this.log.log(
           JSON.stringify({
             action: 'REPORT_OCR_PAGE_ATTEMPT',
@@ -322,6 +337,10 @@ export class ReportOcrCascade {
       );
       transcripts.push(chosen.output.text);
     }
+    // A missing OCR service is an infrastructure failure when no visual page
+    // was recovered. Isolated failures remain explicit review pages.
+    if (unavailablePages > 0 && successfulVisualPages === 0)
+      throw new OcrServiceUnavailableError();
     this.log.log(
       JSON.stringify({
         action: 'REPORT_OCR_CASCADE_COMPLETE',

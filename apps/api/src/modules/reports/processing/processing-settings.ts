@@ -14,6 +14,8 @@ export function processingSettings(config: ConfigService) {
     policy: {
       maxAttempts: int('REPORT_MAX_ATTEMPTS', 3, 1, 10),
       processingDeadlineMs: int('REPORT_DEADLINE_MS', 1800000),
+      processingDeadlinePerPageMs: int('REPORT_DEADLINE_PER_PAGE_MS', 130000),
+      processingDeadlineOverheadMs: int('REPORT_DEADLINE_OVERHEAD_MS', 600000),
       uploadDeadlineMs: int('REPORT_UPLOAD_DEADLINE_MS', 120000),
       idempotencyRetentionMs: int('REPORT_IDEMPOTENCY_RETENTION_MS', 604800000),
       cleanupRetryMs: int('REPORT_ORPHAN_RETRY_MS', 3600000),

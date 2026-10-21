@@ -151,6 +151,25 @@ export class ReportJobStore {
     return rows[1] === 1;
   }
 
+  async extendDeadline(
+    lease: ReportJobLease,
+    budgetMs: number,
+  ): Promise<Date> {
+    const result = await this.db.query(
+      `UPDATE report_processing_jobs j SET
+       deadline_at=GREATEST(j.deadline_at,j.created_at+$5*interval '1 millisecond'),
+       lease_expires_at=GREATEST(j.lease_expires_at,LEAST(j.created_at+$5*interval '1 millisecond',clock_timestamp()+$6*interval '1 millisecond'))
+       FROM reports r WHERE j.id=$1 AND j.report_id=$2 AND j.generation=$3
+       AND j.lease_token=$4 AND j.state='leased' AND j.lease_expires_at>clock_timestamp()
+       AND j.deadline_at>clock_timestamp() AND r.id=j.report_id
+       AND r.processing_generation=j.generation AND r.deleted_at IS NULL
+       RETURNING j.deadline_at`,
+      [lease.jobId, lease.reportId, lease.generation, lease.token, budgetMs, this.leaseMs],
+    );
+    if (result[1] !== 1) throw new ReportLeaseLostError();
+    return new Date(result[0][0].deadline_at);
+  }
+
   async setStage(lease: ReportJobLease, stage: 'normalizing'): Promise<void> {
     await this.db.transaction(async (manager) => {
       const { report } = await this.lockLease(manager, lease);

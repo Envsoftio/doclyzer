@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { ConfigService } from '@nestjs/config';
 import { processingSettings } from '../src/modules/reports/processing/processing-settings';
+import { reportDeadlineMs } from '../src/modules/reports/processing/report-deadline';
 import {
   acceptedSourceHash,
   assertProcessingTransition,
@@ -32,6 +33,8 @@ assert.equal(legacyReportStatus.retry_scheduled, 'failed_transient');
 const defaultSettings = processingSettings(new ConfigService({}));
 assert.equal(defaultSettings.runtime, true);
 assert.equal(defaultSettings.admission, true);
+assert.equal(reportDeadlineMs(defaultSettings.policy, 1), 1800000);
+assert.equal(reportDeadlineMs(defaultSettings.policy, 100), 13600000);
 const drainedSettings = processingSettings(
   new ConfigService({
     REPORT_ASYNC_RUNTIME_ENABLED: 'true',

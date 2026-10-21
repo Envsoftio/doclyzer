@@ -97,10 +97,10 @@ type Column = {
 };
 const LABEL = /^(?:test(?: name)?|investigations?|parameters?|analyte)$/i;
 const RESULT =
-  /^(?:result|observed value|current|previous|prior)(?:\s*\([^)]*\))?$/i;
+  /^(?:results?|obtained value|observed value|current|previous|prior)(?:\s*\([^)]*\))?$/i;
 const UNIT = /^(?:units?|uom)$/i;
 const RANGE =
-  /^(?:reference(?: range| interval)?|ref\.? range|biological ref\.? interval)$/i;
+  /^(?:reference(?: range| interval)?|ref\.? range|bio\.? ref\.? intervals?|biological ref\.? interval)$/i;
 const FLAG = /^(?:flag|status)$/i;
 const MISSING = /^(?:pending|not performed|see comment|[-–—])$/i;
 const QUAL =
@@ -225,6 +225,111 @@ function columnsFromHeader(
     right: i < recognized.length - 1 ? (h.x + recognized[i + 1].x) / 2 : width,
     ...(h.role === 'result' ? { resultColumn: normalized(h.raw) } : {}),
   }));
+}
+
+/** Recover source-linked review rows when OCR places column headings on
+ * separate lines. The inferred row pairing is never eligible for release. */
+export function recoverStaggeredReviewCandidates(
+  page: PageEvidence,
+): LabCandidate[] {
+  const tokens = page.tokens;
+  const labels = tokens.filter((token) => LABEL.test(token.text_raw.trim()));
+  const results = tokens.filter((token) => RESULT.test(token.text_raw.trim()));
+  if (labels.length !== 1 || results.length !== 1) return [];
+  const labelBox = bounds(labels[0].polygon_original);
+  const resultBox = bounds(results[0].polygon_original);
+  if (
+    resultBox.cx <= labelBox.cx ||
+    Math.abs(resultBox.cy - labelBox.cy) > Math.max(64, page.height * 0.04)
+  )
+    return [];
+
+  const headerTop = Math.min(labelBox.top, resultBox.top);
+  const headerBottom = Math.max(labelBox.bottom, resultBox.bottom);
+  const nextHeading = tokens
+    .filter((token) => {
+      const box = bounds(token.polygon_original);
+      return (
+        box.cx > resultBox.cx &&
+        box.top >= headerTop - 36 &&
+        box.bottom <= headerBottom + 36 &&
+        /\b(?:units?|reference|ref\.?|intervals?|range)\b/i.test(token.text_raw)
+      );
+    })
+    .sort(
+      (a, b) => bounds(a.polygon_original).cx - bounds(b.polygon_original).cx,
+    )[0];
+  if (!nextHeading) return [];
+
+  const testRight = (labelBox.cx + resultBox.cx) / 2;
+  const resultRight =
+    (resultBox.cx + bounds(nextHeading.polygon_original).cx) / 2;
+  const body = tokens.filter(
+    (token) => bounds(token.polygon_original).top > headerBottom + 4,
+  );
+  const testRows = rowGroups(
+    body.filter((token) => bounds(token.polygon_original).cx < testRight),
+  )
+    .map((row) => ({
+      tokens: row,
+      top: Math.min(...row.map((t) => bounds(t.polygon_original).top)),
+    }))
+    .sort((a, b) => a.top - b.top);
+  const valueTokens = body.filter((token) => {
+    const x = bounds(token.polygon_original).cx;
+    return x >= testRight && x < resultRight;
+  });
+  const candidates: LabCandidate[] = [];
+  for (let i = 0; i < testRows.length; i++) {
+    const row = testRows[i];
+    const nextTop = testRows[i + 1]?.top ?? page.height;
+    const values = valueTokens.filter((token) => {
+      const top = bounds(token.polygon_original).top;
+      return top >= row.top - 4 && top < nextTop - 2;
+    });
+    if (!values.length || LABEL.test(text(row.tokens))) continue;
+    const value = text(
+      values.sort(
+        (a, b) =>
+          bounds(a.polygon_original).left - bounds(b.polygon_original).left,
+      ),
+    );
+    const parsed = classify(value);
+    candidates.push({
+      id: `${page.document_id}:${page.page_id}:staggered:${i}`,
+      documentId: page.document_id,
+      pageId: page.page_id,
+      panelId: `${page.page_id}:staggered`,
+      rowId: `${page.page_id}:staggered:${i}`,
+      resultColumn: 'obtained value',
+      date: null,
+      specimen: null,
+      testRaw: text(row.tokens),
+      resultRaw: value,
+      resultKind: parsed.kind,
+      numericDecimal: parsed.decimal,
+      qualifier: parsed.qualifier,
+      unitRaw: null,
+      rangeRaw: null,
+      flagRaw: null,
+      evidence: {
+        test: row.tokens.map((t) => t.token_id),
+        result: values.map((t) => t.token_id),
+        unit: [],
+        range: [],
+        flag: [],
+      },
+      sourcePolygon: boxOf([...row.tokens, ...values]),
+      status: 'needs_review',
+      machineEligible: false,
+      interpretationReady: false,
+      reviewReasons: ['ambiguous_row_pairing', 'quality_profile_unvalidated'],
+      validatorVersion: VERSION,
+      templateVersion: null,
+      readings: [{ engine: values[0].engine, raw: value, cropId: null }],
+    });
+  }
+  return candidates;
 }
 function assign(row: EvidenceToken[], columns: Column[]) {
   const cells = columns.map(() => [] as EvidenceToken[]);

@@ -33,6 +33,7 @@ services:
       OPENDATALOADER_ENABLED: "false"
       LAB_OCR_BASE_URL: http://paddleocr:5005
       LAB_OCR_API_KEY: ${LAB_OCR_API_KEY:-}
+      LAB_OCR_TIMEOUT_MS: "${LAB_OCR_TIMEOUT_MS:-130000}"
       DOCLING_OCR_ENABLED: "true"
       DOCLING_OCR_BASE_URL: http://docling:5002
       REPORT_ASYNC_RUNTIME_ENABLED: "${REPORT_ASYNC_RUNTIME_ENABLED:-true}"
@@ -72,6 +73,7 @@ services:
       DOCLING_OCR_BASE_URL: http://docling:5002
       LAB_OCR_BASE_URL: http://paddleocr:5005
       LAB_OCR_API_KEY: ${LAB_OCR_API_KEY:-}
+      LAB_OCR_TIMEOUT_MS: "${LAB_OCR_TIMEOUT_MS:-130000}"
       REPORT_WORKER_CONCURRENCY: "${REPORT_WORKER_CONCURRENCY:-1}"
       NODE_ENV: production
     command: npm run start:report-worker:prod
@@ -164,7 +166,8 @@ services:
       OMP_NUM_THREADS: "1"
       OPENBLAS_NUM_THREADS: "1"
       MKL_NUM_THREADS: "1"
-      LAB_OCR_PAGE_TIMEOUT_SEC: "60"
+      LAB_OCR_PAGE_TIMEOUT_SEC: "${LAB_OCR_PAGE_TIMEOUT_SEC:-120}"
+      LAB_OCR_WORKER_MAX_PAGES: "${LAB_OCR_WORKER_MAX_PAGES:-25}"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import json,urllib.request,sys; sys.exit(0 if json.load(urllib.request.urlopen('http://127.0.0.1:5005/health',timeout=3))['ready'] else 1)\""]
       interval: 30s

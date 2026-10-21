@@ -5,7 +5,7 @@ import type { DataSource } from 'typeorm';
 import type { ConfigService } from '@nestjs/config';
 
 async function main() {
-  const pdf = await PDFDocument.create(); pdf.addPage([600,800]);
+  const pdf = await PDFDocument.create(); pdf.addPage([600,800]); pdf.addPage([600,800]);
   let saved: unknown[] = [];
   const db = { query: async (_sql:string, values:unknown[]) => { saved = values; return []; } } as unknown as DataSource;
   const config = { get: () => 'false' } as unknown as ConfigService;
@@ -26,6 +26,9 @@ async function main() {
   assert.equal(candidates[0].id,'p0-t1000-r0');
   const raw = JSON.parse(saved[4] as string);
   assert.deepEqual(raw[0].geometry.paddlePage.paddle.rec_texts,words);
+  assert.equal(raw[1].geometry, null);
+  const statuses = JSON.parse(saved[3] as string);
+  assert.deepEqual(statuses.map((page: { status: string }) => page.status), ['parsed', 'parsed']);
   console.log('PASS Paddle evidence persists as review candidate with aligned raw output');
 }
 void main().catch((error)=>{console.error(error);process.exitCode=1});

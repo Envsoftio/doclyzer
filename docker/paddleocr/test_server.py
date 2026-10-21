@@ -1,5 +1,4 @@
 """Synthetic contract tests; no inference quality claims."""
-import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -41,12 +40,47 @@ class ServerTests(unittest.TestCase):
 
     def test_supervisor_returns_child_result(self):
         value = {'page_width': 300, 'paddle': {'rec_texts': []}}
+        class FakeStdin:
+            def write(self, command):
+                import json
+                _, _, result_path = json.loads(command)
+                Path(result_path).write_text(json.dumps(value))
+            def flush(self):
+                pass
+            def close(self):
+                pass
+        class FakeStdout:
+            def readline(self):
+                return 'OK\n'
+            def close(self):
+                pass
+        class FakeProcess:
+            stdin = FakeStdin()
+            stdout = FakeStdout()
+            def poll(self):
+                return None
+            def terminate(self):
+                pass
+            def wait(self, timeout=None):
+                return 0
+        server.stop_worker()
+        with patch.object(server.subprocess, 'Popen', return_value=FakeProcess()) as spawn:
+            with patch.object(server.select, 'select', return_value=([FakeProcess.stdout], [], [])):
+                self.assertEqual(server.run_supervised(b'pdf'), value)
+                self.assertEqual(server.run_supervised(b'pdf'), value)
+        self.assertEqual(spawn.call_count, 1)
+        server.stop_worker()
 
-        def fake_run(args, **kwargs):
-            Path(args[-1]).write_text(json.dumps(value))
-
-        with patch.object(server.subprocess, 'run', side_effect=fake_run):
-            self.assertEqual(server.run_supervised(b'pdf'), value)
+    def test_timeout_restarts_supervised_worker(self):
+        from fastapi import HTTPException
+        server.stop_worker()
+        with patch.object(server.subprocess, 'Popen') as spawn:
+            spawn.return_value.poll.return_value = None
+            with patch.object(server.select, 'select', return_value=([], [], [])):
+                with self.assertRaises(HTTPException) as error:
+                    server.run_supervised(b'pdf')
+        self.assertEqual(error.exception.status_code, 504)
+        self.assertIsNone(server._worker)
 
     def test_native_words_have_top_left_coordinates(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -61,6 +61,8 @@ async function main() {
   const policy = {
     maxAttempts: 3,
     processingDeadlineMs: 600000,
+    processingDeadlinePerPageMs: 130000,
+    processingDeadlineOverheadMs: 600000,
     uploadDeadlineMs: 60000,
     idempotencyRetentionMs: 86400000,
     cleanupRetryMs: 60000,

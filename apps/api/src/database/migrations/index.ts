@@ -55,6 +55,8 @@ import { CompleteObservationContract1730817500000 } from './1730817500000-Comple
 import { CreateObservationRules1730817600000 } from './1730817600000-CreateObservationRules';
 import { AddObservationIdentityEvidence1730817700000 } from './1730817700000-AddObservationIdentityEvidence';
 import { CreateReportVlShadows1730818400000 } from './1730818400000-CreateReportVlShadows';
+import { RepairReportVlShadowsApplied1730818500000 } from './1730818500000-RepairReportVlShadowsApplied';
+import { CreateReportOcrPageCheckpoints1730818600000 } from './1730818600000-CreateReportOcrPageCheckpoints';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -114,4 +116,6 @@ export const migrations = [
   RepairReportProviderSubmissionCount1730818200000,
   AccountDeletionLifecycle1730818300000,
   CreateReportVlShadows1730818400000,
+  RepairReportVlShadowsApplied1730818500000,
+  CreateReportOcrPageCheckpoints1730818600000,
 ];

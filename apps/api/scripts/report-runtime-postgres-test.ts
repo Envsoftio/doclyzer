@@ -47,6 +47,17 @@ async function main() {
     partial = false,
     unavailable = false;
   const provider = createServer((req, res) => {
+    if (req.url === '/v1/extract/page') {
+      req.resume();
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({
+        page_width: 612, page_height: 792, dpi: 300, native_words: [],
+        paddle: { rec_texts: [], rec_scores: [], rec_polys: [] },
+        model_version: 'fixture', paddleocr_version: 'fixture',
+        docling_parse_version: 'fixture',
+      }));
+      return;
+    }
     if (req.url?.startsWith('/fixture-bucket/')) {
       const key = req.url.slice('/fixture-bucket/'.length).split('?')[0];
       const value = bytes.get(decodeURIComponent(key));
@@ -220,10 +231,14 @@ async function main() {
       lease,
       new AbortController().signal,
     );
+    const resumedProgress = await client.loadCascadeProgress(lease, resumedOcr.cascadeProgress);
     assert.deepEqual(
-      Object.keys(resumedOcr.cascadeProgress?.['1'] ?? {}).sort(),
+      Object.keys(resumedProgress['1'] ?? {}).sort(),
       ['paddleocr-v5'],
     );
+    const [afterPage] = await db.query('SELECT staged_result FROM report_processing_jobs WHERE id=$1', [lease.jobId]);
+    assert.deepEqual(afterPage.staged_result, checkpoint.staged_result,
+      'page checkpoint must not rewrite the staged document');
     await jobs.complete(lease, 'ready', async () => {});
     const replay = await streams.replay(user, snapshot.cursor);
     assert.equal(replay.reset, false);
@@ -436,6 +451,8 @@ async function main() {
           B2_ENDPOINT: `http://127.0.0.1:${address.port}`,
           B2_REGION: 'test',
           DOCLING_OCR_BASE_URL: `http://127.0.0.1:${address.port}`,
+          LAB_OCR_BASE_URL: `http://127.0.0.1:${address.port}`,
+          LAB_OCR_API_KEY: 'fixture',
           DOCLING_API_KEY: '',
           REPORT_SUMMARY_ENABLED: 'false',
           REPORT_LAB_AI_FALLBACK_ENABLED: 'false',
@@ -491,6 +508,25 @@ async function main() {
     child.kill('SIGTERM');
     await stopped;
     child = null;
+    const longUser = randomUUID(), longProfile = randomUUID();
+    await db.query("INSERT INTO users(id,email) VALUES($1,'long-report@example.test')", [longUser]);
+    await db.query("INSERT INTO profiles(id,user_id,name) VALUES($1,$2,'Long report')", [longProfile, longUser]);
+    await db.query('INSERT INTO user_entitlements(user_id,plan_id) VALUES($1,$2)', [longUser, plan.id]);
+    const hundredPages = await PDFDocument.create();
+    for (let page = 0; page < 100; page++) hundredPages.addPage();
+    const longReport = await admission.accept({
+      userId: longUser, profileId: longProfile, idempotencyKey: 'hundred-pages',
+      file: { buffer: Buffer.from(await hundredPages.save()),
+        originalname: 'hundred-pages.pdf', mimetype: 'application/pdf' },
+    });
+    const [longJob] = await db.query(
+      `SELECT r.source_page_count,
+       EXTRACT(EPOCH FROM j.deadline_at-j.created_at)*1000 AS budget_ms
+       FROM reports r JOIN report_processing_jobs j ON j.report_id=r.id WHERE r.id=$1`,
+      [longReport.reportId],
+    );
+    assert.equal(longJob.source_page_count, 100);
+    assert.ok(Number(longJob.budget_ms) >= 13600000);
     console.log(
       'PASS actual Nest worker process kill/restart, provider task reuse, extraction adapter and graceful shutdown; SSE session revocation',
     );

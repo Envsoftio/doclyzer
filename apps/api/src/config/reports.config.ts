@@ -54,7 +54,7 @@ export const reportsConfig = registerAs(
     paddleOcrBaseUrl: process.env.LAB_OCR_BASE_URL ?? 'http://127.0.0.1:5005',
     paddleOcrApiKey: process.env.LAB_OCR_API_KEY ?? '',
     paddleOcrTimeoutMs: parseInt(
-      process.env.LAB_OCR_TIMEOUT_MS ?? '65000',
+      process.env.LAB_OCR_TIMEOUT_MS ?? '130000',
       10,
     ),
     reportSummaryEnabled: process.env.REPORT_SUMMARY_ENABLED === 'true',

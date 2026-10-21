@@ -3,6 +3,7 @@ import contextlib
 import io
 import json
 import os
+import select
 import subprocess
 import sys
 import tempfile
@@ -21,6 +22,9 @@ API_KEY = os.environ.get('LAB_OCR_API_KEY', '')
 LOCK = threading.Lock()
 app = FastAPI()
 _ocr = None
+_worker = None
+_worker_pages = 0
+WORKER_MAX_PAGES = max(1, int(os.environ.get('LAB_OCR_WORKER_MAX_PAGES', '25')))
 
 
 def authorized(key):
@@ -177,18 +181,54 @@ async def extract_page(request: Request, x_api_key: str | None = Header(default=
 
 
 def run_supervised(data, content_type='application/pdf'):
-    """A timed-out native call cannot outlive its supervised child process."""
+    """Reuse a warm model while keeping a hard kill boundary for hung native calls."""
+    global _worker, _worker_pages
     with tempfile.TemporaryDirectory(prefix='lab-page-') as temp:
+        request_path = Path(temp) / 'request'
         result_path = Path(temp) / 'result.json'
+        request_path.write_bytes(data)
         try:
-            subprocess.run([sys.executable, '/app/server.py', '--page-worker', content_type, str(result_path)],
-                           input=data, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                           timeout=int(os.environ.get('LAB_OCR_PAGE_TIMEOUT_SEC', '30')), check=True)
-        except subprocess.TimeoutExpired:
-            raise HTTPException(504, 'Page extraction timed out') from None
-        except subprocess.CalledProcessError:
+            if _worker is None or _worker.poll() is not None:
+                stop_worker()
+                _worker = subprocess.Popen(
+                    [sys.executable, '/app/server.py', '--page-worker-loop'],
+                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL, text=True, bufsize=1)
+            _worker.stdin.write(json.dumps([content_type, str(request_path), str(result_path)]) + '\n')
+            _worker.stdin.flush()
+            ready, _, _ = select.select([_worker.stdout], [], [],
+                                        int(os.environ.get('LAB_OCR_PAGE_TIMEOUT_SEC', '30')))
+            if not ready:
+                stop_worker()
+                raise HTTPException(504, 'Page extraction timed out')
+            if _worker.stdout.readline().strip() != 'OK':
+                stop_worker()
+                raise HTTPException(502, 'Page extraction failed')
+            result = json.loads(result_path.read_text())
+            _worker_pages += 1
+            if _worker_pages >= WORKER_MAX_PAGES:
+                stop_worker()
+            return result
+        except (BrokenPipeError, OSError, ValueError, json.JSONDecodeError):
+            stop_worker()
             raise HTTPException(502, 'Page extraction failed') from None
-        return json.loads(result_path.read_text())
+
+
+def stop_worker():
+    global _worker, _worker_pages
+    if _worker is not None:
+        if _worker.poll() is None:
+            _worker.terminate()
+            try:
+                _worker.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                _worker.kill()
+                _worker.wait()
+        for pipe in (_worker.stdin, _worker.stdout):
+            if pipe:
+                pipe.close()
+    _worker = None
+    _worker_pages = 0
 
 
 @app.post('/v1/verify/field')
@@ -223,8 +263,16 @@ async def verify_field(request: Request, x_api_key: str | None = Header(default=
                 'engine': 'tesseract', 'crop_rect': list(crop)}
 
 
-if __name__ == '__main__' and sys.argv[1:2] == ['--page-worker']:
-    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-        data = sys.stdin.buffer.read()
-        result = read_one_page(data) if sys.argv[2] == 'application/pdf' else read_one_image(data)
-    Path(sys.argv[3]).write_text(json.dumps(result))
+if __name__ == '__main__' and sys.argv[1:2] == ['--page-worker-loop']:
+    for line in sys.stdin:
+        try:
+            content_type, request_path, result_path = json.loads(line)
+            with open(os.devnull, 'w') as quiet:
+                with contextlib.redirect_stdout(quiet), contextlib.redirect_stderr(quiet):
+                    data = Path(request_path).read_bytes()
+                    result = read_one_page(data) if content_type == 'application/pdf' else read_one_image(data)
+            Path(result_path).write_text(json.dumps(result))
+            sys.stdout.write('OK\n')
+        except Exception:
+            sys.stdout.write('ERROR\n')
+        sys.stdout.flush()

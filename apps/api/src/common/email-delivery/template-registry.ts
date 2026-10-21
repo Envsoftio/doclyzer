@@ -25,6 +25,10 @@ export const EMAIL_TEMPLATE_REGISTRY: Record<string, EmailTemplateDefinition> =
       templateKey: 'report-upload-complete',
       subject: 'Your report upload is complete',
     },
+    'report.review_required': {
+      templateKey: 'report-review-required',
+      subject: 'Your report needs review',
+    },
     'report.parse_failed': {
       templateKey: 'report-parse-failed',
       subject: 'We could not parse your report',

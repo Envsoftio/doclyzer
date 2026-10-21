@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
 import { appendReportEvent } from './report-event.store';
 import type { AdmissionPolicy } from './report-admission.service';
+import { reportDeadlineMs } from './report-deadline';
 
 export async function cancelReportProcessing(
   db: DataSource,
@@ -27,6 +28,10 @@ export async function cancelReportProcessing(
     await m.query(
       `UPDATE report_processing_jobs SET state='cancelled',lease_token=NULL,lease_expires_at=NULL,heartbeat_at=NULL,completed_at=clock_timestamp(),staged_result=NULL
       WHERE report_id=$1 AND state IN ('queued','leased','retry_scheduled')`,
+      [reportId],
+    );
+    await m.query(
+      'DELETE FROM report_ocr_page_checkpoints WHERE job_id IN (SELECT id FROM report_processing_jobs WHERE report_id=$1)',
       [reportId],
     );
     await m.query(
@@ -128,7 +133,7 @@ export async function retryReportProcessing(
         reportId,
         next.processing_generation,
         policy.maxAttempts,
-        policy.processingDeadlineMs,
+        reportDeadlineMs(policy, r.source_page_count),
       ],
     );
     await appendReportEvent(m, userId, {

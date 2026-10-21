@@ -9,7 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { ReportLabValueEntity } from '../../../database/entities/report-lab-value.entity';
 import { loadObservationRules, normalizeObservation } from '../observation-normalizer';
 import { adaptPaddle, adaptNativeWords, bounds, type PageEvidence } from '../geometry/evidence';
-import { parseGeometry } from '../geometry/lab-parser';
+import { parseGeometry, recoverStaggeredReviewCandidates } from '../geometry/lab-parser';
 import type { OcrOutput } from '../report-ocr-cascade';
 
 type PageStatus = { page: number; status: 'parsed' | 'failed'; reason?: string; candidateCount: number };
@@ -36,6 +36,11 @@ export class ReportVlShadowService {
     const rawOutput: unknown[] = [];
     for (let page = 0; page < pageCount; page++) {
       if (signal.aborted) return;
+      if (!useVl && !reviewPages[String(page + 1)]) {
+        pageStatus.push({ page, status: 'parsed', candidateCount: 0 });
+        rawOutput.push({ geometry: null, vl: null });
+        continue;
+      }
       const paddlePage = (reviewPages[String(page + 1)]?.visual?.parsedJson as { paddlePage?: {
         page_width: number; page_height: number; dpi: number;
         native_words: Parameters<typeof adaptNativeWords>[0];
@@ -43,6 +48,7 @@ export class ReportVlShadowService {
         model_version: string; paddleocr_version: string; docling_parse_version: string;
       } } | undefined)?.paddlePage;
       let geometryRaw: unknown = null;
+      let geometryIncomplete = false;
       if (paddlePage) {
         try {
           const pageId = `${reportId}:page:${page + 1}`;
@@ -64,6 +70,9 @@ export class ReportVlShadowService {
             failed_regions: [], raw_output_ref: `${pageId}:raw`,
           };
           const parsed = parseGeometry([evidence], [pageId]);
+          if (!parsed.candidates.length)
+            parsed.candidates.push(...recoverStaggeredReviewCandidates(evidence));
+          geometryIncomplete = parsed.documentStatus === 'partial';
           parsed.candidates.forEach((candidate, row) => {
             const box = bounds(candidate.sourcePolygon);
             candidates.push({
@@ -83,7 +92,7 @@ export class ReportVlShadowService {
         }
       }
       if (!useVl || !base || !key) {
-        pageStatus.push({ page, status: geometryRaw ? 'parsed' : 'failed', reason: geometryRaw ? undefined : 'paddle_page_unavailable',
+        pageStatus.push({ page, status: geometryRaw && !geometryIncomplete ? 'parsed' : 'failed', reason: geometryRaw ? (geometryIncomplete ? 'geometry_incomplete' : undefined) : 'paddle_page_unavailable',
           candidateCount: candidates.filter((c) => c.page === page).length });
         rawOutput.push({ geometry: geometryRaw, vl: null });
         continue;

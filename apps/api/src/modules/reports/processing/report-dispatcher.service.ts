@@ -196,7 +196,9 @@ export class ReportDispatcherService {
           eventType:
             r.status === 'ready'
               ? NotifiableEventType.REPORT_UPLOAD_COMPLETE
-              : NotifiableEventType.REPORT_PARSE_FAILED,
+              : r.status === 'needs_attention'
+                ? NotifiableEventType.REPORT_REVIEW_REQUIRED
+                : NotifiableEventType.REPORT_PARSE_FAILED,
           userId: r.user_id,
           profileId: r.profile_id,
           correlationId: r.id,
@@ -278,6 +280,11 @@ export class ReportDispatcherService {
       });
     await this.db.query(
       `UPDATE report_processing_jobs SET staged_result=NULL WHERE state IN ('succeeded','failed','cancelled') AND completed_at<clock_timestamp()-interval '1 day'`,
+    );
+    await this.db.query(
+      `DELETE FROM report_ocr_page_checkpoints c USING report_processing_jobs j
+       WHERE c.job_id=j.id AND j.state IN ('succeeded','failed','cancelled')
+       AND j.completed_at<clock_timestamp()-interval '1 day'`,
     );
     await this.db.query(
       'DELETE FROM report_sse_connections WHERE expires_at<clock_timestamp()',

@@ -8,6 +8,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { DataSource, type EntityManager } from 'typeorm';
+import { PDFDocument } from 'pdf-lib';
 import type { FileStorageService } from '../../../common/storage/file-storage.interface';
 import {
   ALLOWED_UPLOAD_CONTENT_TYPES,
@@ -19,10 +20,13 @@ import {
 } from './report-processing.contract';
 import { appendReportEvent } from './report-event.store';
 import { reportSourceStorageKey } from './report-storage-key';
+import { reportDeadlineMs } from './report-deadline';
 
 export interface AdmissionPolicy {
   maxAttempts: number;
   processingDeadlineMs: number;
+  processingDeadlinePerPageMs: number;
+  processingDeadlineOverheadMs: number;
   uploadDeadlineMs: number;
   idempotencyRetentionMs: number;
   cleanupRetryMs: number;
@@ -59,6 +63,8 @@ export class ReportAdmissionService {
     for (const key of [
       'maxAttempts',
       'processingDeadlineMs',
+      'processingDeadlinePerPageMs',
+      'processingDeadlineOverheadMs',
       'uploadDeadlineMs',
       'idempotencyRetentionMs',
       'cleanupRetryMs',
@@ -96,6 +102,16 @@ export class ReportAdmissionService {
       return this.replay(manager, input, requestHash);
     });
     if (replay) return replay;
+
+    let sourcePageCount: number | null = input.file.mimetype === 'application/pdf' ? null : 1;
+    if (input.file.mimetype === 'application/pdf') {
+      try {
+        sourcePageCount = (await PDFDocument.load(input.file.buffer)).getPageCount();
+        if (sourcePageCount > 1000) sourcePageCount = null;
+      } catch {
+        // Invalid or encrypted content is rejected by the processing worker.
+      }
+    }
 
     const intentId = randomUUID();
     const reportId = randomUUID();
@@ -161,6 +177,7 @@ export class ReportAdmissionService {
           hash,
         ],
       );
+      await manager.query('UPDATE reports SET source_page_count=$2 WHERE id=$1', [reportId, sourcePageCount]);
       await manager.query(
         `INSERT INTO report_processing_content_claims VALUES ($1,$2,$3,1,$4)`,
         [input.userId, input.profileId, hash, reportId],
@@ -172,7 +189,7 @@ export class ReportAdmissionService {
           randomUUID(),
           reportId,
           this.policy.maxAttempts,
-          this.policy.processingDeadlineMs,
+          reportDeadlineMs(this.policy, sourcePageCount),
         ],
       );
       await this.recordRequest(manager, input, requestHash, reportId);

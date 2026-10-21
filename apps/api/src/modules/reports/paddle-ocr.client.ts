@@ -39,7 +39,7 @@ export class PaddleOcrClient {
   private async extract(buffer: Buffer, contentType: 'application/pdf' | 'image/jpeg' | 'image/png', signal?: AbortSignal): Promise<PaddlePageOutput | null> {
     const base = this.config.get<string>('reports.paddleOcrBaseUrl');
     const key = this.config.get<string>('reports.paddleOcrApiKey');
-    const timeout = this.config.get<number>('reports.paddleOcrTimeoutMs') ?? 65000;
+    const timeout = this.config.get<number>('reports.paddleOcrTimeoutMs') ?? 130000;
     if (!base || !key || buffer.length > 10 * 1024 * 1024) return null;
     const dispatcher = new Agent({ headersTimeout: timeout, bodyTimeout: timeout });
     try {

@@ -15,6 +15,7 @@ import { ReportAdmissionService } from './report-admission.service';
 import { DoclingTaskClient, ProcessingFailure } from './docling-task.client';
 import { processingSettings } from './processing-settings';
 import { ReportVlShadowService } from './report-vl-shadow.service';
+import { reportDeadlineMs } from './report-deadline';
 @Injectable()
 export class ReportWorkerService {
   private readonly log = new Logger(ReportWorkerService.name);
@@ -122,6 +123,7 @@ export class ReportWorkerService {
       let normalized: Awaited<
         ReturnType<ReportsService['normalizeWorkerSource']>
       >;
+      let pageCount: number | null = null;
       try {
         assertImageResourceLimit(
           bytes,
@@ -143,9 +145,22 @@ export class ReportWorkerService {
           const pdf = await PDFDocument.load(normalized.buffer);
           if (pdf.getPageCount() > settings.maxPages)
             throw new Error('PAGE_LIMIT');
+          pageCount = pdf.getPageCount();
         }
-      } catch {
+      } catch (error) {
+        if (error instanceof ReportLeaseLostError) throw error;
         throw new ProcessingFailure('INVALID_CONTENT', false);
+      }
+      if (pageCount !== null) {
+        const extended = await jobs.extendDeadline(
+          lease,
+          reportDeadlineMs(settings.policy, pageCount),
+        );
+        if (deadline) clearTimeout(deadline);
+        deadline = setTimeout(
+          () => controller.abort(),
+          Math.max(1, extended.getTime() - Date.now()),
+        );
       }
       const result = normalized.source === 'image'
         ? await this.reports.extractImageWithPaddle(
@@ -157,9 +172,10 @@ export class ReportWorkerService {
             // Native PDF conversion stays durably checkpointed.
             const native = await provider.convert(normalized.buffer, lease, signal, true);
             if (signal.aborted) throw new ReportLeaseLostError();
+            const progress = await provider.loadCascadeProgress(lease, native.cascadeProgress);
             return this.reports.extractWithOcrCascade(
               normalized.buffer, signal, native,
-              { progress: native.cascadeProgress,
+              { progress,
                 save: (page, engine, output) =>
                   provider.saveCascadeCandidate(lease, page, engine, output) },
             );

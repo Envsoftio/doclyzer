@@ -186,14 +186,36 @@ export class DoclingTaskClient {
     engine: 'paddleocr-v5',
     output: OcrOutput,
   ): Promise<void> {
-    await this.checkpoint(
-      lease,
-      `staged_result=jsonb_set(staged_result, '{doclyzer_cascade}',
-      COALESCE(staged_result->'doclyzer_cascade','{}'::jsonb) ||
-      jsonb_build_object($3::text, COALESCE(staged_result->'doclyzer_cascade'->$3::text,'{}'::jsonb) ||
-      jsonb_build_object($4::text,$5::jsonb)))`,
-      [String(page), engine, JSON.stringify(output)],
+    const result = await this.db.query(
+      `INSERT INTO report_ocr_page_checkpoints(job_id,page_number,engine,output)
+       SELECT id,$3,$4,$5::jsonb FROM report_processing_jobs
+       WHERE id=$1 AND lease_token=$2 AND state='leased'
+         AND lease_expires_at>clock_timestamp() AND deadline_at>clock_timestamp()
+       ON CONFLICT (job_id,page_number,engine) DO UPDATE SET output=excluded.output
+       RETURNING job_id`,
+      [lease.jobId, lease.token, page, engine, JSON.stringify(output)],
     );
+    if (result.length !== 1 || result[0]?.job_id !== lease.jobId)
+      throw new ReportLeaseLostError();
+  }
+  async loadCascadeProgress(
+    lease: ReportJobLease,
+    legacy?: CascadeProgress,
+  ): Promise<CascadeProgress> {
+    const rows: { page_number: number; engine: 'paddleocr-v5'; output: OcrOutput }[] =
+      await this.db.query(
+        `SELECT c.page_number,c.engine,c.output FROM report_ocr_page_checkpoints c
+         JOIN report_processing_jobs j ON j.id=c.job_id
+         WHERE j.id=$1 AND j.lease_token=$2 AND j.state='leased'`,
+        [lease.jobId, lease.token],
+      );
+    const progress: CascadeProgress = { ...legacy };
+    for (const row of rows)
+      progress[String(row.page_number)] = {
+        ...progress[String(row.page_number)],
+        [row.engine]: row.output,
+      };
+    return progress;
   }
   private outputs(result: Record<string, unknown>): {
     text: string;

@@ -11,6 +11,7 @@ import {
 import {
   applyVerification,
   parseGeometry,
+  recoverStaggeredReviewCandidates,
   type LabTemplate,
 } from '../src/modules/reports/geometry/lab-parser';
 import { evaluate } from '../src/modules/reports/geometry/evaluation';
@@ -65,6 +66,60 @@ const head = [
 ];
 function parse(tokens: EvidenceToken[]) {
   return parseGeometry([page([...head, ...tokens])], ['p1']);
+}
+{
+  const evidence = page([
+    tok('unit-head', 'Units Bio.Ref. Intervals', 300, 35),
+    tok('result-head', 'Obtained Value', 180, 50),
+    tok('test-head', 'Test Name', 20, 70),
+    tok('test-a', 'Marker A', 20, 100),
+    tok('value-a', '90', 180, 112),
+    tok('test-b', 'Marker B', 20, 130),
+    tok('value-b', '95', 180, 142),
+  ]);
+  const recovered = recoverStaggeredReviewCandidates(evidence);
+  assert.deepEqual(
+    recovered.map((row) => [row.testRaw, row.resultRaw]),
+    [
+      ['Marker A', '90'],
+      ['Marker B', '95'],
+    ],
+  );
+  assert(
+    recovered.every(
+      (row) => row.status === 'needs_review' && !row.machineEligible,
+    ),
+  );
+  assert.deepEqual(
+    recoverStaggeredReviewCandidates(
+      page([
+        tok('test-head', 'Test Name', 20, 70),
+        tok('result-head', 'Obtained Value', 180, 50),
+        tok('test-a', 'Marker A', 20, 100),
+        tok('value-a', '90', 180, 112),
+      ]),
+    ),
+    [],
+  );
+}
+{
+  const out = parseGeometry(
+    [
+      page([
+        tok('test-head', 'Test Name', 20, 10),
+        tok('result-head', 'Results', 200, 10),
+        tok('unit-head', 'Units', 300, 10),
+        tok('range-head', 'Bio. Ref. Interval', 400, 10),
+        tok('test', 'Marker A', 20, 40),
+        tok('value', '90', 200, 40),
+        tok('unit', 'mg/dL', 300, 40),
+        tok('range', '70-99', 400, 40),
+      ]),
+    ],
+    ['p1'],
+  );
+  assert.equal(out.candidates[0].resultRaw, '90');
+  assert.equal(out.candidates[0].rangeRaw, '70-99');
 }
 {
   const out = parse([

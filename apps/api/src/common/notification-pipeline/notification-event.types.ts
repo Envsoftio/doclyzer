@@ -6,6 +6,7 @@ export enum NotifiableEventType {
   ACCOUNT_CLOSURE_CONFIRMED = 'ACCOUNT_CLOSURE_CONFIRMED',
   ACCOUNT_PASSWORD_RESET = 'ACCOUNT_PASSWORD_RESET',
   REPORT_UPLOAD_COMPLETE = 'REPORT_UPLOAD_COMPLETE',
+  REPORT_REVIEW_REQUIRED = 'REPORT_REVIEW_REQUIRED',
   REPORT_PARSE_FAILED = 'REPORT_PARSE_FAILED',
   BILLING_PAYMENT_SUCCESS = 'BILLING_PAYMENT_SUCCESS',
   BILLING_PAYMENT_FAILED = 'BILLING_PAYMENT_FAILED',
@@ -25,6 +26,10 @@ export const EVENT_CATEGORY_MAP: Record<
   [NotifiableEventType.REPORT_UPLOAD_COMPLETE]: {
     category: 'product',
     emailType: 'report.upload_complete',
+  },
+  [NotifiableEventType.REPORT_REVIEW_REQUIRED]: {
+    category: 'product',
+    emailType: 'report.review_required',
   },
   [NotifiableEventType.REPORT_PARSE_FAILED]: {
     category: 'product',
