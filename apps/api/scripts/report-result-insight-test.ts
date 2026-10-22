@@ -43,6 +43,40 @@ async function main() {
     referenceRange: '12-16',
     sampleDate: 'Synthetic private date must not be transmitted',
   };
+  const categoricalRange =
+    'Optimal: <100\nAbove Optimal: 100-129\nBorderline: 130-159\nHigh: 160-189\nVery High: >190';
+  for (const [value, expected] of [
+    ['99', 'within'],
+    ['100', 'above'],
+    ['115', 'above'],
+    ['190', 'above'],
+  ]) {
+    assert.equal(
+      comparePrintedRange({
+        ...result,
+        value,
+        referenceRange: categoricalRange,
+      }),
+      expected,
+    );
+  }
+  for (const range of [
+    '3.50-5.20',
+    '3.50–5.20',
+    '3.50&#x2d;5.20',
+    '3.50 to 5.20',
+  ]) {
+    assert.equal(
+      comparePrintedRange({
+        parameterName: 'Albumin',
+        value: '4.06',
+        unit: 'g/dL',
+        referenceRange: range,
+        isAbnormal: false,
+      }),
+      'within',
+    );
+  }
   assert.equal(comparePrintedRange(result), 'below');
   assert.equal(comparePrintedRange({ ...result, value: '14' }), 'within');
   assert.equal(comparePrintedRange({ ...result, value: '17' }), 'above');
@@ -113,6 +147,17 @@ async function main() {
       { parameterName: 'Hb', value: '10', unit: '' },
     ),
     undefined,
+  );
+  assert.equal(
+    selectStoredResult(
+      [
+        { ...result, id: 'first', unit: 'g/dL' },
+        { ...result, id: 'second', unit: 'g/dL' },
+      ],
+      { parameterName: 'Hb', value: '10', unit: 'g/dL' },
+    ),
+    undefined,
+    'identical visible fields cannot select an arbitrary stored observation',
   );
   try {
     let fetchCount = 0;

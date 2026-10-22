@@ -151,12 +151,17 @@ check(
       table([
         ['Test Name', 'Ref Range', 'Flag', 'Unit', 'Result'],
         ['Glucose', '70-99', 'High', 'mg/dL', '105'],
+        ['Unfamiliar calculation', '2.5-3.5', 'Low', '', '1.7'],
       ]),
     ).extractedLabValues;
-    assert.equal(rows.length, 1);
+    assert.equal(rows.length, 2);
     assert.deepEqual(
       [rows[0].value, rows[0].unit, rows[0].referenceRange],
       ['105', 'mg/dL', '70-99'],
+    );
+    assert.deepEqual(
+      [rows[1].value, rows[1].unit, rows[1].referenceRange],
+      ['1.7', null, '2.5-3.5'],
     );
   },
 );
@@ -334,6 +339,145 @@ check(
     );
   },
 );
+check('Printed albumin intervals survive table and text extraction', () => {
+  const explicit = parser.parse(
+    table([
+      ['Test Name', 'Result', 'Unit', 'Reference Range'],
+      ['Albumin Method : BCG Method', '4.06', 'g/dL', '3.50-5.20'],
+    ]),
+  ).extractedLabValues;
+  assert.equal(explicit[0].parameterName, 'Albumin');
+  assert.equal(explicit[0].referenceRange, '3.50-5.20');
+  assert.equal(explicit[0].isAbnormal, false);
+  for (const transcript of [
+    '| Albumin | 4.06 | g/dL | 3.50-5.20 |',
+    'Albumin\t4.06\tg/dL\t3.50-5.20',
+    'Albumin: 4.06 g/dL 3.50-5.20',
+    'Albumin 4.06 g/dL 3.50-5.20',
+    '**Albumin&#x20;**\nMethod : BCG Method&#x20;\n4.06&#x20;\ng/dL&#x20;\n3.50-5.20',
+    'Albumin\n4.06\ng/dL\n3.50-5.20',
+    'INVESTIGATION\nAlbumin\nRESULTS\n4.06\nUOM\ng/dL\nREFERENCE RANGE\n3.50-5.20',
+  ]) {
+    const rows = new LabValueExtractor().extract(transcript);
+    assert.equal(rows.length, 1, transcript);
+    assert.deepEqual(
+      [
+        rows[0].parameterName,
+        rows[0].value,
+        rows[0].unit,
+        rows[0].referenceRange,
+      ],
+      ['Albumin', '4.06', 'g/dL', '3.50-5.20'],
+      transcript,
+    );
+    if (transcript.includes('BCG'))
+      assert.equal(rows[0].identityEvidence?.method, 'BCG Method');
+  }
+});
+check('Mapped ranges reject reversed bounds and compare complete categories', () => {
+  const rows = parser.parse(table([
+    ['Test', 'Result', 'Unit', 'Reference Range'],
+    ['LDL cholesterol', '98.48', 'mg/dL', 'Optimal: <100 Above Optimal: 100-129 High: >129'],
+    ['Another marker', '115', 'mg/dL', 'Optimal: <100 Above Optimal: 100-129 High: >129'],
+    ['Albumin', '14', 'g/dL', '16-12'],
+  ])).extractedLabValues;
+  assert.equal(rows[0].isAbnormal, false);
+  assert.equal(rows[1].isAbnormal, true);
+  assert.equal(rows[2].isAbnormal, undefined);
+});
+check('Vertical category ranges remain attached to their result', () => {
+  const range = [
+    'Optimal: <100',
+    'Above Optimal: 100-129',
+    'Borderline: 130-159',
+    'High: 160-189',
+    'Very High: >190',
+  ].join('\n');
+  const rows = new LabValueExtractor().extract(
+    [
+      'LDL Cholesterol',
+      '135',
+      'mg/dL',
+      range,
+      'Albumin',
+      '4.06',
+      'g/dL',
+      '3.50-5.20',
+    ].join('\n'),
+  );
+  assert.deepEqual(
+    rows.map((row) => [row.parameterName, row.referenceRange]),
+    [
+      ['LDL Cholesterol', range],
+      ['Albumin', '3.50-5.20'],
+    ],
+  );
+  const partialRange = 'Optimal: <100\nUnexpected category: <130\nHigh: >';
+  const partialRows = new LabValueExtractor().extract(
+    `LDL Cholesterol\n135\nmg/dL\n${partialRange}`,
+  );
+  assert.equal(partialRows.length, 1);
+  assert.equal(partialRows[0].referenceRange, partialRange);
+  const tableRows = new LabValueExtractor().extract(
+    `| LDL Cholesterol | 135 | mg/dL | ${range.replace(/\n/g, '<br>')} |`,
+  );
+  assert.equal(tableRows.length, 1);
+  assert.equal(tableRows[0].referenceRange, range.replace(/\n/g, '; '));
+  const mixedRange = `${range}\nOther category: 130 to 159`;
+  const mixedRows = new LabValueExtractor().extract(
+    `LDL Cholesterol\n135\nmg/dL\n${mixedRange}\nMCV: 90 fL 80-100\nAlbumin: 4.06 g/dL 3.50-5.20`,
+  );
+  assert.deepEqual(
+    mixedRows.map((row) => [row.parameterName, row.referenceRange]),
+    [
+      ['LDL Cholesterol', mixedRange],
+      ['MCV', '80-100'],
+      ['Albumin', '3.50-5.20'],
+    ],
+  );
+  const flattened = range.replace(/\n/g, ' ');
+  assert.equal(
+    new LabValueExtractor().extract(`LDL Cholesterol 135 mg/dL ${flattened}`)[0]
+      .referenceRange,
+    flattened,
+  );
+  for (const label of [
+    'Normal',
+    'Very Low',
+    'Borderline Low',
+    'Near or Above Optimal',
+  ]) {
+    assert.equal(new LabValueExtractor().extract(`${label}: <5`).length, 0);
+  }
+});
+check('Fallback range enrichment keeps different unit scales separate', () => {
+  const rows = new LabValueExtractor().extract(
+    '| Novel count | 2 | % | |\n| Novel count | 2 | /cmm | 1-3 |',
+  );
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].referenceRange, undefined);
+  assert.equal(rows[1].referenceRange, '1-3');
+  for (const transcript of [
+    'Novel count: 4.06 10^9/L 3.50-5.20',
+    'Novel count 4.06 10^9/L 3.50-5.20',
+    'Novel count\n4.06\n10^9/L\n3.50-5.20',
+  ]) {
+    const [row] = new LabValueExtractor().extract(transcript);
+    assert.equal(row.unit, '10^9/L');
+    assert.equal(row.referenceRange, '3.50-5.20');
+  }
+});
+check('Vertical text does not borrow ranges from another test or prose', () => {
+  for (const transcript of [
+    'Albumin\nMethod : BCG Method\n4.06\ng/dL\nCalcium\n9.4\nmg/dL\n8.6-10.2',
+    'Albumin\n4.06\ng/dL\nSee interpretation\n3.50-5.20',
+  ]) {
+    const albumin = new LabValueExtractor()
+      .extract(transcript)
+      .find((row) => row.parameterName === 'Albumin');
+    assert.equal(albumin?.referenceRange, undefined);
+  }
+});
 check('Single unknown assay is recognized from report structure', () => {
   const classify = ReportsService.prototype as unknown as {
     isLikelyLabReport: (

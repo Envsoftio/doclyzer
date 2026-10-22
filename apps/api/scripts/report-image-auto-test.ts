@@ -101,6 +101,15 @@ async function main() {
   const corroboratedRows = extractAutoImageLabRows(corroborated);
   assert.equal(corroboratedRows[2].unit, '%');
   assert.equal(corroboratedRows[2].referenceRange, '0-100');
+  const categorical = structuredClone(visual.parsedJson.paddlePage);
+  const categoryText = 'Optimal: <100 Above Optimal: 100-129 High: >129';
+  categorical.paddle.rec_texts[11] = `% ${categoryText}`;
+  const categoricalRows = extractAutoImageLabRows(categorical);
+  assert.equal(categoricalRows[2].referenceRange, categoryText);
+  const invalidCategory = structuredClone(categorical);
+  invalidCategory.paddle.rec_texts[11] =
+    '% Optimal: <100 Unknown category: 100-129 High: >129';
+  assert.equal(extractAutoImageLabRows(invalidCategory)[2].referenceRange, null);
   corroborated.paddle.rec_texts[14] = 'fl 0-100';
   corroborated.paddle.rec_scores[14] = 0.88;
   const uncorroboratedRows = extractAutoImageLabRows(corroborated);

@@ -58,7 +58,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Forgot Password')),
+      appBar: AppBar(
+        leading: BackButton(onPressed: widget.onGoToLogin),
+        title: const Text('Forgot Password'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

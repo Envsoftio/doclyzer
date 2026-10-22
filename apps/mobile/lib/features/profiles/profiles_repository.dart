@@ -32,9 +32,9 @@ class Profile {
   }
 }
 
-/// Thrown when the user has reached their plan's profile limit (e.g. free tier: 1).
+/// Thrown when the user has reached their configured plan profile limit.
 class ProfileLimitExceededException implements Exception {
-  ProfileLimitExceededException([this.message = 'Free plan allows 1 profile. Upgrade to add more.']);
+  ProfileLimitExceededException([this.message = 'Your plan profile limit has been reached. Upgrade to add more.']);
   final String message;
 }
 
@@ -50,7 +50,7 @@ class ProfileNotFoundException implements Exception {
 abstract class ProfilesRepository {
   Future<List<Profile>> getProfiles();
 
-  /// Returns max profiles allowed for the user's plan. null = unlimited (e.g. tests).
+  /// Returns max profiles allowed for the user's current plan. null = unlimited in tests.
   Future<int?> getMaxProfiles();
 
   Future<Profile> createProfile({

@@ -11,7 +11,10 @@ class VerificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Verification Required')),
+      appBar: AppBar(
+        leading: BackButton(onPressed: onContinueToLogin),
+        title: const Text('Verification Required'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

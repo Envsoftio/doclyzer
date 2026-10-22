@@ -52,7 +52,7 @@ export class ProfilesService {
   ): Promise<ProfileWithActive> {
     const count = await this.profileRepo.count({ where: { userId } });
     const maxProfiles = await this.entitlementsService.getMaxProfiles(userId);
-    if (count >= maxProfiles) throw new ProfileLimitExceededException();
+    if (count >= maxProfiles) throw new ProfileLimitExceededException(maxProfiles);
 
     const isFirstProfile = count === 0;
     const entity = this.profileRepo.create({

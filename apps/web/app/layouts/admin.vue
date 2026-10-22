@@ -19,6 +19,7 @@ const navItems = [
   { label: 'Deleted accounts', icon: 'users', href: '/admin/deleted-accounts', group: 'Manage' },
   { label: 'Files', icon: 'files', href: '/admin/files', group: 'Manage' },
   { label: 'Billing', icon: 'billing', href: '/admin/billing', group: 'Manage' },
+  { label: 'Plans', icon: 'billing', href: '/admin/plans', group: 'Manage' },
   { label: 'Risk', icon: 'risk', href: '/admin/risk', group: 'Operations' },
   { label: 'Notifications', icon: 'notifications', href: '/admin/notifications', group: 'Operations' },
 ]

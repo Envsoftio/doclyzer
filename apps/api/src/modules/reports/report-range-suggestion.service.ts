@@ -9,6 +9,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ReportResultInsightUsageEntity } from '../../database/entities/report-result-insight-usage.entity';
 
+import {
+  normalizePrintedRangeText,
+  preferredPrintedRange,
+  validPrintedNumericRange,
+} from './report-reference-range';
+export { preferredPrintedRange } from './report-reference-range';
+
 export interface RangeSuggestion {
   providerCalled: boolean;
   suggestedRange: string | null;
@@ -19,11 +26,11 @@ export interface RangeSuggestion {
 
 /** Only the printed range is sent. OCR confusions are allowed, free text is not. */
 export function safeRawRange(value: string | null | undefined): string | null {
-  const raw = value?.trim() ?? '';
+  const raw = normalizePrintedRangeText(value ?? '');
   if (!raw || raw.length > 160 || !/\d/.test(raw)) return null;
-  const categorical = categoryCandidates(raw);
-  if (categorical.length > 0) return raw;
+  if (preferredPrintedRange(raw) != null) return raw;
   if (raw.length > 64) return null;
+  if (validSuggestedRange(raw)) return raw;
   if (!/^[\d\s.,<>≤≥=+\-–—IOlio]+$/.test(raw)) return null;
   if (!/^[<>≤≥=+\-\s]*\d/.test(raw)) return null;
   const letters = raw.match(/[A-Za-z]+/g) ?? [];
@@ -35,39 +42,7 @@ export function safeRawRange(value: string | null | undefined): string | null {
   return raw;
 }
 
-function categoryCandidates(raw: string): string[] {
-  const normalized = raw.replace(/\s+/g, ' ').trim();
-  const item =
-    /(?:Adult\s+)?(?:Desirable|Normal|Optimal|Borderline|Very High|High|Low)\s*:\s*(?:<=|>=|<|>|≤|≥)?\s*\d{1,5}(?:\.\d{1,6})?(?:\s*[-–—]\s*\d{1,5}(?:\.\d{1,6})?)?/gi;
-  const matches = [...normalized.matchAll(item)];
-  if (matches.length === 0 || matches.length > 5) return [];
-  if (normalized.replace(item, '').trim() !== '') return [];
-  if (
-    matches.filter((match) => /(?:Desirable|Normal|Optimal)/i.test(match[0]))
-      .length !== 1
-  )
-    return [];
-  const candidates = matches.map((match) => match[0].split(':')[1].trim());
-  return candidates.every(validSuggestedRange) ? candidates : [];
-}
-
-export function preferredPrintedRange(raw: string): string | null {
-  if (categoryCandidates(raw).length === 0) return null;
-  const preferred = raw.match(
-    /(?:Adult\s+)?(?:Desirable|Normal|Optimal)\s*:\s*((?:<=|>=|<|>|≤|≥)?\s*\d{1,5}(?:\.\d{1,6})?(?:\s*[-–—]\s*\d{1,5}(?:\.\d{1,6})?)?)/gi,
-  );
-  if (preferred?.length !== 1) return null;
-  const range = preferred[0].split(':')[1].trim();
-  return validSuggestedRange(range) ? range : null;
-}
-
-export function validSuggestedRange(value: unknown): boolean {
-  if (typeof value !== 'string' || value.length > 64) return false;
-  const number = '-?\\d{1,5}(?:\\.\\d{1,6})?';
-  return new RegExp(
-    `^(?:(?:<=|>=|<|>|≤|≥)\\s*${number}|${number}\\s*[-–—]\\s*${number})$`,
-  ).test(value);
-}
+export const validSuggestedRange = validPrintedNumericRange;
 
 function comparableNotation(value: string): string {
   return value
@@ -104,7 +79,11 @@ export class ReportRangeSuggestionService {
     };
     const rawRange = safeRawRange(rawInput);
     if (!rawRange) return empty;
-    if (validSuggestedRange(rawRange)) return empty;
+    if (
+      validSuggestedRange(rawRange) ||
+      preferredPrintedRange(rawRange) != null
+    )
+      return empty;
     const apiKey = this.config.get<string>('reports.labAiFallbackOpenaiApiKey');
     if (!apiKey) return empty;
     const model =
@@ -209,19 +188,7 @@ export class ReportRangeSuggestionService {
         !validSuggestedRange(parsed.suggestedRange)
       )
         return result;
-      const categories = categoryCandidates(rawRange);
-      if (categories.length > 0) {
-        const preferred =
-          rawRange.match(
-            /(?:Adult\s+)?(?:Desirable|Normal|Optimal)\s*:\s*((?:<=|>=|<|>|≤|≥)?\s*\d{1,5}(?:\.\d{1,6})?(?:\s*[-–—]\s*\d{1,5}(?:\.\d{1,6})?)?)/gi,
-          ) ?? [];
-        if (
-          preferred.length !== 1 ||
-          comparableNotation(preferred[0].split(':')[1].trim()) !==
-            comparableNotation(parsed.suggestedRange)
-        )
-          return result;
-      } else if (
+      if (
         comparableNotation(rawRange) !==
         comparableNotation(parsed.suggestedRange)
       ) {

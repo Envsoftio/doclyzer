@@ -57,6 +57,7 @@ import { AddObservationIdentityEvidence1730817700000 } from './1730817700000-Add
 import { CreateReportVlShadows1730818400000 } from './1730818400000-CreateReportVlShadows';
 import { RepairReportVlShadowsApplied1730818500000 } from './1730818500000-RepairReportVlShadowsApplied';
 import { CreateReportOcrPageCheckpoints1730818600000 } from './1730818600000-CreateReportOcrPageCheckpoints';
+import { SeedStarterPlan1730818700000 } from './1730818700000-SeedStarterPlan';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -118,4 +119,5 @@ export const migrations = [
   CreateReportVlShadows1730818400000,
   RepairReportVlShadowsApplied1730818500000,
   CreateReportOcrPageCheckpoints1730818600000,
+  SeedStarterPlan1730818700000,
 ];

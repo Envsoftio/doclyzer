@@ -40,11 +40,9 @@ export class ReportsRecycleBinCleanupService
     try {
       const deletedCount =
         await this.reportsService.purgeExpiredRecycleBinReports();
-      if (deletedCount > 0) {
-        this.logger.log(
-          `Recycle bin purge removed ${deletedCount} expired report(s).`,
-        );
-      }
+      this.logger.log(
+        `Recycle bin purge completed; removed ${deletedCount} expired report(s).`,
+      );
     } catch (err) {
       this.logger.warn(
         redactSecrets(

@@ -9,6 +9,13 @@ import 'package:mobile/features/support/support_repository.dart';
 
 class _Reports extends Fake implements ReportsRepository {
   String? requestedProfile;
+  String? requestedRecycleProfile;
+
+  @override
+  Future<List<Report>> listRecycleBin({String? profileId}) async {
+    requestedRecycleProfile = profileId;
+    return [];
+  }
 
   @override
   Future<List<Report>> listReports(String profileId) async {
@@ -69,6 +76,7 @@ class _RecycleReports extends Fake implements ReportsRepository {
           Report(
             id: 'deleted',
             profileId: profileId ?? '',
+            profileName: 'Sam',
             originalFileName: 'saved-report.pdf',
             contentType: 'application/pdf',
             sizeBytes: 100,
@@ -76,6 +84,7 @@ class _RecycleReports extends Fake implements ReportsRepository {
             createdAt: DateTime(2026, 10, 18),
             collectionDate: '2026-10-10',
             deletedAt: DateTime(2026, 10, 19),
+            purgeAfterAt: DateTime.now().add(const Duration(days: 30)),
           ),
         ];
 
@@ -91,6 +100,50 @@ class _RecycleReports extends Fake implements ReportsRepository {
       status: 'parsed',
       createdAt: DateTime(2026, 10, 18),
     );
+  }
+}
+
+class _DeletionReports extends Fake implements ReportsRepository {
+  _DeletionReports({this.failOneOnEmpty = false});
+
+  bool failOneOnEmpty;
+  final ids = <String>{'first', 'second'};
+  String? deletedId;
+  int emptyCalls = 0;
+
+  @override
+  Future<List<Report>> listRecycleBin({String? profileId}) async => ids
+      .map(
+        (id) => Report(
+          id: id,
+          profileId: 'sam',
+          originalFileName: '$id.pdf',
+          contentType: 'application/pdf',
+          sizeBytes: 100,
+          status: 'parsed',
+          createdAt: DateTime(2026, 10, 18),
+          deletedAt: DateTime(2026, 10, 19),
+          purgeAfterAt: DateTime.now().add(const Duration(days: 30)),
+        ),
+      )
+      .toList();
+
+  @override
+  Future<void> permanentlyDeleteReport(String reportId) async {
+    deletedId = reportId;
+    ids.remove(reportId);
+  }
+
+  @override
+  Future<RecycleBinEmptyResult> emptyRecycleBin() async {
+    emptyCalls += 1;
+    if (failOneOnEmpty) {
+      ids.remove('first');
+      return const RecycleBinEmptyResult(deletedCount: 1, failedCount: 1);
+    }
+    final count = ids.length;
+    ids.clear();
+    return RecycleBinEmptyResult(deletedCount: count, failedCount: 0);
   }
 }
 
@@ -130,13 +183,22 @@ void main() {
       expect(find.text('other.pdf'), findsNothing);
       expect(find.text('Original'), findsOneWidget);
 
+      await tester.tap(find.byKey(const Key('timeline-recycle-bin-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('Recycle bin is empty.'), findsOneWidget);
+      expect(reports.requestedRecycleProfile, isNull);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
       await tester.enterText(find.byType(TextField), 'missing');
       await tester.pump();
       expect(find.text('No reports match your search.'), findsOneWidget);
     },
   );
 
-  testWidgets('recycle bin shows report dates and restores in place', (tester) async {
+  testWidgets('recycle bin shows report dates and restores in place', (
+    tester,
+  ) async {
     final reports = _RecycleReports();
     await tester.pumpWidget(
       MaterialApp(
@@ -145,10 +207,65 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Collected: 10-Oct-2026'), findsOneWidget);
+    expect(find.text('Profile: Sam'), findsOneWidget);
     expect(find.textContaining('Uploaded:'), findsOneWidget);
+    expect(find.text('Days left: 30'), findsOneWidget);
     await tester.tap(find.text('Restore'));
     await tester.pumpAndSettle();
     expect(reports.restored, isTrue);
+    expect(find.text('Recycle bin is empty.'), findsOneWidget);
+  });
+
+  testWidgets('permanent deletion requires confirmation', (tester) async {
+    final reports = _DeletionReports()..ids.remove('second');
+    await tester.pumpWidget(
+      MaterialApp(home: RecycleBinScreen(reportsRepository: reports)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete permanently'));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete report permanently?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(reports.deletedId, isNull);
+    await tester.tap(find.text('Delete permanently'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete permanently').last);
+    await tester.pumpAndSettle();
+    expect(reports.deletedId, 'first');
+    expect(find.text('Recycle bin is empty.'), findsOneWidget);
+  });
+
+  testWidgets('empty bin reports partial failures and can retry', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final reports = _DeletionReports(failOneOnEmpty: true);
+    await tester.pumpWidget(
+      MaterialApp(home: RecycleBinScreen(reportsRepository: reports)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('recycle-bin-empty')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(reports.emptyCalls, 0);
+    await tester.tap(find.byKey(const Key('recycle-bin-empty')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete all'));
+    await tester.pumpAndSettle();
+    expect(reports.emptyCalls, 1);
+    expect(find.text('second.pdf'), findsOneWidget);
+    expect(find.textContaining('1 could not be deleted'), findsOneWidget);
+    reports.failOneOnEmpty = false;
+    await tester.tap(find.byKey(const Key('recycle-bin-empty')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete all'));
+    await tester.pumpAndSettle();
+    expect(reports.emptyCalls, 2);
     expect(find.text('Recycle bin is empty.'), findsOneWidget);
   });
 }

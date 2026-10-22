@@ -23,8 +23,43 @@ export const useAdminAuth = () => {
     )
     const token = data?.data?.accessToken ?? data?.data?.token ?? (data as Record<string, string>).accessToken ?? (data as Record<string, string>).token
     if (!token) throw new Error('Login failed: no access token returned')
+    try {
+      await $fetch(`${apiBaseUrl}/entitlements/admin/plan-configs`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    } catch (error: unknown) {
+      const status = typeof error === 'object' && error !== null && 'statusCode' in error
+        ? error.statusCode
+        : null
+      if (status === 403) {
+        // A regular user's login succeeded, but the admin role check failed.
+        try {
+          await $fetch(`${apiBaseUrl}/auth/logout`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        } catch { /* The token is never stored in admin storage. */ }
+      }
+      throw new Error(status === 403 ? 'Superadmin access is required.' : 'Unable to verify admin access. Try again.')
+    }
     accessToken.value = token as string
     if (import.meta.client) sessionStorage.setItem('admin_access_token', token as string)
+  }
+
+  async function verify(): Promise<boolean> {
+    if (!accessToken.value) return false
+    try {
+      await $fetch(`${apiBaseUrl}/entitlements/admin/plan-configs`, {
+        headers: authHeaders.value,
+      })
+      return true
+    } catch (error: unknown) {
+      const status = typeof error === 'object' && error !== null && 'statusCode' in error
+        ? error.statusCode
+        : null
+      if (status === 401 || status === 403) logout()
+      return false
+    }
   }
 
   function logout(): void {
@@ -38,6 +73,7 @@ export const useAdminAuth = () => {
     isAuthenticated,
     authHeaders,
     login,
+    verify,
     logout,
   }
 }

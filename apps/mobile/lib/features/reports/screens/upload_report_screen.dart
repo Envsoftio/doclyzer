@@ -1,16 +1,17 @@
-import '../report_processing_store.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import '../../../shared/app_date_format.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/api_client.dart';
 import '../../../core/feedback/incident_banner.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../features/incidents/incident_repository.dart';
 import '../../../features/support/support_models.dart';
 import '../../../features/support/support_repository.dart';
 import '../../../features/support/support_request_sheet.dart';
+import '../../../shared/app_date_format.dart';
 import '../../profiles/profiles_repository.dart';
+import '../report_processing_store.dart';
 import '../reports_repository.dart';
 import 'pdf_viewer_screen.dart';
 import 'report_detail_screen.dart';
@@ -433,70 +434,242 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (showIncidentBanner) ...[
-                IncidentBanner(incident: incident),
-                const SizedBox(height: 24),
-              ],
-              Text(
-                'Uploading to: ${widget.activeProfileName}',
-                style: Theme.of(context).textTheme.bodyLarge,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.screenPadding),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: 520,
+                  minHeight:
+                      (constraints.maxHeight - 2 * AppSpacing.screenPadding)
+                          .clamp(0.0, double.infinity),
+                ),
+                child: Column(
+                  mainAxisAlignment:
+                      _state == _UploadState.idle && !showIncidentBanner
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (showIncidentBanner) ...[
+                      IncidentBanner(incident: incident),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
+                    if (_state != _UploadState.idle) ...[
+                      _buildDestination(),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
+                    switch (_state) {
+                      _UploadState.idle => _buildIdle(),
+                      _UploadState.selected => _buildSelected(),
+                      _UploadState.uploading => _buildProgress(
+                        'Uploading report…',
+                      ),
+                      _UploadState.reading => _buildProgress('Reading report…'),
+                      _UploadState.success =>
+                        _isParseFailure()
+                            ? _buildParseFailure()
+                            : _buildSuccess(),
+                      _UploadState.duplicate => _buildDuplicateDialog(),
+                      _UploadState.limit => _buildLimitWarning(),
+                      _UploadState.error => _buildError(),
+                    },
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
-              switch (_state) {
-                _UploadState.idle => _buildIdle(),
-                _UploadState.selected => _buildSelected(),
-                _UploadState.uploading => _buildProgress('Uploading report…'),
-                _UploadState.reading => _buildProgress('Reading report…'),
-                _UploadState.success =>
-                  _isParseFailure() ? _buildParseFailure() : _buildSuccess(),
-                _UploadState.duplicate => _buildDuplicateDialog(),
-                _UploadState.limit => _buildLimitWarning(),
-                _UploadState.error => _buildError(),
-              },
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  Widget _buildDestination() {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 12,
+      ),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.person_outline_rounded, color: colors.primary, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'Adding to  ',
+                    style: TextStyle(color: colors.onSurfaceVariant),
+                  ),
+                  TextSpan(
+                    text: widget.activeProfileName,
+                    style: TextStyle(
+                      color: colors.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              style: theme.textTheme.bodyMedium,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildIdle() {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FilledButton.icon(
-          key: const Key('upload-report-pick'),
-          onPressed: _pickAndUpload,
-          icon: const Icon(Icons.upload_file),
-          label: const Text('Pick PDF or Image'),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: colors.primaryContainer,
+              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            ),
+            child: Icon(
+              Icons.description_outlined,
+              color: colors.onPrimaryContainer,
+              size: 28,
+            ),
+          ),
         ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () => _pickImage(ImageSource.gallery),
-          icon: const Icon(Icons.photo_library_outlined),
-          label: const Text('Choose Photo'),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          key: const Key('upload-report-camera'),
-          onPressed: _captureAndUpload,
-          icon: const Icon(Icons.photo_camera_outlined),
-          label: const Text('Take Photo'),
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.md),
+        Text('Add a report', style: theme.textTheme.headlineSmall),
+        const SizedBox(height: AppSpacing.xs),
         Text(
-          'Accepted formats: PDF, JPG, PNG',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          'Choose a PDF or a clear photo of your report.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _buildDestination(),
+        const SizedBox(height: AppSpacing.lg),
+        Text(
+          'CHOOSE A SOURCE',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: colors.onSurfaceVariant,
+            letterSpacing: 1.1,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Material(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              _buildSourceOption(
+                key: const Key('upload-report-pick'),
+                icon: Icons.upload_file_outlined,
+                title: 'Pick PDF or Image',
+                subtitle: 'Browse files on your device',
+                onTap: _pickAndUpload,
+              ),
+              Divider(height: 1, indent: 72, color: colors.outlineVariant),
+              _buildSourceOption(
+                icon: Icons.photo_library_outlined,
+                title: 'Choose Photo',
+                subtitle: 'Select from your gallery',
+                onTap: () => _pickImage(ImageSource.gallery),
+              ),
+              Divider(height: 1, indent: 72, color: colors.outlineVariant),
+              _buildSourceOption(
+                key: const Key('upload-report-camera'),
+                icon: Icons.photo_camera_outlined,
+                title: 'Take Photo',
+                subtitle: 'Use your camera',
+                onTap: _captureAndUpload,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          'Supported formats: PDF, JPG, PNG',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colors.onSurfaceVariant,
           ),
           textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+
+  Widget _buildSourceOption({
+    Key? key,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return InkWell(
+      key: key,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 76),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: colors.primaryContainer.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: colors.primary, size: 22),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: theme.textTheme.titleSmall),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: colors.onSurfaceVariant,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

@@ -11,6 +11,7 @@ import 'core/api_config.dart';
 import 'core/feedback/status_messenger.dart';
 import 'core/theme/app_theme.dart';
 import 'core/navigation/mobile_navigation_shell.dart';
+import 'core/navigation/app_notification_frame.dart';
 import 'core/token_storage.dart';
 import 'features/incidents/api_incident_repository.dart';
 import 'features/incidents/incident_repository.dart';
@@ -349,11 +350,15 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     }
     if (restored && mounted) {
       ClosureRequest? closure;
-      try { closure = await _dataRightsRepository.getClosureRequest(); } catch (_) {}
+      try {
+        closure = await _dataRightsRepository.getClosureRequest();
+      } catch (_) {}
       final interrupted = await _readInterruptedUpload();
       if (closure?.status != 'pending') _startReportServices();
       setState(() {
-        _authView = closure?.status == 'pending' ? _AuthView.dataRights : _AuthView.home;
+        _authView = closure?.status == 'pending'
+            ? _AuthView.dataRights
+            : _AuthView.home;
         _hasInterruptedUpload = interrupted;
         _initialized = true;
       });
@@ -456,7 +461,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     if (closure?.status != 'pending') _startReportServices();
     if (mounted) {
       setState(() {
-        _authView = closure?.status == 'pending' ? _AuthView.dataRights : _AuthView.home;
+        _authView = closure?.status == 'pending'
+            ? _AuthView.dataRights
+            : _AuthView.home;
         _hasInterruptedUpload = interrupted;
       });
     }
@@ -576,48 +583,62 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     _AuthView.trends,
     _AuthView.accountProfile,
   ];
-  bool _openingTab = false;
+  int? _pendingTabIndex;
+  int _tabRequestSerial = 0;
 
   Future<void> _selectTab(int index) async {
     final destination = _tabViews[index];
-    if (_openingTab || destination == _authView) return;
-    if (destination == _AuthView.timeline || destination == _AuthView.trends) {
-      _openingTab = true;
-      final origin = _authView;
-      try {
-        final restriction = await _restrictionRepository.getStatus();
-        if (!mounted || _authView != origin) return;
-        const action = 'view_timeline';
-        if (restriction.isRestricted &&
-            (restriction.restrictedActions?.isEmpty ?? true)) {
-          _showProfileLoadError(
-            'This action is temporarily unavailable while your account is under review.',
-          );
-          return;
-        }
-        if (restriction.isRestricted &&
-            (restriction.restrictedActions?.contains(action) ?? false)) {
-          _showProfileLoadError(
-            'This action is temporarily unavailable while your account is under review.',
-          );
-          return;
-        }
-        final active = await _getActiveProfileOrNotify(forUpload: false);
-        if (!mounted || active == null || _authView != origin) return;
+    if (destination == _authView && _pendingTabIndex == null) return;
+    final requestId = ++_tabRequestSerial;
+    if (destination != _AuthView.timeline && destination != _AuthView.trends) {
+      setState(() {
+        _pendingTabIndex = null;
+        _authView = destination;
+      });
+      return;
+    }
+
+    setState(() => _pendingTabIndex = index);
+    final origin = _authView;
+    bool isCurrent() =>
+        mounted && requestId == _tabRequestSerial && _authView == origin;
+    try {
+      final restriction = await _restrictionRepository.getStatus();
+      if (!isCurrent()) return;
+      const action = 'view_timeline';
+      if (restriction.isRestricted &&
+          (restriction.restrictedActions?.isEmpty ?? true)) {
+        _showProfileLoadError(
+          'This action is temporarily unavailable while your account is under review.',
+        );
+        return;
+      }
+      if (restriction.isRestricted &&
+          (restriction.restrictedActions?.contains(action) ?? false)) {
+        _showProfileLoadError(
+          'This action is temporarily unavailable while your account is under review.',
+        );
+        return;
+      }
+      final active = await _getActiveProfileOrNotify(forUpload: false);
+      if (!isCurrent() || active == null) return;
+      setState(() {
         _timelineProfileId = active.id;
         _timelineProfileName = active.name;
-      } catch (_) {
-        if (mounted) {
-          _showProfileLoadError(
-            'Unable to open this section. Please try again.',
-          );
-        }
-        return;
-      } finally {
-        _openingTab = false;
+        _pendingTabIndex = null;
+        _authView = destination;
+      });
+    } catch (_) {
+      if (isCurrent()) {
+        _showProfileLoadError('Unable to open this section. Please try again.');
+      }
+    } finally {
+      if (mounted &&
+          requestId == _tabRequestSerial &&
+          _pendingTabIndex != null) {
+        setState(() => _pendingTabIndex = null);
       }
     }
-    if (mounted) setState(() => _authView = destination);
   }
 
   Widget _buildNavigationShell(Widget screen) {
@@ -632,9 +653,15 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       );
     }
     return MobileNavigationShell(
-      selectedIndex: selected,
+      selectedIndex: _pendingTabIndex ?? selected,
+      contentIndex: selected,
+      isChangingDestination: _pendingTabIndex != null,
       onDestinationSelected: _selectTab,
-      onBackToHome: () => setState(() => _authView = _AuthView.home),
+      onBackToHome: () => setState(() {
+        _tabRequestSerial++;
+        _pendingTabIndex = null;
+        _authView = _AuthView.home;
+      }),
       child: screen,
     );
   }
@@ -685,92 +712,90 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       themeMode: _themeMode,
       scaffoldMessengerKey: _scaffoldMessengerKey,
       navigatorKey: _navigatorKey,
-      builder: (context, child) => AnimatedBuilder(
-        animation: ReportProcessingStore.instance,
-        builder: (context, _) {
-          final store = ReportProcessingStore.instance;
-          return AnnotatedRegion<SystemUiOverlayStyle>(
-            value: AppTheme.systemBars(Theme.of(context).brightness),
-            child: Column(
-              children: [
-                if (_hasInterruptedUpload && _authView == _AuthView.home)
-                  Material(
-                    color: Theme.of(context).colorScheme.tertiaryContainer,
-                    child: SafeArea(
-                      bottom: false,
-                      child: ListTile(
-                        title: const Text(
-                          'An upload may have been interrupted',
-                        ),
-                        subtitle: const Text(
-                          'Check Reports. If it is missing, add the same file again.',
-                        ),
-                        onTap: () => unawaited(_selectTab(1)),
-                        trailing: IconButton(
-                          tooltip: 'Dismiss upload notice',
-                          icon: const Icon(Icons.close),
-                          onPressed: () async {
-                            await _tokenStorage.clearInterruptedReportUpload();
-                            if (mounted) {
-                              setState(() => _hasInterruptedUpload = false);
-                            }
-                          },
-                        ),
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: AppTheme.systemBars(Theme.of(context).brightness),
+        child: AppNotificationFrame(
+          uploadNotice: _hasInterruptedUpload && _authView == _AuthView.home
+              ? Material(
+                  color: Theme.of(context).colorScheme.tertiaryContainer,
+                  child: SafeArea(
+                    bottom: false,
+                    child: ListTile(
+                      title: const Text('An upload may have been interrupted'),
+                      subtitle: const Text(
+                        'Check Reports. If it is missing, add the same file again.',
                       ),
-                    ),
-                  ),
-                if (store.readyCount > 0)
-                  Material(
-                    color: Theme.of(context).colorScheme.secondaryContainer,
-                    child: SafeArea(
-                      bottom: false,
-                      child: ListTile(
-                        title: Text('${store.readyCount} report(s) ready'),
-                        trailing: IconButton(
-                          tooltip: 'Dismiss ready notifications',
-                          icon: const Icon(Icons.close),
-                          onPressed: () async {
-                            final ids = store.reports.entries
-                                .where(
-                                  (e) =>
-                                      e.value['status'] == 'ready' &&
-                                      e.value['acknowledgedAt'] == null,
-                                )
-                                .map((e) => e.key)
-                                .toList();
-                            try {
-                              for (final id in ids) {
-                                await store.acknowledge(id);
-                              }
-                            } catch (_) {
-                              _scaffoldMessengerKey.currentState?.showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Could not dismiss notifications. Try again.',
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                        onTap: () {
-                          final ready = store.reports.values.firstWhere(
-                            (r) =>
-                                r['status'] == 'ready' &&
-                                r['acknowledgedAt'] == null,
-                          );
-                          _pushNotificationService.onReportOpen?.call(
-                            ready['reportId'] as String,
-                          );
+                      onTap: () => unawaited(_selectTab(1)),
+                      trailing: IconButton(
+                        tooltip: 'Dismiss upload notice',
+                        icon: const Icon(Icons.close),
+                        onPressed: () async {
+                          await _tokenStorage.clearInterruptedReportUpload();
+                          if (mounted) {
+                            setState(() => _hasInterruptedUpload = false);
+                          }
                         },
                       ),
                     ),
                   ),
-                Expanded(child: child ?? const SizedBox.shrink()),
-              ],
-            ),
-          );
-        },
+                )
+              : null,
+          readyNotice: AnimatedBuilder(
+            animation: ReportProcessingStore.instance,
+            builder: (context, _) {
+              final store = ReportProcessingStore.instance;
+              return store.readyCount > 0
+                  ? Material(
+                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      child: SafeArea(
+                        bottom: false,
+                        child: ListTile(
+                          title: Text('${store.readyCount} report(s) ready'),
+                          trailing: IconButton(
+                            tooltip: 'Dismiss ready notifications',
+                            icon: const Icon(Icons.close),
+                            onPressed: () async {
+                              final ids = store.reports.entries
+                                  .where(
+                                    (e) =>
+                                        e.value['status'] == 'ready' &&
+                                        e.value['acknowledgedAt'] == null,
+                                  )
+                                  .map((e) => e.key)
+                                  .toList();
+                              try {
+                                for (final id in ids) {
+                                  await store.acknowledge(id);
+                                }
+                              } catch (_) {
+                                _scaffoldMessengerKey.currentState?.showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Could not dismiss notifications. Try again.',
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                          onTap: () {
+                            final ready = store.reports.values.firstWhere(
+                              (r) =>
+                                  r['status'] == 'ready' &&
+                                  r['acknowledgedAt'] == null,
+                            );
+                            _pushNotificationService.onReportOpen?.call(
+                              ready['reportId'] as String,
+                            );
+                          },
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink();
+            },
+          ),
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
       home: _buildNavigationShell(switch (_authView) {
         _AuthView.sessionUnavailable => Scaffold(
@@ -901,7 +926,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           onGoToDataRights: () =>
               setState(() => _authView = _AuthView.dataRights),
           onLogout: _logout,
-          showBackButton: false,
+          showBackButton: true,
           accountRepository: _accountRepository,
           restrictionRepository: _restrictionRepository,
           onBack: () {
@@ -931,7 +956,6 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           },
         ),
         _AuthView.profileList => ProfileListScreen(
-          showBackButton: false,
           profilesRepository: _profilesRepository,
           reportsRepository: _reportsRepository,
           onCreateProfile: () {
@@ -1024,7 +1048,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         _AuthView.timeline =>
           _timelineProfileId != null
               ? TimelineScreen(
-                  showBackButton: false,
+                  showBackButton: true,
                   reportsRepository: _reportsRepository,
                   profilesRepository: _profilesRepository,
                   profileId: _timelineProfileId!,
@@ -1033,6 +1057,40 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                   incidentStatus: _incidentStatus,
                   onBack: () {
                     setState(() => _authView = _AuthView.home);
+                  },
+                  onUploadReport: () async {
+                    try {
+                      final restriction = await _restrictionRepository
+                          .getStatus();
+                      if (!mounted) return;
+                      if (restriction.isRestricted &&
+                          ((restriction.restrictedActions?.isEmpty ?? true) ||
+                              (restriction.restrictedActions?.contains(
+                                    'upload_report',
+                                  ) ??
+                                  false))) {
+                        _showProfileLoadError(
+                          restriction.nextSteps?.trim().isNotEmpty == true
+                              ? restriction.nextSteps!
+                              : 'Uploads are temporarily unavailable while your account is under review.',
+                        );
+                        return;
+                      }
+                      final active = await _getActiveProfileOrNotify(
+                        forUpload: true,
+                      );
+                      if (!mounted || active == null) return;
+                      setState(() {
+                        _activeProfileNameForUpload = active.name;
+                        _authView = _AuthView.uploadReport;
+                      });
+                    } catch (_) {
+                      if (mounted) {
+                        _showProfileLoadError(
+                          'Unable to start an upload. Please try again.',
+                        );
+                      }
+                    }
                   },
                   onUpgrade: () {
                     setState(() => _authView = _AuthView.billing);
@@ -1047,6 +1105,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                   profileName: _timelineProfileName,
                   reportsRepository: _reportsRepository,
                   profilesRepository: _profilesRepository,
+                  onBack: () => setState(() => _authView = _AuthView.home),
                 )
               : const Scaffold(body: Center(child: Text('No active profile'))),
         _AuthView.billing => EntitlementSummaryScreen(

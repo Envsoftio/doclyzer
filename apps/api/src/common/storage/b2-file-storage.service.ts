@@ -174,6 +174,9 @@ export class B2FileStorageService implements FileStorageService {
     try {
       if (options?.allVersions) {
         await this.deleteVersions(key, await this.objectVersions(key));
+        if ((await this.objectVersions(key)).length > 0) {
+          throw new Error('Object versions remain after deletion');
+        }
         return;
       }
       await this.client.send(

@@ -39,7 +39,7 @@ export class DoclingOcrClient {
     const ocrEngine =
       options?.engine ??
       this.configService.get<string>('reports.doclingOcrEngine') ??
-      'auto';
+      'tesseract';
     const languages = (
       (options?.engine
         ? ''

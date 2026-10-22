@@ -137,7 +137,7 @@ services:
       MALLOC_ARENA_MAX: "2"
       PYTHON_GC_THRESHOLD: "700,10,10"
       DOCLING_SERVE_CUSTOM_OCR_PRESETS: '{"tesseract-table":{"kind":"tesseract","lang":["eng"],"psm":6,"tesseract_cmd":"/usr/local/bin/tesseract-table"}}'
-      DOCLING_SERVE_OCR_ENGINE: ${DOCLING_OCR_ENGINE:-auto}
+      DOCLING_SERVE_OCR_ENGINE: ${DOCLING_OCR_ENGINE:-tesseract}
     command: >
       sh -c "docling-serve run --host 0.0.0.0 --port 5002 --workers 1"
     ports:

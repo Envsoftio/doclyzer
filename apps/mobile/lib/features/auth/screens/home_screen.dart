@@ -224,6 +224,12 @@ class _HomeScreenState extends State<HomeScreen> {
         .length;
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        key: const Key('go-to-upload-report'),
+        onPressed: _upload,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Upload report'),
+      ),
       appBar: AppBar(
         centerTitle: false,
         backgroundColor: Colors.transparent,
@@ -255,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 760),
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 112),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -314,15 +320,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: TextStyle(color: Color(0xFFDBF0F2)),
                                 ),
                                 const SizedBox(height: 12),
-                                FilledButton.icon(
-                                  key: const Key('go-to-upload-report'),
-                                  onPressed: _upload,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF075C69),
-                                  ),
-                                  icon: const Icon(Icons.add_rounded),
-                                  label: const Text('Upload Report'),
+                                const Icon(
+                                  Icons.description_outlined,
+                                  color: Colors.white,
+                                  size: 28,
                                 ),
                               ],
                             ),

@@ -28,7 +28,7 @@ async function main() {
   form.append('pipeline', 'standard');
   form.append('do_ocr', 'true');
   form.append('force_ocr', 'false');
-  form.append('ocr_preset', 'auto');
+  form.append('ocr_preset', 'tesseract-table');
   form.append('pdf_backend', 'docling_parse');
   form.append('do_table_structure', 'true');
   form.append('table_structure_preset', 'tableformer_v1_accurate');
@@ -71,6 +71,11 @@ async function main() {
     };
     assert.equal(data.status, 'success');
     assert.ok(data.document.md_content);
+    for (const value of ['Haemoglobin', '13.5', 'Platelet Count', '250'])
+      assert.ok(
+        data.document.md_content.includes(value),
+        `synthetic lab value missing: ${value}`,
+      );
     assert.equal(data.document.json_content.schema_name, 'DoclingDocument');
   }
   console.log(

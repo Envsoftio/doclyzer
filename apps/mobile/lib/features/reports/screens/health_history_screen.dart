@@ -16,12 +16,14 @@ class HealthHistoryScreen extends StatefulWidget {
     required this.reportsRepository,
     required this.profilesRepository,
     this.profileName,
+    this.onBack,
   });
 
   final String profileId;
   final ReportsRepository reportsRepository;
   final ProfilesRepository profilesRepository;
   final String? profileName;
+  final VoidCallback? onBack;
 
   @override
   State<HealthHistoryScreen> createState() => _HealthHistoryScreenState();
@@ -103,7 +105,12 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
     final showDisclaimer =
         _state == _HealthHistoryState.loaded && _params.isNotEmpty;
     return Scaffold(
-      appBar: AppBar(title: const Text('Trends')),
+      appBar: AppBar(
+        title: const Text('Trends'),
+        leading: widget.onBack == null
+            ? null
+            : BackButton(onPressed: widget.onBack),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

@@ -10,7 +10,10 @@ import { Repository } from 'typeorm';
 import { ReportResultInsightEntity } from '../../database/entities/report-result-insight.entity';
 import { ReportResultInsightUsageEntity } from '../../database/entities/report-result-insight-usage.entity';
 import type { ExtractedLabValueDto } from './reports.service';
-import { preferredPrintedRange } from './report-range-suggestion.service';
+import {
+  normalizePrintedRangeText,
+  preferredPrintedRange,
+} from './report-reference-range';
 
 export interface ReportResultInsight {
   testExplanation: string;
@@ -25,12 +28,12 @@ type RangeStatus = 'below' | 'within' | 'above' | 'unknown';
 
 // A display comparison only. The printed range may not apply to this person.
 export function comparePrintedRange(result: ExtractedLabValueDto): RangeStatus {
-  const value = result.value.trim();
-  const rawRange = result.referenceRange?.trim() ?? '';
+  const value = normalizePrintedRangeText(result.value);
+  const rawRange = normalizePrintedRangeText(result.referenceRange ?? '');
   const range = preferredPrintedRange(rawRange) ?? rawRange;
   if (
     !result.parameterName.trim() ||
-    !result.unit?.trim() ||
+    !normalizePrintedRangeText(result.unit ?? '') ||
     !/^-?\d+(?:\.\d+)?$/.test(value)
   ) {
     return 'unknown';
@@ -38,6 +41,7 @@ export function comparePrintedRange(result: ExtractedLabValueDto): RangeStatus {
   const match =
     /^\s*(-?\d+(?:\.\d+)?)\s*(?:[-–—]|to)\s*(-?\d+(?:\.\d+)?)\s*$/i.exec(range);
   const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 'unknown';
   let status: RangeStatus;
   if (match) {
     const low = Number(match[1]);
@@ -131,18 +135,19 @@ export class ReportResultInsightService {
       !/\b(?:name|patient|person|address|phone|mobile|email|dob|date of birth|client)\b/i.test(
         savedName,
       );
-    if (!safeName || !numeric.test(result.value.trim()) || aliases.length > 1) {
+    const safeValue = normalizePrintedRangeText(result.value);
+    if (!safeName || !numeric.test(safeValue) || aliases.length > 1) {
       throw new ServiceUnavailableException({
         code: 'RESULT_INSIGHT_UNSAFE_INPUT',
         message: 'This result cannot be safely sent for an explanation.',
       });
     }
-    const safeUnit = result.unit?.trim() ?? '';
-    const safeRange = result.referenceRange?.trim() ?? '';
+    const safeUnit = normalizePrintedRangeText(result.unit ?? '');
+    const safeRange = normalizePrintedRangeText(result.referenceRange ?? '');
     const preferredRange = preferredPrintedRange(safeRange);
     const input = {
       testName: aliases.length === 1 ? aliases[0].name : savedName,
-      value: result.value.trim(),
+      value: safeValue,
       unit: unit.test(safeUnit) ? safeUnit : '',
       printedLabRange:
         preferredRange ?? (range.test(safeRange) ? safeRange : ''),

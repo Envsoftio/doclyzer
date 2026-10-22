@@ -408,4 +408,20 @@ abstract class ReportsRepository {
 
   /// Restore report from recycle bin.
   Future<Report> restoreReport(String reportId);
+
+  /// Permanently delete one report and its stored file from recycle bin.
+  Future<void> permanentlyDeleteReport(String reportId);
+
+  /// Permanently delete every report in the account's recycle bin.
+  Future<RecycleBinEmptyResult> emptyRecycleBin();
+}
+
+class RecycleBinEmptyResult {
+  const RecycleBinEmptyResult({
+    required this.deletedCount,
+    required this.failedCount,
+  });
+
+  final int deletedCount;
+  final int failedCount;
 }

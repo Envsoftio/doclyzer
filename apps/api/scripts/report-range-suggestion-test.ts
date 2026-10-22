@@ -4,11 +4,44 @@ import {
   ReportRangeSuggestionService,
   preferredPrintedRange,
   safeRawRange,
+  validSuggestedRange,
 } from '../src/modules/reports/report-range-suggestion.service';
 import { ReportsService } from '../src/modules/reports/reports.service';
 
 async function main() {
   const usageRows: unknown[] = [];
+  const optimalCategories = [
+    'Optimal: <100',
+    'Above Optimal: 100-129',
+    'Borderline: 130-159',
+    'High: 160-189',
+    'Very High: >190',
+  ].join('\n');
+  for (const raw of [
+    optimalCategories,
+    optimalCategories.replaceAll('\n', '\\'),
+    optimalCategories.replaceAll('\n', '; '),
+    optimalCategories.replaceAll('\n', '<br>').replace('<100', '&lt;100'),
+    optimalCategories.replace('Above Optimal', 'Near or Above Optimal'),
+  ]) {
+    assert.equal(preferredPrintedRange(raw), '<100');
+    assert.notEqual(safeRawRange(raw), null);
+  }
+  for (const raw of [
+    'Above Optimal: 100-129 High: >160',
+    'Optimal: <100 Normal: <130 High: >160',
+    'Optimal: <100 Above Optimal: 129-100',
+    'Optimal: <100 High: 160-189 Note: 190',
+    'Optimal: <100 Above Optimal: 90-129 High: >129',
+    'Normal: 0-100 High: 100-200',
+    'Female Optimal: <100 Male Optimal: <130',
+    'Suboptimal: <100 High: >160',
+    'Optimal: <100 High: 160',
+  ])
+    assert.equal(preferredPrintedRange(raw), null, raw);
+  assert.equal(validSuggestedRange('3.50&#x2d;5.20'), true);
+  assert.equal(validSuggestedRange('5.20-3.50'), false);
+  assert.equal(validSuggestedRange('3.50 to 5.20'), true);
   assert.equal(safeRawRange('12-l6'), '12-l6');
   assert.equal(
     safeRawRange('Normal: <161 High: 161-199 Very High: 200-499'),
@@ -102,27 +135,19 @@ async function main() {
     await service.recordUsage('12-l6', 'user', 'report', deferred);
     assert.equal(usageRows.length, 2);
 
-    global.fetch = async (_url, options) => {
-      const body = JSON.parse(options?.body as string);
-      assert.deepEqual(JSON.parse(body.input), {
-        rawRange: 'Normal: <161 High: 161-199 Very High: 200-499',
-      });
-      return new Response(
-        JSON.stringify({
-          output_text: JSON.stringify({ suggestedRange: '<161' }),
-          usage: { input_tokens: 50, output_tokens: 10 },
-        }),
-      );
-    };
+    const callsBeforeCategories = calls;
+    for (const range of [
+      optimalCategories,
+      'Normal: <161 High: 161-199 Very High: 200-499',
+    ]) {
+      const readable = await service.suggest(range, 'user', 'report');
+      assert.equal(readable.providerCalled, false);
+      assert.equal(readable.suggestedRange, null);
+    }
     assert.equal(
-      (
-        await service.suggest(
-          'Normal: <161 High: 161-199 Very High: 200-499',
-          'user',
-          'report',
-        )
-      ).suggestedRange,
-      '<161',
+      calls,
+      callsBeforeCategories,
+      'readable categories do not need an LLM',
     );
 
     const processing = Object.create(ReportsService.prototype) as Record<
@@ -149,6 +174,22 @@ async function main() {
         isAbnormal: null,
       },
     ];
+    values.push({
+      parameterName: 'Categorical test',
+      value: '110',
+      unit: 'mg/dL',
+      sampleDate: null,
+      referenceRange: optimalCategories,
+      isAbnormal: null,
+    });
+    values.push({
+      parameterName: 'Albumin',
+      value: '4.06',
+      unit: 'g/dL',
+      sampleDate: null,
+      referenceRange: '3.50-5.20',
+      isAbnormal: null,
+    });
     const before = usageRows.length;
     global.fetch = async () =>
       new Response(
@@ -169,6 +210,8 @@ async function main() {
     ).resolveUnclearRanges(values, 'user', 'report', true);
     assert.equal(values[0].referenceRange, '12-16');
     assert.equal(values[1].referenceRange, 'Patient Jane 12-16');
+    assert.equal(values[2].referenceRange, optimalCategories);
+    assert.equal(values[3].referenceRange, '3.50-5.20');
     assert.equal(deferredUsage.length, 1);
     assert.equal(usageRows.length, before);
 

@@ -15,8 +15,10 @@ class ApiProfilesRepository implements ProfilesRepository {
 
   @override
   Future<int?> getMaxProfiles() async {
-    // API does not expose maxProfiles; backend enforces on create.
-    return null;
+    final response = await _client.get('v1/entitlements/summary');
+    final summary = response['data'] as Map<String, dynamic>;
+    final limits = summary['limits'] as Map<String, dynamic>;
+    return limits['maxProfiles'] as int;
   }
 
   @override

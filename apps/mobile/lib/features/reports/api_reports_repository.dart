@@ -3,6 +3,7 @@ import 'package:crypto/crypto.dart';
 import '../../core/api_client.dart';
 import '../../core/token_storage.dart';
 import 'reports_repository.dart';
+import 'result_range.dart';
 
 class ApiReportsRepository implements ReportsRepository {
   ApiReportsRepository(this._client, {TokenStorage? tokenStorage})
@@ -11,26 +12,8 @@ class ApiReportsRepository implements ReportsRepository {
   final ApiClient _client;
   final TokenStorage _tokenStorage;
   static final RegExp _rangeToken = RegExp(
-    r'\b\d+(?:\.\d+)?\s*-\s*\d+(?:\.\d+)?\b',
+    r'^\s*-?\d+(?:\.\d+)?\s*[-–—]\s*-?\d+(?:\.\d+)?\s*$',
   );
-
-  static const List<String> _knownTests = [
-    'Reticulocyte Count',
-    'Haemoglobin (Hb)',
-    'Total Leucocyte Count (TLC)',
-    'Polymorphs',
-    'Lymphocyte',
-    'Monocytes',
-    'Eosinophils',
-    'Basophils',
-    'Platelet Count (PC)',
-    'RBC Count',
-    'Haematocrit (HCT)',
-    'Mean Corpuscular Volume (MCV)',
-    'Mean Corpuscular Hemoglobin (MCH)',
-    'Mean Corpuscular Hemoglobin Concentration (MCHC)',
-    'Red Cell Distribution Width (RDW)',
-  ];
 
   String _normalize(String s) =>
       s.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -53,43 +36,32 @@ class ApiReportsRepository implements ReportsRepository {
   bool _looksNoisyParameter(String input) {
     final p = _normalize(input);
     if (p.isEmpty) return true;
-    final wordCount = p.split(' ').length;
-    if (wordCount > 12) return true;
-    if (p.contains('investigation results') || p.contains('reference range')) {
-      return true;
-    }
-    var matches = 0;
-    for (final test in _knownTests) {
-      if (p.contains(_normalize(test))) matches++;
-      if (matches >= 2) return true;
-    }
-    return false;
+    // A test name can be unfamiliar, long, or include several familiar words.
+    // Only discard fields that are unambiguously table headers.
+    return p == 'investigation results' || p == 'reference range';
   }
 
   String? _firstRange(String text) {
-    final m = _rangeToken.firstMatch(text);
-    return m?.group(0)?.replaceAll(' ', '');
+    if (preferredPrintedRange(text) != null) return text.trim();
+    return _rangeToken.hasMatch(text)
+        ? text.trim().replaceAll(RegExp(r'\s+'), '')
+        : null;
   }
 
-  double? _toNumber(String? s) {
-    if (s == null) return null;
-    final m = RegExp(r'[-+]?\d+(?:\.\d+)?').firstMatch(s);
-    if (m == null) return null;
-    return double.tryParse(m.group(0)!);
-  }
-
-  bool? _isOutOfRange(String? value, String? referenceRange) {
-    final v = _toNumber(value);
-    if (v == null) return null;
-    if (referenceRange == null || referenceRange.trim().isEmpty) return null;
-    final rm = RegExp(
-      r'([-+]?\d+(?:\.\d+)?)\s*-\s*([-+]?\d+(?:\.\d+)?)',
-    ).firstMatch(referenceRange);
-    if (rm == null) return null;
-    final min = double.tryParse(rm.group(1)!);
-    final max = double.tryParse(rm.group(2)!);
-    if (min == null || max == null) return null;
-    return v < min || v > max;
+  bool? _isOutOfRange(String name, String value, String? unit, String? range) {
+    final position = compareWithPrintedRange(
+      ExtractedLabValue(
+        parameterName: name,
+        value: value,
+        unit: unit,
+        referenceRange: range,
+      ),
+    );
+    return switch (position) {
+      RangePosition.unknown => null,
+      RangePosition.within => false,
+      RangePosition.below || RangePosition.above => true,
+    };
   }
 
   List<ExtractedLabValue> _cleanLabValues(List<ExtractedLabValue> raw) {
@@ -101,14 +73,16 @@ class ApiReportsRepository implements ReportsRepository {
       final name = v.parameterName.trim();
       final value = v.value.trim();
       if (name.isEmpty || value.isEmpty) return;
-      final k = v.id ?? '${_normalize(name)}|$value';
+      final k =
+          v.id ??
+          '${_normalize(name)}|$value|${_normalize(v.unit ?? '')}|${_normalize(v.referenceRange ?? '')}';
       if (seen.contains(k)) return;
       seen.add(k);
       cleaned.add(v);
     }
 
     for (final row in raw) {
-      // Keep old-PDF behavior unless we actually detect OCR-style merged noise.
+      // Keep source observations unless a field is an unambiguous table header.
       if (row.reviewVersion == 0 &&
           hasNoisyRows &&
           _looksNoisyParameter(row.parameterName)) {
@@ -135,7 +109,8 @@ class ApiReportsRepository implements ReportsRepository {
           referenceRange: range?.trim().isEmpty == true ? null : range?.trim(),
           isAbnormal: row.reviewVersion > 0
               ? row.isAbnormal
-              : row.isAbnormal ?? _isOutOfRange(row.value, range?.trim()),
+              : row.isAbnormal ??
+                    _isOutOfRange(row.parameterName, row.value, unit, range),
           reviewVersion: row.reviewVersion,
           sourceSnapshot: row.sourceSnapshot,
           canonicalTestId: row.canonicalTestId,
@@ -176,7 +151,9 @@ class ApiReportsRepository implements ReportsRepository {
         unit: unit?.trim().isEmpty == true ? null : unit?.trim(),
         sampleDate: item.sampleDate,
         referenceRange: range?.trim().isEmpty == true ? null : range?.trim(),
-        isAbnormal: item.isAbnormal ?? _isOutOfRange(item.value, range?.trim()),
+        isAbnormal:
+            item.isAbnormal ??
+            _isOutOfRange(item.parameterName, item.value, unit, range),
       );
     }
 
@@ -189,7 +166,7 @@ class ApiReportsRepository implements ReportsRepository {
           continue;
         }
         final key =
-            '${_normalize(section.heading)}|${_normalize(normalized.parameterName)}|${normalized.value}';
+            '${_normalize(section.heading)}|${_normalize(normalized.parameterName)}|${normalized.value}|${_normalize(normalized.unit ?? '')}|${_normalize(normalized.referenceRange ?? '')}';
         if (seen.contains(key)) continue;
         seen.add(key);
         tests.add(normalized);
@@ -740,5 +717,19 @@ class ApiReportsRepository implements ReportsRepository {
     final data = await _client.post('v1/reports/$reportId/restore');
     final d = data['data'] as Map<String, dynamic>;
     return _reportFromJson(d);
+  }
+
+  @override
+  Future<void> permanentlyDeleteReport(String reportId) =>
+      _client.delete('v1/reports/recycle-bin/$reportId');
+
+  @override
+  Future<RecycleBinEmptyResult> emptyRecycleBin() async {
+    final response = await _client.deleteAndGetJson('v1/reports/recycle-bin');
+    final data = response['data'] as Map<String, dynamic>;
+    return RecycleBinEmptyResult(
+      deletedCount: data['deletedCount'] as int,
+      failedCount: data['failedCount'] as int,
+    );
   }
 }

@@ -23,6 +23,7 @@ class TimelineScreen extends StatefulWidget {
     required this.profilesRepository,
     required this.profileId,
     required this.onBack,
+    this.onUploadReport,
     this.showBackButton = true,
     required this.sharingRepository,
     required this.profileName,
@@ -35,6 +36,7 @@ class TimelineScreen extends StatefulWidget {
   final ProfilesRepository profilesRepository;
   final String profileId;
   final VoidCallback onBack;
+  final VoidCallback? onUploadReport;
   final bool showBackButton;
   final SharingRepository sharingRepository;
   final String profileName;
@@ -111,6 +113,16 @@ class _TimelineScreenState extends State<TimelineScreen> {
         });
       }
     }
+  }
+
+  Future<void> _openRecycleBin() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            RecycleBinScreen(reportsRepository: widget.reportsRepository),
+      ),
+    );
+    if (mounted) await _loadReports();
   }
 
   Future<void> _openReport(Report report) async {
@@ -210,6 +222,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
             : null,
         actions: [
           IconButton(
+            key: const Key('timeline-recycle-bin-button'),
+            icon: const Icon(Icons.delete_outline_rounded),
+            tooltip: 'Recycle bin',
+            onPressed: _openRecycleBin,
+          ),
+          IconButton(
             key: const Key('timeline-health-history-button'),
             icon: const Icon(Icons.health_and_safety_outlined),
             tooltip: 'Health History',
@@ -222,23 +240,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 ),
               ),
             ),
-          ),
-          IconButton(
-            key: const Key('timeline-recycle-bin-button'),
-            icon: const Icon(Icons.delete_outline),
-            tooltip: 'Recycle Bin',
-            onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => RecycleBinScreen(
-                    reportsRepository: widget.reportsRepository,
-                    profileId: widget.profileId,
-                  ),
-                ),
-              );
-              if (!mounted) return;
-              await _loadReports();
-            },
           ),
           IconButton(
             key: const Key('timeline-share-button'),
@@ -259,6 +260,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
           ),
         ],
       ),
+      floatingActionButton: widget.onUploadReport == null
+          ? null
+          : FloatingActionButton.extended(
+              key: const Key('timeline-upload-report'),
+              onPressed: widget.onUploadReport,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Upload report'),
+            ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -310,7 +319,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Upload a report from the home screen to see it here.',
+              'Tap Upload report to add your first lab result.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -361,6 +370,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               ? const Center(child: Text('No reports match your search.'))
               : ListView.builder(
                   key: PageStorageKey('timeline-list-${widget.profileId}'),
+                  padding: const EdgeInsets.only(bottom: 96),
                   itemCount: entries.length,
                   itemBuilder: (context, index) {
                     final entry = entries[index];

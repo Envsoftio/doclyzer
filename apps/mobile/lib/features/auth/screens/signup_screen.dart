@@ -88,6 +88,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: BackButton(onPressed: widget.onGoToLogin),
         title: const Text('Create account'),
         centerTitle: true,
         surfaceTintColor: Colors.transparent,

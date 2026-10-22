@@ -105,6 +105,23 @@ export class ReportsController {
     return successResponse({ reports: data }, getCorrelationId(req));
   }
 
+  @Delete('recycle-bin')
+  async emptyRecycleBin(@Req() req: Request): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.reportsService.emptyRecycleBin(userId);
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Delete('recycle-bin/:id')
+  async permanentlyDeleteReport(
+    @Param('id') reportId: string,
+    @Req() req: Request,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    await this.reportsService.permanentlyDeleteReport(userId, reportId);
+    return successResponse({ deleted: true }, getCorrelationId(req));
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(

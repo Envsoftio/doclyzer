@@ -494,6 +494,22 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             ? BackButton(onPressed: widget.onBack)
             : null,
       ),
+      bottomNavigationBar: widget.editProfile && !_loading
+          ? SafeArea(
+              minimum: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              child: FilledButton.icon(
+                key: const Key('account-profile-save'),
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check_rounded),
+                label: const Text('Save changes'),
+              ),
+            )
+          : null,
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -556,19 +572,31 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                         ),
                         const SizedBox(height: 16),
                       ],
-                      Center(child: _buildAvatar()),
-                      TextButton.icon(
-                        onPressed: _uploadingAvatar
-                            ? null
-                            : _pickAndUploadAvatar,
-                        icon: const Icon(Icons.photo_library_outlined),
-                        label: Text(
-                          _uploadingAvatar
-                              ? 'Uploading photo…'
-                              : 'Change photo',
+                      Center(
+                        child: Column(
+                          children: [
+                            _buildAvatar(),
+                            const SizedBox(height: 8),
+                            TextButton.icon(
+                              onPressed: _uploadingAvatar
+                                  ? null
+                                  : _pickAndUploadAvatar,
+                              icon: const Icon(Icons.photo_library_outlined),
+                              label: Text(
+                                _uploadingAvatar
+                                    ? 'Uploading photo…'
+                                    : 'Change photo',
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 24),
+                      Text(
+                        'Your details',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 12),
                       if (_error != null)
                         Text(
                           _error!,
@@ -582,25 +610,26 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        decoration: const InputDecoration(labelText: 'Email'),
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.mail_outline_rounded),
+                          helperText: 'Email cannot be changed here',
+                        ),
                       ),
                       const SizedBox(height: 16),
                       TextField(
                         key: const Key('account-profile-display-name'),
                         controller: _displayNameController,
+                        textCapitalization: TextCapitalization.words,
+                        textInputAction: TextInputAction.done,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                         decoration: const InputDecoration(
-                          labelText: 'Display Name',
+                          labelText: 'Display name',
+                          prefixIcon: Icon(Icons.person_outline_rounded),
                         ),
                         maxLength: 100,
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton(
-                        key: const Key('account-profile-save'),
-                        onPressed: _saving ? null : _save,
-                        child: const Text('Save'),
                       ),
                     ],
                   ),

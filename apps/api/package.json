@@ -27,7 +27,7 @@
     "reports:privacy-test": "ts-node scripts/report-privacy-test.ts",
     "reports:test": "ts-node scripts/report-parser-regression-test.ts && ts-node scripts/report-value-suggestion-test.ts && ts-node scripts/report-ocr-cascade-test.ts && ts-node scripts/report-paddle-shadow-test.ts && ts-node scripts/report-image-auto-test.ts && ts-node scripts/report-pdf-result-column-test.ts",
     "reports:benchmark": "ts-node scripts/report-parser-benchmark.ts",
-    "reports:insight-test": "ts-node scripts/report-result-insight-test.ts",
+    "reports:insight-test": "ts-node scripts/report-result-insight-test.ts && ts-node scripts/report-range-suggestion-test.ts",
     "reports:trends-test": "ts-node scripts/lab-trend-builder-test.ts",
     "reports:correction-test": "ts-node scripts/report-correction-test.ts",
     "reports:history-test": "ts-node scripts/report-collection-date-test.ts",

@@ -10,6 +10,10 @@ import {
   type LabCandidate,
 } from './lab-parser';
 import type { PaddlePageOutput } from '../paddle-ocr.client';
+import {
+  preferredPrintedRange,
+  validPrintedNumericRange,
+} from '../report-reference-range';
 
 export interface AutoImageLabRow {
   parameterName: string;
@@ -197,15 +201,40 @@ function attachAlignedMetadata(
       (a, b) => bounds(a.polygon_original).cx - bounds(b.polygon_original).cx,
     );
     const combined = group.map((token) => token.text_raw.trim()).join(' ');
-    const range = combined.match(rangeAtEnd)?.[1] ?? null;
-    const prefix = range
-      ? combined.slice(0, combined.length - range.length).trim()
+    const categorical = /^(\S+)\s+(.+)$/.exec(combined);
+    const categoryRange =
+      categorical &&
+      unitPattern.test(categorical[1]) &&
+      preferredPrintedRange(categorical[2]) != null
+        ? categorical[2]
+        : null;
+    const interval = categoryRange ? null : combined.match(rangeAtEnd)?.[1];
+    const prefix = interval
+      ? combined.slice(0, combined.length - interval.length).trim()
       : combined;
-    const unit = unitPattern.test(prefix) ? prefix : group[0]?.text_raw.trim();
+    // A numeric fragment at the end of a category list is not a range cell.
+    const range =
+      categoryRange ??
+      (interval &&
+      unitPattern.test(prefix) &&
+      validPrintedNumericRange(interval)
+        ? interval
+        : null);
+    const unit = categoryRange
+      ? categorical![1]
+      : unitPattern.test(prefix)
+        ? prefix
+        : group[0]?.text_raw.trim();
     const unitToken = group.find((token) =>
       token.text_raw.trim().startsWith(unit),
     );
-    return { group, range, unit, unitToken };
+    return {
+      group,
+      range,
+      unit,
+      unitToken,
+      categorical: categoryRange != null,
+    };
   });
   const corroboratedUnits = new Set(
     metadata
@@ -217,17 +246,21 @@ function attachAlignedMetadata(
   );
   const referenceXs = metadata.flatMap(({ group }) =>
     group
-      .filter((token) =>
-        rangeAtEnd.test(token.text_raw.trim()) &&
-        (token.confidence_raw ?? 0) >= 0.9,
+      .filter(
+        (token) =>
+          rangeAtEnd.test(token.text_raw.trim()) &&
+          (token.confidence_raw ?? 0) >= 0.9,
       )
       .map((token) => bounds(token.polygon_original).cx),
   );
   const referenceX = referenceXs.length ? median(referenceXs) : null;
-  metadata.forEach(({ group, range, unit, unitToken }, index) => {
+  metadata.forEach(({ group, range, unit, unitToken, categorical }, index) => {
     const rangeToken = group.find((token) =>
       rangeAtEnd.test(token.text_raw.trim()),
     );
+    const rangeConfidence = categorical
+      ? Math.min(...group.map((token) => token.confidence_raw ?? 0))
+      : (rangeToken?.confidence_raw ?? 0);
     const unitCorroborated = corroboratedUnits.has(unit);
     const correctedUnit = /^\d+~\d+\/[a-zA-Z]+$/.test(unit)
       ? unit.replace('~', '^')
@@ -236,10 +269,12 @@ function attachAlignedMetadata(
       correctedUnit != null && corroboratedUnits.has(correctedUnit);
     if (
       range &&
-      ((rangeToken?.confidence_raw ?? 0) >= 0.9 ||
-        (unitCorroborated && (rangeToken?.confidence_raw ?? 0) >= 0.88))
+      (rangeConfidence >= 0.9 ||
+        (unitCorroborated && !categorical && rangeConfidence >= 0.88))
     )
-      rows[index].referenceRange = range.replace(/\s+/g, '');
+      rows[index].referenceRange = categorical
+        ? range
+        : range.replace(/\s+/g, '');
     if (!range && referenceX != null && group.length > 1) {
       const last = group.at(-1)!;
       const text = last.text_raw.trim();

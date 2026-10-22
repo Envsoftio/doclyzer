@@ -350,7 +350,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Move to recycle bin?'),
         content: const Text(
-          'This report will move to recycle bin and be permanently deleted after 30 days.',
+          'You can restore this report from Reports > Recycle Bin for 30 days. After that, it will be permanently deleted.',
         ),
         actions: [
           TextButton(

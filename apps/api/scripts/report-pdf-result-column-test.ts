@@ -75,6 +75,19 @@ assert.deepEqual(extractPdfResultColumn([first, second]), [
 assert.deepEqual(extractPdfResultColumn([first, null]), []);
 const uncertain = page([...heading, ['Glucose', 20, 200], ['90', 400, 200]]);
 assert.deepEqual(extractPdfResultColumn([uncertain]), []);
+const splitCategory = page([
+  ...heading,
+  ['LDL cholesterol', 20, 200],
+  ['98.48', 400, 200],
+  ['mg/dL', 600, 200],
+  ['Optimal: <100', 800, 200],
+  ['Above Optimal: 100-129', 900, 200],
+  ['High: >129', 1000, 200],
+]);
+assert.equal(
+  extractPdfResultColumn([splitCategory])[0].referenceRange,
+  'Optimal: <100 Above Optimal: 100-129 High: >129',
+);
 console.log(
   'PASS headed PDF results, pending cells, interpretation charts, uncertainty',
 );

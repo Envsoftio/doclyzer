@@ -1,4 +1,5 @@
 import importlib.util
+import io
 from pathlib import Path
 import unittest
 import tempfile
@@ -39,5 +40,29 @@ class TablePreprocessTest(unittest.TestCase):
                 return 0
             with patch.object(module.sys, 'argv', ['wrapper', '-l', 'eng', path, 'stdout', 'tsv']), patch.object(module.subprocess, 'call', side_effect=invoke):
                 self.assertEqual(module.main(), 0)
+
+    def test_sparse_osd_defaults_upright_without_preprocessing(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = str(Path(folder) / 'sparse.png')
+            Image.new('RGB', (100, 100), 'white').save(path)
+            args = ['--psm', '0', '-l', 'osd', path, 'stdout']
+            output = io.StringIO()
+            failure = module.subprocess.CompletedProcess(
+                args, 1, b'', b'Too few characters. Skipping this page\nError during processing.\n'
+            )
+            with patch.object(module.sys, 'argv', ['wrapper', *args]), patch.object(module.sys, 'stdout', output), patch.object(module.subprocess, 'run', return_value=failure) as run:
+                self.assertEqual(module.main(), 0)
+            run.assert_called_once_with(['/usr/bin/tesseract', *args], capture_output=True)
+            self.assertEqual(output.getvalue(), 'Orientation in degrees: 0\n')
+
+    def test_other_osd_failures_are_not_hidden(self):
+        args = ['--psm', '0', '-l', 'osd', '/missing.png', 'stdout']
+        failure = module.subprocess.CompletedProcess(args, 2, b'', b'Cannot read input file')
+        stdout = io.TextIOWrapper(io.BytesIO())
+        stderr_bytes = io.BytesIO()
+        stderr = io.TextIOWrapper(stderr_bytes)
+        with patch.object(module.sys, 'argv', ['wrapper', *args]), patch.object(module.sys, 'stdout', stdout), patch.object(module.sys, 'stderr', stderr), patch.object(module.subprocess, 'run', return_value=failure):
+            self.assertEqual(module.main(), 2)
+        self.assertEqual(stderr_bytes.getvalue(), b'Cannot read input file')
 
 if __name__ == '__main__': unittest.main()

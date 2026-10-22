@@ -13,7 +13,10 @@ type Token = { text: string; x: number; y: number; height: number };
 export function extractPdfResultColumn(
   pages: Array<PaddlePageOutput | null>,
 ): PdfResultRow[] {
-  if (!pages.length || pages.some((page) => !page?.parsedJson?.paddlePage?.paddle))
+  if (
+    !pages.length ||
+    pages.some((page) => !page?.parsedJson?.paddlePage?.paddle)
+  )
     return [];
   const results: PdfResultRow[] = [];
   let headedPages = 0;
@@ -116,7 +119,11 @@ export function extractPdfResultColumn(
         if (value.y < cutoff && labels.length) return [];
         continue;
       }
-      const reference = sameLine.find((token) => token.x >= rangeLeft);
+      const reference = sameLine
+        .filter((token) => token.x >= rangeLeft)
+        .sort((a, b) => a.x - b.x)
+        .map((token) => token.text)
+        .join(' ');
       // A later explanation can reuse the same horizontal columns. Require
       // the patient table's reference column when a result follows one.
       if (value.y >= cutoff && !reference) continue;
@@ -124,7 +131,7 @@ export function extractPdfResultColumn(
         parameterName: labels.map((token) => token.text).join(' '),
         value: value.text,
         unit: units[0].text,
-        referenceRange: reference?.text ?? null,
+        referenceRange: reference && reference.length <= 256 ? reference : null,
       });
     }
   }

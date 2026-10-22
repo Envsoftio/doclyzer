@@ -4,6 +4,91 @@ import 'package:mobile/core/navigation/mobile_navigation_shell.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 
 void main() {
+  testWidgets('tab page moves in while navigation stays mounted', (
+    tester,
+  ) async {
+    var selected = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) => MobileNavigationShell(
+            selectedIndex: selected,
+            contentIndex: selected,
+            onDestinationSelected: (value) => setState(() => selected = value),
+            onBackToHome: () {},
+            child: Scaffold(
+              body: Center(
+                child: Text(selected == 0 ? 'Home content' : 'Reports content'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final navigation = tester.element(find.byType(NavigationBar));
+
+    await tester.tap(find.text('Reports'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Home content'), findsOneWidget);
+    expect(find.text('Reports content'), findsOneWidget);
+    expect(tester.element(find.byType(NavigationBar)), same(navigation));
+
+    await tester.pumpAndSettle();
+    expect(find.text('Home content'), findsNothing);
+    expect(find.text('Reports content'), findsOneWidget);
+  });
+
+  testWidgets('pending tab responds immediately without remounting content', (
+    tester,
+  ) async {
+    var selected = 0;
+    var pending = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) => MobileNavigationShell(
+            selectedIndex: selected,
+            contentIndex: 0,
+            isChangingDestination: pending,
+            onDestinationSelected: (value) => setState(() {
+              selected = value;
+              pending = value == 1;
+            }),
+            onBackToHome: () {},
+            child: const Scaffold(
+              body: Center(
+                child: Text('Current page', key: Key('current-page')),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final content = tester.element(find.byKey(const Key('current-page')));
+
+    await tester.tap(find.text('Reports'));
+    await tester.pump();
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      1,
+    );
+    expect(find.byKey(const Key('tab-loading-page')), findsOneWidget);
+    expect(
+      tester.element(find.byKey(const Key('current-page'))),
+      same(content),
+    );
+
+    await tester.tap(find.text('Home'));
+    await tester.pump();
+    expect(find.byKey(const Key('tab-loading-page')), findsNothing);
+    expect(
+      tester.element(find.byKey(const Key('current-page'))),
+      same(content),
+    );
+  });
+
   testWidgets(
     'tabs switch, system back returns home, details cover navigation',
     (tester) async {

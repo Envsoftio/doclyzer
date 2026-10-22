@@ -129,6 +129,46 @@ async function run() {
   }).evaluateAbnormalFromReference.bind(service);
   assert.equal(compare('1,2', '10-20'), null);
   assert.equal(compare('<12', '10-20'), null);
+  const repeatedReport = Object.assign(new ReportEntity(), report, {
+    structuredReport: {
+      patientDetails: {},
+      sections: [{ heading: 'Blood', tests: [
+        { parameterName: 'Marker', value: '10', unit: 'g/dL', referenceRange: '12-16' },
+        { parameterName: 'Marker', value: '20', unit: 'mg/dL', referenceRange: '18-22' },
+        { parameterName: 'Solo', value: '4.06', unit: 'g/dL', referenceRange: '3.50-5.20' },
+        { parameterName: 'Duplicate', value: '8', unit: 'mg/dL', referenceRange: '7-9' },
+        { parameterName: 'Duplicate', value: '8', unit: 'mg/dL', referenceRange: '10-12' },
+        { parameterName: 'Local', value: '8', unit: 'mg/dL', referenceRange: '7-9', isAbnormal: false },
+      ] }],
+    },
+  });
+  const repeatedRows = [
+    { parameterName: 'Marker', value: '10', unit: 'g/dL' },
+    { parameterName: 'Marker', value: '19', unit: 'mg/dL' },
+    { parameterName: 'Solo', value: '4.06', unit: 'mg/dL' },
+    { parameterName: 'Duplicate', value: '8', unit: 'mg/dL' },
+    { parameterName: 'Local', value: '8', unit: 'mg/dL' },
+  ].map((fields) => Object.assign(new ReportLabValueEntity(), row, {
+    ...fields, referenceRange: null, reviewVersion: 0, sampleDate: null,
+  }));
+  const repeatedDto = (service as unknown as {
+    toDto(report: ReportEntity, values: ReportLabValueEntity[], transcript: boolean, structured: boolean): ReportDto;
+  }).toDto(repeatedReport, repeatedRows, false, true);
+  assert.equal(repeatedDto.extractedLabValues[0].referenceRange, '12-16');
+  assert.equal(repeatedDto.extractedLabValues[1].referenceRange, undefined,
+    'a repeated test name cannot select the first row’s range');
+  assert.equal(repeatedDto.extractedLabValues[2].referenceRange, undefined,
+    'a name match with different units cannot supply a range');
+  assert.equal(repeatedDto.extractedLabValues[3].referenceRange, undefined,
+    'conflicting exact rows cannot supply an arbitrary range');
+  const localRow = Object.assign(new ReportLabValueEntity(), repeatedRows[4], {
+    referenceRange: '10-12',
+  });
+  const localRangeDto = (service as unknown as {
+    toDto(report: ReportEntity, values: ReportLabValueEntity[], transcript: boolean, structured: boolean): ReportDto;
+  }).toDto(repeatedReport, [...repeatedRows.slice(0, 4), localRow], false, true);
+  assert.equal(localRangeDto.extractedLabValues[4].isAbnormal, true,
+    'a stored row range must not inherit a flag for a different structured range');
   console.log('PASS correction provenance, version conflict, and cache invalidation');
 }
 

@@ -50,7 +50,7 @@ export class DoclingTaskClient {
     );
     const instance =
       this.settings.providerInstance +
-      (nativeOnly ? ':native-v1' : ':auto-tableformer-v1');
+      (nativeOnly ? ':native-v1' : ':tesseract-tableformer-v1');
     if (job.staged_result && job.provider_instance_id === instance)
       return this.outputs(job.staged_result);
     if (job.staged_result && job.provider_instance_id !== instance)
@@ -89,7 +89,7 @@ export class DoclingTaskClient {
       form.append('pipeline', 'standard');
       form.append('do_ocr', String(!nativeOnly));
       form.append('force_ocr', 'false');
-      form.append('ocr_preset', 'auto');
+      form.append('ocr_preset', 'tesseract-table');
       form.append('pdf_backend', 'docling_parse');
       form.append('do_table_structure', 'true');
       form.append('table_structure_preset', 'tableformer_v1_accurate');

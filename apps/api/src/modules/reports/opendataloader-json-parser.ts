@@ -9,6 +9,10 @@ import type {
 import { adaptDoclingDocument } from './docling-document-adapter';
 import { LabDetailsExtractor } from './lab-details-extractor';
 import {
+  normalizePrintedRangeText,
+  preferredPrintedRange,
+} from './report-reference-range';
+import {
   comparisonNotation,
   isAssayAnnotation,
   splitAssayAnnotation,
@@ -597,7 +601,9 @@ export class OpenDataLoaderJsonParser {
         // check them; do not turn them into numbers here.
         const unclearNumeric =
           !numeric &&
-          /^(?:[<>]=?|[≤≥])?\s*[-+]?[\dOoIl][\dOoIl.,]{0,30}$/.test(cleanedValue) &&
+          /^(?:[<>]=?|[≤≥])?\s*[-+]?[\dOoIl][\dOoIl.,]{0,30}$/.test(
+            cleanedValue,
+          ) &&
           /\d/.test(cleanedValue);
         const qualitative =
           /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale yellow|yellow|amber|straw|non[- ]?reactive|reactive|detected|not detected|no growth|sterile|[ABO]|AB|(?:[ABO]|AB)\s*[+-]|(?:rh\s*)?(?:positive|negative)|["'](?:[ABO]|AB)["']|(?:present|positive)\s*\([+]{1,4}\))$/i.test(
@@ -633,7 +639,10 @@ export class OpenDataLoaderJsonParser {
         const isAbnormal =
           flag && flag !== '*'
             ? true
-            : !numeric || unclearNumeric || /^[<>≤≥]/.test(value) || /,/.test(value)
+            : !numeric ||
+                unclearNumeric ||
+                /^[<>≤≥]/.test(value) ||
+                /,/.test(value)
               ? undefined
               : this.evaluateAbnormal(value, c4);
         if (!sections.has(currentSection)) sections.set(currentSection, []);
@@ -740,7 +749,9 @@ export class OpenDataLoaderJsonParser {
       /\barea\b/.test(header)
     )
       return true;
-    const labels = texts.map((row) => row[0]?.toLowerCase() ?? '').filter(Boolean);
+    const labels = texts
+      .map((row) => row[0]?.toLowerCase() ?? '')
+      .filter(Boolean);
     return (
       labels.length >= 2 &&
       labels.every((label) =>
@@ -1200,7 +1211,8 @@ export class OpenDataLoaderJsonParser {
   ): boolean | undefined {
     if (!referenceRange) return undefined;
 
-    const ref = referenceRange.trim();
+    const normalized = normalizePrintedRangeText(referenceRange);
+    const ref = preferredPrintedRange(normalized) ?? normalized;
     const refLower = ref.toLowerCase();
     const qual =
       /^(negative|positive|nil|normal|absent|present|clear|cloudy|turbid|trace|pale yellow|yellow|amber|straw)$/i;
@@ -1215,24 +1227,23 @@ export class OpenDataLoaderJsonParser {
     if (numericValue === null) return undefined;
 
     const between = ref.match(
-      /^\s*(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)\s*$/,
+      /^\s*(-?\d+(?:\.\d+)?)\s*(?:[-–—]|to)\s*(-?\d+(?:\.\d+)?)\s*$/i,
     );
     if (between) {
       const low = Number(between[1]);
       const high = Number(between[2]);
-      if (!Number.isFinite(low) || !Number.isFinite(high)) return undefined;
-      return (
-        numericValue < Math.min(low, high) || numericValue > Math.max(low, high)
-      );
+      if (!Number.isFinite(low) || !Number.isFinite(high) || low > high)
+        return undefined;
+      return numericValue < low || numericValue > high;
     }
 
     const lt = ref.match(/^\s*<\s*(-?\d+(?:\.\d+)?)\s*$/);
     if (lt) return numericValue >= Number(lt[1]);
-    const lte = ref.match(/^\s*<=\s*(-?\d+(?:\.\d+)?)\s*$/);
+    const lte = ref.match(/^\s*(?:<=|≤)\s*(-?\d+(?:\.\d+)?)\s*$/);
     if (lte) return numericValue > Number(lte[1]);
     const gt = ref.match(/^\s*>\s*(-?\d+(?:\.\d+)?)\s*$/);
     if (gt) return numericValue <= Number(gt[1]);
-    const gte = ref.match(/^\s*>=\s*(-?\d+(?:\.\d+)?)\s*$/);
+    const gte = ref.match(/^\s*(?:>=|≥)\s*(-?\d+(?:\.\d+)?)\s*$/);
     if (gte) return numericValue < Number(gte[1]);
 
     return undefined;

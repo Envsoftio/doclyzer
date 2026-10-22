@@ -79,10 +79,12 @@ export const reportsConfig = registerAs(
       process.env.DOCLING_OCR_TIMEOUT_MS ?? '180000',
       10,
     ),
-    doclingOcrEngine: process.env.DOCLING_OCR_ENGINE ?? 'auto',
+    doclingOcrEngine: process.env.DOCLING_OCR_ENGINE ?? 'tesseract',
     doclingOcrLanguages:
       process.env.DOCLING_OCR_LANGUAGES?.trim() ||
-      (process.env.DOCLING_OCR_ENGINE?.startsWith('tesser') ? 'eng' : ''),
+      ((process.env.DOCLING_OCR_ENGINE ?? 'tesseract').startsWith('tesser')
+        ? 'eng'
+        : ''),
     labAiFallbackEnabled: process.env.REPORT_LAB_AI_FALLBACK_ENABLED === 'true',
     labAiFallbackOpenaiApiKey:
       process.env.REPORT_LAB_AI_FALLBACK_OPENAI_API_KEY ?? '',

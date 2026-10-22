@@ -112,6 +112,8 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final canAddProfile =
+        !_loading && (_maxProfiles == null || _profiles.length < _maxProfiles!);
 
     return Scaffold(
       appBar: AppBar(
@@ -130,25 +132,80 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
             ? const Center(child: CircularProgressIndicator())
             : _buildContent(theme),
       ),
-      floatingActionButton: _loading
-          ? null
-          : (_maxProfiles != null && _profiles.length >= _maxProfiles!)
-          ? null
-          : Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: FloatingActionButton.extended(
-                key: const Key('profile-create-new'),
-                onPressed: widget.onCreateProfile,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Add profile'),
+      bottomNavigationBar: canAddProfile
+          ? SafeArea(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  border: Border(
+                    top: BorderSide(color: theme.colorScheme.outlineVariant),
+                  ),
+                ),
+                child: FilledButton.icon(
+                  key: const Key('profile-create-new'),
+                  onPressed: widget.onCreateProfile,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Add profile'),
+                ),
               ),
-            ),
+            )
+          : null,
     );
   }
 
   Widget _buildContent(ThemeData theme) {
     return CustomScrollView(
       slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface.withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      Icons.group_outlined,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${_profiles.length} ${_profiles.length == 1 ? 'profile' : 'profiles'}',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Reports and trends, organized by person',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
         if (_error != null)
           SliverToBoxAdapter(
             child: Padding(
@@ -217,8 +274,20 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
             ),
           )
         else
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: Text('People', style: theme.textTheme.titleMedium),
+            ),
+          ),
+        if (_profiles.isNotEmpty)
           SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.screenPadding),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenPadding,
+              0,
+              AppSpacing.screenPadding,
+              AppSpacing.lg,
+            ),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 final profile = _profiles[index];
@@ -282,12 +351,12 @@ class _ProfileCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: InkWell(
-        onTap: () => reportCount > 0 ? onOpenReports() : onEdit(),
+        onTap: onOpenReports,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -309,7 +378,12 @@ class _ProfileCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(profile.name, style: theme.textTheme.titleMedium),
+                        Text(
+                          profile.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium,
+                        ),
                         if (profile.relation != null &&
                             profile.relation!.isNotEmpty)
                           Text(
@@ -325,12 +399,49 @@ class _ProfileCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  PopupMenuButton<String>(
+                    key: Key('profile-actions-${profile.id}'),
+                    tooltip: 'Actions for ${profile.name}',
+                    icon: const Icon(Icons.more_vert_rounded),
+                    onSelected: (action) {
+                      if (action == 'edit') onEdit();
+                      if (action == 'delete') onDelete();
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(Icons.edit_outlined),
+                          title: Text('Edit profile'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(
+                            Icons.delete_outline_rounded,
+                            color: theme.colorScheme.error,
+                          ),
+                          title: Text('Delete profile'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
                   if (profile.isActive)
                     Container(
                       key: Key('profile-active-chip-${profile.id}'),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
+                        horizontal: 10,
+                        vertical: 6,
                       ),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primaryContainer,
@@ -356,30 +467,12 @@ class _ProfileCard extends StatelessWidget {
                       ),
                       child: const Text('Set active'),
                     ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
-                    key: Key('profile-edit-${profile.id}'),
-                    icon: const Icon(Icons.edit_outlined),
-                    onPressed: onEdit,
-                    style: IconButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ),
-                  IconButton(
-                    key: Key('profile-delete-${profile.id}'),
-                    icon: Icon(
-                      Icons.delete_outline_rounded,
-                      color: theme.colorScheme.error,
-                    ),
-                    onPressed: onDelete,
-                    style: IconButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                    ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: onOpenReports,
+                    iconAlignment: IconAlignment.end,
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                    label: const Text('View reports'),
                   ),
                 ],
               ),

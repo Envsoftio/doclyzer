@@ -2,7 +2,8 @@
 """Tesseract table preset: remove only long straight rules, preserving text pixels.
 
 The original PDF is never modified. Forward all CLI options without a shell and
-remove the temporary image even when Tesseract fails.
+remove the temporary image even when Tesseract fails. Keep OSD on the original
+crop; sparse crops cannot supply orientation evidence and default to upright.
 """
 import re
 import subprocess
@@ -31,6 +32,29 @@ def remove_rules(image):
 
 def main():
     args = sys.argv[1:]
+
+    def value_after(flag):
+        if flag not in args:
+            return None
+        index = args.index(flag) + 1
+        return args[index] if index < len(args) else None
+
+    if value_after('--psm') == '0' and value_after('-l') == 'osd':
+        result = subprocess.run(['/usr/bin/tesseract', *args], capture_output=True)
+        sparse_crop = (
+            result.returncode
+            and b'Too few characters. Skipping this page' in result.stderr
+            and b'Error during processing.' in result.stderr
+        )
+        if sparse_crop:
+            # Docling already assumes 0 degrees after this OSD error, then runs
+            # OCR with the configured language. Return that same default without
+            # filling the logs with errors for small table cells.
+            sys.stdout.write('Orientation in degrees: 0\n')
+            return 0
+        sys.stdout.buffer.write(result.stdout)
+        sys.stderr.buffer.write(result.stderr)
+        return result.returncode
     image_index = next((i for i, arg in enumerate(args) if Path(arg).is_file()), None)
     if image_index is None:
         return subprocess.call(['/usr/bin/tesseract', *args])

@@ -33,9 +33,10 @@ export function selectStoredResult<T extends SavedResult>(
   if (candidates.length === 0) return undefined;
   const selectedUnit =
     typeof selection.unit === 'string' ? selection.unit.trim() : '';
-  const exact = candidates.find(
+  const exact = candidates.filter(
     (row) => (row.unit ?? '').trim() === selectedUnit,
   );
-  if (exact) return exact;
+  if (exact.length === 1) return exact[0];
+  if (exact.length > 1) return undefined;
   return candidates.length === 1 ? candidates[0] : undefined;
 }

@@ -52,6 +52,7 @@ import { LabValueExtractor } from './lab-value-extractor';
 import { LabDetailsExtractor } from './lab-details-extractor';
 import { ReportLabAiFallbackService } from './report-lab-ai-fallback.service';
 import { ReportRangeSuggestionService, safeRawRange, validSuggestedRange, type RangeSuggestion } from './report-range-suggestion.service';
+import { normalizePrintedRangeText, preferredPrintedRange } from './report-reference-range';
 import { ReportValueSuggestionService, isUnclearResultValue, type ParsedResultValue } from './report-value-suggestion.service';
 import { ReportDuplicateDetectedException } from './exceptions/report-duplicate-detected.exception';
 import { summarizeReportCollectionDate } from './report-collection-date';
@@ -271,7 +272,7 @@ export class ReportsService {
   ): Promise<Array<{ raw: string; result: RangeSuggestion }>> {
     if (!userId) return [];
     const candidates = [...new Set(values.map((value) => value.referenceRange?.trim() ?? ''))]
-      .filter((range) => safeRawRange(range) != null && !validSuggestedRange(range))
+      .filter((range) => safeRawRange(range) != null && !validSuggestedRange(range) && preferredPrintedRange(range) == null)
       .slice(0, 20);
     const resolved = new Map<string, string>();
     const usage: Array<{ raw: string; result: RangeSuggestion }> = [];
@@ -1946,7 +1947,8 @@ export class ReportsService {
     if (!referenceRange || /^[<>≤≥]/.test(rawValue.trim())) return null;
 
     const valueNum = this.tryParseNumeric(rawValue);
-    const ref = referenceRange.trim();
+    const normalized = normalizePrintedRangeText(referenceRange);
+    const ref = preferredPrintedRange(normalized) ?? normalized;
     const refLower = ref.toLowerCase();
 
     const qual =
@@ -1960,22 +1962,22 @@ export class ReportsService {
     if (valueNum === null) return null;
 
     const between = ref.match(
-      /^\s*(-?\d+(?:\.\d+)?)\s*[-–]\s*(-?\d+(?:\.\d+)?)\s*$/,
+      /^\s*(-?\d+(?:\.\d+)?)\s*(?:[-–—]|to)\s*(-?\d+(?:\.\d+)?)\s*$/i,
     );
     if (between) {
       const low = Number(between[1]);
       const high = Number(between[2]);
-      if (!Number.isFinite(low) || !Number.isFinite(high)) return null;
-      return valueNum < Math.min(low, high) || valueNum > Math.max(low, high);
+      if (!Number.isFinite(low) || !Number.isFinite(high) || low > high) return null;
+      return valueNum < low || valueNum > high;
     }
 
     const lt = ref.match(/^\s*<\s*(-?\d+(?:\.\d+)?)\s*$/);
     if (lt) return valueNum >= Number(lt[1]);
-    const lte = ref.match(/^\s*<=\s*(-?\d+(?:\.\d+)?)\s*$/);
+    const lte = ref.match(/^\s*(?:<=|≤)\s*(-?\d+(?:\.\d+)?)\s*$/);
     if (lte) return valueNum > Number(lte[1]);
     const gt = ref.match(/^\s*>\s*(-?\d+(?:\.\d+)?)\s*$/);
     if (gt) return valueNum <= Number(gt[1]);
-    const gte = ref.match(/^\s*>=\s*(-?\d+(?:\.\d+)?)\s*$/);
+    const gte = ref.match(/^\s*(?:>=|≥)\s*(-?\d+(?:\.\d+)?)\s*$/);
     if (gte) return valueNum < Number(gte[1]);
 
     return null;
@@ -2533,9 +2535,8 @@ export class ReportsService {
       return this.toDto(updated);
     }
     const now = new Date();
-    const purgeAfterAt = new Date(now);
-    purgeAfterAt.setDate(
-      purgeAfterAt.getDate() + ReportsService.RECYCLE_BIN_RETENTION_DAYS,
+    const purgeAfterAt = new Date(
+      now.getTime() + ReportsService.RECYCLE_BIN_RETENTION_DAYS * 24 * 60 * 60 * 1000,
     );
     entity.deletedAt = now;
     entity.purgeAfterAt = purgeAfterAt;
@@ -2557,6 +2558,7 @@ export class ReportsService {
         userId,
         ...(profileId ? { profileId } : {}),
         deletedAt: LessThanOrEqual(new Date()),
+        purgeAfterAt: MoreThan(new Date()),
       },
       order: { deletedAt: 'DESC', createdAt: 'DESC' },
     });
@@ -2592,19 +2594,20 @@ export class ReportsService {
     reportId: string,
   ): Promise<ReportDto> {
     if (!isUUID(reportId)) throw new ReportNotFoundException();
-    const entity = await this.reportRepo.findOne({
-      where: { id: reportId, userId, deletedAt: LessThanOrEqual(new Date()) },
-    });
-    if (!entity) throw new ReportNotFoundException();
-    await this.reportRepo.manager.transaction(async (manager) => {
+    const entity = await this.reportRepo.manager.transaction(async (manager) => {
       await manager.query(
         'SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE',
         [userId],
       );
-      const locked = await manager.getRepository(ReportEntity).findOneOrFail({
+      const locked = await manager.getRepository(ReportEntity).findOne({
         where: { id: reportId, userId },
         lock: { mode: 'pessimistic_write' },
       });
+      if (
+        !locked?.deletedAt ||
+        !locked.purgeAfterAt ||
+        locked.purgeAfterAt <= new Date()
+      ) throw new ReportNotFoundException();
       const [entitlement] = await manager.query(
         'SELECT plan_id FROM user_entitlements WHERE user_id=$1 FOR UPDATE',
         [userId],
@@ -2645,20 +2648,88 @@ export class ReportsService {
           status: locked.processingState!,
           stage: 'complete',
         });
-      Object.assign(entity, locked);
+      return locked;
     });
     const profileInfoById = await this.getProfileInfoMap(userId);
     return this.withProfileInfo(this.toDto(entity), profileInfoById);
   }
 
+  private async permanentlyDeleteRecycleBinReport(
+    reportId: string,
+    options: { userId?: string; expiredOnly?: boolean },
+  ): Promise<boolean> {
+    return this.reportRepo.manager.transaction(async (manager) => {
+      const reports = manager.getRepository(ReportEntity);
+      const locked = await reports.findOne({
+        where: {
+          id: reportId,
+          ...(options.userId ? { userId: options.userId } : {}),
+        },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!locked?.deletedAt || !locked.purgeAfterAt) return false;
+      const now = new Date();
+      if (options.expiredOnly && locked.purgeAfterAt > now) return false;
+      if (options.userId && locked.purgeAfterAt <= now) return false;
+      await this.fileStorage.delete(locked.originalFileStorageKey, {
+        allVersions: true,
+      });
+      await reports.delete({ id: locked.id });
+      return true;
+    });
+  }
+
+  async permanentlyDeleteReport(userId: string, reportId: string): Promise<void> {
+    if (!isUUID(reportId)) throw new ReportNotFoundException();
+    const removed = await this.permanentlyDeleteRecycleBinReport(reportId, {
+      userId,
+    });
+    if (!removed) throw new ReportNotFoundException();
+  }
+
+  async emptyRecycleBin(
+    userId: string,
+  ): Promise<{ deletedCount: number; failedCount: number }> {
+    const reports = await this.reportRepo.find({
+      where: {
+        userId,
+        deletedAt: LessThanOrEqual(new Date()),
+        purgeAfterAt: MoreThan(new Date()),
+      },
+      select: ['id'],
+    });
+    let deletedCount = 0;
+    let failedCount = 0;
+    for (let index = 0; index < reports.length; index += 4) {
+      await Promise.all(
+        reports.slice(index, index + 4).map(async (report) => {
+          try {
+            if (
+              await this.permanentlyDeleteRecycleBinReport(report.id, {
+                userId,
+              })
+            ) deletedCount += 1;
+          } catch (err) {
+            failedCount += 1;
+            this.logger.warn(
+              redactSecrets(
+                `Recycle bin deletion failed: ${err instanceof Error ? err.message : String(err)}`,
+              ),
+            );
+          }
+        }),
+      );
+    }
+    return { deletedCount, failedCount };
+  }
+
   async purgeExpiredRecycleBinReports(): Promise<number> {
-    const now = new Date();
     const expired = await this.reportRepo.find({
       where: {
-        deletedAt: LessThanOrEqual(now),
-        purgeAfterAt: LessThanOrEqual(now),
+        deletedAt: LessThanOrEqual(new Date()),
+        purgeAfterAt: LessThanOrEqual(new Date()),
       },
-      select: ['id', 'originalFileStorageKey'],
+      select: ['id'],
       order: { purgeAfterAt: 'ASC' },
       take: 500,
     });
@@ -2666,16 +2737,17 @@ export class ReportsService {
     let deletedCount = 0;
     for (const report of expired) {
       try {
-        await this.fileStorage.delete(report.originalFileStorageKey);
+        const removed = await this.permanentlyDeleteRecycleBinReport(report.id, {
+          expiredOnly: true,
+        });
+        if (removed) deletedCount += 1;
       } catch (err) {
         this.logger.warn(
           redactSecrets(
-            `Recycle bin purge: failed to delete file key=${report.originalFileStorageKey}: ${err instanceof Error ? err.message : String(err)}`,
+            `Recycle bin purge failed: ${err instanceof Error ? err.message : String(err)}`,
           ),
         );
       }
-      await this.reportRepo.delete({ id: report.id });
-      deletedCount += 1;
     }
     return deletedCount;
   }
@@ -2695,14 +2767,15 @@ export class ReportsService {
       structuredReport?.patientDetails.sampleCollectionDate ??
         this.getStoredStructuredReport(e)?.patientDetails.sampleCollectionDate,
     );
-    const rangeByKey = new Map<
-      string,
-      { referenceRange?: string; isAbnormal?: boolean }
-    >();
-    const rangeByName = new Map<
-      string,
-      { referenceRange?: string; isAbnormal?: boolean }
-    >();
+    type RangeMetadata = {
+      referenceRange?: string;
+      isAbnormal?: boolean;
+      unit: string | null;
+    };
+    // Null marks conflicting structured rows. An arbitrary first/last match
+    // must never supply a reference range for another observation.
+    const rangeByKey = new Map<string, RangeMetadata | null>();
+    const rangeByName = new Map<string, RangeMetadata | null>();
     if (structuredReport) {
       for (const section of structuredReport.sections) {
         for (const test of section.tests) {
@@ -2711,6 +2784,7 @@ export class ReportsService {
             null;
           if (!key) continue;
           const meta = {
+            unit: test.unit?.trim().toLowerCase() || null,
             ...(test.referenceRange
               ? { referenceRange: test.referenceRange }
               : {}),
@@ -2718,10 +2792,20 @@ export class ReportsService {
               ? { isAbnormal: test.isAbnormal }
               : {}),
           };
-          rangeByKey.set(key, meta);
+          if (!rangeByKey.has(key)) {
+            rangeByKey.set(key, meta);
+          } else {
+            const previous = rangeByKey.get(key);
+            if (
+              previous?.referenceRange !== meta.referenceRange ||
+              previous?.isAbnormal !== meta.isAbnormal
+            ) rangeByKey.set(key, null);
+          }
           const byNameKey = test.parameterName.trim().toLowerCase();
           if (byNameKey && !rangeByName.has(byNameKey)) {
             rangeByName.set(byNameKey, meta);
+          } else if (byNameKey) {
+            rangeByName.set(byNameKey, null);
           }
         }
       }
@@ -2748,9 +2832,14 @@ export class ReportsService {
       extractedLabValues: labValues.map((lv) => {
         const key =
           this.labRowKey(lv.parameterName, lv.value, lv.unit ?? null) ?? '';
-        const meta =
-          rangeByKey.get(key) ??
-          rangeByName.get(lv.parameterName.trim().toLowerCase());
+        const exactMeta = rangeByKey.get(key);
+        const nameMeta = rangeByKey.has(key)
+          ? null
+          : rangeByName.get(lv.parameterName.trim().toLowerCase());
+        const fallbackMeta = nameMeta?.unit === (lv.unit?.trim().toLowerCase() || null)
+          ? nameMeta
+          : null;
+        const meta = exactMeta ?? fallbackMeta;
         const referenceRange =
           lv.reviewVersion > 0
             ? lv.referenceRange
@@ -2761,7 +2850,11 @@ export class ReportsService {
                 lv.value,
                 referenceRange ?? null,
               )
-            : meta?.isAbnormal;
+            : lv.referenceRange && lv.referenceRange !== exactMeta?.referenceRange
+            ? this.evaluateAbnormalFromReference(lv.value, referenceRange ?? null)
+            : exactMeta?.isAbnormal ?? (fallbackMeta
+              ? this.evaluateAbnormalFromReference(lv.value, referenceRange ?? null)
+              : undefined);
         return {
           id: lv.id,
           parameterName: lv.parameterName,
