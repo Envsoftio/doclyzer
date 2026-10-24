@@ -78,6 +78,7 @@ class Report {
     this.profileName,
     this.profileIsActive,
     required this.originalFileName,
+    this.laboratoryName,
     required this.contentType,
     required this.sizeBytes,
     required this.status,
@@ -99,6 +100,7 @@ class Report {
   final String? profileName;
   final bool? profileIsActive;
   final String originalFileName;
+  final String? laboratoryName;
   final String contentType;
   final int sizeBytes;
   final String status;
@@ -333,6 +335,7 @@ abstract class ReportsRepository {
 
   /// List reports for the given profile, newest first.
   Future<List<Report>> listReports(String profileId);
+  Future<List<Report>> searchReports(String profileId, String query);
 
   /// List reports across all profiles, newest first.
   Future<List<Report>> listAllReports();

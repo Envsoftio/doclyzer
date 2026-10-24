@@ -51,7 +51,7 @@ class MobileNavigationShell extends StatelessWidget {
                   opacity: animation,
                   child: SlideTransition(
                     position: Tween<Offset>(
-                      begin: const Offset(0.08, 0),
+                      begin: const Offset(0.06, 0),
                       end: Offset.zero,
                     ).animate(animation),
                     child: page,
@@ -106,9 +106,14 @@ class MobileNavigationShell extends StatelessWidget {
             label: 'Trends',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'You',
+            icon: Icon(Icons.people_outline_rounded),
+            selectedIcon: Icon(Icons.people_rounded),
+            label: 'Family',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_circle_outlined),
+            selectedIcon: Icon(Icons.account_circle_rounded),
+            label: 'Profile',
           ),
         ],
       ),

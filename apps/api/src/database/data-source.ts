@@ -11,6 +11,7 @@ import { DataExportRequestEntity } from './entities/data-export-request.entity';
 import { ProfileEntity } from './entities/profile.entity';
 import { PushDeliveryEventEntity } from './entities/push-delivery-event.entity';
 import { PushOpenEventEntity } from './entities/push-open-event.entity';
+import { NotificationReadEntity } from './entities/notification-read.entity';
 import { PushSendAuditEntity } from './entities/push-send-audit.entity';
 import { ReportEntity } from './entities/report.entity';
 import { ReportLabValueEntity } from './entities/report-lab-value.entity';
@@ -57,6 +58,7 @@ export const AppDataSource = new DataSource({
     PushSendAuditEntity,
     PushDeliveryEventEntity,
     PushOpenEventEntity,
+    NotificationReadEntity,
     AccountPreferenceEntity,
     RestrictionEntity,
     DataExportRequestEntity,

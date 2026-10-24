@@ -62,6 +62,19 @@ class _Profiles extends Fake implements ProfilesRepository {
   Future<List<Profile>> getProfiles() async => [];
 }
 
+class _FamilyProfiles extends Fake implements ProfilesRepository {
+  @override
+  Future<List<Profile>> getProfiles() async => [
+    Profile(id: 'sam', name: 'Sam', createdAt: DateTime(2026), isActive: true),
+    Profile(
+      id: 'alex',
+      name: 'Alex',
+      createdAt: DateTime(2026),
+      isActive: false,
+    ),
+  ];
+}
+
 class _Sharing extends Fake implements SharingRepository {}
 
 class _Support extends Fake implements SupportRepository {}
@@ -148,6 +161,66 @@ class _DeletionReports extends Fake implements ReportsRepository {
 }
 
 void main() {
+  testWidgets('report list shows one profile switcher without a move action', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final reports = _Reports();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TimelineScreen(
+          reportsRepository: reports,
+          profilesRepository: _FamilyProfiles(),
+          profileId: 'sam',
+          profileName: 'Sam',
+          sharingRepository: _Sharing(),
+          supportRepository: _Support(),
+          onBack: () {},
+          onUpgrade: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('REPORTS FOR'), findsOneWidget);
+    expect(find.text('Switch'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('timeline-profile-switcher')));
+    await tester.pumpAndSettle();
+    expect(find.text('Switch active profile'), findsOneWidget);
+    expect(find.textContaining('active profile for uploads'), findsOneWidget);
+    Navigator.of(tester.element(find.text('Switch active profile'))).pop();
+    await tester.pumpAndSettle();
+    expect(find.text('Move report'), findsNothing);
+    expect(find.text('Original'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('report library actions fit a 390px phone', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TimelineScreen(
+          reportsRepository: _Reports(),
+          profilesRepository: _Profiles(),
+          profileId: 'sam',
+          profileName: 'Sam',
+          sharingRepository: _Sharing(),
+          supportRepository: _Support(),
+          onBack: () {},
+          onUpgrade: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('timeline-compare-button')), findsOneWidget);
+  });
+
   testWidgets(
     'history scopes reports and keeps collection distinct from upload',
     (tester) async {

@@ -13,6 +13,7 @@ enum SupportActionType {
   billingCheckout,
   notificationPreferences,
   accountProfileUpdate,
+  productHelp,
 }
 
 String supportActionTypeValue(SupportActionType type) {
@@ -26,15 +27,12 @@ String supportActionTypeValue(SupportActionType type) {
     SupportActionType.billingCheckout => 'billing_checkout',
     SupportActionType.notificationPreferences => 'notification_preferences',
     SupportActionType.accountProfileUpdate => 'account_profile_update',
+    SupportActionType.productHelp => 'product_help',
   };
 }
 
 class SupportRequestMetadata {
-  const SupportRequestMetadata({
-    this.appVersion,
-    this.platform,
-    this.surface,
-  });
+  const SupportRequestMetadata({this.appVersion, this.platform, this.surface});
 
   final String? appVersion;
   final String? platform;
@@ -108,9 +106,7 @@ class SupportRequestPayload {
   final String? errorMessage;
 
   Map<String, dynamic> toJson() {
-    final data = <String, dynamic>{
-      'context': context.toJson(),
-    };
+    final data = <String, dynamic>{'context': context.toJson()};
     if (userMessage != null && userMessage!.trim().isNotEmpty) {
       data['userMessage'] = userMessage!.trim();
     }
@@ -136,8 +132,9 @@ SupportRequestContext buildSupportRequestContext({
 }) {
   final correlationId =
       apiException?.data?['correlationId'] as String? ?? correlationIdOverride;
-  final clientActionId =
-      correlationId == null ? _generateClientActionId() : null;
+  final clientActionId = correlationId == null
+      ? _generateClientActionId()
+      : null;
 
   return SupportRequestContext(
     actionType: actionType,

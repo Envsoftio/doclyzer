@@ -43,6 +43,15 @@ export class DataExportRequestEntity {
   })
   downloadUrl!: string | null;
 
+  @Column({ type: 'jsonb', name: 'options', nullable: true })
+  options!: {
+    profileId?: string;
+    from?: string;
+    to?: string;
+    includeOriginals?: boolean;
+    includeResults?: boolean;
+  } | null;
+
   @Column({ type: 'text', name: 'failure_reason', nullable: true })
   failureReason!: string | null;
 }

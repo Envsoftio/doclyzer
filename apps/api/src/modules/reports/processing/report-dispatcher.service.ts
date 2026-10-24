@@ -136,8 +136,13 @@ export class ReportDispatcherService {
         outcome = 'skipped';
       else if (delivery.channel === 'push') {
         const [device] = await this.db.query(
-          `SELECT * FROM user_device_tokens WHERE id=$1 AND user_id=$2 AND active AND COALESCE((preferences->>'product')::boolean,true)`,
-          [delivery.target, r.user_id],
+          `SELECT token.* FROM user_device_tokens token
+           LEFT JOIN account_preferences pref ON pref.user_id = token.user_id
+           WHERE token.id=$1 AND token.user_id=$2 AND token.active
+             AND COALESCE((token.preferences->>'product')::boolean,true)
+             AND (($3 = 'ready' AND COALESCE(pref.report_ready_enabled,true))
+               OR ($3 <> 'ready' AND COALESCE(pref.upload_updates_enabled,true)))`,
+          [delivery.target, r.user_id, r.status],
         );
         if (!device || !processingSettings(this.config).pushEnabled)
           outcome = 'skipped';

@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -31,6 +32,24 @@ import { NotificationsService } from './notifications.service';
 @UseGuards(AuthGuard)
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
+
+  @Get('inbox')
+  async getInbox(@Req() req: Request): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.notificationsService.getInbox(userId);
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Post('inbox/:source/:id/read')
+  async markInboxRead(
+    @Req() req: Request,
+    @Param('source') source: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    const data = await this.notificationsService.markInboxRead(userId, source, id);
+    return successResponse(data, getCorrelationId(req));
+  }
 
   @Get('device-tokens')
   async listDeviceTokens(@Req() req: Request): Promise<object> {

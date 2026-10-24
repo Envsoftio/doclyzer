@@ -247,29 +247,31 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Below the listed lab range'), findsOneWidget);
-    expect(find.text('What this result may mean'), findsNothing);
+    expect(find.text("Below this lab's reference range"), findsOneWidget);
+    expect(find.text('Understand your result'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('What this test measures'), 200);
     expect(find.text('What this test measures'), findsOneWidget);
-    final measuresCard = find.ancestor(
-      of: find.text('What this test measures'),
+    expect(find.text('AI-GENERATED GUIDANCE'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Understanding this result'),
+      250,
+    );
+    final meaningCard = find.ancestor(
+      of: find.text('Understanding this result'),
       matching: find.byType(Card),
     );
     expect(
       find.descendant(
-        of: measuresCard,
+        of: meaningCard,
         matching: find.byKey(const Key('result-insight-meaning')),
       ),
       findsOneWidget,
     );
-    expect(
-      find.descendant(
-        of: measuresCard,
-        matching: find.text('AI-GENERATED EXPLANATION'),
-      ),
-      findsOneWidget,
+    await tester.scrollUntilVisible(
+      find.text('Lifestyle factors to discuss'),
+      250,
     );
-    await tester.scrollUntilVisible(find.text('Lifestyle considerations'), 250);
-    expect(find.text('Lifestyle considerations'), findsOneWidget);
+    expect(find.text('Lifestyle factors to discuss'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -290,8 +292,11 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Explanation unavailable'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('result-insight-retry')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('result-insight-retry')));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('What this test measures'), 200);
     expect(find.text('What this test measures'), findsOneWidget);
   });
 
@@ -345,6 +350,8 @@ void main() {
       find.textContaining('could not be matched to a saved result'),
       findsOneWidget,
     );
+    await tester.ensureVisible(find.text('Check original report').first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Check original report').first);
     expect(openedOriginal, isTrue);
   });
@@ -367,6 +374,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('has not been reviewed'), findsOneWidget);
     expect(find.byKey(const Key('result-insight-retry')), findsNothing);
+    await tester.ensureVisible(find.text('Check original report').first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Check original report').first);
     expect(openedOriginal, isTrue);
   });

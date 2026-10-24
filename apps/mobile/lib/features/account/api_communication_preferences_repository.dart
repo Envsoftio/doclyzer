@@ -22,6 +22,15 @@ class ApiCommunicationPreferencesRepository
     if (updates.containsKey(commPrefCategoryProduct)) {
       body['productEmails'] = updates[commPrefCategoryProduct];
     }
+    if (updates.containsKey(commPrefCategoryReportReady)) {
+      body['reportReady'] = updates[commPrefCategoryReportReady];
+    }
+    if (updates.containsKey(commPrefCategoryUploadUpdates)) {
+      body['uploadUpdates'] = updates[commPrefCategoryUploadUpdates];
+    }
+    if (updates.containsKey(commPrefCategoryShareReminders)) {
+      body['shareReminders'] = updates[commPrefCategoryShareReminders];
+    }
     final data = await _client.patch(
       'v1/account/communication-preferences',
       body: body,

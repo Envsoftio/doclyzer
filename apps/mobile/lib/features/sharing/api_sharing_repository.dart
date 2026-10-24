@@ -6,18 +6,34 @@ class ApiSharingRepository implements SharingRepository {
   final ApiClient _client;
 
   @override
-  Future<ShareLink> createShareLink(String profileId, {DateTime? expiresAt}) async {
+  Future<ShareLink> createShareLink(
+    String profileId, {
+    DateTime? expiresAt,
+    List<String>? reportIds,
+    List<String>? labValueIds,
+    bool requireAccessCode = false,
+  }) async {
     final body = <String, dynamic>{'profileId': profileId};
     if (expiresAt != null) body['expiresAt'] = expiresAt.toIso8601String();
+    if (reportIds != null) body['reportIds'] = reportIds;
+    if (labValueIds != null) body['labValueIds'] = labValueIds;
+    body['requireAccessCode'] = requireAccessCode;
     final data = await _client.post('v1/sharing/links', body: body);
     return ShareLink.fromJson(data['data'] as Map<String, dynamic>);
   }
 
   @override
-  Future<List<ShareLink>> listShareLinks(String profileId) async {
-    final data = await _client.get('v1/sharing/links?profileId=$profileId');
+  Future<List<ShareLink>> listShareLinks(
+    String profileId, {
+    bool includePast = false,
+  }) async {
+    final data = await _client.get(
+      'v1/sharing/links?profileId=$profileId${includePast ? '&includePast=true' : ''}',
+    );
     final list = data['data'] as List<dynamic>;
-    return list.map((e) => ShareLink.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => ShareLink.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   @override
@@ -53,6 +69,8 @@ class ApiSharingRepository implements SharingRepository {
   Future<List<ShareAccessEvent>> listAccessEvents(String linkId) async {
     final data = await _client.get('v1/sharing/links/$linkId/access-events');
     final list = data['data'] as List<dynamic>;
-    return list.map((e) => ShareAccessEvent.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => ShareAccessEvent.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 }

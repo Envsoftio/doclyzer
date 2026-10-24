@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/api_client.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/design_components.dart';
 import '../../reports/reports_repository.dart';
 import '../profiles_repository.dart';
 
@@ -42,6 +44,12 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
   }
 
   Future<void> _loadProfiles() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final profiles = await widget.profilesRepository.getProfiles();
       final reports = await widget.reportsRepository.listAllReports();
@@ -52,6 +60,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
         reportCountByProfileId[profileId] =
             (reportCountByProfileId[profileId] ?? 0) + 1;
       }
+      if (!mounted) return;
       setState(() {
         _profiles = profiles;
         _reportCountByProfileId = reportCountByProfileId;
@@ -59,6 +68,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = 'Failed to load profiles. Please try again.';
         _loading = false;
@@ -67,8 +77,17 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
   }
 
   Future<void> _activateProfile(String id) async {
-    await widget.profilesRepository.activateProfile(id);
-    await _loadProfiles();
+    try {
+      await widget.profilesRepository.activateProfile(id);
+      if (mounted) await _loadProfiles();
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error =
+              'Unable to switch profiles. ${error is ApiException && error.message.isNotEmpty ? error.message : 'Please try again.'}',
+        );
+      }
+    }
   }
 
   Future<void> _showDeleteConfirm(Profile profile) async {
@@ -118,7 +137,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Profiles'),
+        title: const Text('Family'),
         leading: widget.showBackButton
             ? IconButton(
                 icon: const Icon(Icons.arrow_back_rounded),
@@ -146,7 +165,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
                   key: const Key('profile-create-new'),
                   onPressed: widget.onCreateProfile,
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text('Add profile'),
+                  label: const Text('Add family member'),
                 ),
               ),
             )
@@ -155,6 +174,15 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
   }
 
   Widget _buildContent(ThemeData theme) {
+    if (_error != null && _profiles.isEmpty) {
+      return DesignEmptyState(
+        icon: Icons.cloud_off_outlined,
+        title: 'Family profiles unavailable',
+        message: _error!,
+        action: 'Try again',
+        onAction: _loadProfiles,
+      );
+    }
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
@@ -186,7 +214,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${_profiles.length} ${_profiles.length == 1 ? 'profile' : 'profiles'}',
+                          '${_profiles.length} ${_profiles.length == 1 ? 'person' : 'people'}',
                           style: theme.textTheme.titleLarge?.copyWith(
                             color: theme.colorScheme.onPrimaryContainer,
                           ),
@@ -277,7 +305,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-              child: Text('People', style: theme.textTheme.titleMedium),
+              child: Text('Your family', style: theme.textTheme.titleMedium),
             ),
           ),
         if (_profiles.isNotEmpty)

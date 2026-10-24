@@ -132,6 +132,7 @@ export interface ReportDto {
   profileName?: string;
   profileIsActive?: boolean;
   originalFileName: string;
+  laboratoryName?: string;
   contentType: string;
   sizeBytes: number;
   status: string;
@@ -662,6 +663,7 @@ export class ReportsService {
 
     this.dispatchReportNotification({
       status: entity.status,
+      reportId: entity.id,
       userId,
       profileId: activeProfileId,
       correlationId,
@@ -1159,6 +1161,51 @@ export class ReportsService {
     );
   }
 
+  async searchReports(
+    userId: string,
+    profileId: string,
+    query: string,
+  ): Promise<ReportDto[]> {
+    await this.profilesService.getProfile(userId, profileId);
+    const term = query.trim().toLocaleLowerCase();
+    const entities = await this.reportRepo.find({
+      where: { userId, profileId, deletedAt: IsNull() },
+      order: { createdAt: 'DESC' },
+    });
+    if (entities.length === 0) return [];
+    const values = await this.reportLabValueRepo.find({
+      where: { reportId: In(entities.map((report) => report.id)) },
+      select: { reportId: true, parameterName: true, originalParameterName: true },
+    });
+    const matchingIds = new Set(
+      values
+        .filter((value) =>
+          value.parameterName.toLocaleLowerCase().includes(term) ||
+          value.originalParameterName.toLocaleLowerCase().includes(term),
+        )
+        .map((value) => value.reportId),
+    );
+    const matches = entities.filter((report) => {
+      const structured = report.structuredReport as
+        | { labDetails?: { name?: unknown } }
+        | null;
+      const labName = structured?.labDetails?.name;
+      return (
+        report.originalFileName.toLocaleLowerCase().includes(term) ||
+        (typeof labName === 'string' && labName.toLocaleLowerCase().includes(term)) ||
+        matchingIds.has(report.id)
+      );
+    });
+    const datesByReport = await this.getCollectionDatesForReports(matches);
+    const profileInfoById = await this.getProfileInfoMap(userId);
+    return matches.map((report) =>
+      this.withProfileInfo(
+        this.toDto(report, [], false, false, datesByReport.get(report.id)),
+        profileInfoById,
+      ),
+    );
+  }
+
   /**
    * List reports: if profileId provided, use it (validates ownership); otherwise use active profile.
    */
@@ -1482,6 +1529,7 @@ export class ReportsService {
 
     this.dispatchReportNotification({
       status: entity.status,
+      reportId: entity.id,
       userId,
       profileId: entity.profileId,
       correlationId,
@@ -2353,6 +2401,7 @@ export class ReportsService {
 
   private dispatchReportNotification(input: {
     status: ReportStatus;
+    reportId: string;
     userId: string;
     profileId: string;
     correlationId?: string;
@@ -2375,6 +2424,7 @@ export class ReportsService {
         eventType,
         userId: input.userId,
         profileId: input.profileId,
+        metadata: { reportId: input.reportId },
         correlationId,
       })
       .catch((err) => {
@@ -2502,12 +2552,18 @@ export class ReportsService {
 
   async keepFile(userId: string, reportId: string): Promise<ReportDto> {
     const entity = await this.getActiveReportOrThrow(userId, reportId);
-    if (entity.processingGeneration > 0)
-      throw new ConflictException({
-        code: 'REPORT_ASYNC_MUTATION_UNSUPPORTED',
-        message:
-          'Background reports cannot be reassigned or changed to file-only records.',
-      });
+    if (entity.processingGeneration > 0) {
+      await cancelReportProcessing(
+        this.reportRepo.manager.connection,
+        userId,
+        reportId,
+        false,
+        true,
+      );
+      const saved = await this.getActiveReportOrThrow(userId, reportId);
+      const profileInfoById = await this.getProfileInfoMap(userId);
+      return this.withProfileInfo(this.toDto(saved), profileInfoById);
+    }
     this.throwIfAlreadyParsed(entity.status);
     // Sets to unparsed so user sees "View PDF"; applies to unparsed and content_not_recognized
     entity.status = 'unparsed';
@@ -2515,6 +2571,8 @@ export class ReportsService {
     entity.parsedTranscript = null;
     entity.structuredReport = null;
     await this.reportRepo.save(entity);
+    await this.reportLabValueRepo.delete({ reportId });
+    await this.reportRepo.manager.delete(ReportResultInsightEntity, { reportId });
     const profileInfoById = await this.getProfileInfoMap(userId);
     return this.withProfileInfo(this.toDto(entity), profileInfoById);
   }
@@ -2762,6 +2820,8 @@ export class ReportsService {
     const structuredReport = includeStructuredReport
       ? this.getStoredStructuredReport(e)
       : undefined;
+    const laboratoryName =
+      (structuredReport ?? this.getStoredStructuredReport(e))?.labDetails?.name?.trim();
     const collection = summarizeReportCollectionDate(
       collectionDates ?? labValues.map((value) => value.sampleDate),
       structuredReport?.patientDetails.sampleCollectionDate ??
@@ -2815,6 +2875,7 @@ export class ReportsService {
       id: e.id,
       profileId: e.profileId,
       originalFileName: e.originalFileName,
+      ...(laboratoryName ? { laboratoryName } : {}),
       contentType: e.contentType,
       sizeBytes: e.sizeBytes,
       status: e.status,

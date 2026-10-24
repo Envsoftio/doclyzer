@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/design_components.dart';
 import '../auth_repository.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -51,9 +52,10 @@ class _SignupScreenState extends State<SignupScreen> {
     final password = _passwordController.text;
     final referralCode = _referralController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email) ||
+        password.isEmpty) {
       setState(() {
-        _error = 'Enter email and password';
+        _error = 'Enter a valid email address and password';
         _isLoading = false;
       });
       return;
@@ -87,10 +89,11 @@ class _SignupScreenState extends State<SignupScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         leading: BackButton(onPressed: widget.onGoToLogin),
-        title: const Text('Create account'),
-        centerTitle: true,
+        title: const SizedBox.shrink(),
+        backgroundColor: theme.colorScheme.surface,
         surfaceTintColor: Colors.transparent,
       ),
       body: SafeArea(
@@ -102,28 +105,25 @@ class _SignupScreenState extends State<SignupScreen> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: AppSpacing.xl),
-                  Icon(
-                    Icons.person_add_rounded,
-                    size: 56,
-                    color: theme.colorScheme.primary,
-                  ),
+                  const SizedBox(height: 28),
+                  const DoclyzerMark(),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'Get started',
-                    style: theme.textTheme.headlineSmall,
-                    textAlign: TextAlign.center,
+                    'A clearer view\nstarts here.',
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      fontSize: 31,
+                      height: 1.22,
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: 18),
                   Text(
-                    'Create an account to store and view your health reports.',
+                    'Create an account to keep your reports and results together.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   TextField(
@@ -133,7 +133,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     textInputAction: TextInputAction.next,
                     onSubmitted: (_) => _passwordFocus.requestFocus(),
                     decoration: const InputDecoration(
-                      labelText: 'Email',
+                      labelText: 'Email address',
                       hintText: 'you@example.com',
                       prefixIcon: Icon(Icons.email_outlined),
                     ),

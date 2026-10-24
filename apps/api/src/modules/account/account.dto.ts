@@ -1,14 +1,36 @@
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
+  IsDateString,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   ValidateBy,
   ValidateIf,
 } from 'class-validator';
 
-export class CreateDataExportRequestDto {}
+export class CreateDataExportRequestDto {
+  @IsOptional()
+  @IsUUID()
+  profileId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  from?: string;
+
+  @IsOptional()
+  @IsDateString()
+  to?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  includeOriginals?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  includeResults?: boolean;
+}
 
 export class CreateClosureRequestDto {
   @IsBoolean()
@@ -52,4 +74,16 @@ export class UpdateCommunicationPreferencesDto {
   @IsOptional()
   @IsBoolean()
   productEmails?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  reportReady?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  uploadUpdates?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  shareReminders?: boolean;
 }

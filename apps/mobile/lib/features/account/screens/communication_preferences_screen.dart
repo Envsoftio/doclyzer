@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../communication_preferences_repository.dart';
 import '../../support/support_models.dart';
@@ -45,8 +48,8 @@ class _CommunicationPreferencesScreenState
       _successMessage = null;
     });
     try {
-      final result =
-          await widget.communicationPreferencesRepository.getPreferences();
+      final result = await widget.communicationPreferencesRepository
+          .getPreferences();
       setState(() {
         _preferences = result.preferences;
         _pendingChanges.clear();
@@ -97,77 +100,167 @@ class _CommunicationPreferencesScreenState
     }
   }
 
+  Future<void> _openDeviceSettings() async {
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        await const MethodChannel(
+          'doclyzer/device_settings',
+        ).invokeMethod<void>('open');
+      } else {
+        final opened = await launchUrl(Uri.parse('app-settings:'));
+        if (!opened) throw PlatformException(code: 'UNAVAILABLE');
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Open the device Settings app to change notification access.',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    const categories = [
+      commPrefCategoryReportReady,
+      commPrefCategoryUploadUpdates,
+      commPrefCategoryShareReminders,
+    ];
+    final reportPreferences = [
+      for (final category in categories)
+        ..._preferences.where((item) => item.category == category),
+    ];
+    final otherPreferences = _preferences
+        .where((item) => !categories.contains(item.category))
+        .toList();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Communication Preferences'),
+        title: const Text('Notifications'),
         leading: BackButton(onPressed: widget.onBack),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ..._preferences.map((item) => _PreferenceRow(
-                        item: item,
-                        effectiveEnabled: _effectiveEnabled(item),
-                        onChanged: item.mandatory
-                            ? null
-                            : (value) {
-                                setState(() {
-                                  _pendingChanges[item.category] = value;
-                                });
-                              },
-                      )),
-                  const SizedBox(height: 16),
-                  if (_successMessage != null)
-                    Padding(
-                      key: const Key('communication-preferences-success'),
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        _successMessage!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  if (_error != null)
-                    Padding(
-                      key: const Key('communication-preferences-error'),
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Text(
-                        _error!,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    ),
-                  if (_error != null && _supportContext != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: TextButton(
-                        onPressed: () {
-                          final supportContext = _supportContext;
-                          if (supportContext == null) return;
-                          showSupportRequestSheet(
-                            context: context,
-                            supportRepository: widget.supportRepository,
-                            supportContext: supportContext,
-                            errorMessage: _supportErrorMessage,
-                          );
-                        },
-                        child: const Text('Need help?'),
-                      ),
-                    ),
-                  FilledButton(
-                    key: const Key('pref-save'),
-                    onPressed: _pendingChanges.isEmpty ? null : _save,
-                    child: const Text('Save'),
-                  ),
-                ],
-              ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(24, 12, 24, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FilledButton(
+              key: const Key('pref-save'),
+              onPressed: _loading || _pendingChanges.isEmpty ? null : _save,
+              child: const Text('Save preferences'),
+            ),
+            TextButton(
+              onPressed: _openDeviceSettings,
+              child: const Text('Open device settings'),
+            ),
+          ],
+        ),
       ),
+      body: _loading && _preferences.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.info_outline),
+                    title: Text('Notification preferences'),
+                    subtitle: Text(
+                      'Device permissions can be changed in Settings.',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'REPORT ACTIVITY',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (reportPreferences.isEmpty && !_loading)
+                  const Text(
+                    'Report activity settings require the latest server version.',
+                  ),
+                for (final item in reportPreferences)
+                  _PreferenceRow(
+                    item: item,
+                    effectiveEnabled: _effectiveEnabled(item),
+                    onChanged: item.mandatory || _loading
+                        ? null
+                        : (value) => setState(
+                            () => _pendingChanges[item.category] = value,
+                          ),
+                  ),
+                const SizedBox(height: 4),
+                const ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('Sensitive lock-screen previews'),
+                  subtitle: Text(
+                    'Report names and personal details are always hidden.',
+                  ),
+                  trailing: Icon(Icons.lock_outline),
+                ),
+                if (otherPreferences.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'OTHER MESSAGES',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  for (final item in otherPreferences)
+                    _PreferenceRow(
+                      item: item,
+                      effectiveEnabled: _effectiveEnabled(item),
+                      onChanged: item.mandatory || _loading
+                          ? null
+                          : (value) => setState(
+                              () => _pendingChanges[item.category] = value,
+                            ),
+                    ),
+                ],
+                if (_successMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Text(
+                      _successMessage!,
+                      key: const Key('communication-preferences-success'),
+                      style: TextStyle(color: theme.colorScheme.primary),
+                    ),
+                  ),
+                if (_error != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: Text(
+                      _error!,
+                      key: const Key('communication-preferences-error'),
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                  ),
+                  if (_supportContext != null)
+                    TextButton(
+                      onPressed: () => showSupportRequestSheet(
+                        context: context,
+                        supportRepository: widget.supportRepository,
+                        supportContext: _supportContext!,
+                        errorMessage: _supportErrorMessage,
+                      ),
+                      child: const Text('Need help?'),
+                    ),
+                ],
+              ],
+            ),
     );
   }
 }
@@ -183,49 +276,60 @@ class _PreferenceRow extends StatelessWidget {
   final bool effectiveEnabled;
   final ValueChanged<bool>? onChanged;
 
-  String get _label {
-    switch (item.category) {
-      case commPrefCategorySecurity:
-        return 'Security Alerts';
-      case commPrefCategoryCompliance:
-        return 'Compliance Notices';
-      case commPrefCategoryProduct:
-        return 'Product Updates';
-      default:
-        return item.category;
-    }
-  }
+  (String, String) get _copy => switch (item.category) {
+    commPrefCategoryReportReady => (
+      'Report ready for review',
+      'Know when your results are ready to check.',
+    ),
+    commPrefCategoryUploadUpdates => (
+      'Upload updates',
+      'Get a message if an upload needs attention.',
+    ),
+    commPrefCategoryShareReminders => (
+      'Shared link reminders',
+      'Hear when a link is about to expire.',
+    ),
+    commPrefCategorySecurity => (
+      'Security alerts',
+      'Required for account safety.',
+    ),
+    commPrefCategoryCompliance => (
+      'Compliance notices',
+      'Required account information.',
+    ),
+    commPrefCategoryProduct => (
+      'Product updates',
+      'Optional news about Doclyzer.',
+    ),
+    _ => (item.category, ''),
+  };
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_label),
-                if (item.mandatory)
-                  Text(
-                    key: Key('pref-${item.category}-mandatory-hint'),
-                    'Required for your account',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-              ],
+  Widget build(BuildContext context) => Column(
+    children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_copy.$1, style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 4),
+                  Text(_copy.$2, style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
             ),
-          ),
-          Switch(
-            key: Key('pref-${item.category}'),
-            value: effectiveEnabled,
-            onChanged: onChanged,
-          ),
-        ],
+            Switch.adaptive(
+              key: Key('pref-${item.category}'),
+              value: effectiveEnabled,
+              onChanged: onChanged,
+            ),
+          ],
+        ),
       ),
-    );
-  }
+      const Divider(height: 1),
+    ],
+  );
 }

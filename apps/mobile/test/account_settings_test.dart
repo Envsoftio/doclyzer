@@ -74,10 +74,23 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(find.byType(ExpansionTile), findsNothing);
+    expect(find.text('Delete account'), findsNothing);
+    await tester.ensureVisible(
+      find.byKey(const Key('additional-account-information')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Additional account information'), findsOneWidget);
     expect(find.text('Free · 12 credits'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('account-credits')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('account-credits')));
+    await tester.ensureVisible(find.byKey(const Key('account-referrals')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('account-referrals')));
     expect(billingOpened && referralsOpened, isTrue);
+    await tester.ensureVisible(find.byKey(const Key('appearance-dark')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('appearance-dark')));
     await tester.pumpAndSettle();
     expect(mode, ThemeMode.dark);
@@ -95,9 +108,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(mode, ThemeMode.system);
     expect(find.byKey(const Key('account-profile-save')), findsNothing);
+    await tester.drag(find.byType(ListView).first, const Offset(0, 2000));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('account-edit-profile')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('account-edit-profile')));
     await tester.pumpAndSettle();
-    expect(find.text('Edit profile'), findsOneWidget);
+    expect(find.text('Personal information'), findsOneWidget);
     expect(find.byKey(const Key('account-profile-save')), findsOneWidget);
     expect(find.text('Change photo'), findsOneWidget);
     expect(find.text('Appearance'), findsNothing);

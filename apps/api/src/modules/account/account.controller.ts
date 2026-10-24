@@ -82,7 +82,7 @@ export class AccountController {
     return successResponse(data, getCorrelationId(req));
   }
 
-  @Put('communication-preferences')
+  @Patch('communication-preferences')
   @HttpCode(HttpStatus.OK)
   async updateCommunicationPreferences(
     @Body() body: UpdateCommunicationPreferencesDto,
@@ -96,10 +96,19 @@ export class AccountController {
     return successResponse(data, getCorrelationId(req));
   }
 
+  @Put('communication-preferences')
+  @HttpCode(HttpStatus.OK)
+  async updateCommunicationPreferencesPut(
+    @Body() body: UpdateCommunicationPreferencesDto,
+    @Req() req: Request,
+  ): Promise<object> {
+    return this.updateCommunicationPreferences(body, req);
+  }
+
   @Post('data-export-requests')
   @HttpCode(HttpStatus.CREATED)
   async createDataExportRequest(
-    @Body() _body: CreateDataExportRequestDto,
+    @Body() body: CreateDataExportRequestDto,
     @Req() req: Request,
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
@@ -107,6 +116,7 @@ export class AccountController {
     const data = await this.accountService.createDataExportRequest(
       userId,
       correlationId,
+      body,
     );
     return successResponse(data, correlationId);
   }

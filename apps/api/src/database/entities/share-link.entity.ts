@@ -23,6 +23,12 @@ export class ShareLinkEntity {
   profile!: ProfileEntity;
   @Column({ type: 'varchar', length: 64, unique: true }) token!: string;
   @Column({ type: 'varchar', length: 32, default: 'all' }) scope!: string;
+  @Column({ type: 'uuid', array: true, name: 'report_ids', nullable: true })
+  reportIds!: string[] | null;
+  @Column({ type: 'uuid', array: true, name: 'lab_value_ids', nullable: true })
+  labValueIds!: string[] | null;
+  @Column({ type: 'varchar', length: 72, name: 'access_code_hash', nullable: true })
+  accessCodeHash!: string | null;
   @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive!: boolean;
   @Column({ type: 'timestamptz', name: 'expires_at', nullable: true })

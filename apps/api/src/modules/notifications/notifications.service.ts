@@ -10,10 +10,13 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { MoreThanOrEqual, Repository, SelectQueryBuilder } from 'typeorm';
+import { Between, MoreThanOrEqual, Repository, SelectQueryBuilder } from 'typeorm';
 import { AccountPreferenceEntity } from '../../database/entities/account-preference.entity';
 import { PushDeliveryEventEntity } from '../../database/entities/push-delivery-event.entity';
 import { PushOpenEventEntity } from '../../database/entities/push-open-event.entity';
+import { NotificationReadEntity } from '../../database/entities/notification-read.entity';
+import { EmailQueueItemEntity } from '../../database/entities/email-queue-item.entity';
+import { ShareLinkEntity } from '../../database/entities/share-link.entity';
 import { PushSendAuditEntity } from '../../database/entities/push-send-audit.entity';
 import {
   PushTokenPreferences,
@@ -61,6 +64,12 @@ export class NotificationsService {
     private readonly deliveryRepo: Repository<PushDeliveryEventEntity>,
     @InjectRepository(PushOpenEventEntity)
     private readonly openRepo: Repository<PushOpenEventEntity>,
+    @InjectRepository(NotificationReadEntity)
+    private readonly notificationReadRepo: Repository<NotificationReadEntity>,
+    @InjectRepository(EmailQueueItemEntity)
+    private readonly emailQueueRepo: Repository<EmailQueueItemEntity>,
+    @InjectRepository(ShareLinkEntity)
+    private readonly shareLinkRepo: Repository<ShareLinkEntity>,
     @InjectRepository(AccountPreferenceEntity)
     private readonly accountPreferenceRepo: Repository<AccountPreferenceEntity>,
     private readonly pushProvider: PushProviderService,
@@ -73,6 +82,139 @@ export class NotificationsService {
       order: { lastSeenAt: 'DESC' },
     });
     return { tokens: tokens.map((token) => this.mapDeviceToken(token)) };
+  }
+
+  async getInbox(userId: string): Promise<object> {
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const [deliveries, queueItems, expiringLinks, reads, accountPreference] = await Promise.all([
+      this.deliveryRepo
+        .createQueryBuilder('delivery')
+        .innerJoinAndSelect('delivery.pushSendAudit', 'audit')
+        .where('delivery.userId = :userId', { userId })
+        .andWhere('delivery.outcome = :outcome', { outcome: 'sent' })
+        .orderBy('delivery.occurredAt', 'DESC')
+        .take(100)
+        .getMany(),
+      this.emailQueueRepo
+        .createQueryBuilder('queue')
+        .where("queue.metadata ->> 'userId' = :userId", { userId })
+        .andWhere('queue.emailType IN (:...types)', {
+          types: ['report.upload_complete', 'report.review_required', 'report.parse_failed'],
+        })
+        .orderBy('queue.createdAt', 'DESC')
+        .take(100)
+        .getMany(),
+      this.shareLinkRepo.find({
+        where: { userId, isActive: true, expiresAt: Between(now, tomorrow) },
+        order: { expiresAt: 'ASC' },
+        take: 100,
+      }),
+      this.notificationReadRepo.find({ where: { userId } }),
+      this.accountPreferenceRepo.findOne({ where: { userId } }),
+    ]);
+    const readKeys = new Set(reads.map((read) => `${read.sourceType}:${read.sourceId}`));
+    const items: Array<{
+      id: string;
+      sourceType: string;
+      type: string;
+      title: string;
+      body: string;
+      occurredAt: string;
+      read: boolean;
+      deepLink: string | null;
+    }> = [];
+    const seenAudits = new Set<string>();
+    for (const delivery of deliveries) {
+      const audit = delivery.pushSendAudit;
+      if (!audit || seenAudits.has(audit.id)) continue;
+      seenAudits.add(audit.id);
+      items.push({
+        id: audit.id,
+        sourceType: 'push',
+        type: delivery.notificationType,
+        title: audit.title,
+        body: audit.body,
+        occurredAt: delivery.occurredAt.toISOString(),
+        read: readKeys.has(`push:${audit.id}`),
+        deepLink: typeof audit.metadata?.deepLink === 'string'
+          ? audit.metadata.deepLink
+          : null,
+      });
+    }
+    const reportCopy: Record<string, { title: string; body: string }> = {
+      'report.upload_complete': {
+        title: 'Your report was saved',
+        body: 'Open your reports to review the saved file.',
+      },
+      'report.review_required': {
+        title: 'Your report is ready to review',
+        body: 'Check extracted details against the original report.',
+      },
+      'report.parse_failed': {
+        title: 'A report needs attention',
+        body: 'Open the report to retry or keep the original.',
+      },
+    };
+    for (const queued of queueItems) {
+      const copy = reportCopy[queued.emailType];
+      if (!copy) continue;
+      items.push({
+        id: queued.id,
+        sourceType: 'report',
+        type: queued.emailType,
+        ...copy,
+        occurredAt: queued.createdAt.toISOString(),
+        read: readKeys.has(`report:${queued.id}`),
+        deepLink: typeof queued.metadata?.reportId === 'string'
+          ? `/reports/${queued.metadata.reportId}`
+          : '/reports',
+      });
+    }
+    for (const link of accountPreference?.shareRemindersEnabled === false ? [] : expiringLinks) {
+      items.push({
+        id: link.id,
+        sourceType: 'share',
+        type: 'share.link_expiring',
+        title: 'A sharing link expires soon',
+        body: 'Review or renew access from Shared links.',
+        occurredAt: now.toISOString(),
+        read: readKeys.has(`share:${link.id}`),
+        deepLink: `/shared-links/${link.profileId}`,
+      });
+    }
+    items.sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+    return { items: items.slice(0, 100) };
+  }
+
+  async markInboxRead(
+    userId: string,
+    sourceType: string,
+    sourceId: string,
+  ): Promise<object> {
+    if (!['push', 'report', 'share'].includes(sourceType)) {
+      throw new NotFoundException('Notification not found');
+    }
+    let owned = false;
+    if (sourceType === 'push') {
+      owned = (await this.deliveryRepo.count({
+        where: { userId, pushSendAuditId: sourceId, outcome: 'sent' },
+      })) > 0;
+    } else if (sourceType === 'report') {
+      const queue = await this.emailQueueRepo.findOne({ where: { id: sourceId } });
+      owned = queue?.metadata?.userId === userId &&
+        ['report.upload_complete', 'report.review_required', 'report.parse_failed']
+          .includes(queue.emailType);
+    } else {
+      owned = (await this.shareLinkRepo.count({ where: { id: sourceId, userId } })) > 0;
+    }
+    if (!owned) throw new NotFoundException('Notification not found');
+    const readAt = new Date();
+    await this.notificationReadRepo.upsert(
+      { userId, sourceType, sourceId, readAt },
+      ['userId', 'sourceType', 'sourceId'],
+    );
+    return { readAt: readAt.toISOString() };
   }
 
   async registerDeviceToken(

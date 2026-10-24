@@ -78,7 +78,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Pick PDF or Image'));
+    await tester.tap(find.byKey(const Key('upload-report-pick')));
     await tester.pump();
     expect(find.text('Check your report'), findsOneWidget);
     expect(find.text('test.pdf'), findsOneWidget);

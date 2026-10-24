@@ -5,11 +5,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
 
 import 'core/api_client.dart';
 import 'core/api_config.dart';
 import 'core/feedback/status_messenger.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/design_components.dart';
 import 'core/navigation/mobile_navigation_shell.dart';
 import 'core/navigation/app_notification_frame.dart';
 import 'core/token_storage.dart';
@@ -22,6 +24,7 @@ import 'features/account/api_restriction_repository.dart';
 import 'features/account/screens/account_profile_screen.dart';
 import 'features/account/screens/communication_preferences_screen.dart';
 import 'features/account/screens/data_rights_screen.dart';
+import 'features/account/screens/account_information_screens.dart';
 import 'features/auth/api_auth_repository.dart';
 import 'features/account/account_repository.dart';
 import 'features/account/communication_preferences_repository.dart';
@@ -34,8 +37,10 @@ import 'features/auth/forgot_password/forgot_password_screen.dart';
 import 'features/auth/reset_password/reset_password_screen.dart';
 import 'features/auth/screens/home_screen.dart';
 import 'features/auth/screens/login_screen.dart';
+import 'features/auth/screens/onboarding_screen.dart';
 import 'features/auth/screens/session_list_screen.dart';
 import 'features/auth/screens/signup_screen.dart';
+import 'features/auth/screens/startup_loading_screen.dart';
 import 'features/auth/screens/verification_screen.dart';
 import 'features/profiles/profiles_repository.dart';
 import 'features/profiles/api_profiles_repository.dart';
@@ -56,9 +61,11 @@ import 'features/billing/screens/entitlement_summary_screen.dart';
 import 'features/billing/screens/plan_selection_screen.dart';
 import 'features/notifications/api_notifications_repository.dart';
 import 'features/notifications/notifications_repository.dart';
+import 'features/notifications/screens/notifications_screen.dart';
 import 'features/notifications/push_notification_service.dart';
 import 'features/sharing/sharing_repository.dart';
 import 'features/sharing/api_sharing_repository.dart';
+import 'features/sharing/screens/create_share_link_screen.dart';
 import 'features/support/api_support_repository.dart';
 import 'features/support/support_repository.dart';
 
@@ -69,6 +76,7 @@ void main() {
 }
 
 enum _AuthView {
+  onboarding,
   login,
   sessionUnavailable,
   signup,
@@ -142,6 +150,76 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
   bool _savingAppearance = false;
+  final LocalAuthentication _localAuthentication = LocalAuthentication();
+  bool _appLockEnabled = false;
+  bool _appLocked = false;
+  bool _unlocking = false;
+
+  Future<void> _restoreAppLock() async {
+    try {
+      final enabled = await _appearanceStorage.read(key: 'doclyzer_app_lock');
+      if (mounted && enabled == 'true') {
+        setState(() {
+          _appLockEnabled = true;
+          _appLocked = true;
+        });
+      }
+    } catch (_) {
+      // Keep the lock off when secure storage cannot be read.
+    }
+  }
+
+  Future<bool> _setAppLockEnabled(bool enabled) async {
+    try {
+      if (enabled) {
+        if (!await _localAuthentication.isDeviceSupported()) {
+          throw StateError('Set a device passcode before turning on App lock.');
+        }
+        final confirmed = await _localAuthentication.authenticate(
+          localizedReason: 'Confirm App lock for Doclyzer',
+          options: const AuthenticationOptions(stickyAuth: true),
+        );
+        if (!confirmed) return _appLockEnabled;
+      }
+      await _appearanceStorage.write(
+        key: 'doclyzer_app_lock',
+        value: enabled ? 'true' : 'false',
+      );
+      if (mounted) {
+        setState(() {
+          _appLockEnabled = enabled;
+          _appLocked = false;
+        });
+      }
+    } catch (error) {
+      _scaffoldMessengerKey.currentState?.showSnackBar(
+        SnackBar(
+          content: Text(
+            error is StateError
+                ? error.message
+                : 'Could not change App lock. Try again.',
+          ),
+        ),
+      );
+    }
+    return _appLockEnabled;
+  }
+
+  Future<void> _unlockApp() async {
+    if (!_appLocked || _unlocking) return;
+    setState(() => _unlocking = true);
+    try {
+      final unlocked = await _localAuthentication.authenticate(
+        localizedReason: 'Unlock Doclyzer to view your health records',
+        options: const AuthenticationOptions(stickyAuth: true),
+      );
+      if (mounted && unlocked) setState(() => _appLocked = false);
+    } catch (_) {
+      // The opaque lock screen stays in place until authentication succeeds.
+    } finally {
+      if (mounted) setState(() => _unlocking = false);
+    }
+  }
 
   Future<void> _restoreAppearance() async {
     try {
@@ -221,6 +299,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     unawaited(_restoreAppearance());
+    unawaited(_restoreAppLock());
     WidgetsBinding.instance.addObserver(this);
     if (widget.authRepository != null) {
       final tokenStorage = _tokenStorage = TokenStorage();
@@ -310,11 +389,19 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      if (_appLocked) unawaited(_unlockApp());
       _refreshIncidentStatus();
       if (_apiClient?.accessToken != null) {
         ReportProcessingStore.instance.start(_apiClient!);
       }
     } else {
+      if (_appLockEnabled &&
+          (state == AppLifecycleState.paused ||
+              state == AppLifecycleState.hidden) &&
+          !_unlocking &&
+          mounted) {
+        setState(() => _appLocked = true);
+      }
       ReportProcessingStore.instance.stop();
     }
   }
@@ -364,20 +451,42 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       });
     } else if (mounted) {
       bool hasStoredSession = false;
+      bool hasSeenOnboarding = true;
       try {
         hasStoredSession = await _tokenStorage.hasTokens();
       } catch (_) {
         // A broken keychain/keystore must not trap the user on the splash.
       }
+      try {
+        hasSeenOnboarding =
+            await _appearanceStorage.read(key: 'doclyzer_onboarding_seen') ==
+            'true';
+      } catch (_) {
+        // Continue to sign-in if first-launch storage is unavailable.
+      }
       if (mounted) {
         setState(() {
           _authView = hasStoredSession
               ? _AuthView.sessionUnavailable
-              : _AuthView.login;
+              : hasSeenOnboarding
+              ? _AuthView.login
+              : _AuthView.onboarding;
           _initialized = true;
         });
       }
     }
+  }
+
+  Future<void> _finishOnboarding() async {
+    try {
+      await _appearanceStorage.write(
+        key: 'doclyzer_onboarding_seen',
+        value: 'true',
+      );
+    } catch (_) {
+      // Users can proceed even when local onboarding storage is unavailable.
+    }
+    if (mounted) setState(() => _authView = _AuthView.login);
   }
 
   Future<bool> _readInterruptedUpload() async {
@@ -439,6 +548,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                 reportId: report.id,
                 profileId: report.profileId,
                 onBack: () => _navigatorKey.currentState?.pop(),
+                onShareReport: _shareReport,
               ),
             ),
           );
@@ -577,10 +687,152 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     }
   }
 
+  void _shareReport(Report report) {
+    unawaited(
+      _openSharedLinks(profileId: report.profileId, reportId: report.id),
+    );
+  }
+
+  Future<void> _openSharedLinks({String? profileId, String? reportId}) async {
+    Profile? profile;
+    if (profileId == null) {
+      profile = await _getActiveProfileOrNotify(forUpload: false);
+    } else {
+      try {
+        final profiles = await _profilesRepository.getProfiles();
+        profile = profiles
+            .where((candidate) => candidate.id == profileId)
+            .firstOrNull;
+      } catch (_) {
+        _showProfileLoadError(
+          'Unable to load sharing links. Please try again.',
+        );
+      }
+    }
+    if (!mounted || profile == null) return;
+    await _navigatorKey.currentState?.push<void>(
+      MaterialPageRoute(
+        builder: (_) => CreateShareLinkScreen(
+          profileId: profile!.id,
+          profileName: profile.name,
+          sharingRepository: _sharingRepository,
+          reportsRepository: _reportsRepository,
+          supportRepository: _supportRepository,
+          onUpgrade: () => setState(() => _authView = _AuthView.billing),
+          incidentStatus: _incidentStatus,
+          initialReportId: reportId,
+        ),
+      ),
+    );
+  }
+
+  void _pushAccountPage(Widget page) {
+    final context = _navigatorKey.currentContext;
+    if (context == null) return;
+    _navigatorKey.currentState?.push(designPageRoute<void>(page, context));
+  }
+
+  void _openExportScreen() => _pushAccountPage(
+    DataRightsScreen(
+      mode: DataRightsMode.export,
+      dataRightsRepository: _dataRightsRepository,
+      profilesRepository: _profilesRepository,
+      reportsRepository: _reportsRepository,
+      onBack: () => _navigatorKey.currentState?.pop(),
+      onAccountClosed: _logout,
+    ),
+  );
+
+  void _openDeleteScreen() => _pushAccountPage(
+    DataRightsScreen(
+      mode: DataRightsMode.delete,
+      dataRightsRepository: _dataRightsRepository,
+      profilesRepository: _profilesRepository,
+      reportsRepository: _reportsRepository,
+      onBack: () => _navigatorKey.currentState?.pop(),
+      onOpenExport: _openExportScreen,
+      onAccountClosed: () async {
+        await _logout();
+        _navigatorKey.currentState?.popUntil((route) => route.isFirst);
+      },
+    ),
+  );
+
+  void _openPrivacyScreen() => _pushAccountPage(
+    PrivacySecurityScreen(
+      appLockEnabled: _appLockEnabled,
+      onAppLockChanged: _setAppLockEnabled,
+      onSharedLinks: () => unawaited(_openSharedLinks()),
+      onExport: _openExportScreen,
+      onPrivacyPolicy: () => _openLegalScreen(LegalSummaryKind.privacy),
+      onDeleteAccount: _openDeleteScreen,
+    ),
+  );
+
+  void _openHelpScreen() => _pushAccountPage(
+    HelpSupportScreen(supportRepository: _supportRepository),
+  );
+
+  void _openLegalScreen(LegalSummaryKind kind) => _pushAccountPage(
+    LegalSummaryScreen(
+      kind: kind,
+      onPrimary: kind == LegalSummaryKind.privacy
+          ? _openPrivacyScreen
+          : _openHelpScreen,
+      onSecondary: kind == LegalSummaryKind.privacy
+          ? _openExportScreen
+          : () => _openLegalScreen(LegalSummaryKind.privacy),
+    ),
+  );
+
+  void _openAboutScreen() => _pushAccountPage(
+    AboutDoclyzerScreen(
+      onTerms: () => _openLegalScreen(LegalSummaryKind.terms),
+      onPrivacy: () => _openLegalScreen(LegalSummaryKind.privacy),
+    ),
+  );
+
+  Future<void> _openNotificationRelated(InboxNotification notification) async {
+    final path = Uri.tryParse(notification.deepLink ?? '')?.path ?? '';
+    _navigatorKey.currentState?.pop();
+    if (path.startsWith('/reports/')) {
+      final reportId = path.substring('/reports/'.length);
+      try {
+        final report = await _reportsRepository.getReport(reportId);
+        if (!mounted) return;
+        await _navigatorKey.currentState?.push<void>(
+          MaterialPageRoute(
+            builder: (routeContext) => ReportDetailScreen(
+              reportsRepository: _reportsRepository,
+              profilesRepository: _profilesRepository,
+              reportId: report.id,
+              profileId: report.profileId,
+              onBack: () => Navigator.of(routeContext).pop(),
+              onShareReport: _shareReport,
+            ),
+          ),
+        );
+      } catch (_) {
+        if (mounted) {
+          _showProfileLoadError(
+            'Unable to open that report. Try the report library.',
+          );
+        }
+      }
+    } else if (path == '/reports') {
+      await _selectTab(1);
+    } else if (path.startsWith('/shared-links/')) {
+      await _openSharedLinks(
+        profileId: path.substring('/shared-links/'.length),
+      );
+    }
+  }
+
   static const _tabViews = [
     _AuthView.home,
     _AuthView.timeline,
     _AuthView.trends,
+    _AuthView.profileList,
     _AuthView.accountProfile,
   ];
   int? _pendingTabIndex;
@@ -649,7 +901,24 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         onPopInvokedWithResult: (didPop, result) {
           if (!didPop) _backFromSecondary();
         },
-        child: screen,
+        child: AnimatedSwitcher(
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 260),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.06, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          ),
+          child: KeyedSubtree(key: ValueKey(_authView), child: screen),
+        ),
       );
     }
     return MobileNavigationShell(
@@ -677,6 +946,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     }
     final target = switch (_authView) {
       _AuthView.signup ||
+      _AuthView.onboarding ||
       _AuthView.verification ||
       _AuthView.forgotPassword ||
       _AuthView.resetPassword => _AuthView.login,
@@ -698,15 +968,22 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     if (!_initialized) {
       return MaterialApp(
+        title: 'Doclyzer',
+        debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: _themeMode,
-        home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+        builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+          value: AppTheme.systemBars(Theme.of(context).brightness),
+          child: child ?? const SizedBox.shrink(),
+        ),
+        home: const StartupLoadingScreen(),
       );
     }
 
     return MaterialApp(
       title: 'Doclyzer',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: _themeMode,
@@ -714,90 +991,147 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       navigatorKey: _navigatorKey,
       builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
         value: AppTheme.systemBars(Theme.of(context).brightness),
-        child: AppNotificationFrame(
-          uploadNotice: _hasInterruptedUpload && _authView == _AuthView.home
-              ? Material(
-                  color: Theme.of(context).colorScheme.tertiaryContainer,
-                  child: SafeArea(
-                    bottom: false,
-                    child: ListTile(
-                      title: const Text('An upload may have been interrupted'),
-                      subtitle: const Text(
-                        'Check Reports. If it is missing, add the same file again.',
-                      ),
-                      onTap: () => unawaited(_selectTab(1)),
-                      trailing: IconButton(
-                        tooltip: 'Dismiss upload notice',
-                        icon: const Icon(Icons.close),
-                        onPressed: () async {
-                          await _tokenStorage.clearInterruptedReportUpload();
-                          if (mounted) {
-                            setState(() => _hasInterruptedUpload = false);
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                )
-              : null,
-          readyNotice: AnimatedBuilder(
-            animation: ReportProcessingStore.instance,
-            builder: (context, _) {
-              final store = ReportProcessingStore.instance;
-              return store.readyCount > 0
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            AppNotificationFrame(
+              uploadNotice: _hasInterruptedUpload && _authView == _AuthView.home
                   ? Material(
-                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      color: Theme.of(context).colorScheme.tertiaryContainer,
                       child: SafeArea(
                         bottom: false,
                         child: ListTile(
-                          title: Text('${store.readyCount} report(s) ready'),
+                          title: const Text(
+                            'An upload may have been interrupted',
+                          ),
+                          subtitle: const Text(
+                            'Check Reports. If it is missing, add the same file again.',
+                          ),
+                          onTap: () => unawaited(_selectTab(1)),
                           trailing: IconButton(
-                            tooltip: 'Dismiss ready notifications',
+                            tooltip: 'Dismiss upload notice',
                             icon: const Icon(Icons.close),
                             onPressed: () async {
-                              final ids = store.reports.entries
-                                  .where(
-                                    (e) =>
-                                        e.value['status'] == 'ready' &&
-                                        e.value['acknowledgedAt'] == null,
-                                  )
-                                  .map((e) => e.key)
-                                  .toList();
-                              try {
-                                for (final id in ids) {
-                                  await store.acknowledge(id);
-                                }
-                              } catch (_) {
-                                _scaffoldMessengerKey.currentState?.showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Could not dismiss notifications. Try again.',
-                                    ),
-                                  ),
-                                );
+                              await _tokenStorage
+                                  .clearInterruptedReportUpload();
+                              if (mounted) {
+                                setState(() => _hasInterruptedUpload = false);
                               }
                             },
                           ),
-                          onTap: () {
-                            final ready = store.reports.values.firstWhere(
-                              (r) =>
-                                  r['status'] == 'ready' &&
-                                  r['acknowledgedAt'] == null,
-                            );
-                            _pushNotificationService.onReportOpen?.call(
-                              ready['reportId'] as String,
-                            );
-                          },
                         ),
                       ),
                     )
-                  : const SizedBox.shrink();
-            },
-          ),
-          child: child ?? const SizedBox.shrink(),
+                  : null,
+              readyNotice: AnimatedBuilder(
+                animation: ReportProcessingStore.instance,
+                builder: (context, _) {
+                  final store = ReportProcessingStore.instance;
+                  return store.readyCount > 0
+                      ? Material(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.secondaryContainer,
+                          child: SafeArea(
+                            bottom: false,
+                            child: ListTile(
+                              title: Text(
+                                '${store.readyCount} report(s) ready',
+                              ),
+                              trailing: IconButton(
+                                tooltip: 'Dismiss ready notifications',
+                                icon: const Icon(Icons.close),
+                                onPressed: () async {
+                                  final ids = store.reports.entries
+                                      .where(
+                                        (e) =>
+                                            e.value['status'] == 'ready' &&
+                                            e.value['acknowledgedAt'] == null,
+                                      )
+                                      .map((e) => e.key)
+                                      .toList();
+                                  try {
+                                    for (final id in ids) {
+                                      await store.acknowledge(id);
+                                    }
+                                  } catch (_) {
+                                    _scaffoldMessengerKey.currentState
+                                        ?.showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Could not dismiss notifications. Try again.',
+                                            ),
+                                          ),
+                                        );
+                                  }
+                                },
+                              ),
+                              onTap: () {
+                                final ready = store.reports.values.firstWhere(
+                                  (r) =>
+                                      r['status'] == 'ready' &&
+                                      r['acknowledgedAt'] == null,
+                                );
+                                _pushNotificationService.onReportOpen?.call(
+                                  ready['reportId'] as String,
+                                );
+                              },
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink();
+                },
+              ),
+              child: child ?? const SizedBox.shrink(),
+            ),
+            if (_appLocked &&
+                _authView != _AuthView.login &&
+                _authView != _AuthView.onboarding &&
+                _authView != _AuthView.signup)
+              Positioned.fill(
+                child: Material(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: SafeArea(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const DoclyzerMark(size: 72),
+                            const SizedBox(height: 24),
+                            Text(
+                              'Doclyzer is locked',
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Use your device passcode or biometrics to continue.',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 28),
+                            FilledButton(
+                              key: const Key('unlock-app'),
+                              onPressed: _unlocking ? null : _unlockApp,
+                              child: _unlocking
+                                  ? const CircularProgressIndicator()
+                                  : const Text('Unlock'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
       home: _buildNavigationShell(switch (_authView) {
+        _AuthView.onboarding => OnboardingScreen(
+          onComplete: () => unawaited(_finishOnboarding()),
+        ),
         _AuthView.sessionUnavailable => Scaffold(
           appBar: AppBar(title: const Text('Connection unavailable')),
           body: SafeArea(
@@ -851,6 +1185,26 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           },
         ),
         _AuthView.home => HomeScreen(
+          onShareReport: _shareReport,
+          onGoToNotifications: () {
+            _navigatorKey.currentState?.push<void>(
+              MaterialPageRoute(
+                builder: (_) => NotificationsScreen(
+                  repository: _notificationsRepository,
+                  onBack: () => _navigatorKey.currentState?.pop(),
+                  onOpenRelated: _openNotificationRelated,
+                  onManagePreferences: () {
+                    _navigatorKey.currentState?.pop();
+                    if (mounted) {
+                      setState(
+                        () => _authView = _AuthView.communicationPreferences,
+                      );
+                    }
+                  },
+                ),
+              ),
+            );
+          },
           accountRepository: _accountRepository,
           reportsRepository: _reportsRepository,
           profilesRepository: _profilesRepository,
@@ -905,10 +1259,17 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
               _timelineProfileName = activeProfile.name;
             });
           },
+          onGoToTrends: () => unawaited(_selectTab(2)),
           restrictionRepository: _restrictionRepository,
           incidentStatus: _incidentStatus,
         ),
         _AuthView.accountProfile => AccountProfileScreen(
+          supportRepository: _supportRepository,
+          onGoToPrivacy: _openPrivacyScreen,
+          onGoToExport: _openExportScreen,
+          onGoToHelp: _openHelpScreen,
+          onGoToAbout: _openAboutScreen,
+          onGoToSharedLinks: () => unawaited(_openSharedLinks()),
           themeMode: _themeMode,
           onThemeChanged: _savingAppearance ? null : _changeAppearance,
           billingRepository: _billingRepository,
@@ -926,7 +1287,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           onGoToDataRights: () =>
               setState(() => _authView = _AuthView.dataRights),
           onLogout: _logout,
-          showBackButton: true,
+          showBackButton: false,
           accountRepository: _accountRepository,
           restrictionRepository: _restrictionRepository,
           onBack: () {
@@ -956,6 +1317,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           },
         ),
         _AuthView.profileList => ProfileListScreen(
+          showBackButton: false,
           profilesRepository: _profilesRepository,
           reportsRepository: _reportsRepository,
           onCreateProfile: () {
@@ -1028,6 +1390,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           },
         ),
         _AuthView.uploadReport => UploadReportScreen(
+          onShareReport: _shareReport,
           reportsRepository: _reportsRepository,
           profilesRepository: _profilesRepository,
           activeProfileName: _activeProfileNameForUpload,
@@ -1048,11 +1411,16 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         _AuthView.timeline =>
           _timelineProfileId != null
               ? TimelineScreen(
+                  onShareReport: _shareReport,
                   showBackButton: true,
                   reportsRepository: _reportsRepository,
                   profilesRepository: _profilesRepository,
                   profileId: _timelineProfileId!,
                   profileName: _timelineProfileName!,
+                  onProfileSelected: (profile) => setState(() {
+                    _timelineProfileId = profile.id;
+                    _timelineProfileName = profile.name;
+                  }),
                   sharingRepository: _sharingRepository,
                   incidentStatus: _incidentStatus,
                   onBack: () {
@@ -1101,6 +1469,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         _AuthView.trends =>
           _timelineProfileId != null
               ? HealthHistoryScreen(
+                  onShareReport: _shareReport,
                   profileId: _timelineProfileId!,
                   profileName: _timelineProfileName,
                   reportsRepository: _reportsRepository,

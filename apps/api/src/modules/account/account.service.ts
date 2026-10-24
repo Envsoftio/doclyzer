@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -7,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
-import { Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { AccountPreferenceEntity } from '../../database/entities/account-preference.entity';
 import { RestrictionEntity } from '../../database/entities/restriction.entity';
 import { DataExportRequestEntity } from '../../database/entities/data-export-request.entity';
@@ -16,6 +17,8 @@ import { ProfileEntity } from '../../database/entities/profile.entity';
 import { ConsentRecordEntity } from '../../database/entities/consent-record.entity';
 import { UserEntity } from '../../database/entities/user.entity';
 import { ReportEntity } from '../../database/entities/report.entity';
+import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
+import { createDataExportArchive, exportCsv } from './data-export-archive';
 import { AuthService } from '../auth/auth.service';
 import { AccountOverrideService } from '../audit-incident/account-override.service';
 import { NotificationPipelineService } from '../../common/notification-pipeline/notification-pipeline.service';
@@ -27,6 +30,7 @@ import type {
   UpdateAccountProfileDto,
   UpdateCommunicationPreferencesDto,
   CreateClosureRequestDto,
+  CreateDataExportRequestDto,
 } from './account.dto';
 import type {
   AccountProfile,
@@ -198,6 +202,21 @@ export class AccountService {
           enabled: productEnabled,
           mandatory: false,
         },
+        {
+          category: COMM_PREF_CATEGORY.REPORT_READY,
+          enabled: pref?.reportReadyEnabled ?? true,
+          mandatory: false,
+        },
+        {
+          category: COMM_PREF_CATEGORY.UPLOAD_UPDATES,
+          enabled: pref?.uploadUpdatesEnabled ?? true,
+          mandatory: false,
+        },
+        {
+          category: COMM_PREF_CATEGORY.SHARE_REMINDERS,
+          enabled: pref?.shareRemindersEnabled ?? true,
+          mandatory: false,
+        },
       ],
     };
   }
@@ -212,6 +231,12 @@ export class AccountService {
     }
     if (dto.productEmails !== undefined)
       pref.productEmailsEnabled = dto.productEmails;
+    if (dto.reportReady !== undefined)
+      pref.reportReadyEnabled = dto.reportReady;
+    if (dto.uploadUpdates !== undefined)
+      pref.uploadUpdatesEnabled = dto.uploadUpdates;
+    if (dto.shareReminders !== undefined)
+      pref.shareRemindersEnabled = dto.shareReminders;
     await this.prefRepo.save(pref);
     return this.getCommunicationPreferences(userId);
   }
@@ -281,13 +306,39 @@ export class AccountService {
   async createDataExportRequest(
     userId: string,
     correlationId: string,
+    dto: CreateDataExportRequestDto = {},
   ): Promise<DataExportRequest> {
+    if (dto.from && dto.to && new Date(dto.from) > new Date(dto.to)) {
+      throw new BadRequestException({
+        code: 'EXPORT_INVALID_DATE_RANGE',
+        message: 'The start date must be before the end date',
+      });
+    }
+    if (dto.includeOriginals === false && dto.includeResults === false) {
+      throw new BadRequestException({
+        code: 'EXPORT_NOTHING_SELECTED',
+        message: 'Select original reports or test results',
+      });
+    }
+    if (dto.profileId) {
+      const profile = await this.profileRepo.findOne({
+        where: { id: dto.profileId, userId },
+      });
+      if (!profile) throw new NotFoundException('Profile not found');
+    }
     const entity = this.exportRepo.create({
       userId,
       status: 'pending',
       completedAt: null,
       downloadUrl: null,
       failureReason: null,
+      options: {
+        ...(dto.profileId ? { profileId: dto.profileId } : {}),
+        ...(dto.from ? { from: dto.from } : {}),
+        ...(dto.to ? { to: dto.to } : {}),
+        includeOriginals: dto.includeOriginals ?? true,
+        includeResults: dto.includeResults ?? true,
+      },
     });
     const saved = await this.exportRepo.save(entity);
 
@@ -312,49 +363,118 @@ export class AccountService {
     if (!entity) return null;
 
     if (entity.status === 'pending') {
-      const user = await this.userRepo.findOne({ where: { id: userId } });
-      const profiles = await this.profileRepo.find({
-        where: { userId },
-        order: { createdAt: 'ASC' },
-      });
-      const consentRecords = await this.consentRepo.find({
-        where: { userId },
-        order: { acceptedAt: 'ASC' },
-      });
-      const exportPayload = user
-        ? {
-            profile: {
-              id: user.id,
-              email: user.email,
-              displayName: user.displayName,
-              createdAt: user.createdAt,
-            },
-            profiles: profiles.map((profile) => ({
-              id: profile.id,
-              name: profile.name,
-              dateOfBirth: profile.dateOfBirth,
-              relation: profile.relation,
-              isActive: profile.isActive,
-              createdAt: profile.createdAt,
-            })),
-            consentRecords: consentRecords.map((record) => ({
-              id: record.id,
-              policyType: record.policyType,
-              policyVersion: record.policyVersion,
-              acceptedAt: record.acceptedAt,
-            })),
-          }
-        : null;
-
-      entity.status = exportPayload ? 'completed' : 'failed';
-      entity.completedAt = exportPayload ? new Date() : null;
-      entity.downloadUrl = exportPayload
-        ? `data:application/json;base64,${Buffer.from(JSON.stringify(exportPayload)).toString('base64')}`
-        : null;
-      entity.failureReason = exportPayload ? null : 'USER_NOT_FOUND';
+      try {
+        const user = await this.userRepo.findOne({ where: { id: userId } });
+        if (!user) throw new Error('USER_NOT_FOUND');
+        const options = entity.options ?? {};
+        const profiles = await this.profileRepo.find({
+          where: { userId, ...(options.profileId ? { id: options.profileId } : {}) },
+          order: { createdAt: 'ASC' },
+        });
+        const consentRecords = await this.consentRepo.find({
+          where: { userId },
+          order: { acceptedAt: 'ASC' },
+        });
+        const allReports = await this.userRepo.manager.getRepository(ReportEntity).find({
+          where: {
+            userId,
+            deletedAt: IsNull(),
+            ...(options.profileId ? { profileId: options.profileId } : {}),
+          },
+          order: { createdAt: 'ASC' },
+        });
+        const from = options.from ? new Date(options.from) : null;
+        const to = options.to ? new Date(options.to) : null;
+        const reports = allReports.filter((report) =>
+          (!from || report.createdAt >= from) && (!to || report.createdAt <= to));
+        const reportIds = reports.map((report) => report.id);
+        const results = options.includeResults !== false && reportIds.length
+          ? await this.userRepo.manager.getRepository(ReportLabValueEntity).find({
+              where: { reportId: In(reportIds) },
+              order: { reportId: 'ASC', sortOrder: 'ASC' },
+            })
+          : [];
+        const payload = {
+          exportedAt: new Date().toISOString(),
+          account: {
+            id: user.id,
+            email: user.email,
+            displayName: user.displayName,
+            createdAt: user.createdAt,
+          },
+          profiles: profiles.map((profile) => ({
+            id: profile.id,
+            name: profile.name,
+            dateOfBirth: profile.dateOfBirth,
+            relation: profile.relation,
+            isActive: profile.isActive,
+            createdAt: profile.createdAt,
+          })),
+          consentRecords: consentRecords.map((record) => ({
+            id: record.id,
+            policyType: record.policyType,
+            policyVersion: record.policyVersion,
+            acceptedAt: record.acceptedAt,
+          })),
+          reports: reports.map((report) => ({
+            id: report.id,
+            profileId: report.profileId,
+            originalFileName: report.originalFileName,
+            status: report.status,
+            createdAt: report.createdAt,
+          })),
+        };
+        const entries = [
+          { path: 'account.json', data: Buffer.from(JSON.stringify(payload, null, 2)) },
+          ...(options.includeResults === false ? [] : [{
+            path: 'results.csv',
+            data: exportCsv([
+              ['report_id', 'profile_id', 'test', 'value', 'unit', 'sample_date', 'reference_range', 'review_state'],
+              ...results.map((result) => [
+                result.reportId,
+                reports.find((report) => report.id === result.reportId)?.profileId,
+                result.parameterName,
+                result.value,
+                result.unit,
+                result.sampleDate,
+                result.referenceRange,
+                result.reviewState,
+              ]),
+            ]),
+          }]),
+        ];
+        for (const report of options.includeOriginals === false ? [] : reports) {
+          const safeName = report.originalFileName
+            .replace(/[^a-zA-Z0-9._-]/g, '_')
+            .slice(-40) || 'original';
+          entries.push({
+            path: `reports/${report.id}/${safeName}`,
+            data: await this.fileStorage.get(report.originalFileStorageKey),
+          });
+        }
+        const key = `exports/${userId}/${entity.id}.tar.gz`;
+        await this.fileStorage.upload(
+          key,
+          createDataExportArchive(entries),
+          'application/gzip',
+          { singleVersion: true },
+        );
+        entity.status = 'completed';
+        entity.completedAt = new Date();
+        entity.downloadUrl = key;
+        entity.failureReason = null;
+      } catch (error) {
+        entity.status = 'failed';
+        entity.failureReason = error instanceof Error ? error.message : 'EXPORT_FAILED';
+        this.logger.warn(`Data export ${entity.id} failed: ${entity.failureReason}`);
+      }
       await this.exportRepo.save(entity);
     }
-    return this.toExportDto(entity);
+    const dto = this.toExportDto(entity);
+    if (entity.status === 'completed' && entity.downloadUrl?.startsWith('exports/')) {
+      dto.downloadUrl = await this.fileStorage.getSignedUrl(entity.downloadUrl, 300);
+    }
+    return dto;
   }
 
   async createClosureRequest(
@@ -497,6 +617,7 @@ export class AccountService {
           // A failure rolls back the transaction, so the next sweep can retry.
           await this.fileStorage.deletePrefix(`reports/${user.id}/`);
           await this.fileStorage.deletePrefix(`avatars/${user.id}/`);
+          await this.fileStorage.deletePrefix(`exports/${user.id}/`);
           for (const extension of ['.jpg', '.jpeg', '.png', '.gif', '.webp']) {
             await this.fileStorage.delete(`avatars/${user.id}${extension}`, {
               allVersions: true,

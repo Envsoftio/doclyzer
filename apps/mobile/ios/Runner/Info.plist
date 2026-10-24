@@ -10,6 +10,8 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Unlock Doclyzer to view your health records.</string>
 	<key>CFBundleDisplayName</key>
 	<string>Doclyzer</string>
 	<key>CFBundleExecutable</key>

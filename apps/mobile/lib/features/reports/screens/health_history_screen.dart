@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/design_components.dart';
 import '../../../shared/app_date_format.dart';
 
 import '../reports_repository.dart';
@@ -17,6 +18,7 @@ class HealthHistoryScreen extends StatefulWidget {
     required this.profilesRepository,
     this.profileName,
     this.onBack,
+    this.onShareReport,
   });
 
   final String profileId;
@@ -24,6 +26,7 @@ class HealthHistoryScreen extends StatefulWidget {
   final ProfilesRepository profilesRepository;
   final String? profileName;
   final VoidCallback? onBack;
+  final ValueChanged<Report>? onShareReport;
 
   @override
   State<HealthHistoryScreen> createState() => _HealthHistoryScreenState();
@@ -33,6 +36,14 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
   _HealthHistoryState _state = _HealthHistoryState.loading;
   List<TrendParameter> _params = [];
   String? _errorMessage;
+  String _query = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -50,7 +61,10 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
         widget.profileId,
       );
       final allParams = result.parameters.toList()
-        ..sort((a, b) => a.parameterName.compareTo(b.parameterName));
+        ..sort((a, b) {
+          final count = b.dataPoints.length.compareTo(a.dataPoints.length);
+          return count != 0 ? count : a.parameterName.compareTo(b.parameterName);
+        });
       if (mounted) {
         setState(() {
           _params = allParams;
@@ -91,6 +105,7 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
           reportId: reportId,
           profileId: widget.profileId,
           onBack: () => Navigator.of(ctx).pop(),
+          onShareReport: widget.onShareReport,
         ),
       ),
     );
@@ -124,12 +139,29 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
               const SizedBox(height: 12),
             ],
             if (showDisclaimer) ...[
+              TextField(
+                key: const Key('trends-search'),
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search),
+                  hintText: 'Search tests',
+                ),
+                onChanged: (value) => setState(() => _query = value),
+              ),
+              const SizedBox(height: 14),
               _HistoryHeader(parameterCount: _params.length),
               const SizedBox(height: 10),
               const AiDisclaimerNote(key: Key('health-history-disclaimer')),
               const SizedBox(height: 10),
             ],
-            Expanded(child: _buildBody()),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 220),
+                child: KeyedSubtree(key: ValueKey(_state), child: _buildBody()),
+              ),
+            ),
           ],
         ),
       ),
@@ -176,11 +208,25 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
         ),
       );
     }
+    final visible = _params.where((param) =>
+      param.parameterName.toLowerCase().contains(_query.trim().toLowerCase())).toList();
+    if (visible.isEmpty) {
+      return DesignEmptyState(
+        icon: Icons.search_off_outlined,
+        title: 'No tests found',
+        message: 'Try a shorter test name.',
+        action: 'Clear search',
+        onAction: () => setState(() {
+          _searchController.clear();
+          _query = '';
+        }),
+      );
+    }
     return ListView.separated(
-      itemCount: _params.length,
+      itemCount: visible.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
-        final param = _params[index];
+        final param = visible[index];
         final latest = param.dataPoints.isEmpty ? null : param.dataPoints.last;
         final first = param.dataPoints.isEmpty ? null : param.dataPoints.first;
         return Card(

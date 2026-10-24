@@ -14,6 +14,28 @@ class ApiDataRightsRepository implements DataRightsRepository {
   }
 
   @override
+  Future<DataExportRequest> createScopedExportRequest({
+    String? profileId,
+    DateTime? from,
+    DateTime? to,
+    bool includeOriginals = true,
+    bool includeResults = true,
+  }) async {
+    final body = <String, dynamic>{
+      'includeOriginals': includeOriginals,
+      'includeResults': includeResults,
+    };
+    if (profileId != null) body['profileId'] = profileId;
+    if (from != null) body['from'] = from.toUtc().toIso8601String();
+    if (to != null) body['to'] = to.toUtc().toIso8601String();
+    final data = await _client.post(
+      'v1/account/data-export-requests',
+      body: body,
+    );
+    return _exportFromJson(data['data'] as Map<String, dynamic>);
+  }
+
+  @override
   Future<DataExportRequest> getExportRequest(String requestId) async {
     try {
       final data = await _client.get(

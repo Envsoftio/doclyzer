@@ -95,6 +95,27 @@ export class ReportsController {
     return successResponse({ reports: data }, getCorrelationId(req));
   }
 
+  @Get('search')
+  async searchReports(
+    @Query('profileId') profileId: string | undefined,
+    @Query('q') query: string | undefined,
+    @Req() req: Request,
+  ): Promise<object> {
+    if (!profileId || !query?.trim() || query.length > 100) {
+      throw new BadRequestException({
+        code: 'REPORT_SEARCH_INVALID',
+        message: 'profileId and a search query of at most 100 characters are required',
+      });
+    }
+    const { id: userId } = req.user as RequestUser;
+    const reports = await this.reportsService.searchReports(
+      userId,
+      profileId,
+      query,
+    );
+    return successResponse({ reports }, getCorrelationId(req));
+  }
+
   @Get('recycle-bin')
   async listRecycleBin(
     @Query('profileId') profileId: string | undefined,

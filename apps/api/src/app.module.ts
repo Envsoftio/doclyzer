@@ -17,6 +17,7 @@ import { DataExportRequestEntity } from './database/entities/data-export-request
 import { ProfileEntity } from './database/entities/profile.entity';
 import { PushDeliveryEventEntity } from './database/entities/push-delivery-event.entity';
 import { PushOpenEventEntity } from './database/entities/push-open-event.entity';
+import { NotificationReadEntity } from './database/entities/notification-read.entity';
 import { PushSendAuditEntity } from './database/entities/push-send-audit.entity';
 import { ReportEntity } from './database/entities/report.entity';
 import { ReportResultInsightEntity } from './database/entities/report-result-insight.entity';
@@ -77,6 +78,7 @@ const typeOrmEntities = [
   PushSendAuditEntity,
   PushDeliveryEventEntity,
   PushOpenEventEntity,
+  NotificationReadEntity,
   AccountPreferenceEntity,
   RestrictionEntity,
   DataExportRequestEntity,

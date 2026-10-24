@@ -10,7 +10,9 @@ class ApiProfilesRepository implements ProfilesRepository {
   Future<List<Profile>> getProfiles() async {
     final data = await _client.get('v1/profiles');
     final list = data['data'] as List<dynamic>;
-    return list.map((e) => _profileFromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => _profileFromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   @override
@@ -32,7 +34,8 @@ class ApiProfilesRepository implements ProfilesRepository {
         'v1/profiles',
         body: {
           'name': name,
-          if (dateOfBirth != null && dateOfBirth.isNotEmpty) 'dateOfBirth': dateOfBirth,
+          if (dateOfBirth != null && dateOfBirth.isNotEmpty)
+            'dateOfBirth': dateOfBirth,
           if (relation != null && relation.isNotEmpty) 'relation': relation,
         },
       );
@@ -65,7 +68,7 @@ class ApiProfilesRepository implements ProfilesRepository {
 
   @override
   Future<void> activateProfile(String id) async {
-    await _client.post('v1/profiles/$id/activate');
+    await _client.patch('v1/profiles/$id/activate');
   }
 
   @override

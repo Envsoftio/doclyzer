@@ -58,6 +58,12 @@ import { CreateReportVlShadows1730818400000 } from './1730818400000-CreateReport
 import { RepairReportVlShadowsApplied1730818500000 } from './1730818500000-RepairReportVlShadowsApplied';
 import { CreateReportOcrPageCheckpoints1730818600000 } from './1730818600000-CreateReportOcrPageCheckpoints';
 import { SeedStarterPlan1730818700000 } from './1730818700000-SeedStarterPlan';
+import { CreateNotificationReads1730818800000 } from './1730818800000-CreateNotificationReads';
+import { AddSelectedReportsToShareLinks1730818900000 } from './1730818900000-AddSelectedReportsToShareLinks';
+import { AddShareAccessCode1730819000000 } from './1730819000000-AddShareAccessCode';
+import { AddSelectedResultsToShareLinks1730819100000 } from './1730819100000-AddSelectedResultsToShareLinks';
+import { AddReportNotificationPreferences1730819200000 } from './1730819200000-AddReportNotificationPreferences';
+import { AddDataExportOptions1730819300000 } from './1730819300000-AddDataExportOptions';
 
 export const migrations = [
   InitialSchema1730812800000,
@@ -120,4 +126,10 @@ export const migrations = [
   RepairReportVlShadowsApplied1730818500000,
   CreateReportOcrPageCheckpoints1730818600000,
   SeedStarterPlan1730818700000,
+  CreateNotificationReads1730818800000,
+  AddSelectedReportsToShareLinks1730818900000,
+  AddShareAccessCode1730819000000,
+  AddSelectedResultsToShareLinks1730819100000,
+  AddReportNotificationPreferences1730819200000,
+  AddDataExportOptions1730819300000,
 ];

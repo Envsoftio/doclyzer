@@ -10,6 +10,7 @@ import '../result_range.dart';
 import '../../../shared/ai_disclaimer_note.dart';
 import '../../../shared/app_date_format.dart';
 import 'health_history_screen.dart';
+import 'compare_reports_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'processing_history_screen.dart';
 import 'result_insight_screen.dart';
@@ -19,7 +20,7 @@ import 'trend_chart_screen.dart';
 
 enum _ReportDetailState { loading, loaded, error }
 
-enum _ReportAction { attempts, compare, reassign }
+enum _ReportAction { attempts, compare, reassign, readParsed, delete }
 
 class ReportDetailScreen extends StatefulWidget {
   const ReportDetailScreen({
@@ -29,6 +30,7 @@ class ReportDetailScreen extends StatefulWidget {
     required this.reportId,
     required this.profileId,
     required this.onBack,
+    this.onShareReport,
   });
 
   final ReportsRepository reportsRepository;
@@ -36,6 +38,7 @@ class ReportDetailScreen extends StatefulWidget {
   final String reportId;
   final String profileId;
   final VoidCallback onBack;
+  final ValueChanged<Report>? onShareReport;
 
   @override
   State<ReportDetailScreen> createState() => _ReportDetailScreenState();
@@ -156,6 +159,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 reportId: reportId,
                 profileId: widget.profileId,
                 onBack: () => Navigator.of(sourceCtx).pop(),
+                onShareReport: widget.onShareReport,
               ),
             ),
           ),
@@ -271,16 +275,40 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         Navigator.push(
           context,
           MaterialPageRoute<void>(
-            builder: (_) => HealthHistoryScreen(
+            builder: (_) => CompareReportsScreen(
               profileId: widget.profileId,
+              profileName:
+                  report.profileName ??
+                  _profiles
+                      .where((profile) => profile.id == widget.profileId)
+                      .firstOrNull
+                      ?.name ??
+                  'Your profile',
               reportsRepository: widget.reportsRepository,
-              profilesRepository: widget.profilesRepository,
             ),
           ),
         );
       case _ReportAction.reassign:
         _showReassignDialog();
+      case _ReportAction.readParsed:
+        _openParsedReportReader();
+      case _ReportAction.delete:
+        _onDeleteReport();
     }
+  }
+
+  void _openTrends() {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => HealthHistoryScreen(
+          profileId: widget.profileId,
+          reportsRepository: widget.reportsRepository,
+          profilesRepository: widget.profilesRepository,
+          onShareReport: widget.onShareReport,
+        ),
+      ),
+    );
   }
 
   Future<void> _onRetryParse() async {
@@ -389,7 +417,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   }
 
   Future<void> _showReassignDialog() async {
-    final currentProfileId = _report?.profileId ?? widget.profileId;
+    final report = _report;
+    if (report == null) return;
+    final currentProfileId = report.profileId;
     final otherProfiles = _profiles
         .where((p) => p.id != currentProfileId)
         .toList();
@@ -397,32 +427,75 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Create another profile to reassign this report.'),
+          content: Text(
+            'Add another family profile before moving this report.',
+          ),
         ),
       );
       return;
     }
-    await showDialog<void>(
+    final selected = await showDialog<Profile>(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: const Text('Reassign to profile'),
-        children: otherProfiles.map((profile) {
-          return SimpleDialogOption(
-            key: Key('reassign-profile-${profile.id}'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _onReassign(profile.id);
-            },
-            child: Text(profile.name),
-          );
-        }).toList(),
+        title: const Text('Move report'),
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+            child: Text(
+              'Choose another family member if this report was added to the wrong profile.',
+              style: Theme.of(ctx).textTheme.bodyMedium,
+            ),
+          ),
+          for (final profile in otherProfiles)
+            SimpleDialogOption(
+              key: Key('reassign-profile-${profile.id}'),
+              onPressed: () => Navigator.of(ctx).pop(profile),
+              child: Text(profile.name),
+            ),
+        ],
       ),
     );
+    if (selected == null || !mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Move this report?'),
+        content: Text(
+          '${report.originalFileName} will appear under ${selected.name} instead of the current profile.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Move report'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) await _onReassign(selected.id);
   }
 
-  String _formatDate(DateTime? d) {
-    if (d == null) return '—';
-    return AppDateFormat.dateWithRelative(d);
+  void _showSampleDateHelp(bool hasMultipleDates) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('About sample dates'),
+        content: Text(
+          hasMultipleDates
+              ? 'This report has results from more than one sample date. Open a result to check its date against the original report.'
+              : 'The sample date is when the sample was taken. We could not find a reliable date in this report. It is different from the upload date. Open a result to check or correct its date.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
   }
 
   static String _statusLabel(String status) {
@@ -430,19 +503,19 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       case 'uploading':
         return 'Uploading';
       case 'queued':
-        return 'Queued for parsing';
+        return 'Waiting to process';
       case 'parsing':
-        return 'Parsing in progress';
+        return 'Reading report';
       case 'parsed':
-        return 'Parsed';
+        return 'Ready to review';
       case 'content_not_recognized':
-        return 'Extraction incomplete';
+        return 'Some results need review';
       case 'unparsed':
-        return 'Unparsed';
+        return 'Could not read report';
       case 'failed_transient':
-        return 'Processing stopped — retry available';
+        return 'Processing stopped';
       case 'failed_terminal':
-        return 'Parsing failed';
+        return 'Could not process report';
       default:
         return status;
     }
@@ -468,7 +541,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     return Scaffold(
       key: const Key('report-detail-scaffold'),
       appBar: AppBar(
-        title: const Text('Report'),
+        title: const Text('Report details'),
         leading: IconButton(
           key: const Key('report-detail-back'),
           icon: const Icon(Icons.arrow_back),
@@ -476,15 +549,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ),
         actions: [
           if (_report != null && _state == _ReportDetailState.loaded) ...[
-            IconButton(
-              key: const Key('report-detail-delete'),
-              tooltip: 'Delete report',
-              onPressed: _onDeleteReport,
-              icon: Icon(
-                Icons.delete_outline,
-                color: Theme.of(context).colorScheme.error,
+            if (_report!.status == 'parsed' && widget.onShareReport != null)
+              IconButton(
+                key: const Key('report-detail-share'),
+                tooltip: 'Share report',
+                onPressed: () => widget.onShareReport!(_report!),
+                icon: const Icon(Icons.share_outlined),
               ),
-            ),
             PopupMenuButton<_ReportAction>(
               key: const Key('report-detail-more-actions'),
               tooltip: 'More report actions',
@@ -511,10 +582,36 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     value: _ReportAction.reassign,
                     child: ListTile(
                       leading: Icon(Icons.swap_horiz),
-                      title: Text('Reassign to profile'),
+                      title: Text('Move report'),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
+                if (_report!.parsedTranscript?.trim().isNotEmpty == true)
+                  const PopupMenuItem(
+                    value: _ReportAction.readParsed,
+                    child: ListTile(
+                      leading: Icon(Icons.menu_book_outlined),
+                      title: Text('Read parsed report'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                PopupMenuItem(
+                  value: _ReportAction.delete,
+                  child: ListTile(
+                    key: const Key('report-detail-delete'),
+                    leading: Icon(
+                      Icons.delete_outline,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    title: Text(
+                      'Move to recycle bin',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
               ],
             ),
           ],
@@ -608,6 +705,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ? Colors.orange.shade700
         : _statusColor(context, report.status);
     final results = _displayResults(report);
+    final sampleDate = report.collectionDate?.trim();
+    final hasMultipleSampleDates = report.collectionDateStatus == 'multiple';
+    final hasSampleDate =
+        !hasMultipleSampleDates && sampleDate != null && sampleDate.isNotEmpty;
+    final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    );
 
     return SingleChildScrollView(
       key: const Key('report-detail-content'),
@@ -615,18 +719,15 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
+            key: const Key('report-detail-overview'),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).colorScheme.primaryContainer,
-                  Theme.of(context).colorScheme.surfaceContainerHighest,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+              borderRadius: BorderRadius.circular(16),
+              color: Theme.of(context).colorScheme.surface,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
               ),
             ),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -635,6 +736,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                   children: [
                     Icon(
                       Icons.description_outlined,
+                      size: 20,
                       color: Theme.of(context).colorScheme.primary,
                     ),
                     const SizedBox(width: 8),
@@ -642,59 +744,119 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       child: Text(
                         report.originalFileName,
                         style: Theme.of(context).textTheme.titleMedium,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                if (report.structuredReport?.labDetails?.name
+                        ?.trim()
+                        .isNotEmpty ==
+                    true) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    report.structuredReport!.labDetails!.name!.trim(),
+                    style: mutedStyle,
+                  ),
+                ],
+                const SizedBox(height: 8),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 12,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Chip(
-                      avatar: Icon(Icons.circle, size: 10, color: statusColor),
-                      label: Text(
-                        report.structuredReport?.extractionReview?.required ==
-                                true
-                            ? 'Extraction incomplete'
-                            : _statusLabel(report.status),
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '● ',
+                            style: TextStyle(color: statusColor),
+                          ),
+                          TextSpan(
+                            text:
+                                report
+                                        .structuredReport
+                                        ?.extractionReview
+                                        ?.required ==
+                                    true
+                                ? 'Some results need review'
+                                : _statusLabel(report.status),
+                          ),
+                        ],
                       ),
+                      style: mutedStyle,
                     ),
-                    Chip(
-                      avatar: const Icon(Icons.event, size: 16),
-                      label: Text(
-                        'Collected: ${report.collectionDateStatus == 'multiple'
-                            ? 'Multiple collection dates'
-                            : report.collectionDate == null || report.collectionDate!.trim().isEmpty
-                            ? 'Unknown'
-                            : AppDateFormat.fromRaw(report.collectionDate!)}',
+                    Text(
+                      'Uploaded ${AppDateFormat.date(report.createdAt)}',
+                      style: mutedStyle,
+                    ),
+                    if (hasSampleDate)
+                      Text(
+                        'Sampled ${AppDateFormat.fromRaw(sampleDate)}',
+                        style: mutedStyle,
+                      )
+                    else
+                      InkWell(
+                        key: const Key('report-detail-sample-date-help'),
+                        onTap: () =>
+                            _showSampleDateHelp(hasMultipleSampleDates),
+                        borderRadius: BorderRadius.circular(4),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: hasMultipleSampleDates
+                                      ? 'Multiple sample dates '
+                                      : 'Sample date not found ',
+                                ),
+                                WidgetSpan(
+                                  alignment: PlaceholderAlignment.middle,
+                                  child: Icon(
+                                    Icons.info_outline,
+                                    size: 15,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            style: mutedStyle,
+                          ),
+                        ),
                       ),
-                    ),
-                    Chip(
-                      avatar: const Icon(Icons.cloud_upload_outlined, size: 16),
-                      label: Text('Uploaded: ${_formatDate(report.createdAt)}'),
-                    ),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            key: const Key('report-detail-view-pdf'),
-            onPressed: _openPdf,
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            label: const Text('View original'),
-          ),
-          if (report.parsedTranscript?.trim().isNotEmpty == true) ...[
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              key: const Key('report-detail-open-parsed-reader'),
-              onPressed: _openParsedReportReader,
-              icon: const Icon(Icons.menu_book_outlined),
-              label: const Text('Read parsed report'),
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 4,
+              runSpacing: 0,
+              children: [
+                TextButton.icon(
+                  key: const Key('report-detail-open-trends'),
+                  onPressed: _openTrends,
+                  icon: const Icon(Icons.show_chart_outlined, size: 18),
+                  label: const Text('View trends'),
+                ),
+                TextButton.icon(
+                  key: const Key('report-detail-open-original'),
+                  onPressed: _openPdf,
+                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                  label: const Text('Original file'),
+                ),
+              ],
             ),
-          ],
+          ),
+          const SizedBox(height: 8),
           if (report.status == 'uploading' ||
               report.status == 'queued' ||
               report.status == 'parsing') ...[
@@ -748,7 +910,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             ),
           ],
           if (results.isNotEmpty) ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
             Text(
               report.status == 'content_not_recognized'
                   ? 'Verified results'
@@ -1066,11 +1228,13 @@ class _ResultCard extends StatelessWidget {
                 if (result.reviewState == 'needs_review') ...[
                   Text(
                     result.reviewVersion == 0 &&
-                            result.sourceSnapshot?['valueSource'] == 'ai_suggestion'
+                            result.sourceSnapshot?['valueSource'] ==
+                                'ai_suggestion'
                         ? 'Value checked by AI during processing. Original OCR: ${result.sourceSnapshot?['originalValue']}. Confirm it against the report.'
-                        : result.sourceSnapshot?['rangeSource'] == 'ai_suggestion'
-                            ? 'Range interpreted by AI during processing. Check the original report.'
-                            : 'Check this result against the original report before relying on it.',
+                        : result.sourceSnapshot?['rangeSource'] ==
+                              'ai_suggestion'
+                        ? 'Range interpreted by AI during processing. Check the original report.'
+                        : 'Check this result against the original report before relying on it.',
                   ),
                   const SizedBox(height: 8),
                 ],

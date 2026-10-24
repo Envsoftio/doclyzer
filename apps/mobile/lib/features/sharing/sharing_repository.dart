@@ -5,6 +5,10 @@ class ShareLink {
     required this.shareUrl,
     required this.profileId,
     required this.scope,
+    this.reportIds,
+    this.labValueIds,
+    this.requiresAccessCode = false,
+    this.accessCode,
     required this.isActive,
     required this.createdAt,
     this.expiresAt,
@@ -14,6 +18,10 @@ class ShareLink {
   final String shareUrl;
   final String profileId;
   final String scope;
+  final List<String>? reportIds;
+  final List<String>? labValueIds;
+  final bool requiresAccessCode;
+  final String? accessCode;
   final bool isActive;
   final DateTime createdAt;
   final DateTime? expiresAt;
@@ -25,6 +33,10 @@ class ShareLink {
       shareUrl: d['shareUrl'] as String,
       profileId: d['profileId'] as String,
       scope: d['scope'] as String,
+      reportIds: (d['reportIds'] as List<dynamic>?)?.cast<String>(),
+      labValueIds: (d['labValueIds'] as List<dynamic>?)?.cast<String>(),
+      requiresAccessCode: d['requiresAccessCode'] as bool? ?? false,
+      accessCode: d['accessCode'] as String?,
       isActive: d['isActive'] as bool,
       createdAt: DateTime.parse(d['createdAt'] as String),
       expiresAt: d['expiresAt'] != null
@@ -39,9 +51,7 @@ class SharePolicy {
   final int? defaultExpiresInDays;
 
   factory SharePolicy.fromJson(Map<String, dynamic> d) {
-    return SharePolicy(
-      defaultExpiresInDays: d['defaultExpiresInDays'] as int?,
-    );
+    return SharePolicy(defaultExpiresInDays: d['defaultExpiresInDays'] as int?);
   }
 }
 
@@ -65,8 +75,17 @@ class ShareAccessEvent {
 }
 
 abstract class SharingRepository {
-  Future<ShareLink> createShareLink(String profileId, {DateTime? expiresAt});
-  Future<List<ShareLink>> listShareLinks(String profileId);
+  Future<ShareLink> createShareLink(
+    String profileId, {
+    DateTime? expiresAt,
+    List<String>? reportIds,
+    List<String>? labValueIds,
+    bool requireAccessCode = false,
+  });
+  Future<List<ShareLink>> listShareLinks(
+    String profileId, {
+    bool includePast = false,
+  });
   Future<void> revokeShareLink(String id);
   Future<ShareLink> setShareLinkExpiry(String id, DateTime? expiresAt);
   Future<SharePolicy> getSharePolicy();

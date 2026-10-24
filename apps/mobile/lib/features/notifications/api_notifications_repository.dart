@@ -7,6 +7,33 @@ class ApiNotificationsRepository implements NotificationsRepository {
   final ApiClient _client;
 
   @override
+  Future<List<InboxNotification>> getInbox() async {
+    final res = await _client.get('v1/notifications/inbox');
+    final data = res['data'] as Map<String, dynamic>;
+    final items = data['items'] as List<dynamic>? ?? const [];
+    return items.map((item) {
+      final json = item as Map<String, dynamic>;
+      return InboxNotification(
+        id: json['id'] as String,
+        type: json['type'] as String? ?? 'product',
+        title: json['title'] as String? ?? '',
+        body: json['body'] as String? ?? '',
+        occurredAt: DateTime.parse(json['occurredAt'] as String),
+        sourceType: json['sourceType'] as String,
+        read: json['read'] as bool? ?? false,
+        deepLink: json['deepLink'] as String?,
+      );
+    }).toList();
+  }
+
+  @override
+  Future<void> markInboxRead(String sourceType, String id) async {
+    await _client.post(
+      'v1/notifications/inbox/${Uri.encodeComponent(sourceType)}/${Uri.encodeComponent(id)}/read',
+    );
+  }
+
+  @override
   Future<PushDeviceToken> registerDeviceToken(
     RegisterPushTokenInput input,
   ) async {

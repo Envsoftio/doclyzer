@@ -16,6 +16,7 @@ import '../reports_repository.dart';
 import 'pdf_viewer_screen.dart';
 import 'report_detail_screen.dart';
 import 'report_review_screen.dart';
+import 'report_pages_screen.dart';
 
 enum _UploadState {
   idle,
@@ -44,6 +45,7 @@ class UploadReportScreen extends StatefulWidget {
     this.initialReport,
     this.initialDuplicateExistingReport,
     this.initialDuplicatePendingPath,
+    this.onShareReport,
   });
 
   final ReportsRepository reportsRepository;
@@ -56,6 +58,7 @@ class UploadReportScreen extends StatefulWidget {
   final VoidCallback? onUpgrade;
   final PublicIncidentStatus? incidentStatus;
   final SupportRepository supportRepository;
+  final ValueChanged<Report>? onShareReport;
 
   /// For testing: when set, shows result state immediately (bypasses file pick).
   final UploadedReport? initialReport;
@@ -156,21 +159,42 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   }
 
   Future<void> _captureAndUpload() async {
-    await _pickImage(ImageSource.camera);
-  }
-
-  Future<void> _pickImage(ImageSource source) async {
     try {
       final image = await _imagePicker.pickImage(
-        source: source,
+        source: ImageSource.camera,
         imageQuality: 95,
       );
-      if (image != null && mounted) _selectPath(image.path);
+      if (image != null && mounted) await _reviewPages([image.path]);
     } catch (_) {
       _showPickerError(
-        'Could not open camera or photos. Check permission and try again.',
+        'Could not open camera. Check permission and try again.',
       );
     }
+  }
+
+  Future<void> _pickGalleryPages() async {
+    try {
+      final images = await _imagePicker.pickMultiImage(imageQuality: 95);
+      if (images.isNotEmpty && mounted) {
+        await _reviewPages(images.map((image) => image.path).toList());
+      }
+    } catch (_) {
+      _showPickerError(
+        'Could not open photos. Check permission and try again.',
+      );
+    }
+  }
+
+  Future<void> _reviewPages(List<String> paths) async {
+    final pdfPath = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => ReportPagesScreen(
+          profileName: widget.activeProfileName,
+          initialPaths: paths,
+        ),
+      ),
+    );
+    if (pdfPath != null && mounted) await _uploadFromPath(pdfPath);
   }
 
   Future<void> _recoverLostImage() async {
@@ -427,7 +451,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Upload Report'),
+        title: const Text('Upload report'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: _state == _UploadState.uploading ? null : widget.onBack,
@@ -460,21 +484,33 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
                       _buildDestination(),
                       const SizedBox(height: AppSpacing.lg),
                     ],
-                    switch (_state) {
-                      _UploadState.idle => _buildIdle(),
-                      _UploadState.selected => _buildSelected(),
-                      _UploadState.uploading => _buildProgress(
-                        'Uploading report…',
+                    AnimatedSwitcher(
+                      duration: MediaQuery.disableAnimationsOf(context)
+                          ? Duration.zero
+                          : const Duration(milliseconds: 240),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      child: KeyedSubtree(
+                        key: ValueKey(_state),
+                        child: switch (_state) {
+                          _UploadState.idle => _buildIdle(),
+                          _UploadState.selected => _buildSelected(),
+                          _UploadState.uploading => _buildProgress(
+                            'Uploading report…',
+                          ),
+                          _UploadState.reading => _buildProgress(
+                            'Organizing your report…',
+                          ),
+                          _UploadState.success =>
+                            _isParseFailure()
+                                ? _buildParseFailure()
+                                : _buildSuccess(),
+                          _UploadState.duplicate => _buildDuplicateDialog(),
+                          _UploadState.limit => _buildLimitWarning(),
+                          _UploadState.error => _buildError(),
+                        },
                       ),
-                      _UploadState.reading => _buildProgress('Reading report…'),
-                      _UploadState.success =>
-                        _isParseFailure()
-                            ? _buildParseFailure()
-                            : _buildSuccess(),
-                      _UploadState.duplicate => _buildDuplicateDialog(),
-                      _UploadState.limit => _buildLimitWarning(),
-                      _UploadState.error => _buildError(),
-                    },
+                    ),
                   ],
                 ),
               ),
@@ -551,10 +587,10 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        Text('Add a report', style: theme.textTheme.headlineSmall),
+        Text('Upload a report', style: theme.textTheme.headlineSmall),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Choose a PDF or a clear photo of your report.',
+          'Choose a PDF or a clear photo. You can check details before saving.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: colors.onSurfaceVariant,
           ),
@@ -580,23 +616,23 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
               _buildSourceOption(
                 key: const Key('upload-report-pick'),
                 icon: Icons.upload_file_outlined,
-                title: 'Pick PDF or Image',
-                subtitle: 'Browse files on your device',
+                title: 'Upload PDF or image',
+                subtitle: 'Choose a report from your files',
                 onTap: _pickAndUpload,
               ),
               Divider(height: 1, indent: 72, color: colors.outlineVariant),
               _buildSourceOption(
                 icon: Icons.photo_library_outlined,
-                title: 'Choose Photo',
-                subtitle: 'Select from your gallery',
-                onTap: () => _pickImage(ImageSource.gallery),
+                title: 'Choose from gallery',
+                subtitle: 'Select one or more report pages',
+                onTap: _pickGalleryPages,
               ),
               Divider(height: 1, indent: 72, color: colors.outlineVariant),
               _buildSourceOption(
                 key: const Key('upload-report-camera'),
                 icon: Icons.photo_camera_outlined,
-                title: 'Take Photo',
-                subtitle: 'Use your camera',
+                title: 'Take a photo',
+                subtitle: 'Capture a complete page',
                 onTap: _captureAndUpload,
               ),
             ],
@@ -718,7 +754,9 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
 
   bool _isParseFailure() {
     final r = _result;
-    return r != null && _isParseFailureStatus(r.status);
+    return r != null &&
+        r.status != 'unparsed' &&
+        _isParseFailureStatus(r.status);
   }
 
   bool _isParseFailureStatus(String status) {
@@ -792,10 +830,28 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     if (r == null) return;
     try {
       await widget.reportsRepository.keepFile(r.reportId);
-    } catch (_) {
-      // Idempotent; already unparsed is fine
+      if (!mounted) return;
+      setState(() {
+        _result = UploadedReport(
+          reportId: r.reportId,
+          profileId: r.profileId,
+          fileName: r.fileName,
+          contentType: r.contentType,
+          sizeBytes: r.sizeBytes,
+          status: 'unparsed',
+          reused: r.reused,
+        );
+        _state = _UploadState.success;
+        _errorMessage = null;
+      });
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _errorMessage =
+              'Could not save the original yet. ${error.toString().replaceFirst('Exception: ', '')}',
+        );
+      }
     }
-    if (mounted) widget.onComplete();
   }
 
   void _onViewPdf() {
@@ -824,6 +880,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           reportId: report.reportId,
           profileId: report.profileId,
           onBack: () => Navigator.of(routeContext).pop(),
+          onShareReport: widget.onShareReport,
         ),
       ),
     );
@@ -966,6 +1023,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   Widget _buildSuccess() {
     final r = _result;
     final status = r?.status ?? '';
+    final originalOnly = status == 'unparsed';
     final processingInProgress =
         status == 'uploading' || status == 'queued' || status == 'parsing';
     final statusMessage = switch (status) {
@@ -975,6 +1033,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         'Your report is still being analyzed. Open it to check its status.',
       'failed_transient' =>
         'Processing stopped. Your file is saved. You can retry.',
+      'unparsed' =>
+        'No extracted test values were added. You can still open and share the document. Your trends are unchanged.',
       _ => null,
     };
     return Column(
@@ -987,7 +1047,9 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          r?.reused == true
+          originalOnly
+              ? 'Your original is saved.'
+              : r?.reused == true
               ? 'Report already in ${widget.activeProfileName}'
               : 'Report added to ${widget.activeProfileName}',
           style: Theme.of(context).textTheme.titleMedium,
@@ -1002,23 +1064,41 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
+        if (_errorMessage case final error?) ...[
+          const SizedBox(height: 8),
+          Text(
+            error,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
         const SizedBox(height: 24),
-        FilledButton.icon(
-          key: const Key('upload-view-results'),
-          onPressed: _onViewReport,
-          icon: Icon(
-            processingInProgress ? Icons.schedule : Icons.analytics_outlined,
+        if (!originalOnly)
+          FilledButton.icon(
+            key: const Key('upload-view-results'),
+            onPressed: _onViewReport,
+            icon: Icon(
+              processingInProgress ? Icons.schedule : Icons.analytics_outlined,
+            ),
+            label: Text(
+              processingInProgress ? 'View report status' : 'View results',
+            ),
           ),
-          label: Text(
-            processingInProgress ? 'View report status' : 'View results',
-          ),
-        ),
         const SizedBox(height: 8),
         OutlinedButton(
           key: const Key('view-pdf-button'),
           onPressed: _onViewPdf,
-          child: const Text('View original file'),
+          child: Text(
+            originalOnly ? 'View original report' : 'View original file',
+          ),
         ),
+        if (originalOnly) ...[
+          const SizedBox(height: 8),
+          OutlinedButton(
+            key: const Key('original-only-retry'),
+            onPressed: _onRetry,
+            child: const Text('Retry extraction'),
+          ),
+        ],
         const SizedBox(height: 8),
         TextButton(
           key: const Key('upload-report-done'),

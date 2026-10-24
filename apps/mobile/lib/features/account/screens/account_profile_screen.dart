@@ -8,6 +8,9 @@ import '../account_repository.dart';
 import '../account_avatar.dart';
 import '../../billing/billing_repository.dart';
 import '../restriction_repository.dart';
+import '../../support/support_models.dart';
+import '../../support/support_repository.dart';
+import '../../support/support_request_sheet.dart';
 
 class AccountProfileScreen extends StatefulWidget {
   const AccountProfileScreen({
@@ -26,6 +29,12 @@ class AccountProfileScreen extends StatefulWidget {
     this.onGoToSessions,
     this.onGoToNotifications,
     this.onGoToDataRights,
+    this.onGoToPrivacy,
+    this.onGoToExport,
+    this.onGoToHelp,
+    this.onGoToAbout,
+    this.onGoToSharedLinks,
+    this.supportRepository,
     this.onLogout,
   });
 
@@ -43,6 +52,12 @@ class AccountProfileScreen extends StatefulWidget {
   final VoidCallback? onGoToSessions;
   final VoidCallback? onGoToNotifications;
   final VoidCallback? onGoToDataRights;
+  final VoidCallback? onGoToPrivacy;
+  final VoidCallback? onGoToExport;
+  final VoidCallback? onGoToHelp;
+  final VoidCallback? onGoToAbout;
+  final VoidCallback? onGoToSharedLinks;
+  final SupportRepository? supportRepository;
   final VoidCallback? onLogout;
 
   @override
@@ -290,17 +305,9 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                               : 'Tap to load your profile'),
                       style: theme.textTheme.bodySmall,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Edit profile',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right),
             ],
           ),
         ),
@@ -334,150 +341,220 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
     );
   }
 
+  Widget _settingsTile({
+    Key? key,
+    required IconData icon,
+    required String label,
+    required VoidCallback? onTap,
+    String? subtitle,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    return ListTile(
+      key: key,
+      contentPadding: EdgeInsets.zero,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colors.primaryContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, size: 20, color: colors.primary),
+      ),
+      title: Text(label, style: Theme.of(context).textTheme.titleSmall),
+      subtitle: subtitle == null ? null : Text(subtitle),
+      trailing: const Icon(Icons.chevron_right, size: 20),
+      onTap: onTap,
+    );
+  }
+
   Widget _buildSettings() {
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Card(
-          child: Column(
-            children: [
-              if (widget.onGoToProfiles != null) ...[
-                ListTile(
-                  key: const Key('account-family-profiles'),
-                  leading: Icon(
-                    Icons.people_outline,
-                    color: theme.colorScheme.primary,
-                  ),
-                  title: const Text('Family profiles'),
-                  subtitle: const Text('Switch or manage profiles'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: widget.onGoToProfiles,
-                ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
-              ],
-              if (widget.onGoToBilling != null)
-                FutureBuilder<EntitlementSummary>(
-                  future: _entitlement,
-                  builder: (context, snapshot) {
-                    final summary = snapshot.data;
-                    return ListTile(
-                      key: const Key('account-credits'),
-                      leading: Icon(
-                        Icons.account_balance_wallet_outlined,
-                        color: theme.colorScheme.primary,
-                      ),
-                      title: const Text('Plan & credits'),
-                      subtitle: Text(
-                        summary != null
-                            ? '${summary.planName} · ${summary.creditBalance.toStringAsFixed(summary.creditBalance % 1 == 0 ? 0 : 1)} credits'
-                            : snapshot.hasError
-                            ? 'View your plan and balance'
-                            : 'Loading balance…',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: widget.onGoToBilling,
-                    );
-                  },
-                ),
-              if (widget.onGoToReferrals != null) ...[
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                ListTile(
-                  key: const Key('account-referrals'),
-                  leading: Icon(
-                    Icons.card_giftcard_outlined,
-                    color: theme.colorScheme.primary,
-                  ),
-                  title: const Text('Refer friends'),
-                  subtitle: const Text('Invites and referral rewards'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: widget.onGoToReferrals,
-                ),
-              ],
-            ],
+        Text(
+          'ACCOUNT & DATA',
+          style: theme.textTheme.labelSmall?.copyWith(
+            letterSpacing: 1.2,
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 24),
-        Text('Appearance', style: theme.textTheme.titleLarge),
         const SizedBox(height: 12),
-        Card(
-          child: Padding(
+        _settingsTile(
+          icon: Icons.person_outline_rounded,
+          label: 'Personal information',
+          onTap: _openProfileEditor,
+        ),
+        _settingsTile(
+          icon: Icons.notifications_none_rounded,
+          label: 'Notification preferences',
+          onTap: widget.onGoToNotifications,
+        ),
+        _settingsTile(
+          icon: Icons.shield_outlined,
+          label: 'Privacy & security',
+          onTap: widget.onGoToPrivacy ?? widget.onGoToDataRights,
+        ),
+        _settingsTile(
+          icon: Icons.link_outlined,
+          label: 'Shared links',
+          onTap: widget.onGoToSharedLinks,
+        ),
+        _settingsTile(
+          icon: Icons.download_outlined,
+          label: 'Export your data',
+          onTap: widget.onGoToExport ?? widget.onGoToDataRights,
+        ),
+        if (widget.onGoToProfiles != null ||
+            widget.onGoToBilling != null ||
+            widget.onGoToReferrals != null ||
+            widget.onGoToSessions != null ||
+            widget.onThemeChanged != null) ...[
+          const SizedBox(height: 28),
+          Container(
+            key: const Key('additional-account-information'),
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
               children: [
-                Text(
-                  'Choose how Doclyzer looks',
-                  style: theme.textTheme.bodyMedium,
+                Icon(
+                  Icons.manage_accounts_outlined,
+                  color: theme.colorScheme.onPrimaryContainer,
                 ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final choice in [
-                      (
-                        ThemeMode.system,
-                        'System',
-                        Icons.brightness_auto_outlined,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Additional account information',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
                       ),
-                      (ThemeMode.light, 'Light', Icons.light_mode_outlined),
-                      (ThemeMode.dark, 'Dark', Icons.dark_mode_outlined),
-                    ])
-                      ChoiceChip(
-                        key: Key('appearance-${choice.$1.name}'),
-                        showCheckmark: false,
-                        avatar: Icon(choice.$3, size: 18),
-                        label: Text(choice.$2),
-                        selected: widget.themeMode == choice.$1,
-                        onSelected: widget.onThemeChanged == null
-                            ? null
-                            : (_) => widget.onThemeChanged!(choice.$1),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Family, plan, referrals, sessions and appearance',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'System follows your device settings.',
-                  style: theme.textTheme.bodySmall,
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-        const SizedBox(height: 24),
-        Text('Settings', style: theme.textTheme.titleLarge),
-        const SizedBox(height: 12),
-        Card(
-          child: Column(
-            children: [
-              for (final item in [
-                (
-                  Icons.devices_outlined,
-                  'Active sessions',
-                  widget.onGoToSessions,
-                ),
-                (
-                  Icons.notifications_outlined,
-                  'Notifications',
-                  widget.onGoToNotifications,
-                ),
-                (
-                  Icons.shield_outlined,
-                  'Privacy & data',
-                  widget.onGoToDataRights,
-                ),
-              ])
-                if (item.$3 != null)
-                  ListTile(
-                    leading: Icon(item.$1),
-                    title: Text(item.$2),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: item.$3,
+          const SizedBox(height: 8),
+          if (widget.onGoToProfiles != null)
+            _settingsTile(
+              key: const Key('account-family-profiles'),
+              icon: Icons.people_outline,
+              label: 'Family profiles',
+              subtitle: 'Switch or manage profiles',
+              onTap: widget.onGoToProfiles,
+            ),
+          if (widget.onGoToBilling != null)
+            FutureBuilder<EntitlementSummary>(
+              future: _entitlement,
+              builder: (context, snapshot) {
+                final summary = snapshot.data;
+                return _settingsTile(
+                  key: const Key('account-credits'),
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: 'Plan & credits',
+                  subtitle: summary != null
+                      ? '${summary.planName} · ${summary.creditBalance.toStringAsFixed(summary.creditBalance % 1 == 0 ? 0 : 1)} credits'
+                      : snapshot.hasError
+                      ? 'View your plan and balance'
+                      : 'Loading balance…',
+                  onTap: widget.onGoToBilling,
+                );
+              },
+            ),
+          if (widget.onGoToReferrals != null)
+            _settingsTile(
+              key: const Key('account-referrals'),
+              icon: Icons.card_giftcard_outlined,
+              label: 'Refer friends',
+              subtitle: 'Invites and referral rewards',
+              onTap: widget.onGoToReferrals,
+            ),
+          if (widget.onGoToSessions != null)
+            _settingsTile(
+              icon: Icons.devices_outlined,
+              label: 'Active sessions',
+              onTap: widget.onGoToSessions,
+            ),
+          if (widget.onThemeChanged != null) ...[
+            const SizedBox(height: 16),
+            Text('Appearance', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final choice in [
+                  (ThemeMode.system, 'System', Icons.brightness_auto_outlined),
+                  (ThemeMode.light, 'Light', Icons.light_mode_outlined),
+                  (ThemeMode.dark, 'Dark', Icons.dark_mode_outlined),
+                ])
+                  ChoiceChip(
+                    key: Key('appearance-${choice.$1.name}'),
+                    showCheckmark: false,
+                    avatar: Icon(choice.$3, size: 18),
+                    label: Text(choice.$2),
+                    selected: widget.themeMode == choice.$1,
+                    onSelected: (_) => widget.onThemeChanged!(choice.$1),
                   ),
-            ],
-          ),
+              ],
+            ),
+          ],
+        ],
+        const Divider(height: 32),
+        _settingsTile(
+          icon: Icons.help_outline_rounded,
+          label: 'Help & support',
+          onTap:
+              widget.onGoToHelp ??
+              (widget.supportRepository == null
+                  ? null
+                  : () => showSupportRequestSheet(
+                      context: context,
+                      supportRepository: widget.supportRepository!,
+                      supportContext: buildSupportRequestContext(
+                        actionType: SupportActionType.productHelp,
+                      ),
+                    )),
         ),
+        _settingsTile(
+          icon: Icons.info_outline_rounded,
+          label: 'About Doclyzer',
+          onTap:
+              widget.onGoToAbout ??
+              () => showAboutDialog(
+                context: context,
+                applicationName: 'Doclyzer',
+                children: const [
+                  Text(
+                    'Keep reports organized by person and review extracted results against the original.',
+                  ),
+                ],
+              ),
+        ),
+        if (widget.onLogout != null) ...[
+          const SizedBox(height: 24),
+          TextButton.icon(
+            onPressed: widget.onLogout,
+            icon: const Icon(Icons.logout_rounded),
+            label: const Text('Log out'),
+          ),
+        ],
       ],
     );
   }
@@ -489,7 +566,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(widget.editProfile ? 'Edit profile' : 'Account'),
+        title: Text(widget.editProfile ? 'Personal information' : 'Profile'),
         leading: widget.showBackButton
             ? BackButton(onPressed: widget.onBack)
             : null,
@@ -511,20 +588,12 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             )
           : null,
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         children: [
           if (!widget.editProfile) ...[
             _buildProfileHeader(),
             const SizedBox(height: 24),
             _buildSettings(),
-            if (widget.onLogout != null) ...[
-              const SizedBox(height: 24),
-              OutlinedButton.icon(
-                onPressed: widget.onLogout,
-                icon: const Icon(Icons.logout),
-                label: const Text('Log out'),
-              ),
-            ],
           ],
           if (widget.editProfile)
             _loading
@@ -593,7 +662,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Your details',
+                        'Account details',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 12),
@@ -611,9 +680,10 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                         decoration: const InputDecoration(
-                          labelText: 'Email',
+                          labelText: 'Email address',
                           prefixIcon: Icon(Icons.mail_outline_rounded),
-                          helperText: 'Email cannot be changed here',
+                          helperText:
+                              'Used for account access. Contact support to change it.',
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -626,7 +696,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                         decoration: const InputDecoration(
-                          labelText: 'Display name',
+                          labelText: 'Account name',
                           prefixIcon: Icon(Icons.person_outline_rounded),
                         ),
                         maxLength: 100,

@@ -164,7 +164,8 @@ void main() {
       ),
     );
     expect(tester.takeException(), isNull);
-    expect(find.text('You'), findsOneWidget);
+    expect(find.text('Family'), findsOneWidget);
+    expect(find.text('Profile'), findsOneWidget);
   });
 
   test('system bars use readable icons for both device themes', () {

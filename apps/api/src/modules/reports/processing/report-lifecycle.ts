@@ -10,6 +10,7 @@ export async function cancelReportProcessing(
   userId: string,
   reportId: string,
   deleted: boolean,
+  originalOnly = false,
 ): Promise<void> {
   await db.transaction(async (m) => {
     await m.query(
@@ -21,6 +22,16 @@ export async function cancelReportProcessing(
       [reportId, userId],
     );
     if (!r || !r.processing_generation) throw new NotFoundException();
+    if (originalOnly && r.status === 'parsed')
+      throw new ConflictException({ code: 'REPORT_ALREADY_PARSED' });
+    if (originalOnly) {
+      const [{ count }] = await m.query(
+        'SELECT count(*)::integer AS count FROM report_lab_values WHERE report_id=$1 AND review_version>0',
+        [reportId],
+      );
+      if (count)
+        throw new ConflictException({ code: 'REPORT_HAS_CORRECTIONS' });
+    }
     await m.query(
       `UPDATE report_job_executions SET outcome='cancelled',finished_at=clock_timestamp() WHERE job_id IN(SELECT id FROM report_processing_jobs WHERE report_id=$1) AND outcome='running'`,
       [reportId],
@@ -38,15 +49,23 @@ export async function cancelReportProcessing(
       'DELETE FROM report_processing_content_claims WHERE report_id=$1',
       [reportId],
     );
-    if (r.processing_state !== 'cancelled' || (deleted && !r.deleted_at)) {
+    if (r.processing_state !== 'cancelled' || (deleted && !r.deleted_at) || originalOnly) {
       const [rows] = await m.query(
         `UPDATE reports SET processing_state='cancelled',processing_stage='complete',processing_version=processing_version+1,
         processing_completed_at=clock_timestamp(),processing_retry_at=NULL,
+        status=CASE WHEN $3 THEN 'unparsed' ELSE status END,
+        summary=CASE WHEN $3 THEN NULL ELSE summary END,
+        parsed_transcript=CASE WHEN $3 THEN NULL ELSE parsed_transcript END,
+        structured_report=CASE WHEN $3 THEN NULL ELSE structured_report END,
         deleted_at=CASE WHEN $2 THEN clock_timestamp() ELSE deleted_at END,
         purge_after_at=CASE WHEN $2 THEN clock_timestamp()+interval '30 days' ELSE purge_after_at END
         WHERE id=$1 RETURNING processing_version`,
-        [reportId, deleted],
+        [reportId, deleted, originalOnly],
       );
+      if (originalOnly) {
+        await m.query('DELETE FROM report_lab_values WHERE report_id=$1', [reportId]);
+        await m.query('DELETE FROM report_result_insights WHERE report_id=$1', [reportId]);
+      }
       await appendReportEvent(m, userId, {
         schemaVersion: 1,
         reportId,

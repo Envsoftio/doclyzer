@@ -48,6 +48,14 @@ class DataRightsException implements Exception {
 abstract class DataRightsRepository {
   Future<DataExportRequest> createExportRequest();
 
+  Future<DataExportRequest> createScopedExportRequest({
+    String? profileId,
+    DateTime? from,
+    DateTime? to,
+    bool includeOriginals = true,
+    bool includeResults = true,
+  }) => throw const DataRightsException('Scoped export is unavailable.');
+
   Future<DataExportRequest> getExportRequest(String requestId);
 
   Future<ClosureRequest> createClosureRequest({

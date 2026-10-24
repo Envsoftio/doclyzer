@@ -49,40 +49,48 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
     final position = compareWithPrintedRange(result);
     final palette = ResultPalette.forPosition(context, position);
     final status = switch (position) {
-      RangePosition.below => 'Below the listed lab range',
-      RangePosition.within => 'Within the listed lab range',
-      RangePosition.above => 'Above the listed lab range',
-      RangePosition.unknown => 'Range comparison unavailable',
+      RangePosition.below => "Below this lab's reference range",
+      RangePosition.within => "Within this lab's reference range",
+      RangePosition.above => "Above this lab's reference range",
+      RangePosition.unknown => 'Cannot compare with the lab range',
     };
 
     return Scaffold(
       appBar: AppBar(title: const Text('Understand this result')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           children: [
             Container(
               key: const Key('result-insight-hero'),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: palette.background,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: palette.foreground.withValues(alpha: 0.22),
-                ),
+                border: Border.all(color: colors.outlineVariant),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'YOUR LAB RESULT',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: palette.foreground,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                    ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.science_outlined,
+                        size: 17,
+                        color: colors.primary,
+                      ),
+                      const SizedBox(width: 7),
+                      Text(
+                        'YOUR RESULT',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colors.primary,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
                     result.parameterName,
                     style: theme.textTheme.headlineSmall?.copyWith(
@@ -90,7 +98,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                       color: colors.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 6),
                   Text(
                     result.unit?.trim().isNotEmpty == true
                         ? '${result.value} ${result.unit}'
@@ -99,14 +107,15 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                     style: theme.textTheme.displaySmall?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: palette.foreground,
+                      fontSize: 36,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: palette.foreground.withValues(alpha: 0.10),
+                      color: palette.background,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
@@ -127,7 +136,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
                   if (position == RangePosition.unknown) ...[
                     Text(
                       unavailableRangeReason(result),
@@ -161,10 +170,10 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                     const SizedBox(height: 10),
                   ],
                   _ResultFact(
-                    label: 'Lab range',
+                    label: 'Lab reference range',
                     value: result.referenceRange?.trim().isNotEmpty == true
                         ? '${result.referenceRange} ${result.unit ?? ''}'.trim()
-                        : 'Not captured',
+                        : 'Not available in this result',
                   ),
                   if (result.sampleDate?.trim().isNotEmpty == true) ...[
                     const SizedBox(height: 8),
@@ -178,14 +187,30 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
+            _ContextNote(
+              icon: Icons.info_outline_rounded,
+              text:
+                  'The lab range comes from your report. The comparison '
+                  'alone cannot explain what a result means for you.',
+            ),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              key: const Key('result-insight-trend'),
+              onPressed: widget.onViewTrend,
+              icon: const Icon(Icons.show_chart),
+              label: const Text('See result history'),
+            ),
+            const SizedBox(height: 26),
+            Text('Understand your result', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 5),
             Text(
-              'This value was extracted from your report. Check the original if a name, value, unit or range looks wrong.',
-              style: theme.textTheme.bodySmall?.copyWith(
+              'Educational context to help you discuss this result.',
+              style: theme.textTheme.bodyMedium?.copyWith(
                 color: colors.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
             FutureBuilder<ResultInsight>(
               future: _insight,
               builder: (context, snapshot) {
@@ -249,23 +274,35 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        'AI-GENERATED GUIDANCE',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.7,
+                        ),
+                      ),
+                    ),
                     _InsightSection(
                       icon: Icons.biotech_outlined,
                       title: 'What this test measures',
+                      child: Text(insight.testExplanation),
+                    ),
+                    _InsightSection(
+                      icon: Icons.manage_search_outlined,
+                      title: 'Understanding this result',
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Text(insight.resultExplanation),
+                          const SizedBox(height: 16),
                           Text(
-                            'AI-GENERATED EXPLANATION',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: colors.onSurfaceVariant,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.7,
-                            ),
+                            'What it could mean',
+                            style: theme.textTheme.titleSmall,
                           ),
-                          const SizedBox(height: 8),
-                          Text(insight.testExplanation),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 7),
                           Text(
                             insight.possibleSignificance,
                             key: const Key('result-insight-meaning'),
@@ -274,14 +311,31 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                       ),
                     ),
                     _InsightSection(
-                      icon: Icons.manage_search_outlined,
-                      title: 'Your result and the lab range',
-                      child: Text(insight.resultExplanation),
+                      icon: Icons.rule_outlined,
+                      title: 'What this result cannot tell you',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'One result alone cannot diagnose a condition '
+                            'or explain symptoms.',
+                          ),
+                          if (insight.dataUncertainties.isNotEmpty) ...[
+                            const SizedBox(height: 14),
+                            Text(
+                              'Details to check',
+                              style: theme.textTheme.titleSmall,
+                            ),
+                            const SizedBox(height: 7),
+                            ...insight.dataUncertainties.map(_Bullet.new),
+                          ],
+                        ],
+                      ),
                     ),
                     if (insight.lifestyleConsiderations.isNotEmpty)
                       _InsightSection(
                         icon: Icons.restaurant_outlined,
-                        title: 'Lifestyle considerations',
+                        title: 'Lifestyle factors to discuss',
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: insight.lifestyleConsiderations
@@ -294,30 +348,12 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                       title: 'Suggested next step',
                       child: Text(insight.suggestedFollowup),
                     ),
-                    if (insight.dataUncertainties.isNotEmpty)
-                      _InsightSection(
-                        icon: Icons.rule_outlined,
-                        title: 'What to check in the report',
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: insight.dataUncertainties
-                              .map((text) => _Bullet(text))
-                              .toList(),
-                        ),
-                      ),
                     const SizedBox(height: 12),
                   ],
                 );
               },
             ),
-            FilledButton.icon(
-              key: const Key('result-insight-trend'),
-              onPressed: widget.onViewTrend,
-              icon: const Icon(Icons.show_chart),
-              label: const Text('See result history'),
-            ),
             if (widget.onViewOriginal != null) ...[
-              const SizedBox(height: 8),
               OutlinedButton.icon(
                 key: const Key('result-insight-original'),
                 onPressed: widget.onViewOriginal,
@@ -335,11 +371,13 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
               ),
             ],
             const SizedBox(height: 16),
-            Text(
-              'Educational information only. It cannot diagnose a condition or tell you which treatment you need. Discuss unexpected results with a clinician.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colors.onSurfaceVariant,
-              ),
+            _ContextNote(
+              icon: Icons.verified_user_outlined,
+              text:
+                  'This value was extracted from your report. Check the '
+                  'original if the name, value, unit or range looks wrong. '
+                  'AI explanations are educational and cannot tell you '
+                  'which treatment you need.',
             ),
           ],
         ),
@@ -364,11 +402,8 @@ class _InsightSection extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Card(
-        elevation: 0,
-        color: theme.colorScheme.surfaceContainerLow,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -386,9 +421,9 @@ class _InsightSection extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 14),
               DefaultTextStyle(
-                style: theme.textTheme.bodyMedium!.copyWith(height: 1.45),
+                style: theme.textTheme.bodyMedium!.copyWith(height: 1.5),
                 child: child,
               ),
             ],
@@ -409,25 +444,47 @@ class _ResultFact extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colors.onSurface,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ContextNote extends StatelessWidget {
+  const _ContextNote({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 88,
-          child: Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colors.onSurfaceVariant,
-            ),
-          ),
-        ),
+        Icon(icon, size: 17, color: theme.colorScheme.onSurfaceVariant),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            value,
+            text,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: colors.onSurface,
-              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ),

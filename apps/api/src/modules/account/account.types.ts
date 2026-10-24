@@ -70,6 +70,9 @@ export const COMM_PREF_CATEGORY = {
   SECURITY: 'security',
   COMPLIANCE: 'compliance',
   PRODUCT: 'product',
+  REPORT_READY: 'report_ready',
+  UPLOAD_UPDATES: 'upload_updates',
+  SHARE_REMINDERS: 'share_reminders',
 } as const;
 
 export type CommPrefCategory =

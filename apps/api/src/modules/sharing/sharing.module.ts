@@ -11,6 +11,7 @@ import { ProfilesModule } from '../profiles/profiles.module';
 import { SharingController } from './sharing.controller';
 import { PublicSharingController } from './public-sharing.controller';
 import { SharingService } from './sharing.service';
+import { StorageModule } from '../../common/storage/storage.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SharingService } from './sharing.service';
     AuthModule,
     EntitlementsModule,
     ProfilesModule,
+    StorageModule,
   ],
   controllers: [SharingController, PublicSharingController],
   providers: [SharingService],

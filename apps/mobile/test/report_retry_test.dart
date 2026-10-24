@@ -62,7 +62,7 @@ void main() {
       repository.result.complete(report('parsed'));
       await tester.pumpAndSettle();
       expect(retry, findsNothing);
-      expect(find.text('Parsed'), findsOneWidget);
+      expect(find.textContaining('Ready to review'), findsOneWidget);
     },
   );
 }

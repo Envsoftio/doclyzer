@@ -30,7 +30,7 @@ export class SharingController {
   @Post('links')
   @HttpCode(HttpStatus.CREATED)
   async createShareLink(
-    @Body() body: { profileId?: string; expiresAt?: string },
+    @Body() body: { profileId?: string; expiresAt?: string; reportIds?: string[]; labValueIds?: string[]; requireAccessCode?: boolean },
     @Req() req: Request,
   ): Promise<object> {
     if (!body?.profileId) {
@@ -53,8 +53,15 @@ export class SharingController {
     const data = await this.sharingService.createShareLink(
       userId,
       body.profileId,
-      'all',
+      body.labValueIds !== undefined
+        ? 'selected_results'
+        : body.reportIds === undefined
+          ? 'all'
+          : 'selected_reports',
       expiresAt,
+      body.reportIds,
+      body.requireAccessCode === true,
+      body.labValueIds,
     );
     return successResponse(data, getCorrelationId(req));
   }
@@ -62,6 +69,7 @@ export class SharingController {
   @Get('links')
   async listShareLinks(
     @Query('profileId') profileId: string | undefined,
+    @Query('includePast') includePast: string | undefined,
     @Req() req: Request,
   ): Promise<object> {
     if (!profileId) {
@@ -71,7 +79,11 @@ export class SharingController {
       });
     }
     const { id: userId } = req.user as RequestUser;
-    const data = await this.sharingService.listShareLinks(userId, profileId);
+    const data = await this.sharingService.listShareLinks(
+      userId,
+      profileId,
+      includePast === 'true',
+    );
     return successResponse(data, getCorrelationId(req));
   }
 

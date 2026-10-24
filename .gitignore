@@ -26,3 +26,5 @@ apps/mobile/pubspec.lock
 *.pyc
 .env
 .local-models/
+Doclyzer-Complete-Redesign.pen
+Doclyzer-Landing-Page.pen

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import '../report_processing_store.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
+import '../../../core/theme/design_components.dart';
 
 import '../../../core/feedback/incident_banner.dart';
 import '../../incidents/incident_repository.dart';
@@ -10,11 +13,19 @@ import '../../sharing/screens/create_share_link_screen.dart';
 import '../../support/support_repository.dart';
 import '../reports_repository.dart';
 import 'health_history_screen.dart';
+import 'compare_reports_screen.dart';
 import 'pdf_viewer_screen.dart';
 import 'recycle_bin_screen.dart';
 import 'report_detail_screen.dart';
 
 enum _TimelineState { loading, loaded, error }
+
+class _LaboratorySearchHit {
+  const _LaboratorySearchHit(this.name, this.reports);
+
+  final String name;
+  final List<Report> reports;
+}
 
 class TimelineScreen extends StatefulWidget {
   const TimelineScreen({
@@ -24,12 +35,14 @@ class TimelineScreen extends StatefulWidget {
     required this.profileId,
     required this.onBack,
     this.onUploadReport,
+    this.onProfileSelected,
     this.showBackButton = true,
     required this.sharingRepository,
     required this.profileName,
     required this.onUpgrade,
     required this.supportRepository,
     this.incidentStatus,
+    this.onShareReport,
   });
 
   final ReportsRepository reportsRepository;
@@ -37,12 +50,14 @@ class TimelineScreen extends StatefulWidget {
   final String profileId;
   final VoidCallback onBack;
   final VoidCallback? onUploadReport;
+  final ValueChanged<Profile>? onProfileSelected;
   final bool showBackButton;
   final SharingRepository sharingRepository;
   final String profileName;
   final VoidCallback onUpgrade;
   final SupportRepository supportRepository;
   final PublicIncidentStatus? incidentStatus;
+  final ValueChanged<Report>? onShareReport;
 
   @override
   State<TimelineScreen> createState() => _TimelineScreenState();
@@ -54,6 +69,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
   List<Profile> _profiles = [];
   String? _errorMessage;
   String _query = '';
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
+  List<Report>? _remoteSearchResults;
+  int _searchVersion = 0;
+  String _filter = 'All reports';
+  String _sort = 'Report date · newest';
   int _loadVersion = 0;
 
   void _onProcessingChanged() {
@@ -62,6 +83,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   @override
   void dispose() {
+    _searchController.dispose();
+    _searchDebounce?.cancel();
     ReportProcessingStore.instance.removeListener(_onProcessingChanged);
     super.dispose();
   }
@@ -82,10 +105,38 @@ class _TimelineScreenState extends State<TimelineScreen> {
         _reports = [];
         _profiles = [];
         _query = '';
+        _searchController.clear();
+        _remoteSearchResults = null;
         _errorMessage = null;
       });
       _loadReports();
     }
+  }
+
+  void _changeQuery(String value) {
+    _searchDebounce?.cancel();
+    final version = ++_searchVersion;
+    setState(() {
+      _query = value;
+      _remoteSearchResults = null;
+    });
+    final query = value.trim();
+    if (query.length < 2) return;
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () async {
+      try {
+        final matches = await widget.reportsRepository.searchReports(
+          widget.profileId,
+          query,
+        );
+        if (mounted &&
+            version == _searchVersion &&
+            widget.profileId.isNotEmpty) {
+          setState(() => _remoteSearchResults = matches);
+        }
+      } catch (_) {
+        // Keep local filename search usable if the search endpoint is unavailable.
+      }
+    });
   }
 
   Future<void> _loadReports() async {
@@ -134,11 +185,45 @@ class _TimelineScreenState extends State<TimelineScreen> {
           reportId: report.id,
           profileId: report.profileId,
           onBack: () => Navigator.of(ctx).pop(),
+          onShareReport: widget.onShareReport,
         ),
       ),
     );
     if (!mounted) return;
     await _loadReports();
+  }
+
+  void _openLaboratory(_LaboratorySearchHit laboratory) {
+    Navigator.of(context).push(
+      designPageRoute(
+        Scaffold(
+          appBar: AppBar(title: Text(laboratory.name)),
+          body: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              Text(
+                widget.profileName,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${laboratory.reports.length} ${laboratory.reports.length == 1 ? 'report' : 'reports'} from ${laboratory.name}',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 24),
+              for (final report in laboratory.reports) ...[
+                DesignReportCard(
+                  report: report,
+                  onTap: () => _openReport(report),
+                ),
+                const SizedBox(height: 12),
+              ],
+            ],
+          ),
+        ),
+        context,
+      ),
+    );
   }
 
   void _openOriginal(Report report) {
@@ -154,51 +239,100 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  Future<void> _showReassignSheet(Report report) async {
-    final otherProfiles = _profiles
-        .where((p) => p.id != report.profileId)
-        .toList();
-    if (otherProfiles.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Create another profile to move this report.'),
-        ),
-      );
-      return;
-    }
-    final selected = await showModalBottomSheet<Profile>(
+  bool _matchesFilter(Report report) => switch (_filter) {
+    'Reviewed' =>
+      report.status == 'parsed' &&
+          report.structuredReport?.extractionReview?.required != true,
+    'Needs review' =>
+      report.status == 'parsed' &&
+          report.structuredReport?.extractionReview?.required == true,
+    'Processing' => const [
+      'queued',
+      'uploading',
+      'parsing',
+    ].contains(report.status),
+    'Original only' => report.status == 'unparsed',
+    _ => true,
+  };
+
+  DateTime _reportDate(Report report) =>
+      DateTime.tryParse(report.collectionDate ?? '') ?? report.createdAt;
+
+  String _monthHeading(Report report) {
+    final date = _reportDate(report);
+    final parts = AppDateFormat.date(date, local: false).split('-');
+    return '${parts[1].toUpperCase()} ${parts[2]}';
+  }
+
+  Future<void> _chooseFilter() async {
+    final selected = await showModalBottomSheet<String>(
       context: context,
+      showDragHandle: true,
       builder: (ctx) => SafeArea(
         child: ListView(
           shrinkWrap: true,
           children: [
-            const ListTile(title: Text('Move report to profile')),
-            ...otherProfiles.map(
-              (profile) => ListTile(
-                leading: const Icon(Icons.person_outline),
-                title: Text(profile.name),
-                onTap: () => Navigator.of(ctx).pop(profile),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+              child: Text(
+                'Filter reports',
+                style: Theme.of(ctx).textTheme.titleLarge,
               ),
             ),
+            for (final value in const [
+              'All reports',
+              'Reviewed',
+              'Needs review',
+              'Processing',
+              'Original only',
+            ])
+              ListTile(
+                title: Text(value),
+                trailing: value == _filter
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () => Navigator.of(ctx).pop(value),
+              ),
           ],
         ),
       ),
     );
-    if (selected == null) return;
-    try {
-      await widget.reportsRepository.reassignReport(report.id, selected.id);
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Moved to ${selected.name}')));
-      await _loadReports();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-      );
-    }
+    if (selected != null && mounted) setState(() => _filter = selected);
+  }
+
+  Future<void> _chooseSort() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+              child: Text(
+                'Sort reports',
+                style: Theme.of(ctx).textTheme.titleLarge,
+              ),
+            ),
+            for (final value in const [
+              'Report date · newest',
+              'Report date · oldest',
+              'Upload date · newest',
+              'Upload date · oldest',
+            ])
+              ListTile(
+                title: Text(value),
+                trailing: value == _sort
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () => Navigator.of(ctx).pop(value),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (selected != null && mounted) setState(() => _sort = selected);
   }
 
   @override
@@ -222,6 +356,21 @@ class _TimelineScreenState extends State<TimelineScreen> {
             : null,
         actions: [
           IconButton(
+            key: const Key('timeline-compare-button'),
+            tooltip: 'Compare reports',
+            icon: const Icon(Icons.compare_arrows_rounded),
+            onPressed: () => Navigator.of(context).push(
+              designPageRoute(
+                CompareReportsScreen(
+                  profileId: widget.profileId,
+                  profileName: widget.profileName,
+                  reportsRepository: widget.reportsRepository,
+                ),
+                context,
+              ),
+            ),
+          ),
+          IconButton(
             key: const Key('timeline-recycle-bin-button'),
             icon: const Icon(Icons.delete_outline_rounded),
             tooltip: 'Recycle bin',
@@ -237,6 +386,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   profileId: widget.profileId,
                   reportsRepository: widget.reportsRepository,
                   profilesRepository: widget.profilesRepository,
+                  onShareReport: widget.onShareReport,
                 ),
               ),
             ),
@@ -251,6 +401,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   profileId: widget.profileId,
                   profileName: widget.profileName,
                   sharingRepository: widget.sharingRepository,
+                  reportsRepository: widget.reportsRepository,
                   supportRepository: widget.supportRepository,
                   onUpgrade: widget.onUpgrade,
                   incidentStatus: widget.incidentStatus,
@@ -293,81 +444,217 @@ class _TimelineScreenState extends State<TimelineScreen> {
     if (_state == _TimelineState.error) {
       return Center(
         key: const Key('timeline-error'),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              _errorMessage ?? 'Something went wrong',
-              style: TextStyle(color: Colors.red.shade700),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: _loadReports, child: const Text('Retry')),
-          ],
-        ),
-      );
-    }
-    if (_reports.isEmpty) {
-      return Center(
-        key: const Key('timeline-empty'),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'No reports yet',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Tap Upload report to add your first lab result.',
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-          ],
+        child: DesignEmptyState(
+          icon: Icons.cloud_off_outlined,
+          title: 'Reports unavailable',
+          message:
+              _errorMessage ??
+              'Unable to load reports. Try again when connected.',
+          action: 'Try again',
+          onAction: _loadReports,
         ),
       );
     }
     final query = _query.trim().toLowerCase();
-    final visible = query.isEmpty
-        ? _reports
-        : _reports
-              .where(
-                (report) =>
-                    report.originalFileName.toLowerCase().contains(query) ||
-                    (report.collectionDate ?? '').toLowerCase().contains(query),
-              )
-              .toList();
-    final groups = <String, List<Report>>{};
-    for (final report in visible) {
-      groups.putIfAbsent(_collectionLabel(report), () => []).add(report);
+    final visible = (_remoteSearchResults ?? _reports).where((report) {
+      if (!_matchesFilter(report)) return false;
+      if (query.isEmpty) return true;
+      if (_remoteSearchResults != null) return true;
+      return report.originalFileName.toLowerCase().contains(query) ||
+          (report.collectionDate ?? '').toLowerCase().contains(query) ||
+          (report.laboratoryName ??
+                  report.structuredReport?.labDetails?.name ??
+                  '')
+              .toLowerCase()
+              .contains(query) ||
+          report.extractedLabValues.any(
+            (value) => value.parameterName.toLowerCase().contains(query),
+          );
+    }).toList();
+    final byUpload = _sort.startsWith('Upload');
+    final oldest = _sort.endsWith('oldest');
+    visible.sort((a, b) {
+      final first = byUpload ? a.createdAt : _reportDate(a);
+      final second = byUpload ? b.createdAt : _reportDate(b);
+      return oldest ? first.compareTo(second) : second.compareTo(first);
+    });
+    final entries = <Object>[];
+    if (query.length >= 2) {
+      final reportsByLab = <String, List<Report>>{};
+      final displayNames = <String, String>{};
+      for (final report in _reports) {
+        final name =
+            (report.laboratoryName ?? report.structuredReport?.labDetails?.name)
+                ?.trim();
+        if (name == null ||
+            name.isEmpty ||
+            !name.toLowerCase().contains(query)) {
+          continue;
+        }
+        final key = name.toLowerCase();
+        displayNames.putIfAbsent(key, () => name);
+        reportsByLab.putIfAbsent(key, () => []).add(report);
+      }
+      if (reportsByLab.isNotEmpty) {
+        entries.add('LABORATORIES');
+        for (final key in reportsByLab.keys.toList()..sort()) {
+          final reports = reportsByLab[key]!
+            ..sort((a, b) => _reportDate(b).compareTo(_reportDate(a)));
+          entries.add(_LaboratorySearchHit(displayNames[key]!, reports));
+        }
+      }
+      if (visible.isNotEmpty) entries.add('REPORTS');
+      entries.addAll(visible);
+    } else {
+      String? previous;
+      for (final report in visible) {
+        final heading = _monthHeading(report);
+        if (heading != previous) entries.add(heading);
+        entries.add(report);
+        previous = heading;
+      }
     }
-    final groupNames = groups.keys.toList()
-      ..sort((a, b) {
-        final aDate = DateTime.tryParse(groups[a]!.first.collectionDate ?? '');
-        final bDate = DateTime.tryParse(groups[b]!.first.collectionDate ?? '');
-        if (aDate != null && bDate != null) return bDate.compareTo(aDate);
-        if (aDate != null) return -1;
-        if (bDate != null) return 1;
-        return a.compareTo(b);
-      });
-    final entries = <Object>[
-      for (final name in groupNames) ...[name, ...groups[name]!],
-    ];
+    final theme = Theme.of(context);
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        InkWell(
+          key: const Key('timeline-profile-switcher'),
+          onTap: _profiles.length > 1 ? _showProfilePicker : null,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: theme.colorScheme.surface.withValues(
+                    alpha: 0.65,
+                  ),
+                  child: Text(
+                    widget.profileName.isEmpty
+                        ? '?'
+                        : widget.profileName[0].toUpperCase(),
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'REPORTS FOR',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      Text(
+                        widget.profileName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_profiles.length > 1) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    'Switch',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 20,
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
         TextField(
           key: ValueKey('timeline-search-${widget.profileId}'),
+          controller: _searchController,
           decoration: const InputDecoration(
             prefixIcon: Icon(Icons.search),
-            hintText: 'Search reports',
-            border: OutlineInputBorder(),
+            hintText: 'Search reports or labs',
           ),
-          onChanged: (value) => setState(() => _query = value),
+          onChanged: _changeQuery,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton(
+                onPressed: () => setState(() => _filter = 'All reports'),
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
+                child: Text(
+                  _filter,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            OutlinedButton.icon(
+              onPressed: _chooseFilter,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 40),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+              ),
+              icon: const Icon(Icons.tune, size: 18),
+              label: const Text('Filters', style: TextStyle(fontSize: 12)),
+            ),
+            const SizedBox(width: 10),
+            IconButton.outlined(
+              onPressed: _chooseSort,
+              icon: const Icon(Icons.sort_rounded),
+              tooltip: 'Sort reports',
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
         Expanded(
-          child: visible.isEmpty
-              ? const Center(child: Text('No reports match your search.'))
+          child: _reports.isEmpty
+              ? DesignEmptyState(
+                  key: const Key('timeline-empty'),
+                  icon: Icons.folder_open_outlined,
+                  title: 'No reports yet',
+                  message:
+                      'Upload a report for ${widget.profileName} to start this library.',
+                  action: widget.onUploadReport == null
+                      ? null
+                      : 'Upload report',
+                  onAction: widget.onUploadReport,
+                )
+              : entries.isEmpty
+              ? DesignEmptyState(
+                  icon: Icons.search_off_outlined,
+                  title: 'No reports match your search.',
+                  message: 'Try a different test, laboratory or filter.',
+                  action: 'Clear search and filters',
+                  onAction: () => setState(() {
+                    _searchController.clear();
+                    _query = '';
+                    _filter = 'All reports';
+                    _remoteSearchResults = null;
+                  }),
+                )
               : ListView.builder(
                   key: PageStorageKey('timeline-list-${widget.profileId}'),
                   padding: const EdgeInsets.only(bottom: 96),
@@ -376,95 +663,66 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     final entry = entries[index];
                     if (entry is String) {
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(4, 10, 4, 8),
+                        padding: const EdgeInsets.fromLTRB(2, 14, 2, 10),
                         child: Text(
                           entry,
-                          style: Theme.of(context).textTheme.titleSmall,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            letterSpacing: 1,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      );
+                    }
+                    if (entry is _LaboratorySearchHit) {
+                      return Card(
+                        key: Key(
+                          'timeline-laboratory-${entry.name.toLowerCase()}',
+                        ),
+                        child: ListTile(
+                          leading: const Icon(Icons.business_outlined),
+                          title: Text(entry.name),
+                          subtitle: Text(
+                            '${entry.reports.length} ${entry.reports.length == 1 ? 'report' : 'reports'} · Latest ${_formatDate(_reportDate(entry.reports.first))}',
+                          ),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => _openLaboratory(entry),
                         ),
                       );
                     }
                     final report = entry as Report;
-                    final statusColor = _statusColor(context, report.status);
-                    return Card(
+                    return Padding(
                       key: Key('timeline-report-${report.id}'),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () => _openReport(report),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      report.originalFileName,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleSmall,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Chip(
-                                    avatar: Icon(
-                                      Icons.circle,
-                                      size: 10,
-                                      color: statusColor,
-                                    ),
-                                    label: Text(_statusLabel(report.status)),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              Wrap(
-                                spacing: 12,
-                                runSpacing: 6,
-                                children: [
-                                  _dateBadge(
-                                    context,
-                                    icon: Icons.person_outline,
-                                    label: 'Profile',
-                                    value: report.profileName ?? 'Unknown',
-                                  ),
-                                  _dateBadge(
-                                    context,
-                                    icon: Icons.event_note,
-                                    label: 'Collected',
-                                    value: _collectionLabel(report),
-                                  ),
-                                  _dateBadge(
-                                    context,
-                                    icon: Icons.cloud_upload_outlined,
-                                    label: 'Uploaded',
-                                    value: _formatDate(report.createdAt),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                alignment: WrapAlignment.end,
-                                spacing: 8,
-                                children: [
-                                  TextButton.icon(
-                                    onPressed: () => _openOriginal(report),
-                                    icon: const Icon(
-                                      Icons.description_outlined,
-                                    ),
-                                    label: const Text('Original'),
-                                  ),
-                                  TextButton.icon(
-                                    onPressed: () => _showReassignSheet(report),
-                                    icon: const Icon(Icons.swap_horiz),
-                                    label: const Text('Change profile'),
-                                  ),
-                                ],
-                              ),
-                            ],
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          DesignReportCard(
+                            report: report,
+                            onTap: () => _openReport(report),
                           ),
-                        ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(10, 4, 10, 0),
+                            child: Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              spacing: 8,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  'Collected: ${_collectionLabel(report)}',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                                Text(
+                                  'Uploaded: ${_formatDate(report.createdAt)}',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                                TextButton(
+                                  onPressed: () => _openOriginal(report),
+                                  child: const Text('Original'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },
@@ -474,31 +732,52 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  Widget _dateBadge(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 14,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 6),
-          Text('$label: $value', style: Theme.of(context).textTheme.bodySmall),
-        ],
+  Future<void> _showProfilePicker() async {
+    if (_profiles.isEmpty) return;
+    final selected = await showModalBottomSheet<Profile>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+              child: Text(
+                'Switch active profile',
+                style: Theme.of(ctx).textTheme.titleLarge,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+              child: Text(
+                'View another person’s reports. Your active profile for uploads and trends will change too.',
+                style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            for (final profile in _profiles)
+              ListTile(
+                title: Text(profile.name),
+                trailing: profile.id == widget.profileId
+                    ? const Icon(Icons.check_circle)
+                    : null,
+                onTap: () => Navigator.of(ctx).pop(profile),
+              ),
+          ],
+        ),
       ),
     );
+    if (selected == null || selected.id == widget.profileId || !mounted) return;
+    await widget.profilesRepository.activateProfile(selected.id);
+    if (mounted) {
+      if (widget.onProfileSelected != null) {
+        widget.onProfileSelected!(selected);
+      } else {
+        widget.onBack();
+      }
+    }
   }
 
   String _formatDate(DateTime d) {
@@ -513,43 +792,5 @@ class _TimelineScreenState extends State<TimelineScreen> {
     return date == null || date.isEmpty
         ? 'Unknown collection date'
         : AppDateFormat.fromRaw(date);
-  }
-
-  Color _statusColor(BuildContext context, String status) {
-    switch (status) {
-      case 'parsed':
-        return Colors.green.shade700;
-      case 'failed_transient':
-        return Colors.orange.shade700;
-      case 'failed_terminal':
-      case 'content_not_recognized':
-      case 'unparsed':
-        return Theme.of(context).colorScheme.error;
-      default:
-        return Theme.of(context).colorScheme.primary;
-    }
-  }
-
-  static String _statusLabel(String status) {
-    switch (status) {
-      case 'uploading':
-        return 'Uploading';
-      case 'queued':
-        return 'Queued for parsing';
-      case 'parsing':
-        return 'Parsing in progress';
-      case 'parsed':
-        return 'Parsed';
-      case 'content_not_recognized':
-        return 'Extraction incomplete';
-      case 'unparsed':
-        return 'Unparsed';
-      case 'failed_transient':
-        return 'Processing stopped — tap to retry';
-      case 'failed_terminal':
-        return 'Parsing failed';
-      default:
-        return status;
-    }
   }
 }

@@ -293,6 +293,7 @@ class ApiReportsRepository implements ReportsRepository {
       profileName: d['profileName'] as String?,
       profileIsActive: d['profileIsActive'] as bool?,
       originalFileName: d['originalFileName'] as String,
+      laboratoryName: d['laboratoryName'] as String?,
       contentType: d['contentType'] as String,
       sizeBytes: d['sizeBytes'] as int,
       status: d['status'] as String,
@@ -392,6 +393,17 @@ class ApiReportsRepository implements ReportsRepository {
     final data = await _client.get('v1/reports?profileId=$profileId');
     final list = data['data']?['reports'] as List<dynamic>? ?? [];
     return list.map((d) => _reportFromJson(d as Map<String, dynamic>)).toList();
+  }
+
+  @override
+  Future<List<Report>> searchReports(String profileId, String query) async {
+    final data = await _client.get(
+      'v1/reports/search?profileId=${Uri.encodeQueryComponent(profileId)}&q=${Uri.encodeQueryComponent(query)}',
+    );
+    final list = data['data']?['reports'] as List<dynamic>? ?? [];
+    return list
+        .map((item) => _reportFromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   @override

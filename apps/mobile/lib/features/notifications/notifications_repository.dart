@@ -1,3 +1,25 @@
+class InboxNotification {
+  const InboxNotification({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.body,
+    required this.occurredAt,
+    required this.sourceType,
+    required this.read,
+    this.deepLink,
+  });
+
+  final String id;
+  final String type;
+  final String title;
+  final String body;
+  final DateTime occurredAt;
+  final String sourceType;
+  final bool read;
+  final String? deepLink;
+}
+
 class PushDeviceToken {
   const PushDeviceToken({
     required this.id,
@@ -34,6 +56,8 @@ class RegisterPushTokenInput {
 }
 
 abstract class NotificationsRepository {
+  Future<List<InboxNotification>> getInbox();
+  Future<void> markInboxRead(String sourceType, String id);
   Future<PushDeviceToken> registerDeviceToken(RegisterPushTokenInput input);
   Future<void> updatePreferences(
     String deviceTokenId,

@@ -47,6 +47,7 @@ export class NotificationPipelineService {
     const suppressed = await this.suppressedByPreference(
       event.userId,
       routing.category,
+      event.eventType,
     );
 
     if (suppressed) {
@@ -196,6 +197,7 @@ export class NotificationPipelineService {
   async suppressedByPreference(
     userId: string,
     category: NotificationCategory,
+    eventType?: NotifiableEventType,
   ): Promise<boolean> {
     if (MANDATORY_NOTIFICATION_CATEGORIES.has(category)) return false;
 
@@ -204,6 +206,13 @@ export class NotificationPipelineService {
     });
 
     if (!preference) return false;
+    if (eventType === NotifiableEventType.REPORT_REVIEW_REQUIRED)
+      return preference.reportReadyEnabled === false;
+    if (
+      eventType === NotifiableEventType.REPORT_UPLOAD_COMPLETE ||
+      eventType === NotifiableEventType.REPORT_PARSE_FAILED
+    )
+      return preference.uploadUpdatesEnabled === false;
     return preference.productEmailsEnabled === false;
   }
 }

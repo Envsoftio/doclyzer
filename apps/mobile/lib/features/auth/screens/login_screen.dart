@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/feedback/status_messenger.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/design_components.dart';
 import '../auth_repository.dart';
 import '../../support/support_models.dart';
 import '../../support/support_repository.dart';
@@ -61,9 +62,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    if (email.isEmpty || password.isEmpty) {
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email) ||
+        password.isEmpty) {
       setState(() {
-        _error = 'Enter email and password';
+        _error = 'Enter a valid email address and password';
         _isLoading = false;
       });
       return;
@@ -110,40 +112,40 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Sign in'),
-        centerTitle: true,
+        title: const SizedBox.shrink(),
+        backgroundColor: theme.colorScheme.surface,
         surfaceTintColor: Colors.transparent,
       ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: AppSpacing.xl),
-                  Icon(
-                    Icons.medical_services_rounded,
-                    size: 56,
-                    color: theme.colorScheme.primary,
-                  ),
+                  const SizedBox(height: 28),
+                  const DoclyzerMark(),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'Welcome back',
-                    style: theme.textTheme.headlineSmall,
-                    textAlign: TextAlign.center,
+                    'A clearer view\nstarts here.',
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      fontSize: 31,
+                      height: 1.22,
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: 18),
                   Text(
-                    'Sign in to access your health reports.',
+                    'Sign in to access and understand your health reports.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   TextField(
@@ -153,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     textInputAction: TextInputAction.next,
                     onSubmitted: (_) => _passwordFocus.requestFocus(),
                     decoration: const InputDecoration(
-                      labelText: 'Email',
+                      labelText: 'Email address',
                       hintText: 'you@example.com',
                       prefixIcon: Icon(Icons.email_outlined),
                     ),
@@ -171,27 +173,40 @@ class _LoginScreenState extends State<LoginScreen> {
                       prefixIcon: const Icon(Icons.lock_outline_rounded),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
                             _obscurePassword = !_obscurePassword;
                           });
                         },
-                        tooltip:
-                            _obscurePassword ? 'Show password' : 'Hide password',
+                        tooltip: _obscurePassword
+                            ? 'Show password'
+                            : 'Hide password',
                       ),
                     ),
                   ),
+                  AnimatedSwitcher(
+                    duration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 180),
+                    child: _error == null
+                        ? const SizedBox.shrink()
+                        : Padding(
+                            key: ValueKey(_error),
+                            padding: const EdgeInsets.only(top: AppSpacing.sm),
+                            child: Text(
+                              _error!,
+                              key: const Key('login-error'),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.error,
+                              ),
+                            ),
+                          ),
+                  ),
                   if (_error != null) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      _error!,
-                      key: const Key('login-error'),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.error,
-                      ),
-                    ),
                     if (_supportContext != null) ...[
                       const SizedBox(height: AppSpacing.xs),
                       TextButton(
@@ -244,7 +259,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         key: const Key('go-to-signup'),
                         onPressed: widget.onGoToSignup,
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xs,
+                          ),
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
@@ -252,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: 36),
                 ],
               ),
             ),

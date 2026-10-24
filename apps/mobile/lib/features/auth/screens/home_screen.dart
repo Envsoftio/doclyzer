@@ -4,12 +4,13 @@ import '../../../shared/app_date_format.dart';
 
 import '../../reports/reports_repository.dart';
 import '../../reports/screens/report_detail_screen.dart';
+import '../../reports/screens/trend_chart_screen.dart';
 import '../../profiles/profiles_repository.dart';
 import '../../billing/billing_repository.dart';
 import '../../account/account_repository.dart';
-import '../../account/account_avatar.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/design_components.dart';
 import '../../../core/feedback/status_messenger.dart';
 import '../../../core/feedback/incident_banner.dart';
 import '../../../core/api_client.dart';
@@ -27,6 +28,8 @@ class HomeScreen extends StatefulWidget {
     required this.onGoToDataRights,
     required this.onGoToUploadReport,
     required this.onGoToTimeline,
+    this.onGoToTrends,
+    this.onGoToNotifications,
     required this.onGoToBilling,
     required this.onGoToReferrals,
     required this.restrictionRepository,
@@ -35,6 +38,7 @@ class HomeScreen extends StatefulWidget {
     required this.billingRepository,
     required this.accountRepository,
     this.incidentStatus,
+    this.onShareReport,
   });
 
   final Future<void> Function() onLogout;
@@ -45,6 +49,8 @@ class HomeScreen extends StatefulWidget {
   final VoidCallback onGoToDataRights;
   final Future<void> Function() onGoToUploadReport;
   final Future<void> Function() onGoToTimeline;
+  final VoidCallback? onGoToTrends;
+  final VoidCallback? onGoToNotifications;
   final VoidCallback onGoToBilling;
   final VoidCallback onGoToReferrals;
   final RestrictionRepository restrictionRepository;
@@ -53,6 +59,7 @@ class HomeScreen extends StatefulWidget {
   final BillingRepository billingRepository;
   final AccountRepository accountRepository;
   final PublicIncidentStatus? incidentStatus;
+  final ValueChanged<Report>? onShareReport;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -66,6 +73,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   RestrictionStatus? _restrictionStatus;
   List<Report>? _reports;
+  Profile? _activeProfile;
+  List<TrendParameter> _latestTrends = [];
   AccountProfile? _accountProfile;
   bool _loading = true;
   bool _loadFailed = false;
@@ -84,9 +93,39 @@ class _HomeScreenState extends State<HomeScreen> {
           if (mounted) setState(() => _reports = null);
           return;
         }
-        final reports = await widget.reportsRepository.listAllReports();
+        final profiles = await widget.profilesRepository.getProfiles();
+        final active = profiles.where((p) => p.isActive).firstOrNull;
+        if (active == null) {
+          if (mounted) {
+            setState(() {
+              _activeProfile = null;
+              _reports = [];
+              _latestTrends = [];
+            });
+          }
+          return;
+        }
+        final reports = await widget.reportsRepository.listReports(active.id);
         reports.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        if (mounted) setState(() => _reports = reports);
+        List<TrendParameter> trends = [];
+        try {
+          final result = await widget.reportsRepository.getLabTrends(active.id);
+          trends =
+              result.parameters.where((p) => p.dataPoints.isNotEmpty).toList()
+                ..sort(
+                  (a, b) =>
+                      b.dataPoints.last.date.compareTo(a.dataPoints.last.date),
+                );
+        } catch (_) {
+          // The report library remains available if trends cannot be fetched.
+        }
+        if (mounted) {
+          setState(() {
+            _activeProfile = active;
+            _reports = reports;
+            _latestTrends = trends;
+          });
+        }
       }),
     ]);
     if (mounted) setState(() => _loading = false);
@@ -139,6 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
           reportId: report.id,
           profileId: report.profileId,
           onBack: () => Navigator.of(routeContext).pop(),
+          onShareReport: widget.onShareReport,
         ),
       ),
     );
@@ -151,6 +191,111 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     await widget.onGoToUploadReport();
+  }
+
+  Future<void> _selectProfile() async {
+    try {
+      final profiles = await widget.profilesRepository.getProfiles();
+      if (!mounted) return;
+      final selected = await showModalBottomSheet<Profile>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+                child: Text(
+                  'Switch profile',
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+              ),
+              for (final profile in profiles)
+                ListTile(
+                  title: Text(profile.name),
+                  subtitle: Text(
+                    profile.isActive ? 'Current profile' : 'View this profile',
+                  ),
+                  leading: CircleAvatar(child: Text(_initials(profile.name))),
+                  trailing: profile.isActive
+                      ? const Icon(Icons.check_circle)
+                      : null,
+                  onTap: () => Navigator.of(sheetContext).pop(profile),
+                ),
+              ListTile(
+                leading: const Icon(Icons.person_add_outlined),
+                title: const Text('Manage family'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  widget.onGoToProfiles();
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+      if (selected != null && !selected.isActive) {
+        await widget.profilesRepository.activateProfile(selected.id);
+        if (!mounted) return;
+        setState(() {
+          _activeProfile = selected;
+          _reports = null;
+          _latestTrends = [];
+        });
+        await _refresh();
+        if (mounted && !_loadFailed) {
+          StatusMessenger.showSuccess(context, 'Switched to ${selected.name}');
+        }
+      }
+    } catch (error) {
+      if (mounted) {
+        StatusMessenger.showError(
+          context,
+          error is ApiException && error.message.isNotEmpty
+              ? 'Unable to switch profiles. ${error.message}'
+              : 'Unable to switch profiles. Please try again.',
+        );
+      }
+    }
+  }
+
+  String _initials(String value) => value
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .take(2)
+      .map((part) => part[0].toUpperCase())
+      .join();
+
+  void _openTrend(TrendParameter parameter) {
+    final profile = _activeProfile;
+    if (profile == null) return;
+    Navigator.of(context).push(
+      designPageRoute(
+        TrendChartScreen(
+          reportsRepository: widget.reportsRepository,
+          profileId: profile.id,
+          parameterName: parameter.parameterName,
+          unit: parameter.unit ?? '',
+          onBack: () => Navigator.of(context).pop(),
+          onOpenReport: (reportId) async {
+            try {
+              final report = await widget.reportsRepository.getReport(reportId);
+              if (mounted) await _openReport(report);
+            } catch (_) {
+              if (mounted) {
+                StatusMessenger.showError(
+                  context,
+                  'Unable to open source report.',
+                );
+              }
+            }
+          },
+        ),
+        context,
+      ),
+    );
   }
 
   bool _isActionBlocked(String action) {
@@ -216,40 +361,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final incident = widget.incidentStatus;
     final reports = _reports;
-    final ready = reports?.where((r) => r.status == 'parsed').length;
-    final processing = reports
-        ?.where((r) => ['uploading', 'queued', 'parsing'].contains(r.status))
-        .length;
-
+    final profile = _activeProfile;
+    final incident = widget.incidentStatus;
+    final latest = _latestTrends.take(2).toList();
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('go-to-upload-report'),
-        onPressed: _upload,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Upload report'),
-      ),
-      appBar: AppBar(
-        centerTitle: false,
-        backgroundColor: Colors.transparent,
-        title: Row(
-          children: [
-            Icon(Icons.health_and_safety_rounded, color: colors.primary),
-            const SizedBox(width: 8),
-            const Text('Doclyzer'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            key: const Key('dashboard-settings'),
-            tooltip: 'Account',
-            onPressed: widget.onGoToAccount,
-            icon: AccountAvatar(profile: _accountProfile, radius: 17),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refresh,
@@ -261,196 +377,299 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 760),
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 112),
+                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: InkWell(
+                                  onTap: _selectProfile,
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 21,
+                                        backgroundColor:
+                                            colors.primaryContainer,
+                                        child: Text(
+                                          profile == null
+                                              ? 'D'
+                                              : _initials(profile.name),
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                color:
+                                                    colors.onPrimaryContainer,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Flexible(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              profile?.name ??
+                                                  _accountProfile
+                                                      ?.displayName ??
+                                                  'Your profile',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: theme.textTheme.titleSmall
+                                                  ?.copyWith(fontSize: 15),
+                                            ),
+                                            Text(
+                                              profile == null
+                                                  ? 'Choose a profile'
+                                                  : 'Your profile',
+                                              style: theme.textTheme.bodySmall,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      const Icon(
+                                        Icons.keyboard_arrow_down_rounded,
+                                        size: 18,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              IconButton.filledTonal(
+                                tooltip: 'Notifications',
+                                onPressed:
+                                    widget.onGoToNotifications ??
+                                    widget.onGoToCommunicationPreferences,
+                                icon: const Icon(
+                                  Icons.notifications_none_rounded,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 28),
+                          Text(
+                            'A little clarity.\nAll in one place.',
+                            style: theme.textTheme.displaySmall?.copyWith(
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 18),
                           if (incident != null &&
                               incident.isActive &&
                               incident.affectsSurface('mobile_app')) ...[
                             IncidentBanner(incident: incident),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 16),
                           ],
                           if (_restrictionStatus?.isRestricted ?? false) ...[
                             _RestrictionBanner(
                               rationale: _restrictionStatus?.rationale ?? '',
                               nextSteps: _restrictionStatus?.nextSteps ?? '',
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 16),
                           ],
-                          Text(
-                            'Your reports',
-                            style: theme.textTheme.displaySmall?.copyWith(
-                              fontSize: 26,
-                              height: 1.15,
-                              letterSpacing: -1,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Keep track of your health, one report at a time.',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colors.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(16),
+                            height: 143,
                             decoration: BoxDecoration(
+                              color: AppColors.blue,
+                              borderRadius: BorderRadius.circular(22),
                               gradient: const LinearGradient(
-                                colors: [Color(0xFF075C69), Color(0xFF0A7C8C)],
-                                begin: Alignment.topLeft,
+                                colors: [AppColors.blue, Color(0xFF168F9F)],
+                                begin: Alignment.centerLeft,
                                 end: Alignment.bottomRight,
                               ),
-                              borderRadius: BorderRadius.circular(24),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Stack(
+                              clipBehavior: Clip.antiAlias,
                               children: [
-                                Text(
-                                  'Add a lab report',
-                                  style: theme.textTheme.titleLarge?.copyWith(
+                                Positioned(
+                                  right: -28,
+                                  top: -20,
+                                  child: Container(
+                                    width: 170,
+                                    height: 170,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: AppColors.teal.withValues(
+                                        alpha: .48,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const Positioned(
+                                  right: 34,
+                                  top: 27,
+                                  child: Icon(
+                                    Icons.note_add_outlined,
+                                    size: 44,
                                     color: Colors.white,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Track your results over time.',
-                                  style: TextStyle(color: Color(0xFFDBF0F2)),
+                                const Positioned(
+                                  left: 20,
+                                  top: 20,
+                                  child: Text(
+                                    'Your next report,\nready when you are.',
+                                    style: TextStyle(
+                                      fontSize: 19,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                      height: 1.25,
+                                    ),
+                                  ),
                                 ),
-                                const SizedBox(height: 12),
-                                const Icon(
-                                  Icons.description_outlined,
-                                  color: Colors.white,
-                                  size: 28,
+                                const Positioned(
+                                  left: 20,
+                                  top: 74,
+                                  child: Text(
+                                    'PDFs, photos and family records.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFFDDEEF2),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  left: 20,
+                                  bottom: 16,
+                                  child: Material(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(9),
+                                    child: InkWell(
+                                      key: const Key('go-to-upload-report'),
+                                      onTap: _upload,
+                                      borderRadius: BorderRadius.circular(9),
+                                      child: const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 7,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.add,
+                                              size: 16,
+                                              color: AppColors.blue,
+                                            ),
+                                            SizedBox(width: 5),
+                                            Text(
+                                              'Upload report',
+                                              style: TextStyle(
+                                                fontSize: 11.5,
+                                                color: AppColors.blue,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'At a glance',
-                            style: theme.textTheme.titleLarge,
+                          const SizedBox(height: 20),
+                          DesignSectionHeading(
+                            title: 'Recent report',
+                            action: 'View all',
+                            onAction: _openTimeline,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Across all profiles',
-                            style: theme.textTheme.bodySmall,
+                          const SizedBox(height: 8),
+                          AnimatedSwitcher(
+                            duration: MediaQuery.disableAnimationsOf(context)
+                                ? Duration.zero
+                                : const Duration(milliseconds: 220),
+                            child: _loading && reports == null
+                                ? const Card(
+                                    key: Key('home-loading'),
+                                    child: SizedBox(
+                                      height: 120,
+                                      child: Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    ),
+                                  )
+                                : _loadFailed && reports == null
+                                ? Card(
+                                    key: const Key('home-error'),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        children: [
+                                          const Text(
+                                            'Reports are unavailable. Try again when connected.',
+                                          ),
+                                          TextButton(
+                                            onPressed: _refresh,
+                                            child: const Text('Try again'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                : reports == null || reports.isEmpty
+                                ? Card(
+                                    key: const Key('home-empty'),
+                                    child: DesignEmptyState(
+                                      icon: Icons.folder_open_outlined,
+                                      title: 'Your story starts here',
+                                      message:
+                                          'Upload your first report to begin a clear history of your records.',
+                                      action: 'Upload your first report',
+                                      onAction: _upload,
+                                    ),
+                                  )
+                                : DesignReportCard(
+                                    key: ValueKey(reports.first.id),
+                                    report: reports.first,
+                                    onTap: () => _openReport(reports.first),
+                                  ),
                           ),
-                          const SizedBox(height: 12),
-                          if (_loading) ...[
-                            const LinearProgressIndicator(
-                              minHeight: 2,
-                              semanticsLabel: 'Loading dashboard',
+                          if (reports != null && reports.isNotEmpty) ...[
+                            const SizedBox(height: 22),
+                            DesignSectionHeading(
+                              title: 'Latest results',
+                              action: 'All trends',
+                              onAction: widget.onGoToTrends ?? _openTimeline,
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 8),
+                            if (latest.isEmpty)
+                              Text(
+                                'Reviewed results will appear here when available.',
+                                style: theme.textTheme.bodySmall,
+                              )
+                            else
+                              Row(
+                                children: [
+                                  for (var i = 0; i < latest.length; i++) ...[
+                                    if (i > 0) const SizedBox(width: 10),
+                                    Expanded(
+                                      child: _ResultPreview(
+                                        parameter: latest[i],
+                                        onTap: () => _openTrend(latest[i]),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                           ],
-                          if (_loadFailed) ...[
+                          if (_loadFailed && reports != null) ...[
+                            const SizedBox(height: 12),
                             Text(
                               'Some information could not be refreshed. Pull down to try again.',
-                              style: theme.textTheme.bodyMedium?.copyWith(
+                              style: theme.textTheme.bodySmall?.copyWith(
                                 color: colors.error,
                               ),
                             ),
-                            const SizedBox(height: 12),
                           ],
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              final narrow =
-                                  constraints.maxWidth < 340 ||
-                                  MediaQuery.textScalerOf(context).scale(14) >
-                                      22;
-                              final stats = [
-                                _Stat(
-                                  label: 'Reports',
-                                  value: reports?.length.toString() ?? '—',
-                                  icon: Icons.description_outlined,
-                                ),
-                                _Stat(
-                                  label: 'Ready',
-                                  value: ready?.toString() ?? '—',
-                                  icon: Icons.task_alt_rounded,
-                                ),
-                                _Stat(
-                                  label: 'Processing',
-                                  value: processing?.toString() ?? '—',
-                                  icon: Icons.hourglass_top_rounded,
-                                ),
-                              ];
-                              return Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
-                                children: [
-                                  for (final stat in stats)
-                                    SizedBox(
-                                      width: narrow
-                                          ? constraints.maxWidth
-                                          : (constraints.maxWidth - 20) / 3,
-                                      child: stat,
-                                    ),
-                                ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 28),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'Recent reports',
-                                  style: theme.textTheme.titleLarge,
-                                ),
-                              ),
-                              TextButton(
-                                key: const Key('go-to-timeline'),
-                                onPressed: _openTimeline,
-                                child: const Text('View all'),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(18),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  if (reports == null)
-                                    Text(
-                                      _loading
-                                          ? 'Fetching your latest reports…'
-                                          : 'Report overview unavailable.',
-                                      style: theme.textTheme.bodyMedium,
-                                    )
-                                  else if (reports.isEmpty) ...[
-                                    Icon(
-                                      Icons.folder_open_rounded,
-                                      size: 40,
-                                      color: colors.primary,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      'Your story starts here',
-                                      textAlign: TextAlign.center,
-                                      style: theme.textTheme.titleMedium,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    const Text(
-                                      'Upload your first report to start building your health history.',
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ] else
-                                    for (final report in reports.take(3))
-                                      _RecentReport(
-                                        report: report,
-                                        onTap: () => _openReport(report),
-                                      ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
                         ],
                       ),
                     ),
@@ -465,113 +684,153 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value, required this.icon});
-  final String label;
-  final String value;
-  final IconData icon;
+class _ResultPreview extends StatelessWidget {
+  const _ResultPreview({required this.parameter, required this.onTap});
+  final TrendParameter parameter;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final point = parameter.dataPoints.last;
     final theme = Theme.of(context);
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 20, color: theme.colorScheme.primary),
-            const SizedBox(height: 8),
-            Text(value, style: theme.textTheme.headlineSmall),
-            const SizedBox(height: 4),
-            Text(label, style: theme.textTheme.bodySmall),
-          ],
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                parameter.parameterName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: point.originalValue ?? point.value.toString(),
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontSize: 26,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' ${parameter.unit ?? ''}',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (parameter.dataPoints
+                      .map((point) => point.date)
+                      .toSet()
+                      .length >=
+                  2)
+                SizedBox(
+                  height: 26,
+                  width: double.infinity,
+                  child: CustomPaint(
+                    painter: _MiniTrendPainter(
+                      parameter.dataPoints,
+                      color: theme.colorScheme.primary,
+                      accent: AppColors.teal,
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  '${parameter.dataPoints.length == 1 ? 'One result' : 'Same-day results'} · ${AppDateFormat.dateWithRelative(point.date, hasTime: false)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall,
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _RecentReport extends StatelessWidget {
-  const _RecentReport({required this.report, required this.onTap});
-  final Report report;
-  final VoidCallback onTap;
+class _MiniTrendPainter extends CustomPainter {
+  const _MiniTrendPainter(
+    this.points, {
+    required this.color,
+    required this.accent,
+  });
+
+  final List<TrendDataPoint> points;
+  final Color color;
+  final Color accent;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final (label, icon) = switch (report.status) {
-      'parsed' => ('Ready', Icons.check_circle_outline_rounded),
-      'uploading' ||
-      'queued' ||
-      'parsing' => ('Processing', Icons.schedule_rounded),
-      'failed_transient' ||
-      'failed_terminal' => ('Processing failed', Icons.error_outline_rounded),
-      'content_not_recognized' => (
-        'Not recognized',
-        Icons.info_outline_rounded,
-      ),
-      'unparsed' => ('Saved without analysis', Icons.description_outlined),
-      _ => ('Uploaded', Icons.description_outlined),
-    };
-    final date = AppDateFormat.dateWithRelative(report.createdAt);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.description_outlined,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    report.originalFileName,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${report.profileName ?? 'Health profile'} • $date',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Icon(
-                        icon,
-                        size: 14,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(label, style: theme.textTheme.bodySmall),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+  void paint(Canvas canvas, Size size) {
+    if (points.length < 2 || size.isEmpty) return;
+    final low = points
+        .map((point) => point.value)
+        .reduce((a, b) => a < b ? a : b);
+    final high = points
+        .map((point) => point.value)
+        .reduce((a, b) => a > b ? a : b);
+    final firstDate = points.first.date.millisecondsSinceEpoch;
+    final lastDate = points.last.date.millisecondsSinceEpoch;
+    final dateSpan = lastDate - firstDate;
+    if (dateSpan <= 0) return;
+    final span = high == low ? 1.0 : high - low;
+    final path = Path();
+    final offsets = <Offset>[];
+    for (var index = 0; index < points.length; index++) {
+      final x =
+          2 +
+          (size.width - 4) *
+              (points[index].date.millisecondsSinceEpoch - firstDate) /
+              dateSpan;
+      final y =
+          size.height -
+          4 -
+          (size.height - 8) * (points[index].value - low) / span;
+      final point = Offset(x, y);
+      offsets.add(point);
+      if (index == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round,
     );
+    for (var index = 0; index < offsets.length; index++) {
+      canvas.drawCircle(
+        offsets[index],
+        index == offsets.length - 1 ? 2.4 : 1.8,
+        Paint()..color = index == offsets.length - 1 ? accent : color,
+      );
+    }
   }
+
+  @override
+  bool shouldRepaint(covariant _MiniTrendPainter oldDelegate) =>
+      oldDelegate.points != points ||
+      oldDelegate.color != color ||
+      oldDelegate.accent != accent;
 }
 
 class _RestrictionBanner extends StatelessWidget {

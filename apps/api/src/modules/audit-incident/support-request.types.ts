@@ -17,7 +17,8 @@ export type SupportActionType =
   | 'billing_entitlement'
   | 'billing_checkout'
   | 'notification_preferences'
-  | 'account_profile_update';
+  | 'account_profile_update'
+  | 'product_help';
 
 export const SUPPORT_ACTION_TYPES: SupportActionType[] = [
   'auth',
@@ -29,6 +30,7 @@ export const SUPPORT_ACTION_TYPES: SupportActionType[] = [
   'billing_checkout',
   'notification_preferences',
   'account_profile_update',
+  'product_help',
 ];
 
 export interface SupportRequestListItem {

@@ -1,6 +1,9 @@
 const commPrefCategorySecurity = 'security';
 const commPrefCategoryCompliance = 'compliance';
 const commPrefCategoryProduct = 'product';
+const commPrefCategoryReportReady = 'report_ready';
+const commPrefCategoryUploadUpdates = 'upload_updates';
+const commPrefCategoryShareReminders = 'share_reminders';
 
 const mandatoryCategories = {commPrefCategorySecurity, commPrefCategoryCompliance};
 
