@@ -89,3 +89,8 @@ export class SupportRequestAdminQueryDto {
   @Type(() => Number)
   page?: number;
 }
+
+export class UpdateSupportRequestStatusDto {
+  @IsIn(SUPPORT_REQUEST_STATUSES)
+  status!: SupportRequestStatus;
+}

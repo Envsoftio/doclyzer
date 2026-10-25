@@ -113,6 +113,16 @@ export class SupportRequestService {
     return entity ? this.mapDetail(entity) : null;
   }
 
+  async updateSupportRequestStatus(
+    id: string,
+    status: SupportRequestStatus,
+  ): Promise<SupportRequestDetail | null> {
+    const entity = await this.supportRepo.findOne({ where: { id } });
+    if (!entity) return null;
+    entity.status = status;
+    return this.mapDetail(await this.supportRepo.save(entity));
+  }
+
   private mapListItem(entity: SupportRequestEntity): SupportRequestListItem {
     return {
       id: entity.id,

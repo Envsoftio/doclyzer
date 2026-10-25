@@ -53,19 +53,8 @@ async function main() {
         store: boolean;
       };
       assert.equal(body.store, false);
-      const input = JSON.parse(body.input) as {
-        targetIndex: number;
-        reportResults: Array<{ value: string; referenceRange: string }>;
-      };
-      assert.equal(input.targetIndex, 0);
-      assert.deepEqual(
-        input.reportResults.map((row) => row.value),
-        ['O.5', '1,2'],
-      );
-      assert.deepEqual(
-        input.reportResults.map((row) => row.referenceRange),
-        ['0.4-1.0', '0.6-1.3'],
-      );
+      const input = JSON.parse(body.input) as Record<string, unknown>;
+      assert.deepEqual(input, { value: 'O.5' });
       return new Response(
         JSON.stringify({
           output_text: JSON.stringify({ suggestedValue: '0.5' }),
@@ -80,6 +69,9 @@ async function main() {
     }));
     assert.equal(await service.suggest(context[0], context), '0.5');
     assert.equal(calls, 1);
+    const unsafe = { ...context[0], value: '555O1234567' };
+    assert.equal(await service.suggest(unsafe, [unsafe]), null);
+    assert.equal(calls, 1, 'long identifiers must not reach the provider');
     assert.equal(
       await new ReportValueSuggestionService(new ConfigService({})).suggest(
         context[0],

@@ -165,6 +165,18 @@ onMounted(loadData)
       <button type="button" class="btn-primary" :disabled="hasInvalidDateRange" @click="loadData">Refresh</button>
     </div>
 
+    <section class="section operations-section" aria-labelledby="app-controls-title">
+      <div class="section-title" id="app-controls-title">App controls</div>
+      <div class="operations-grid">
+        <NuxtLink to="/admin/plans" class="operation-link"><strong>Plan limits</strong><span>Profiles, reports, and sharing</span></NuxtLink>
+        <NuxtLink to="/admin/promos" class="operation-link"><strong>Promo codes</strong><span>Checkout discounts</span></NuxtLink>
+        <NuxtLink to="/admin/referrals" class="operation-link"><strong>Referrals</strong><span>Credits and reward tiers</span></NuxtLink>
+        <NuxtLink to="/admin/vouchers" class="operation-link"><strong>Gift vouchers</strong><span>Create and void codes</span></NuxtLink>
+        <NuxtLink to="/admin/incidents" class="operation-link"><strong>Incidents</strong><span>Public status banners</span></NuxtLink>
+        <NuxtLink to="/admin/support" class="operation-link"><strong>Support</strong><span>Review app requests</span></NuxtLink>
+      </div>
+    </section>
+
     <div v-if="error" class="error-box" role="alert" aria-live="assertive">
       {{ error }}
     </div>
@@ -247,19 +259,27 @@ onMounted(loadData)
 
       <div class="section insight-usage-section">
         <div class="section-title">
-          Result AI spend
-          <span class="section-link">Usage is event-level; cost is estimated from configured model rates</span>
+          Tracked report AI spend
+          <span class="section-link">Estimated from recorded tokens and configured model rates. Earlier summaries are excluded. Calls without token usage appear as unpriced.</span>
         </div>
         <div class="card-row">
-          <div class="metric-card metric-card--accent"><div class="metric-label">Requests</div><div class="metric-value">{{ formatCount(insightUsage?.totals?.requests) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.providerCalls) }} provider calls</div></div>
-          <div class="metric-card"><div class="metric-label">Estimated OpenAI cost</div><div class="metric-value">{{ formatUsd(insightUsage?.totals?.estimatedCostUsd) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.totalTokens) }} tokens</div></div>
-          <div class="metric-card"><div class="metric-label">Unclear range checks</div><div class="metric-value">{{ formatCount(insightUsage?.totals?.rangeRequests) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.rangeTokens) }} tokens</div></div>
-          <div class="metric-card"><div class="metric-label">Estimated range cost</div><div class="metric-value">{{ formatUsd(insightUsage?.totals?.rangeCostUsd) }}</div></div>
+          <div class="metric-card metric-card--accent"><div class="metric-label">Provider calls</div><div class="metric-value">{{ formatCount(insightUsage?.totals?.providerCalls) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.requests) }} usage events</div></div>
+          <div class="metric-card"><div class="metric-label">Total estimated cost</div><div class="metric-value">{{ formatUsd(insightUsage?.totals?.estimatedCostUsd) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.totalTokens) }} tokens</div></div>
+          <div class="metric-card"><div class="metric-label">Test explanation cost</div><div class="metric-value">{{ formatUsd(insightUsage?.totals?.explanationCostUsd) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.explanationProviderCalls) }} generated · {{ formatCount(insightUsage?.totals?.explanationCacheHits) }} served from saved</div></div>
+          <div class="metric-card"><div class="metric-label">Report summary cost</div><div class="metric-value">{{ formatUsd(insightUsage?.totals?.summaryCostUsd) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.summaryRequests) }} calls · {{ formatCount(insightUsage?.totals?.summaryTokens) }} tokens</div></div>
+          <div class="metric-card"><div class="metric-label">Range check cost</div><div class="metric-value">{{ formatUsd(insightUsage?.totals?.rangeCostUsd) }}</div><div class="metric-delta">{{ formatCount(insightUsage?.totals?.rangeRequests) }} checks</div></div>
+        </div>
+        <p v-if="insightUsage?.totals?.unpricedProviderCalls" class="muted">{{ formatCount(insightUsage.totals.unpricedProviderCalls) }} provider calls had no token usage, so their cost is not included.</p>
+        <div class="table-wrap">
+          <table class="table"><thead><tr><th>Workload</th><th>Model</th><th>Generated</th><th>Saved views</th><th>Tokens</th><th>Estimated cost</th></tr></thead><tbody>
+            <tr v-for="row in insightUsage?.models ?? []" :key="`${row.workload}:${row.model}`"><td>{{ row.workload }}</td><td>{{ row.model }}</td><td>{{ formatCount(row.providerCalls) }}</td><td>{{ formatCount(row.cacheHits) }}</td><td>{{ formatCount(row.totalTokens) }}</td><td>{{ formatUsd(row.estimatedCostUsd) }}</td></tr>
+            <tr v-if="!(insightUsage?.models?.length)"><td colspan="6" class="empty-cell">No narrative usage in this period.</td></tr>
+          </tbody></table>
         </div>
         <div class="table-wrap">
-          <table class="table"><thead><tr><th>User</th><th>Requests</th><th>Provider calls</th><th>Tokens</th><th>Est. cost</th><th>Range checks</th><th>Range cost</th></tr></thead><tbody>
-            <tr v-for="row in insightUsage?.users ?? []" :key="row.userId"><td><strong>{{ row.displayName || 'Unnamed' }}</strong><br><span class="list-meta">{{ row.email }}</span></td><td>{{ row.requests }}</td><td>{{ row.providerCalls }}</td><td>{{ row.totalTokens }}</td><td>{{ formatUsd(row.estimatedCostUsd) }}</td><td>{{ row.rangeRequests }}</td><td>{{ formatUsd(row.rangeCostUsd) }}</td></tr>
-            <tr v-if="!(insightUsage?.users?.length)"><td colspan="7" class="empty-cell">No result AI usage in this period.</td></tr>
+          <table class="table"><thead><tr><th>User</th><th>Provider calls</th><th>Tokens</th><th>Total cost</th><th>Explanation cost</th><th>Summary calls</th><th>Summary tokens</th><th>Summary cost</th><th>Range cost</th></tr></thead><tbody>
+            <tr v-for="row in insightUsage?.users ?? []" :key="row.userId"><td><strong>{{ row.displayName || 'Unnamed' }}</strong><br><span class="list-meta">{{ row.email }}</span></td><td>{{ row.providerCalls }}</td><td>{{ row.totalTokens }}</td><td>{{ formatUsd(row.estimatedCostUsd) }}</td><td>{{ formatUsd(row.explanationCostUsd) }}</td><td>{{ row.summaryRequests }}</td><td>{{ row.summaryTokens }}</td><td>{{ formatUsd(row.summaryCostUsd) }}</td><td>{{ formatUsd(row.rangeCostUsd) }}</td></tr>
+            <tr v-if="!(insightUsage?.users?.length)"><td colspan="9" class="empty-cell">No report AI usage in this period.</td></tr>
           </tbody></table>
         </div>
       </div>
@@ -402,8 +422,8 @@ onMounted(loadData)
 
 <style scoped>
 .dashboard {
-  --font-ui: 'Plus Jakarta Sans', 'Inter', 'Avenir Next', 'Segoe UI', sans-serif;
-  --font-display: 'Space Grotesk', 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  --font-ui: var(--brand-font);
+  --font-display: var(--brand-font);
   max-width: 1260px;
   margin: 0 auto;
   padding-bottom: 24px;
@@ -414,7 +434,7 @@ onMounted(loadData)
   font-size: clamp(1.55rem, 1.2vw + 1.25rem, 2.1rem);
   font-weight: 700;
   margin: 0;
-  color: #0f172a;
+  color: var(--brand-ink);
   letter-spacing: -0.02em;
   font-family: var(--font-display);
 }
@@ -422,7 +442,7 @@ onMounted(loadData)
 .page-subtitle {
   font-size: 13px;
   margin-top: 8px;
-  color: #526277;
+  color: var(--brand-muted);
   max-width: 60ch;
 }
 
@@ -432,7 +452,7 @@ onMounted(loadData)
   justify-content: space-between;
   gap: 18px;
   margin-bottom: 18px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(255, 248, 242, 0.84));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(230, 244, 241, 0.84));
   border: 1px solid rgba(13, 27, 42, 0.08);
   border-radius: 16px;
   padding: 18px 18px 16px;
@@ -448,7 +468,7 @@ onMounted(loadData)
   flex-wrap: wrap;
   margin-bottom: 24px;
   font-size: 12px;
-  color: #334155;
+  color: var(--brand-ink);
   background: rgba(255, 255, 255, 0.78);
   border: 1px solid rgba(13, 27, 42, 0.08);
   border-radius: 14px;
@@ -470,8 +490,8 @@ onMounted(loadData)
 .date-input:focus,
 .select-input:focus {
   outline: none;
-  border-color: #d97706;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  border-color: var(--brand-teal);
+  box-shadow: 0 0 0 3px rgba(19, 143, 138, 0.15);
 }
 
 .btn-primary,
@@ -485,16 +505,16 @@ onMounted(loadData)
 }
 
 .btn-primary {
-  background: linear-gradient(145deg, #0f172a, #1e293b);
+  background: var(--brand-blue);
   color: #fff;
-  border: 1px solid #111827;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
+  border: 1px solid var(--brand-blue);
+  box-shadow: 0 8px 20px rgba(17, 82, 120, 0.18);
 }
 
 .btn-secondary {
   background: #fff;
   border: 1px solid rgba(13, 27, 42, 0.16);
-  color: #0f172a;
+  color: var(--brand-ink);
 }
 
 .btn-primary:hover,
@@ -550,10 +570,18 @@ onMounted(loadData)
   box-shadow: 0 12px 28px rgba(13, 27, 42, 0.06);
 }
 
+.operations-section { margin-bottom: 18px; }
+.operations-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 10px; }
+.operation-link { display: flex; flex-direction: column; gap: 5px; min-height: 70px; padding: 13px 14px; border: 1px solid rgba(13, 27, 42, .1); border-radius: 11px; background: #fff; color: var(--brand-ink); text-decoration: none; transition: border-color .15s ease, transform .15s ease; }
+.operation-link:hover { border-color: var(--brand-teal); transform: translateY(-2px); }
+.operation-link:focus-visible { outline: 2px solid var(--brand-teal-bright); outline-offset: 2px; }
+.operation-link strong { font-size: 12px; font-weight: 700; }
+.operation-link span { font-size: 11px; color: var(--brand-muted); line-height: 1.4; }
+
 .section-title {
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--brand-ink);
   margin: 0 0 12px;
   display: flex;
   align-items: center;
@@ -564,7 +592,7 @@ onMounted(loadData)
 
 .section-link {
   font-size: 12px;
-  color: #b45309;
+  color: var(--brand-blue);
   text-decoration: none;
   font-weight: 600;
 }
@@ -580,7 +608,7 @@ onMounted(loadData)
 
 .metric-card {
   background:
-    radial-gradient(65% 110% at 0% 0%, rgba(255, 237, 213, 0.42), transparent 60%),
+    radial-gradient(65% 110% at 0% 0%, rgba(230, 244, 241, 0.8), transparent 60%),
     #fff;
   border: 1px solid rgba(13, 27, 42, 0.1);
   border-radius: 14px;
@@ -591,7 +619,7 @@ onMounted(loadData)
 }
 .metric-label {
   font-size: 11px;
-  color: #5f6f84;
+  color: var(--brand-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 7px;
@@ -601,11 +629,11 @@ onMounted(loadData)
 .metric-value {
   font-size: clamp(1.2rem, 1vw + 1.05rem, 1.7rem);
   font-weight: 700;
-  color: #0f172a;
+  color: var(--brand-ink);
   font-family: var(--font-display);
 }
 
-.metric-delta { font-size: 11px; color: #6b7b90; margin-top: 5px; }
+.metric-delta { font-size: 11px; color: var(--brand-muted); margin-top: 5px; }
 
 .stat-chip {
   background: #fff;
@@ -620,10 +648,10 @@ onMounted(loadData)
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 .stat-chip--tight { margin-top: 12px; }
-.stat-chip__label { font-size: 11px; color: #617287; text-transform: uppercase; letter-spacing: 0.05em; }
-.stat-chip__value { font-size: 20px; font-weight: 700; color: #0f172a; }
+.stat-chip__label { font-size: 11px; color: var(--brand-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-chip__value { font-size: 20px; font-weight: 700; color: var(--brand-ink); }
 .stat-chip__value--red { color: #dc2626; }
-.stat-chip__meta { font-size: 11px; color: #7b8ca1; }
+.stat-chip__meta { font-size: 11px; color: var(--brand-muted); }
 
 .split-grid {
   display: grid;
@@ -642,7 +670,7 @@ onMounted(loadData)
 .panel-title {
   font-size: 12px;
   font-weight: 600;
-  color: #213044;
+  color: var(--brand-ink);
   margin: 0 0 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -665,19 +693,19 @@ onMounted(loadData)
   background: #fff;
 }
 .table th {
-  background: linear-gradient(180deg, #f8fafc, #eef2f7);
+  background: linear-gradient(180deg, var(--brand-canvas), var(--brand-mint));
   padding: 10px 12px;
   text-align: left;
   font-weight: 600;
-  color: #2a3a4f;
+  color: var(--brand-ink);
   font-size: 12px;
   font-family: var(--font-display);
 }
 
 .table td {
   padding: 10px 12px;
-  border-top: 1px solid #eef2f6;
-  color: #334155;
+  border-top: 1px solid var(--brand-border);
+  color: var(--brand-ink);
 }
 .td-green { color: #16a34a; font-weight: 600; }
 .td-red { color: #dc2626; font-weight: 600; }
@@ -692,8 +720,8 @@ onMounted(loadData)
   background: #f1f5f9;
   border: 1px solid rgba(13, 27, 42, 0.1);
 }
-.status-chip__name { font-size: 11px; color: #64748b; }
-.status-chip__count { font-size: 18px; font-weight: 700; color: #0f172a; }
+.status-chip__name { font-size: 11px; color: var(--brand-muted); }
+.status-chip__count { font-size: 18px; font-weight: 700; color: var(--brand-ink); }
 .status-chip--parsed { background: #f0fdf4; border-color: #bbf7d0; }
 .status-chip--parsed .status-chip__count { color: #16a34a; }
 .status-chip--queued, .status-chip--parsing, .status-chip--uploading { background: #fffbeb; border-color: #fde68a; }
@@ -710,32 +738,32 @@ onMounted(loadData)
   display: grid;
   gap: 8px;
   font-size: 13px;
-  color: #334155;
+  color: var(--brand-ink);
 }
 
 .list li {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--brand-canvas);
+  border: 1px solid var(--brand-border);
   border-radius: 10px;
   padding: 9px 10px;
 }
 
-.list-meta { display: block; font-size: 11px; color: #7b8ca1; margin-top: 4px; }
-.inline-link { margin-left: 6px; font-size: 12px; color: #b45309; text-decoration: none; font-weight: 600; }
+.list-meta { display: block; font-size: 11px; color: var(--brand-muted); margin-top: 4px; }
+.inline-link { margin-left: 6px; font-size: 12px; color: var(--brand-blue); text-decoration: none; font-weight: 600; }
 .inline-link:hover { text-decoration: underline; }
 
 .retention-row {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px solid #eef2f7;
+  border-bottom: 1px solid var(--brand-mint);
   font-size: 13px;
-  color: #334155;
+  color: var(--brand-ink);
 }
 .retention-row:last-child { border-bottom: none; }
 .retention-label { font-weight: 500; }
 .retention-value { font-weight: 600; }
-.retention-delta { font-size: 12px; color: #64748b; }
+.retention-delta { font-size: 12px; color: var(--brand-muted); }
 
 .stat-grid {
   display: grid;
@@ -743,26 +771,26 @@ onMounted(loadData)
   gap: 10px;
 }
 .stat-grid > div {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--brand-canvas);
+  border: 1px solid var(--brand-border);
   border-radius: 10px;
   padding: 10px;
 }
-.stat-grid__label { font-size: 11px; color: #617287; }
-.stat-grid__value { font-size: 17px; font-weight: 700; color: #0f172a; }
+.stat-grid__label { font-size: 11px; color: var(--brand-muted); }
+.stat-grid__value { font-size: 17px; font-weight: 700; color: var(--brand-ink); }
 
 .skeleton-row { display: flex; gap: 16px; margin-bottom: 24px; }
 .skeleton-card {
   flex: 1;
   height: 96px;
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background: linear-gradient(90deg, var(--brand-border) 25%, #f1f5f9 50%, var(--brand-border) 75%);
   background-size: 220% 100%;
   border-radius: 12px;
   animation: shimmer 1.4s linear infinite;
 }
 .skeleton-block {
   height: 220px;
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background: linear-gradient(90deg, var(--brand-border) 25%, #f1f5f9 50%, var(--brand-border) 75%);
   background-size: 220% 100%;
   border-radius: 12px;
   animation: shimmer 1.4s linear infinite;

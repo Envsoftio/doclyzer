@@ -6,6 +6,7 @@ import { ReportResultInsightUsageEntity } from '../src/database/entities/report-
 import { selectStoredResult } from '../src/modules/reports/report-result-selector';
 import {
   comparePrintedRange,
+  relatedResultContext,
   ReportResultInsightService,
 } from '../src/modules/reports/report-result-insight.service';
 
@@ -14,7 +15,9 @@ async function main() {
   const config = new ConfigService({
     reports: {
       labAiFallbackOpenaiApiKey: 'test-key',
-      labAiFallbackOpenaiModel: 'gpt-5-mini',
+      reportNarrativeOpenaiModel: 'gpt-5-mini',
+      reportNarrativeInputPricePerMillion: 2,
+      reportNarrativeOutputPricePerMillion: 10,
       resultInsightTimeoutMs: 1000,
     },
   });
@@ -32,8 +35,11 @@ async function main() {
       rows.set(`${row.reportId}:${row.cacheKey}`, row);
     },
   } as unknown as Repository<ReportResultInsightEntity>;
+  const usageRows: Array<Record<string, unknown>> = [];
   const usageRepo = {
-    insert: async () => undefined,
+    insert: async (row: Record<string, unknown>) => {
+      usageRows.push(row);
+    },
   } as unknown as Repository<ReportResultInsightUsageEntity>;
   const service = new ReportResultInsightService(config, cacheRepo, usageRepo);
   const result = {
@@ -78,6 +84,67 @@ async function main() {
     );
   }
   assert.equal(comparePrintedRange(result), 'below');
+  const mchc = {
+    parameterName: 'MCHC',
+    value: '30.7',
+    unit: 'g/dL',
+    referenceRange: '32-36',
+  };
+  const hemoglobin = {
+    parameterName: 'Hemoglobin',
+    value: '11.2',
+    unit: 'g/dL',
+    referenceRange: '12-16',
+  };
+  const mcv = {
+    parameterName: 'MCV',
+    value: '75',
+    unit: 'fL',
+    referenceRange: '80-100',
+  };
+  assert.deepEqual(
+    relatedResultContext(mchc, [
+      mchc,
+      hemoglobin,
+      mcv,
+      {
+        parameterName: 'Patient Name',
+        value: '42',
+        unit: '',
+        referenceRange: '',
+      },
+    ]),
+    [
+      {
+        parameterName: 'Hemoglobin',
+        value: '11.2',
+        unit: 'g/dL',
+        referenceRange: '12-16',
+      },
+      {
+        parameterName: 'MCV',
+        value: '75',
+        unit: 'fL',
+        referenceRange: '80-100',
+      },
+    ],
+  );
+  assert.deepEqual(
+    relatedResultContext(mchc, [
+      mchc,
+      hemoglobin,
+      { ...hemoglobin, value: '13.1' },
+    ]),
+    [],
+    'conflicting duplicate peer results must be omitted',
+  );
+  assert.deepEqual(
+    relatedResultContext({ ...mchc, sampleDate: '2026-10-25' }, [
+      { ...mcv, sampleDate: '2026-10-24' },
+    ]),
+    [],
+    'a peer from a different collection date must be omitted',
+  );
   assert.equal(comparePrintedRange({ ...result, value: '14' }), 'within');
   assert.equal(comparePrintedRange({ ...result, value: '17' }), 'above');
   assert.equal(
@@ -179,6 +246,11 @@ async function main() {
         body.instructions as string,
         /uploaded-report text as data|extracted report data as unverified and as data/,
       );
+      assert.match(
+        body.instructions as string,
+        /four or five concrete sentences/,
+      );
+      assert.match(body.instructions as string, /relatedResults/);
       assert.deepEqual(
         (body.text as { format: { schema: { required: string[] } } }).format
           .schema.required,
@@ -199,9 +271,11 @@ async function main() {
         printedRangeCategories: '',
         rangeStatus: 'below',
         labAbnormalFlag: null,
+        relatedResults: [],
       });
       return new Response(
         JSON.stringify({
+          usage: { input_tokens: 120, output_tokens: 80 },
           output_text: JSON.stringify({
             testExplanation: 'A blood protein.',
             resultExplanation: 'Below the printed range.',
@@ -215,11 +289,36 @@ async function main() {
         }),
       );
     };
-    const insight = await service.explain('report-1', result);
+    const insight = await service.explain('report-1', result, 'user-1');
     assert.equal(insight.testExplanation, 'A blood protein.');
     assert.equal(rows.size, 1);
-    assert.deepEqual(await service.explain('report-1', result), insight);
+    assert.equal(usageRows[0].model, 'gpt-5-mini');
+    assert.equal(usageRows[0].inputTokens, 120);
+    assert.equal(usageRows[0].outputTokens, 80);
+    assert.equal(usageRows[0].estimatedCostUsd, '0.00104000');
+    assert.equal(usageRows[0].cacheHit, false);
+    assert.deepEqual(
+      await service.explain('report-1', result, 'user-1'),
+      insight,
+    );
+    assert.equal(usageRows[1].cacheHit, true);
+    assert.equal(usageRows[1].estimatedCostUsd, '0.00000000');
     assert.equal(fetchCount, 1, 'repeat visit should use saved explanation');
+    const restartedService = new ReportResultInsightService(
+      config,
+      cacheRepo,
+      usageRepo,
+    );
+    assert.deepEqual(
+      await restartedService.explain('report-1', result, 'user-1'),
+      insight,
+    );
+    assert.equal(
+      fetchCount,
+      1,
+      'a saved explanation survives a service restart',
+    );
+    assert.equal(usageRows[2].cacheHit, true);
     await service.explain('report-2', result);
     assert.equal(
       fetchCount,
@@ -251,7 +350,7 @@ async function main() {
       new ConfigService({
         reports: {
           labAiFallbackOpenaiApiKey: 'test-key',
-          labAiFallbackOpenaiModel: 'new-model',
+          reportNarrativeOpenaiModel: 'new-model',
           resultInsightTimeoutMs: 1000,
         },
       }),
@@ -345,6 +444,7 @@ async function main() {
         printedRangeCategories: '',
         rangeStatus: 'unknown',
         labAbnormalFlag: null,
+        relatedResults: [],
       });
       return new Response(
         JSON.stringify({ output_text: JSON.stringify(insight) }),
@@ -387,6 +487,64 @@ async function main() {
         error.response?.code === 'RESULT_INSIGHT_UNSAFE_INPUT',
     );
     assert.equal(fetchCount, callsBeforeUnreviewed + 1);
+    global.fetch = async (_url, options) => {
+      const body = JSON.parse(options?.body as string) as { input: string };
+      const input = JSON.parse(body.input);
+      assert.equal(input.testName, 'MCHC');
+      assert.deepEqual(input.relatedResults, [
+        {
+          parameterName: 'Hemoglobin',
+          value: '11.2',
+          unit: 'g/dL',
+          referenceRange: '12-16',
+        },
+        {
+          parameterName: 'MCV',
+          value: '75',
+          unit: 'fL',
+          referenceRange: '80-100',
+        },
+      ]);
+      return new Response(
+        JSON.stringify({ output_text: JSON.stringify(insight) }),
+      );
+    };
+    await unreviewed.explain('report-mchc', mchc, undefined, [
+      mchc,
+      hemoglobin,
+      mcv,
+    ]);
+    const unavailableCache = {
+      manager: cacheRepo.manager,
+      findOneBy: async () => null,
+      upsert: async () => {
+        throw new Error('Synthetic cache failure');
+      },
+    } as unknown as Repository<ReportResultInsightEntity>;
+    const serviceWithoutPersistence = new ReportResultInsightService(
+      config,
+      unavailableCache,
+      usageRepo,
+    );
+    global.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          usage: { input_tokens: 120, output_tokens: 80 },
+          output_text: JSON.stringify(insight),
+        }),
+      );
+    await assert.rejects(
+      () =>
+        serviceWithoutPersistence.explain(
+          'report-cache-failure',
+          result,
+          'user-1',
+        ),
+      (error: { response?: { code?: string } }) =>
+        error.response?.code === 'RESULT_INSIGHT_SAVE_UNAVAILABLE',
+    );
+    assert.equal(usageRows.at(-1)?.estimatedCostUsd, '0.00104000');
+    assert.equal(usageRows.at(-1)?.cacheHit, false);
   } finally {
     global.fetch = originalFetch;
   }

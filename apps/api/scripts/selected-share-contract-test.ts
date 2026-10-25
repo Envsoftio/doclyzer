@@ -185,6 +185,7 @@ async function main() {
     protectedLink.accessCode,
   );
   assert.equal(unlocked.reports.length, 1);
+  assert.equal(unlocked.reports[0].summary, 'Unselected result in summary');
 
   await assert.rejects(
     service.createShareLink(

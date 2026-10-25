@@ -21,6 +21,17 @@ interface WorkbenchData {
 const data = ref<WorkbenchData | null>(null)
 const loading = ref(true)
 const error = ref('')
+const reportSearch = ref('')
+const reportStatus = ref('')
+const reportPage = ref(1)
+const reportPageSize = 10
+const filteredReports = computed(() => data.value?.reports.filter(r =>
+  (!reportStatus.value || r.status === reportStatus.value) &&
+  (!reportSearch.value.trim() || r.originalFileName.toLowerCase().includes(reportSearch.value.trim().toLowerCase())),
+) ?? [])
+const visibleReports = computed(() => filteredReports.value.slice((reportPage.value - 1) * reportPageSize, reportPage.value * reportPageSize))
+const reportPages = computed(() => Math.max(1, Math.ceil(filteredReports.value.length / reportPageSize)))
+watch([reportSearch, reportStatus], () => { reportPage.value = 1 })
 
 onMounted(async () => {
   try {
@@ -56,10 +67,10 @@ const STATUS_COLORS: Record<string, string> = {
 </script>
 
 <template>
-  <div class="workbench">
-    <NuxtLink to="/admin/users" class="back-link">← Back to Users</NuxtLink>
+  <div class="admin-ops workbench">
+    <NuxtLink to="/admin/users" class="admin-ops__back back-link">← Users</NuxtLink>
 
-    <div v-if="error" class="error-box" role="alert" aria-live="assertive">
+    <div v-if="error" class="admin-ops__message admin-ops__message--error" role="alert" aria-live="assertive">
       {{ error }}
     </div>
 
@@ -67,18 +78,20 @@ const STATUS_COLORS: Record<string, string> = {
 
     <template v-else-if="data">
       <!-- User header -->
-      <div class="user-header">
+      <header class="admin-ops__header user-header">
         <div>
-          <h2 class="user-email">{{ data.user.email }}</h2>
+          <p class="admin-ops__eyebrow">Manage / Account workbench</p>
+          <h1 class="user-email">{{ data.user.email }}</h1>
           <div class="user-meta">
             <span>{{ data.user.displayName || 'No display name' }}</span>
             <span class="dot">·</span>
-            <span class="role-badge" :class="`role-badge--${data.user.role}`">{{ data.user.role }}</span>
+            <span class="admin-ops__badge">{{ data.user.role }}</span>
             <span class="dot">·</span>
             <span>Joined {{ fmtDate(data.user.createdAt) }}</span>
           </div>
         </div>
-      </div>
+        <NuxtLink class="admin-ops__button" :to="`/admin/reports?userId=${data.user.id}`">Browse reports</NuxtLink>
+      </header>
 
       <!-- Report status summary -->
       <div class="status-summary">
@@ -93,10 +106,10 @@ const STATUS_COLORS: Record<string, string> = {
       </div>
 
       <!-- Profiles -->
-      <div class="section">
+      <section class="admin-ops__card section">
         <h3 class="section-title">Profiles ({{ data.profiles.length }})</h3>
-        <div v-if="data.profiles.length === 0" class="empty">No profiles.</div>
-        <table v-else class="table">
+        <div v-if="data.profiles.length === 0" class="admin-ops__empty">No profiles.</div>
+        <div v-else class="admin-ops__table-wrap"><table class="admin-ops__table">
           <thead><tr><th>Name</th><th>Reports</th><th>Created</th></tr></thead>
           <tbody>
             <tr v-for="p in data.profiles" :key="p.id">
@@ -105,31 +118,34 @@ const STATUS_COLORS: Record<string, string> = {
               <td>{{ fmtDate(p.createdAt) }}</td>
             </tr>
           </tbody>
-        </table>
-      </div>
+        </table></div>
+      </section>
 
       <!-- Reports -->
-      <div class="section">
-        <h3 class="section-title">Reports ({{ data.reports.length }})</h3>
-        <div v-if="data.reports.length === 0" class="empty">No reports.</div>
-        <table v-else class="table">
-          <thead><tr><th>File</th><th>Size</th><th>Status</th><th>Uploaded</th></tr></thead>
+      <section class="admin-ops__card section">
+        <div class="report-heading"><h3 class="section-title">Reports ({{ data.reports.length }})</h3><NuxtLink :to="`/admin/reports?userId=${data.user.id}`">Browse all user reports →</NuxtLink></div>
+        <div class="report-filters"><label class="admin-ops__field">Find file<input v-model="reportSearch" class="admin-ops__input" type="search" placeholder="Search filename" /></label><label class="admin-ops__field">Status<select v-model="reportStatus" class="admin-ops__select"><option value="">All statuses</option><option v-for="status in Object.keys(data.reportStatusSummary)" :key="status" :value="status">{{ status.replaceAll('_', ' ') }}</option></select></label></div>
+        <div v-if="filteredReports.length === 0" class="admin-ops__empty">No reports match.</div>
+        <div v-else class="admin-ops__table-wrap"><table class="admin-ops__table">
+          <thead><tr><th>File</th><th>Size</th><th>Status</th><th>Uploaded</th><th>Open</th></tr></thead>
           <tbody>
-            <tr v-for="r in data.reports" :key="r.id">
+            <tr v-for="r in visibleReports" :key="r.id">
               <td class="td-file">{{ r.originalFileName }}</td>
               <td>{{ fmtBytes(r.sizeBytes) }}</td>
-              <td><span class="badge" :class="STATUS_COLORS[r.status] || 'badge--grey'">{{ r.status }}</span></td>
+              <td><span class="admin-ops__badge" :class="STATUS_COLORS[r.status] || 'badge--grey'">{{ r.status.replaceAll('_', ' ') }}</span></td>
               <td>{{ fmtDate(r.createdAt) }}</td>
+              <td><NuxtLink :to="`/admin/reports/${r.id}`">Inspect →</NuxtLink></td>
             </tr>
           </tbody>
-        </table>
-      </div>
+        </table></div>
+        <div v-if="filteredReports.length > reportPageSize" class="admin-ops__pagination"><span>{{ (reportPage - 1) * reportPageSize + 1 }}–{{ Math.min(reportPage * reportPageSize, filteredReports.length) }} of {{ filteredReports.length }}</span><div><button class="admin-ops__button" :disabled="reportPage <= 1" @click="reportPage--">Previous</button><span>Page {{ reportPage }} of {{ reportPages }}</span><button class="admin-ops__button" :disabled="reportPage >= reportPages" @click="reportPage++">Next</button></div></div>
+      </section>
 
       <!-- Sessions -->
-      <div class="section">
+      <section class="admin-ops__card section">
         <h3 class="section-title">Recent Sessions ({{ data.sessions.length }})</h3>
-        <div v-if="data.sessions.length === 0" class="empty">No sessions.</div>
-        <table v-else class="table">
+        <div v-if="data.sessions.length === 0" class="admin-ops__empty">No sessions.</div>
+        <div v-else class="admin-ops__table-wrap"><table class="admin-ops__table">
           <thead><tr><th>IP</th><th>Device</th><th>Created</th><th>Expires</th></tr></thead>
           <tbody>
             <tr v-for="s in data.sessions" :key="s.id">
@@ -139,48 +155,38 @@ const STATUS_COLORS: Record<string, string> = {
               <td>{{ fmtDate(s.expiresAt) }}</td>
             </tr>
           </tbody>
-        </table>
-      </div>
+        </table></div>
+      </section>
     </template>
   </div>
 </template>
 
 <style scoped>
-.workbench { max-width: 1000px; }
-.back-link { font-size: 13px; color: #6366f1; text-decoration: none; display: inline-block; margin-bottom: 24px; }
+.workbench { max-width: 1280px; }
+.back-link { display: inline-block; margin-bottom: 18px; font-size: 14px; font-weight: 700; text-decoration: none; }
 .back-link:hover { text-decoration: underline; }
-
-.error-box { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
-
-.user-header { margin-bottom: 20px; }
-.user-email { font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 6px; }
-.user-meta { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; flex-wrap: wrap; }
-.dot { color: #cbd5e1; }
-
-.role-badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #f1f5f9; color: #475569; }
-.role-badge--superadmin { background: #ede9fe; color: #6d28d9; }
-.role-badge--admin { background: #dbeafe; color: #1d4ed8; }
-
-.status-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
-.status-chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #f1f5f9; color: #374151; }
-
-.section { margin-bottom: 32px; }
-.section-title { font-size: 15px; font-weight: 600; color: #1e293b; margin: 0 0 12px; }
-.empty { font-size: 13px; color: #94a3b8; }
-
-.table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; }
-.table th { background: #f8fafc; padding: 10px 14px; text-align: left; font-weight: 600; color: #374151; }
-.table td { padding: 10px 14px; border-top: 1px solid #f1f5f9; color: #374151; }
-.td-file { font-weight: 500; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.td-ua { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #94a3b8; }
-
-.badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+.user-header { align-items: center; }
+.user-header > a { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.user-email { overflow-wrap: anywhere; }
+.user-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; color: var(--brand-muted); font-size: 14px; }
+.dot { color: var(--brand-border); }
+.status-summary { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 20px; }
+.status-chip { padding: 6px 11px; border-radius: 999px; background: var(--brand-mint); color: var(--brand-ink); font-size: 13px; }
+.section { margin-bottom: 0; }
+.section-title { margin: 0 0 14px; color: var(--brand-ink); font-size: 19px; font-weight: 700; }
+.report-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.report-heading a { font-size: 14px; font-weight: 700; }
+.report-filters { display: flex; gap: 12px; flex-wrap: wrap; margin: 4px 0 14px; }
+.report-filters label { flex: 1; min-width: 180px; }
+.td-file { min-width: 180px; max-width: 320px; overflow-wrap: anywhere; font-weight: 650; }
+.td-ua { min-width: 180px; max-width: 280px; overflow-wrap: anywhere; color: var(--brand-muted); font-size: 13px; }
 .badge--green { background: #dcfce7; color: #166534; }
-.badge--amber { background: #fef9c3; color: #854d0e; }
+.badge--amber { background: #fff2dd; color: #854d0e; }
 .badge--orange { background: #ffedd5; color: #9a3412; }
-.badge--red { background: #fee2e2; color: #991b1b; }
-.badge--grey { background: #f1f5f9; color: #475569; }
-
-.skeleton-block { height: 400px; background: #e2e8f0; border-radius: 10px; animation: pulse 1.4s ease-in-out infinite; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.badge--red { background: #ffe9e6; color: #991b1b; }
+.badge--grey { background: #eef3f3; color: var(--brand-muted); }
+.skeleton-block { height: 360px; border-radius: 16px; background: var(--brand-mint); animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .55; } }
+@media (max-width: 640px) { .user-header { align-items: flex-start; } .user-header > a { width: 100%; text-align: center; } }
+@media (prefers-reduced-motion: reduce) { .skeleton-block { animation: none; } }
 </style>

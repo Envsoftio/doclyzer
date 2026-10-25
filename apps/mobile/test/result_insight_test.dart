@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/features/reports/reports_repository.dart';
+import 'package:mobile/features/reports/result_palette.dart';
 import 'package:mobile/features/reports/result_range.dart';
 import 'package:mobile/features/reports/screens/result_insight_screen.dart';
 import 'package:mobile/shared/app_date_format.dart';
@@ -22,6 +24,31 @@ void main() {
     suggestedFollowup: 'Discuss this value with a clinician.',
     dataUncertainties: ['A single result cannot identify the cause.'],
   );
+
+  testWidgets('below-range status stays legible in dark mode', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: ResultInsightScreen(
+          result: hemoglobin,
+          loadInsight: () async => insight,
+          onViewTrend: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final status = tester.widget<Text>(
+      find.byKey(const Key('result-insight-range-status')),
+    );
+    final palette = ResultPalette.forPosition(
+      tester.element(find.byKey(const Key('result-insight-range-status'))),
+      RangePosition.below,
+    );
+    expect(status.style?.color, palette.foreground);
+    final lighter = palette.foreground.computeLuminance() + 0.05;
+    final darker = palette.background.computeLuminance() + 0.05;
+    expect(lighter / darker, greaterThanOrEqualTo(4.5));
+  });
 
   test('plain values use only the printed range', () {
     expect(compareWithPrintedRange(hemoglobin), RangePosition.below);
@@ -247,6 +274,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(
+      tester.widget<Text>(find.byKey(const Key('result-insight-value'))).data,
+      '10',
+    );
+    expect(find.text('g/dL'), findsOneWidget);
     expect(find.text("Below this lab's reference range"), findsOneWidget);
     expect(find.text('Understand your result'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('What this test measures'), 200);
@@ -273,6 +305,38 @@ void main() {
     );
     expect(find.text('Lifestyle factors to discuss'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('result actions are grouped beside the result', (tester) async {
+    var trendOpens = 0;
+    var originalOpens = 0;
+    var reviewOpens = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ResultInsightScreen(
+          result: hemoglobin,
+          loadInsight: () async => insight,
+          onViewTrend: () => trendOpens++,
+          onViewOriginal: () => originalOpens++,
+          onReviewResult: () => reviewOpens++,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final actions = find.byKey(const Key('result-insight-actions'));
+    expect(actions, findsOneWidget);
+    for (final key in [
+      'result-insight-trend',
+      'result-insight-original',
+      'result-insight-review',
+    ]) {
+      final button = find.byKey(Key(key));
+      expect(find.descendant(of: actions, matching: button), findsOneWidget);
+      await tester.ensureVisible(button);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+    }
+    expect((trendOpens, originalOpens, reviewOpens), (1, 1, 1));
   });
 
   testWidgets('failed generation offers retry', (tester) async {

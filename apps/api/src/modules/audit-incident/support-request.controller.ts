@@ -4,6 +4,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -18,6 +19,7 @@ import { SuperadminGuard } from '../auth/superadmin.guard';
 import {
   CreateSupportRequestDto,
   SupportRequestAdminQueryDto,
+  UpdateSupportRequestStatusDto,
 } from './support-request.dto';
 import { SupportRequestService } from './support-request.service';
 
@@ -71,5 +73,24 @@ export class SupportRequestAdminController {
       });
     }
     return successResponse(data, correlationId);
+  }
+
+  @Patch(':supportRequestId/status')
+  async updateSupportRequestStatus(
+    @Req() req: Request,
+    @Param('supportRequestId') supportRequestId: string,
+    @Body() dto: UpdateSupportRequestStatusDto,
+  ): Promise<object> {
+    const data = await this.supportRequestService.updateSupportRequestStatus(
+      supportRequestId,
+      dto.status,
+    );
+    if (!data) {
+      throw new NotFoundException({
+        code: 'SUPPORT_REQUEST_NOT_FOUND',
+        message: 'Support request not found',
+      });
+    }
+    return successResponse(data, getCorrelationId(req));
   }
 }

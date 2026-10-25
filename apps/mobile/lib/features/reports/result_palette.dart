@@ -22,12 +22,12 @@ class ResultPalette {
         Icons.check_circle_outline_rounded,
       ),
       RangePosition.below => ResultPalette(
-        colors.error,
+        colors.onErrorContainer,
         colors.errorContainer,
         Icons.south_rounded,
       ),
       RangePosition.above => ResultPalette(
-        colors.error,
+        colors.onErrorContainer,
         colors.errorContainer,
         Icons.north_rounded,
       ),

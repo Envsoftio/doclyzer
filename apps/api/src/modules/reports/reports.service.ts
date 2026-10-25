@@ -31,6 +31,7 @@ import { ReportLabValueCorrectionEntity } from '../../database/entities/report-l
 import { ReportResultInsightEntity } from '../../database/entities/report-result-insight.entity';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ReportSummaryService } from './report-summary/report-summary.service';
+import type { SummaryProviderUsage } from './report-summary/report-summarizer.interface';
 import { OpenDataLoaderClient } from './opendataloader.client';
 import { PaddleOcrClient } from './paddle-ocr.client';
 import {
@@ -587,9 +588,13 @@ export class ReportsService {
       this.reportRepo.manager.query(sql),
     );
 
+    const summaryUsage: { current: SummaryProviderUsage | null } = { current: null };
     const summary =
       finalStatus === 'parsed'
-        ? await this.reportSummaryService.generateSummary(normalizedFile.buffer)
+        ? await this.reportSummaryService.generateSummary(
+            persistedLabValues,
+            (usage) => { summaryUsage.current = usage; },
+          )
         : null;
 
     const entity = this.reportRepo.create({
@@ -602,6 +607,11 @@ export class ReportsService {
       originalFileStorageKey: storageKey,
       status: finalStatus,
       summary,
+      summaryStatus: summary
+        ? 'ready'
+        : this.configService.get<boolean>('reports.reportSummaryEnabled') && finalStatus === 'parsed'
+          ? 'failed'
+          : 'not_requested',
       parsedTranscript: finalStatus === 'parsed' ? transcript : null,
       structuredReport:
         finalStatus === 'parsed'
@@ -624,6 +634,10 @@ export class ReportsService {
       }
       throw err;
     }
+    if (summaryUsage.current)
+      await this.reportSummaryService.recordUsageSafely(
+        userId, reportId, summaryUsage.current,
+      );
     await Promise.all(deferredRangeUsage.map(({ raw, result }) =>
       this.rangeSuggestionService.recordUsage(raw, userId, reportId, result)));
 
@@ -869,12 +883,72 @@ export class ReportsService {
   async enrichWorkerSummary(
     reportId: string,
     generation: number,
-  ): Promise<void> {
-    // Drain previously queued summary intents without reading/transmitting PHI.
-    await this.reportRepo.update(
-      { id: reportId, processingGeneration: generation, deletedAt: IsNull() },
-      { summaryStatus: 'not_requested' },
+    refresh = false,
+  ): Promise<boolean> {
+    if (!this.configService.get<boolean>('reports.reportSummaryEnabled')) {
+      await this.reportRepo.update(
+        { id: reportId, processingGeneration: generation, deletedAt: IsNull() },
+        { summaryStatus: 'not_requested' },
+      );
+      return false;
+    }
+    const report = await this.reportRepo.findOneBy({
+      id: reportId,
+      processingGeneration: generation,
+      deletedAt: IsNull(),
+    });
+    if (
+      !report ||
+      report.status !== 'parsed' ||
+      (generation > 0 && report.processingState !== 'ready')
+    ) return false;
+    if (report.summary?.trim() && !refresh) return false;
+    const originalSummary = report.summary;
+    const rows = await this.reportLabValueRepo.find({
+      where: { reportId },
+      order: { sortOrder: 'ASC' },
+    });
+    const rowSnapshot = (items: ReportLabValueEntity[]) => JSON.stringify(
+      items.map((row) => [row.id, row.parameterName, row.value, row.unit, row.referenceRange, row.reviewVersion]),
     );
+    const snapshot = rowSnapshot(rows);
+    const summaryUsage: { current: SummaryProviderUsage | null } = { current: null };
+    const summary = await this.reportSummaryService.generateSummary(
+      rows,
+      (usage) => { summaryUsage.current = usage; },
+    );
+    if (summaryUsage.current)
+      await this.reportSummaryService.recordUsageSafely(
+        report.userId, reportId, summaryUsage.current,
+      );
+    return this.reportRepo.manager.transaction(async (manager) => {
+      // Corrections lock the report before changing rows. Check the same row
+      // snapshot while holding that lock so an old response cannot win.
+      const current = await manager.getRepository(ReportEntity).findOne({
+        where: {
+          id: reportId,
+          processingGeneration: generation,
+          deletedAt: IsNull(),
+        },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (
+        !current ||
+        current.status !== 'parsed' ||
+        (generation > 0 && current.processingState !== 'ready')
+      ) return false;
+      if (current.summary !== originalSummary) return false;
+      if (current.summary?.trim() && !refresh) return false;
+      const now = await manager.getRepository(ReportLabValueEntity).find({
+        where: { reportId },
+        order: { sortOrder: 'ASC' },
+      });
+      if (rowSnapshot(now) !== snapshot) return false;
+      if (summary) current.summary = summary;
+      current.summaryStatus = current.summary ? 'ready' : 'failed';
+      await manager.getRepository(ReportEntity).save(current);
+      return summary !== null;
+    });
   }
 
   private computeContentHash(buffer: Buffer): string {
@@ -1088,9 +1162,25 @@ export class ReportsService {
         correctedValue: next,
       });
       report.summary = null;
+      report.summaryStatus = 'not_requested';
       await manager.getRepository(ReportEntity).save(report);
       await manager.delete(ReportResultInsightEntity, { reportId });
     });
+    if (this.configService.get<boolean>('reports.reportSummaryEnabled')) {
+      const changed = await this.reportRepo.findOneBy({
+        id: reportId,
+        userId,
+        deletedAt: IsNull(),
+      });
+      if (changed) {
+        try {
+          await this.enrichWorkerSummary(reportId, changed.processingGeneration);
+        } catch {
+          // The correction has committed; summary generation is secondary.
+          this.logger.warn('Report summary refresh failed after correction');
+        }
+      }
+    }
     return this.getReport(userId, reportId);
   }
 
@@ -1419,11 +1509,24 @@ export class ReportsService {
       this.reportRepo.manager.query(sql),
     );
 
+    const summaryUsage: { current: SummaryProviderUsage | null } = { current: null };
     entity.status = finalStatus;
     entity.summary =
       finalStatus === 'parsed'
-        ? await this.reportSummaryService.generateSummary(buffer)
+        ? await this.reportSummaryService.generateSummary(
+            persistedRetryLabValues,
+            (usage) => { summaryUsage.current = usage; },
+          )
         : null;
+    if (summaryUsage.current)
+      await this.reportSummaryService.recordUsageSafely(
+        userId, entity.id, summaryUsage.current,
+      );
+    entity.summaryStatus = entity.summary
+      ? 'ready'
+      : this.configService.get<boolean>('reports.reportSummaryEnabled') && finalStatus === 'parsed'
+        ? 'failed'
+        : 'not_requested';
     // Only overwrite transcript on success; preserve existing on failure (AC3)
     let retryStructuredReport: StructuredReportDto | null = null;
     if (finalStatus === 'parsed') {
@@ -1480,6 +1583,7 @@ export class ReportsService {
       }
       locked.status = entity.status;
       locked.summary = entity.summary;
+      locked.summaryStatus = entity.summaryStatus;
       locked.parsedTranscript = entity.parsedTranscript;
       locked.structuredReport = entity.structuredReport;
       await manager.getRepository(ReportEntity).save(locked);

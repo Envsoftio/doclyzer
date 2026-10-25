@@ -6,10 +6,6 @@ export interface ReportsConfig {
   paddleOcrTimeoutMs: number;
   /** Enable/disable AI report summarisation. */
   reportSummaryEnabled: boolean;
-  /** Provider type for summarisation (currently only 'http' supported). */
-  reportSummaryProvider: string;
-  /** Base URL of the internal summariser HTTP service. */
-  reportSummaryHttpUrl: string;
   /** Timeout in ms for summariser HTTP call. */
   reportSummaryTimeoutMs: number;
   /** Enable/disable OpenDataLoader parser integration. */
@@ -46,6 +42,10 @@ export interface ReportsConfig {
   resultInsightTimeoutMs: number;
   resultInsightOpenaiInputPricePerMillion: number;
   resultInsightOpenaiOutputPricePerMillion: number;
+  /** Dedicated model and standard token rates for patient-facing explanations. */
+  reportNarrativeOpenaiModel: string;
+  reportNarrativeInputPricePerMillion: number;
+  reportNarrativeOutputPricePerMillion: number;
 }
 
 export const reportsConfig = registerAs(
@@ -57,11 +57,9 @@ export const reportsConfig = registerAs(
       process.env.LAB_OCR_TIMEOUT_MS ?? '130000',
       10,
     ),
-    reportSummaryEnabled: process.env.REPORT_SUMMARY_ENABLED === 'true',
-    reportSummaryProvider: process.env.REPORT_SUMMARY_PROVIDER ?? 'http',
-    reportSummaryHttpUrl: process.env.REPORT_SUMMARY_HTTP_URL ?? '',
+    reportSummaryEnabled: process.env.REPORT_SUMMARY_ENABLED !== 'false',
     reportSummaryTimeoutMs: parseInt(
-      process.env.REPORT_SUMMARY_TIMEOUT_MS ?? '10000',
+      process.env.REPORT_SUMMARY_TIMEOUT_MS ?? '60000',
       10,
     ),
     opendataloaderEnabled: process.env.OPENDATALOADER_ENABLED === 'true',
@@ -101,10 +99,22 @@ export const reportsConfig = registerAs(
       process.env.REPORT_LAB_AI_FALLBACK_MIN_CONFIDENCE ?? '0.72',
     ),
     resultInsightTimeoutMs: parseInt(
-      process.env.REPORT_RESULT_INSIGHT_TIMEOUT_MS ?? '30000',
+      process.env.REPORT_RESULT_INSIGHT_TIMEOUT_MS ?? '60000',
       10,
     ),
-    resultInsightOpenaiInputPricePerMillion: parseFloat(process.env.REPORT_RESULT_INSIGHT_INPUT_PRICE_PER_MILLION ?? '0'),
-    resultInsightOpenaiOutputPricePerMillion: parseFloat(process.env.REPORT_RESULT_INSIGHT_OUTPUT_PRICE_PER_MILLION ?? '0'),
+    resultInsightOpenaiInputPricePerMillion: parseFloat(
+      process.env.REPORT_RESULT_INSIGHT_INPUT_PRICE_PER_MILLION ?? '0',
+    ),
+    resultInsightOpenaiOutputPricePerMillion: parseFloat(
+      process.env.REPORT_RESULT_INSIGHT_OUTPUT_PRICE_PER_MILLION ?? '0',
+    ),
+    reportNarrativeOpenaiModel:
+      process.env.REPORT_NARRATIVE_OPENAI_MODEL ?? 'gpt-6.1-sol',
+    reportNarrativeInputPricePerMillion: parseFloat(
+      process.env.REPORT_NARRATIVE_INPUT_PRICE_PER_MILLION ?? '2',
+    ),
+    reportNarrativeOutputPricePerMillion: parseFloat(
+      process.env.REPORT_NARRATIVE_OUTPUT_PRICE_PER_MILLION ?? '10',
+    ),
   }),
 );

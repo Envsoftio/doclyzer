@@ -27,7 +27,8 @@ async function handleLogin() {
 <template>
   <div class="login-page">
     <div class="login-card">
-      <h1 class="login-title">Doclyzer Admin</h1>
+      <div class="login-brand"><span class="login-brand__mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 2h7c5 0 9 4 9 10s-4 10-9 10h-7z"/><path d="M1 12h5l3-6 4 12 3-6h7"/></svg></span><span>doclyzer</span></div>
+      <h1 class="login-title">Admin console</h1>
 
       <div v-if="error" class="error-box" role="alert" aria-live="assertive">
         {{ error }}
@@ -56,24 +57,28 @@ async function handleLogin() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f1f5f9;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background: radial-gradient(70rem 40rem at 90% -10%, var(--brand-mint), transparent 60%), var(--brand-canvas);
+  font-family: var(--brand-font);
 }
 
 .login-card {
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  border: 1px solid var(--brand-border);
+  border-radius: 24px;
+  box-shadow: 0 12px 30px rgba(16, 62, 84, 0.08);
   padding: 40px;
   width: 100%;
   max-width: 380px;
 }
 
+.login-brand { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--brand-ink); font-size: 22px; font-weight: 800; letter-spacing: -.045em; margin-bottom: 26px; }
+.login-brand__mark { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 11px; background: linear-gradient(90deg, var(--brand-teal-bright), var(--brand-blue)); }
+.login-brand__mark svg { width: 25px; height: 25px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .login-title {
   font-size: 20px;
   font-weight: 700;
   margin: 0 0 24px;
-  color: #0f172a;
+  color: var(--brand-ink);
   text-align: center;
 }
 
@@ -95,32 +100,33 @@ async function handleLogin() {
   gap: 6px;
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--brand-ink);
 }
 
 .form-input {
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid var(--brand-border);
+  border-radius: 9px;
   font-size: 14px;
   outline: none;
   font-family: inherit;
 }
-.form-input:focus { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+.form-input:focus { border-color: var(--brand-teal); box-shadow: 0 0 0 3px rgba(19,143,138,0.15); }
 .form-input--code { letter-spacing: 0.3em; font-size: 20px; text-align: center; }
 
 .btn-primary {
   padding: 10px;
-  background: #4f46e5;
+  background: var(--brand-blue);
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 9px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
 }
-.btn-primary:hover:not(:disabled) { background: #4338ca; }
+.btn-primary:hover:not(:disabled) { background: #0d405e; }
+.btn-primary:focus-visible, .form-input:focus-visible { outline: 2px solid var(--brand-teal-bright); outline-offset: 2px; }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
 </style>

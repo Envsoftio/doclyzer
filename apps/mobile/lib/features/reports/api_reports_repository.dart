@@ -11,6 +11,14 @@ class ApiReportsRepository implements ReportsRepository {
 
   final ApiClient _client;
   final TokenStorage _tokenStorage;
+
+  @override
+  Future<void> requestSummary(String reportId, {bool refresh = false}) async {
+    await _client.post(
+      'v1/reports/processing/$reportId/summary/retry${refresh ? '?refresh=true' : ''}',
+    );
+  }
+
   static final RegExp _rangeToken = RegExp(
     r'^\s*-?\d+(?:\.\d+)?\s*[-–—]\s*-?\d+(?:\.\d+)?\s*$',
   );

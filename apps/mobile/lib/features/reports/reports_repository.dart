@@ -343,6 +343,9 @@ abstract class ReportsRepository {
   /// Fetch a report by id.
   Future<Report> getReport(String reportId);
 
+  /// Generate a summary, or explicitly replace a saved one; the server saves it.
+  Future<void> requestSummary(String reportId, {bool refresh = false});
+
   /// Save a reviewed result. The server rejects stale review versions.
   Future<Report> correctResult(
     String reportId,

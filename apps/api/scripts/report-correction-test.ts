@@ -58,6 +58,7 @@ const manager = {
   transaction: async (work: (transaction: unknown) => Promise<void>) => work(manager),
 };
 const service = Object.assign(Object.create(ReportsService.prototype) as object, {
+  configService: { get: () => false },
   reportRepo: { manager: { ...manager, query: async (sql: string) =>
     sql.includes('lab_test_aliases')
       ? [{ alias_key: 'hemoglobin', canonical_test_id: 'hemoglobin', canonical_name: 'Hemoglobin' }]

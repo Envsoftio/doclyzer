@@ -48,10 +48,6 @@ class ReportProcessingStore extends ChangeNotifier {
     start(api);
   }
 
-  Future<void> retrySummary(String id) async {
-    await _api?.post('v1/reports/processing/$id/summary/retry');
-  }
-
   Future<void> acknowledge(String id) async {
     final api = _api;
     if (api == null) throw StateError('Not signed in');

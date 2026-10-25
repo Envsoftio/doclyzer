@@ -96,10 +96,11 @@ onMounted(loadPlans)
 </script>
 
 <template>
-  <div class="plans-page">
+  <div class="plans-page admin-ops">
     <header class="page-header">
       <div>
-        <h2>Plans</h2>
+        <p class="admin-ops__eyebrow">Manage / Product</p>
+        <h1>Plans</h1>
         <p>Set limits for Free, Starter, and Pro users. Report limits apply to stored reports and uploads in progress.</p>
       </div>
       <button type="button" class="secondary-btn" :disabled="loading || !!savingId" @click="loadPlans">Refresh</button>
@@ -136,26 +137,29 @@ onMounted(loadPlans)
 </template>
 
 <style scoped>
-.plans-page { max-width: 1100px; }
+.plans-page { max-width: 1280px; }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
-h2 { margin: 0; font-size: 22px; color: #0f172a; }
-.page-header p, .plan-heading p, .hint { color: #64748b; font-size: 14px; }
-.page-header p { margin: 6px 0 0; }
-.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-.plan-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; }
+.page-header p:not(.admin-ops__eyebrow), .plan-heading p, .hint { color: #607186; font-size: 13px; line-height: 1.55; }
+.page-header p:not(.admin-ops__eyebrow) { margin: 8px 0 0; }
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px; }
+.plan-card { background: rgba(255,255,255,.9); border: 1px solid rgba(13,27,42,.1); border-radius: 16px; padding: 22px; box-shadow: 0 12px 28px rgba(13,27,42,.06); }
 .plan-heading { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 24px; }
-.plan-heading h3 { margin: 0; font-size: 18px; color: #0f172a; }
+.plan-heading h3 { margin: 0; font: 700 19px var(--font-display); color: #0d1b2a; }
 .plan-heading p { margin: 5px 0 0; }
-.plan-heading span { color: #64748b; font-size: 12px; white-space: nowrap; }
-label { display: block; color: #334155; font-size: 14px; font-weight: 600; margin: 16px 0 8px; }
-input[type='number'] { width: 180px; max-width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; font: inherit; }
+.plan-heading span { color: #607186; font-size: 11px; white-space: nowrap; }
+label { display: block; color: #34465b; font-size: 12px; font-weight: 700; margin: 16px 0 8px; }
+input[type='number'] { width: 100%; border: 1px solid #cbd6e2; border-radius: 9px; min-height: 42px; padding: 9px 11px; background: #fff; color: #17283b; font: 500 13px var(--font-ui); }
 .checkbox-label { display: flex; align-items: center; gap: 8px; }
+.checkbox-label input { accent-color: var(--brand-teal); }
 .hint { margin: 18px 0; }
-button { border-radius: 6px; padding: 9px 14px; font: inherit; cursor: pointer; }
-button:disabled { opacity: .6; cursor: not-allowed; }
-.primary-btn { border: 0; background: #4f46e5; color: #fff; font-weight: 600; }
-.secondary-btn { border: 1px solid #d1d5db; background: #fff; color: #0f172a; }
-.message { padding: 10px 14px; border-radius: 6px; font-size: 13px; }
-.error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
-.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+button { min-height: 40px; border-radius: 9px; padding: 9px 14px; font: 700 12px var(--font-ui); cursor: pointer; }
+button:disabled { opacity: .55; cursor: not-allowed; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--brand-teal-bright); outline-offset: 2px; }
+.primary-btn { border: 1px solid var(--brand-blue); background: var(--brand-blue); color: #fff; }
+.primary-btn:hover { background: #0d405e; }
+.secondary-btn { border: 1px solid #ccd6e0; background: #fff; color: #26394d; }
+.message { padding: 11px 13px; border-radius: 9px; font-size: 13px; }
+.error { background: #fff1ef; border: 1px solid #efbeb9; color: #a52626; }
+.success { background: #effaf3; border: 1px solid #b9dfcb; color: #16653b; }
+@media (max-width: 640px) { .page-header { flex-direction: column; } .plan-card { padding: 16px; } }
 </style>

@@ -42,6 +42,11 @@ const resultMessage = ref('')
 const webPushStatus = ref('')
 const metrics = ref<Metrics | null>(null)
 const auditItems = ref<PushAuditItem[]>([])
+const auditPage = ref(1)
+const auditPageSize = ref(25)
+const auditTotal = ref(0)
+const auditTotalPages = ref(1)
+const auditDryRun = ref('')
 
 const notificationType = ref<'announcement' | 'incident' | 'support' | 'billing' | 'referral' | 'system'>('announcement')
 const category = ref<'admin_announcements' | 'billing' | 'referrals' | 'product' | 'security' | 'compliance'>('admin_announcements')
@@ -63,16 +68,20 @@ async function loadNotifications() {
   try {
     const [metricsRes, auditRes] = await Promise.all([
       adminFetch<{ data: Metrics }>('/admin/notifications/metrics'),
-      adminFetch<{ data: { items: PushAuditItem[] } }>('/admin/notifications/push/audit?page=1&pageSize=25'),
+      adminFetch<{ data: { items: PushAuditItem[]; pagination: { total: number; totalPages: number } } }>(`/admin/notifications/push/audit?page=${auditPage.value}&pageSize=${auditPageSize.value}${auditDryRun.value ? `&dryRun=${auditDryRun.value}` : ''}`),
     ])
     metrics.value = metricsRes.data
     auditItems.value = auditRes.data.items
+    auditTotal.value = auditRes.data.pagination.total
+    auditTotalPages.value = auditRes.data.pagination.totalPages
   } catch (e: unknown) {
     error.value = (e instanceof Error ? e.message : String(e)) || 'Failed to load notification operations'
   } finally {
     loading.value = false
   }
 }
+function applyAuditFilter() { auditPage.value = 1; void loadNotifications() }
+function changeAuditPage(next: number) { auditPage.value = next; void loadNotifications() }
 
 function buildPayload(includeApproval: boolean) {
   const payload: Record<string, unknown> = {
@@ -277,6 +286,7 @@ onMounted(loadNotifications)
 
     <section class="panel">
       <h3 class="section-title">Push Audit</h3>
+      <div class="audit-controls"><label>Send type<select v-model="auditDryRun" @change="applyAuditFilter"><option value="">All</option><option value="true">Dry runs</option><option value="false">Live sends</option></select></label><label>Rows per page<select v-model.number="auditPageSize" @change="applyAuditFilter"><option :value="25">25</option><option :value="50">50</option><option :value="100">100</option></select></label></div>
       <div v-if="loading" class="empty-state">Loading notification audit…</div>
       <div v-else-if="auditItems.length === 0" class="empty-state">No push sends recorded yet.</div>
       <div v-else class="table-wrap">
@@ -312,12 +322,15 @@ onMounted(loadNotifications)
           </tbody>
         </table>
       </div>
+      <div v-if="!loading && auditTotal" class="admin-ops__pagination"><span>{{ (auditPage - 1) * auditPageSize + 1 }}–{{ Math.min(auditPage * auditPageSize, auditTotal) }} of {{ auditTotal }}</span><div><button class="admin-ops__button" :disabled="auditPage <= 1" @click="changeAuditPage(auditPage - 1)">Previous</button><span>Page {{ auditPage }} of {{ auditTotalPages }}</span><button class="admin-ops__button" :disabled="auditPage >= auditTotalPages" @click="changeAuditPage(auditPage + 1)">Next</button></div></div>
     </section>
   </div>
 </template>
 
 <style scoped>
 .notifications-page { max-width: 1180px; }
+.audit-controls { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+.audit-controls label { min-width: 155px; }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .page-title { font-size: 22px; font-weight: 700; margin: 0 0 4px; color: #0f172a; }
 .page-subtitle { margin: 0; color: #64748b; font-size: 13px; }

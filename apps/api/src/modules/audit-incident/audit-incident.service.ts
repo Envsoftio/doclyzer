@@ -51,9 +51,10 @@ export class AuditIncidentService {
         ]);
 
         const repo = manager.getRepository(SuperadminActionAuditEventEntity);
-        const lastEvent = await repo.findOne({
+        const [lastEvent] = await repo.find({
           order: { tamperSequence: 'DESC' },
           select: ['tamperSequence', 'tamperHash'],
+          take: 1,
         });
         const sequence = (lastEvent?.tamperSequence ?? 0) + 1;
         const previousHash = lastEvent?.tamperHash ?? null;

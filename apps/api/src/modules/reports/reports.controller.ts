@@ -382,7 +382,12 @@ export class ReportsController {
         message: 'This result is not available in the report.',
       });
     }
-    const data = await this.resultInsightService.explain(reportId, result, userId);
+    const data = await this.resultInsightService.explain(
+      reportId,
+      result,
+      userId,
+      results,
+    );
     return successResponse(data, getCorrelationId(req));
   }
 

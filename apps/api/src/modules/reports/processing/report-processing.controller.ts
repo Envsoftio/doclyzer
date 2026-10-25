@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Param,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -12,6 +13,7 @@ import {
   BadRequestException,
   NotFoundException,
   HttpException,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -35,10 +37,12 @@ import {
   cancelReportProcessing,
 } from './report-lifecycle';
 import { MAX_REPORT_SIZE_BYTES } from '../reports.types';
+import { ReportsService } from '../reports.service';
 
 @Controller('reports/processing')
 @UseGuards(AuthGuard)
 export class ReportProcessingController {
+  private readonly logger = new Logger(ReportProcessingController.name);
   constructor(
     private readonly db: DataSource,
     private readonly config: ConfigService,
@@ -47,6 +51,7 @@ export class ReportProcessingController {
     private readonly usage: UsageLimitsService,
     private readonly auth: AuthService,
     private readonly stream: ReportStreamService,
+    private readonly reports: ReportsService,
   ) {}
   private user(req: Request) {
     return (req.user as { id: string }).id;
@@ -163,12 +168,84 @@ export class ReportProcessingController {
   @Post(':id/summary/retry') async retrySummary(
     @Req() req: Request,
     @Param('id') id: string,
+    @Query('refresh') refresh?: string,
   ) {
-    await this.status(req, id);
-    throw new ServiceUnavailableException({
-      code: 'REPORT_SUMMARY_DISABLED_FOR_PRIVACY',
-      message: 'Report summaries are unavailable until a privacy-safe input is supported.',
-    });
+    this.auth.enforceRateLimit('report-summary-retry', this.user(req), 5);
+    if (!this.config.get<boolean>('reports.reportSummaryEnabled'))
+      throw new ServiceUnavailableException({
+        code: 'REPORT_SUMMARY_DISABLED',
+        message: 'Report summaries are temporarily unavailable.',
+      });
+    const reportId = this.id(id);
+    const userId = this.user(req);
+    const replaceSavedSummary = refresh === 'true';
+    const [report] = await this.db.query(
+      `SELECT id FROM reports WHERE id=$1 AND user_id=$2 AND deleted_at IS NULL
+       AND status='parsed' AND (processing_generation=0 OR processing_state='ready')`,
+      [reportId, userId],
+    );
+    if (!report) throw new NotFoundException();
+    // A saved summary is reused unless the user explicitly requests an update.
+    const claimResult = await this.db.query(
+      `UPDATE reports SET summary_status='pending' WHERE id=$1 AND user_id=$2
+       AND deleted_at IS NULL
+       AND ($3::boolean OR NULLIF(BTRIM(summary), '') IS NULL)
+       AND summary_status IN ('not_requested','failed','ready')
+       RETURNING processing_generation AS generation`,
+      [reportId, userId, replaceSavedSummary],
+    );
+    // TypeORM's PostgreSQL raw UPDATE result is [returningRows, affectedCount].
+    const claimedRows = Array.isArray(claimResult[0])
+      ? claimResult[0]
+      : claimResult;
+    const claimed = claimedRows[0] as { generation?: unknown } | undefined;
+    if (claimed) {
+      try {
+        const generation = Number(claimed.generation);
+        if (!Number.isSafeInteger(generation) || generation < 0)
+          throw new Error('Invalid summary generation claim');
+        const generated = await this.reports.enrichWorkerSummary(
+          reportId,
+          generation,
+          replaceSavedSummary,
+        );
+        if (replaceSavedSummary && !generated)
+          throw new Error('Summary refresh did not produce an update');
+      } catch (error) {
+        // Provider payloads and database errors can contain health data.
+        // Keep diagnostics to the error type and SQLSTATE only.
+        const errorType =
+          error instanceof Error ? error.constructor.name : typeof error;
+        const driverCode = (error as { driverError?: { code?: unknown } })
+          ?.driverError?.code;
+        const sqlState =
+          typeof driverCode === 'string' && /^[A-Z0-9]{5}$/.test(driverCode)
+            ? driverCode
+            : 'none';
+        this.logger.error(
+          `Report summary failed type=${errorType} sqlState=${sqlState}`,
+        );
+        await this.db.query(
+          `UPDATE reports SET summary_status=CASE WHEN summary IS NULL THEN 'failed' ELSE 'ready' END
+           WHERE id=$1 AND user_id=$2 AND summary_status='pending'`,
+          [reportId, userId],
+        );
+        throw new ServiceUnavailableException({
+          code: 'REPORT_SUMMARY_UNAVAILABLE',
+          message: 'The summary could not be generated. Please try again.',
+        });
+      }
+    }
+    return {
+      data: {
+        summaryStatus: (
+          await this.db.query(
+            'SELECT summary_status AS "summaryStatus" FROM reports WHERE id=$1 AND user_id=$2',
+            [reportId, userId],
+          )
+        )[0]?.summaryStatus,
+      },
+    };
   }
   @Post(':id/acknowledge') async acknowledge(
     @Req() req: Request,

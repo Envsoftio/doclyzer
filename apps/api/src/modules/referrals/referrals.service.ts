@@ -34,6 +34,7 @@ import {
   type ReferralPolicySnapshot,
   type ReferralProgressTimelineItemDto,
 } from './referrals.types';
+import type { UpdateReferralPolicyDto } from './referrals.dto';
 
 interface PostgresDriverError {
   code?: string;
@@ -202,6 +203,114 @@ export class ReferralsService implements OnModuleInit {
       monthlyRewardCap: parseFloat(config.monthlyRewardCap),
       zeroAmountOrderEligible: config.zeroAmountOrderEligible,
     };
+  }
+
+  async getAdminReferralPolicy(): Promise<
+    ReferralPolicySnapshot & { updatedAt: string | null }
+  > {
+    const config = await this.referralPolicyConfigRepo.findOne({
+      where: { configKey: 'default' },
+    });
+    if (!config) return { ...DEFAULT_REFERRAL_POLICY, updatedAt: null };
+    return {
+      inviteeBonusCredits: Number(config.inviteeBonusCredits),
+      milestoneACredits: Number(config.milestoneACredits),
+      milestoneBTiers: config.milestoneBTiers,
+      monthlyRewardCap: Number(config.monthlyRewardCap),
+      zeroAmountOrderEligible: config.zeroAmountOrderEligible,
+      updatedAt: config.updatedAt.toISOString(),
+    };
+  }
+
+  async updateReferralPolicy(
+    actorUserId: string,
+    dto: UpdateReferralPolicyDto,
+  ): Promise<ReferralPolicySnapshot & { updatedAt: string }> {
+    const tiers = dto.milestoneBTiers.map((tier) => ({
+      label: tier.label.trim(),
+      thresholdAmount: tier.thresholdAmount,
+      rewardCredits: tier.rewardCredits,
+    }));
+    const labels = new Set(tiers.map((tier) => tier.label));
+    if (labels.size !== tiers.length || tiers.some((tier) => !tier.label)) {
+      throw new BadRequestException({
+        code: 'REFERRAL_POLICY_TIERS_INVALID',
+        message: 'Tier labels must be distinct and non-empty.',
+      });
+    }
+    if (
+      tiers[0].thresholdAmount !== 0 ||
+      tiers.some(
+        (tier, index) =>
+          index > 0 && tier.thresholdAmount <= tiers[index - 1].thresholdAmount,
+      )
+    ) {
+      throw new BadRequestException({
+        code: 'REFERRAL_POLICY_TIERS_INVALID',
+        message:
+          'Tiers must start at zero and have strictly increasing thresholds.',
+      });
+    }
+
+    try {
+      return await this.dataSource.transaction(async (manager) => {
+        const repo = manager.getRepository(ReferralPolicyConfigEntity);
+        const existing = await repo
+          .createQueryBuilder('policy')
+          .setLock('pessimistic_write')
+          .where('policy.config_key = :configKey', { configKey: 'default' })
+          .getOne();
+        const actualUpdatedAt = existing?.updatedAt.toISOString() ?? null;
+        if (actualUpdatedAt !== (dto.expectedUpdatedAt ?? null)) {
+          throw new ConflictException({
+            code: 'REFERRAL_POLICY_CHANGED',
+            message: 'Referral policy changed. Reload it before saving.',
+          });
+        }
+        const previous = existing
+          ? {
+              inviteeBonusCredits: Number(existing.inviteeBonusCredits),
+              milestoneACredits: Number(existing.milestoneACredits),
+              milestoneBTiers: existing.milestoneBTiers,
+              monthlyRewardCap: Number(existing.monthlyRewardCap),
+              zeroAmountOrderEligible: existing.zeroAmountOrderEligible,
+            }
+          : DEFAULT_REFERRAL_POLICY;
+        const policy = existing ?? repo.create({ configKey: 'default' });
+        policy.inviteeBonusCredits = dto.inviteeBonusCredits.toFixed(2);
+        policy.milestoneACredits = dto.milestoneACredits.toFixed(2);
+        policy.milestoneBTiers = tiers;
+        policy.monthlyRewardCap = dto.monthlyRewardCap.toFixed(2);
+        policy.zeroAmountOrderEligible = dto.zeroAmountOrderEligible;
+        const saved = await repo.save(policy);
+        const next = {
+          inviteeBonusCredits: Number(saved.inviteeBonusCredits),
+          milestoneACredits: Number(saved.milestoneACredits),
+          milestoneBTiers: saved.milestoneBTiers,
+          monthlyRewardCap: Number(saved.monthlyRewardCap),
+          zeroAmountOrderEligible: saved.zeroAmountOrderEligible,
+          updatedAt: saved.updatedAt.toISOString(),
+        };
+        await this.saveAuditEvent(manager, {
+          actorUserId,
+          eventType: 'REFERRAL_POLICY_UPDATED',
+          outcome: 'success',
+          metadata: { previous, next },
+        });
+        return next;
+      });
+    } catch (error: unknown) {
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as PostgresDriverError).code === '23505'
+      ) {
+        throw new ConflictException({
+          code: 'REFERRAL_POLICY_CHANGED',
+          message: 'Referral policy changed. Reload it before saving.',
+        });
+      }
+      throw error;
+    }
   }
 
   async getReferralDashboard(userId: string): Promise<ReferralDashboardDto> {

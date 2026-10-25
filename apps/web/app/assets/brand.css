@@ -1,0 +1,12 @@
+:root {
+  --brand-ink: #153d4a;
+  --brand-navy: #103e54;
+  --brand-blue: #115278;
+  --brand-teal: #138f8a;
+  --brand-teal-bright: #1ebeb6;
+  --brand-muted: #536e78;
+  --brand-border: #d6e5e5;
+  --brand-mint: #e6f4f1;
+  --brand-canvas: #fafcfb;
+  --brand-font: 'Plus Jakarta Sans', system-ui, sans-serif;
+}

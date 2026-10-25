@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AnalyticsAdminController } from './analytics-admin.controller';
+import { AdminReportsController } from './admin-reports.controller';
+import { AdminReportsService } from './admin-reports.service';
 import { AnalyticsAdminService } from './analytics-admin.service';
 import { AnalyticsGovernanceService } from './analytics-governance.service';
 import { UserActivityService } from './user-activity.service';
@@ -9,6 +11,7 @@ import { UserEntity } from '../../database/entities/user.entity';
 import { SessionEntity } from '../../database/entities/session.entity';
 import { ProfileEntity } from '../../database/entities/profile.entity';
 import { ReportEntity } from '../../database/entities/report.entity';
+import { ReportLabValueEntity } from '../../database/entities/report-lab-value.entity';
 import { OrderEntity } from '../../database/entities/order.entity';
 import { AnalyticsTaxonomyFieldEntity } from '../../database/entities/analytics-taxonomy-field.entity';
 import { AnalyticsGovernanceReviewEntity } from '../../database/entities/analytics-governance-review.entity';
@@ -20,18 +23,21 @@ import { UserSharePolicyEntity } from '../../database/entities/user-share-policy
 import { ReportResultInsightUsageEntity } from '../../database/entities/report-result-insight-usage.entity';
 import { SubscriptionEntity } from '../../database/entities/subscription.entity';
 import { AuditIncidentModule } from '../audit-incident/audit-incident.module';
+import { StorageModule } from '../../common/storage/storage.module';
 import { EntitlementsModule } from '../entitlements/entitlements.module';
 
 @Module({
   imports: [
     AuthModule,
     AuditIncidentModule,
+    StorageModule,
     EntitlementsModule,
     TypeOrmModule.forFeature([
       UserEntity,
       SessionEntity,
       ProfileEntity,
       ReportEntity,
+      ReportLabValueEntity,
       OrderEntity,
       SubscriptionEntity,
       SuperadminAuthAuditEventEntity,
@@ -44,11 +50,12 @@ import { EntitlementsModule } from '../entitlements/entitlements.module';
       ReportResultInsightUsageEntity,
     ]),
   ],
-  controllers: [AnalyticsAdminController],
+  controllers: [AnalyticsAdminController, AdminReportsController],
   providers: [
     AnalyticsAdminService,
     AnalyticsGovernanceService,
     UserActivityService,
+    AdminReportsService,
   ],
 })
 export class AnalyticsAdminModule {}

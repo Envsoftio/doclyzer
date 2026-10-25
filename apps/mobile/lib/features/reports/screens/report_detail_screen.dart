@@ -44,15 +44,21 @@ class ReportDetailScreen extends StatefulWidget {
   State<ReportDetailScreen> createState() => _ReportDetailScreenState();
 }
 
-class _ReportDetailScreenState extends State<ReportDetailScreen> {
+class _ReportDetailScreenState extends State<ReportDetailScreen>
+    with SingleTickerProviderStateMixin {
   _ReportDetailState _state = _ReportDetailState.loading;
   Report? _report;
   String? _errorMessage;
   List<Profile> _profiles = [];
   bool _acknowledging = false;
   bool _refreshing = false;
+  bool _summaryRequesting = false;
+  String? _summaryError;
   String? _processingState;
   int _loadVersion = 0;
+  late final TabController _reportTabController;
+  final GlobalKey _reportTabsKey = GlobalKey();
+  int _selectedReportTab = 0;
 
   void _onProcessingChanged() {
     if (!mounted) return;
@@ -67,12 +73,14 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   @override
   void dispose() {
     ReportProcessingStore.instance.removeListener(_onProcessingChanged);
+    _reportTabController.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
     super.initState();
+    _reportTabController = TabController(length: 2, vsync: this);
     ReportProcessingStore.instance.addListener(_onProcessingChanged);
     final processing = ReportProcessingStore.instance.reports[widget.reportId];
     if (processing != null) {
@@ -80,6 +88,20 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     }
     _loadReport();
     _loadProfiles();
+  }
+
+  void _selectReportTab(int index) {
+    setState(() => _selectedReportTab = index);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final tabsContext = _reportTabsKey.currentContext;
+      if (mounted && tabsContext != null) {
+        Scrollable.ensureVisible(
+          tabsContext,
+          duration: const Duration(milliseconds: 220),
+          alignment: 0.08,
+        );
+      }
+    });
   }
 
   Future<void> _loadProfiles() async {
@@ -139,6 +161,37 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               : e.toString().replaceFirst('Exception: ', '');
         });
       }
+    }
+  }
+
+  Future<void> _requestSummary({bool refresh = false}) async {
+    if (_summaryRequesting ||
+        (!refresh && _report?.summary?.trim().isNotEmpty == true) ||
+        _report?.summaryStatus == 'pending') {
+      return;
+    }
+    setState(() {
+      _summaryRequesting = true;
+      _summaryError = null;
+    });
+    try {
+      await widget.reportsRepository.requestSummary(
+        widget.reportId,
+        refresh: refresh,
+      );
+      if (mounted) await _loadReport();
+    } catch (_) {
+      // Keep the report readable and show a retry next to the summary.
+      if (mounted) await _loadReport();
+      if (mounted) {
+        setState(() {
+          _summaryError = refresh
+              ? 'We could not update the summary right now. The saved summary is still available.'
+              : 'We could not create the summary right now. Your results are still available below.';
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _summaryRequesting = false);
     }
   }
 
@@ -630,31 +683,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 TextButton(onPressed: _loadReport, child: const Text('Retry')),
               ],
             ),
-          if (_report?.summaryStatus == 'failed')
-            TextButton(
-              onPressed: () async {
-                try {
-                  await ReportProcessingStore.instance.retrySummary(
-                    widget.reportId,
-                  );
-                  await _loadReport();
-                } catch (_) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Summary retry is unavailable.'),
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Summary unavailable — retry summary'),
-            ),
-          if (_report?.summaryStatus == 'pending')
-            TextButton(
-              onPressed: _loadReport,
-              child: const Text('Summary pending — refresh'),
-            ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -662,6 +690,93 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(Report report) {
+    final summary = report.summary?.trim();
+    final hasSummary = summary != null && summary.isNotEmpty;
+    final isWaiting = _summaryRequesting || report.summaryStatus == 'pending';
+    return Card(
+      key: const Key('report-detail-summary'),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.auto_awesome_outlined,
+                  size: 22,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Report summary',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (hasSummary) ...[
+              _ReportSummaryBody(summary: summary),
+              const SizedBox(height: 12),
+              const AiDisclaimerNote(
+                key: Key('report-detail-summary-disclaimer'),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                key: const Key('report-detail-summary-refresh'),
+                onPressed: isWaiting
+                    ? null
+                    : () => _requestSummary(refresh: true),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Update summary'),
+              ),
+              if (_summaryRequesting) const LinearProgressIndicator(),
+              if (_summaryError != null) Text(_summaryError!),
+            ] else if (isWaiting) ...[
+              const LinearProgressIndicator(
+                key: Key('report-detail-summary-progress'),
+              ),
+              const SizedBox(height: 12),
+              const Text('Putting your results into plain language…'),
+              if (!_summaryRequesting) ...[
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: _loadReport,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Check summary'),
+                ),
+              ],
+            ] else ...[
+              Text(
+                _summaryError ??
+                    (report.summaryStatus == 'failed'
+                        ? 'We could not create the summary. You can try again.'
+                        : 'A plain language explanation of the key results will appear here.'),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                key: const Key('report-detail-summary-retry'),
+                onPressed: _requestSummary,
+                icon: const Icon(Icons.refresh),
+                label: Text(
+                  report.summaryStatus == 'failed' || _summaryError != null
+                      ? 'Try summary again'
+                      : 'Generate summary',
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -699,7 +814,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     }
 
     final report = _report!;
-    final summary = report.summary;
     final statusColor =
         report.structuredReport?.extractionReview?.required == true
         ? Colors.orange.shade700
@@ -857,6 +971,62 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             ),
           ),
           const SizedBox(height: 8),
+          if (report.status == 'parsed' &&
+              (results.isNotEmpty ||
+                  report.summary?.isNotEmpty == true ||
+                  report.summaryStatus == 'failed' ||
+                  report.summaryStatus == 'pending')) ...[
+            Container(
+              key: _reportTabsKey,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: const EdgeInsets.all(4),
+              child: TabBar(
+                key: const Key('report-detail-tabs'),
+                controller: _reportTabController,
+                onTap: _selectReportTab,
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                indicator: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                labelColor: Theme.of(context).colorScheme.onPrimary,
+                unselectedLabelColor: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant,
+                tabs: [
+                  const Tab(text: 'Test values'),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Flexible(child: Text('Summary')),
+                        if (report.summaryStatus == 'failed' &&
+                            report.summary == null) ...[
+                          const SizedBox(width: 5),
+                          Icon(
+                            Icons.error_outline,
+                            size: 16,
+                            color: _selectedReportTab == 1
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Theme.of(context).colorScheme.error,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (_selectedReportTab == 1) ...[
+              _buildSummaryCard(report),
+              const SizedBox(height: 12),
+            ],
+          ],
           if (report.status == 'uploading' ||
               report.status == 'queued' ||
               report.status == 'parsing') ...[
@@ -909,12 +1079,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               ),
             ),
           ],
-          if (results.isNotEmpty) ...[
+          if (results.isNotEmpty &&
+              (report.status != 'parsed' || _selectedReportTab == 0)) ...[
             const SizedBox(height: 12),
             Text(
               report.status == 'content_not_recognized'
                   ? 'Verified results'
-                  : 'Your results',
+                  : 'Test values (${results.length})',
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -937,7 +1108,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               ],
             ),
           ],
-          if (results.isEmpty && report.status == 'parsed') ...[
+          if (results.isEmpty &&
+              report.status == 'parsed' &&
+              _selectedReportTab == 0) ...[
             const SizedBox(height: 20),
             Card(
               child: Padding(
@@ -945,33 +1118,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 child: Text(
                   'No test values were found in this report. Open the original file to check its contents.',
                   style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-            ),
-          ],
-          if (summary != null && summary.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Card(
-              key: const Key('report-detail-summary'),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Summary',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      summary,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    const AiDisclaimerNote(
-                      key: Key('report-detail-summary-disclaimer'),
-                    ),
-                  ],
                 ),
               ),
             ),
@@ -1137,6 +1283,50 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _ReportSummaryBody extends StatelessWidget {
+  const _ReportSummaryBody({required this.summary});
+
+  final String summary;
+
+  @override
+  Widget build(BuildContext context) {
+    const headings = {
+      'Overview',
+      'Results to discuss',
+      'Other results',
+      'What to ask your clinician',
+    };
+    final sections = summary.trim().split(RegExp(r'\n\s*\n'));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final section in sections) ...[
+          if (section != sections.first) const SizedBox(height: 16),
+          if (headings.contains(section.split('\n').first)) ...[
+            Text(
+              section.split('\n').first,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 6),
+            SelectableText(
+              section.substring(section.indexOf('\n') + 1).trim(),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(height: 1.5),
+            ),
+          ] else
+            SelectableText(
+              section,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(height: 1.5),
+            ),
+        ],
+      ],
     );
   }
 }

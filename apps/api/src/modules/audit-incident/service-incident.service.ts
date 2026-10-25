@@ -100,6 +100,17 @@ export class ServiceIncidentService {
     return this.toPublicIncident(incident);
   }
 
+  async listActiveIncidents(): Promise<PublicIncidentStatus[]> {
+    const incidents = await this.incidentRepository
+      .createQueryBuilder('incident')
+      .where('incident.status IN (:...statuses)', {
+        statuses: ACTIVE_INCIDENT_STATUSES,
+      })
+      .orderBy('incident.updatedAt', 'DESC')
+      .getMany();
+    return incidents.map((incident) => this.toPublicIncident(incident));
+  }
+
   private toPublicIncident(
     incident: ServiceIncidentEntity,
   ): PublicIncidentStatus {

@@ -104,12 +104,53 @@ export class AnalyticsAdminService {
       .addSelect('COUNT(*)', 'requests').addSelect('COUNT(*) FILTER (WHERE u.cache_hit = false)', 'providerCalls')
       .addSelect('COALESCE(SUM(u.input_tokens), 0)', 'inputTokens').addSelect('COALESCE(SUM(u.output_tokens), 0)', 'outputTokens')
       .addSelect('COALESCE(SUM(u.total_tokens), 0)', 'totalTokens').addSelect('COALESCE(SUM(u.estimated_cost_usd), 0)', 'estimatedCostUsd')
+      .addSelect("COUNT(*) FILTER (WHERE u.cache_key NOT LIKE 'range:%' AND u.cache_key NOT LIKE 'summary:%')", 'explanationRequests')
+      .addSelect("COUNT(*) FILTER (WHERE u.cache_key NOT LIKE 'range:%' AND u.cache_key NOT LIKE 'summary:%' AND u.cache_hit = false)", 'explanationProviderCalls')
+      .addSelect("COUNT(*) FILTER (WHERE u.cache_key NOT LIKE 'range:%' AND u.cache_key NOT LIKE 'summary:%' AND u.cache_hit = true)", 'explanationCacheHits')
+      .addSelect("COALESCE(SUM(u.estimated_cost_usd) FILTER (WHERE u.cache_key NOT LIKE 'range:%' AND u.cache_key NOT LIKE 'summary:%'), 0)", 'explanationCostUsd')
+      .addSelect("COUNT(*) FILTER (WHERE u.cache_key LIKE 'summary:%')", 'summaryRequests')
+      .addSelect("COALESCE(SUM(u.total_tokens) FILTER (WHERE u.cache_key LIKE 'summary:%'), 0)", 'summaryTokens')
+      .addSelect("COALESCE(SUM(u.estimated_cost_usd) FILTER (WHERE u.cache_key LIKE 'summary:%'), 0)", 'summaryCostUsd')
       .addSelect("COUNT(*) FILTER (WHERE u.cache_key LIKE 'range:%')", 'rangeRequests')
       .addSelect("COALESCE(SUM(u.total_tokens) FILTER (WHERE u.cache_key LIKE 'range:%'), 0)", 'rangeTokens')
       .addSelect("COALESCE(SUM(u.estimated_cost_usd) FILTER (WHERE u.cache_key LIKE 'range:%'), 0)", 'rangeCostUsd')
+      .addSelect('COUNT(*) FILTER (WHERE u.cache_hit = false AND u.total_tokens = 0)', 'unpricedProviderCalls')
       .leftJoin(UserEntity, 'usr', 'usr.id = u.user_id').where('u.created_at >= :start AND u.created_at <= :end', { start: new Date(query.startDate), end: new Date(query.endDate) })
       .groupBy('u.user_id').addGroupBy('usr.email').addGroupBy('usr.display_name').orderBy('"estimatedCostUsd"', 'DESC').getRawMany();
-    return { users: rows.map((r) => ({ ...r, requests: Number(r.requests), providerCalls: Number(r.providerCalls), inputTokens: Number(r.inputTokens), outputTokens: Number(r.outputTokens), totalTokens: Number(r.totalTokens), estimatedCostUsd: Number(r.estimatedCostUsd), rangeRequests: Number(r.rangeRequests), rangeTokens: Number(r.rangeTokens), rangeCostUsd: Number(r.rangeCostUsd) })), totals: rows.reduce((a, r) => ({ requests: a.requests + Number(r.requests), providerCalls: a.providerCalls + Number(r.providerCalls), totalTokens: a.totalTokens + Number(r.totalTokens), estimatedCostUsd: a.estimatedCostUsd + Number(r.estimatedCostUsd), rangeRequests: a.rangeRequests + Number(r.rangeRequests), rangeTokens: a.rangeTokens + Number(r.rangeTokens), rangeCostUsd: a.rangeCostUsd + Number(r.rangeCostUsd) }), { requests: 0, providerCalls: 0, totalTokens: 0, estimatedCostUsd: 0, rangeRequests: 0, rangeTokens: 0, rangeCostUsd: 0 }) };
+    const numericFields = [
+      'requests', 'providerCalls', 'inputTokens', 'outputTokens', 'totalTokens',
+      'estimatedCostUsd', 'explanationRequests', 'explanationProviderCalls', 'explanationCacheHits', 'explanationCostUsd',
+      'summaryRequests', 'summaryTokens', 'summaryCostUsd',
+      'rangeRequests', 'rangeTokens', 'rangeCostUsd', 'unpricedProviderCalls',
+    ] as const;
+    const users = rows.map((row) => {
+      const result: Record<string, unknown> = { ...row };
+      for (const field of numericFields) result[field] = Number(row[field]);
+      return result;
+    });
+    const totals: Record<string, number> = {};
+    for (const field of numericFields)
+      totals[field] = rows.reduce((sum, row) => sum + Number(row[field]), 0);
+    const workload = "CASE WHEN u.cache_key LIKE 'summary:%' THEN 'Report summary' ELSE 'Test explanation' END";
+    const modelRows = await this.insightUsageRepo.createQueryBuilder('u')
+      .select(workload, 'workload').addSelect('u.model', 'model')
+      .addSelect('COUNT(*) FILTER (WHERE u.cache_hit = false)', 'providerCalls')
+      .addSelect('COUNT(*) FILTER (WHERE u.cache_hit = true)', 'cacheHits')
+      .addSelect('COALESCE(SUM(u.total_tokens), 0)', 'totalTokens')
+      .addSelect('COALESCE(SUM(u.estimated_cost_usd), 0)', 'estimatedCostUsd')
+      .where('u.created_at >= :start AND u.created_at <= :end', { start: new Date(query.startDate), end: new Date(query.endDate) })
+      .andWhere("u.cache_key NOT LIKE 'range:%'")
+      .groupBy(workload).addGroupBy('u.model')
+      .orderBy('"estimatedCostUsd"', 'DESC').getRawMany();
+    const models = modelRows.map((row) => ({
+      workload: row.workload as string,
+      model: row.model as string,
+      providerCalls: Number(row.providerCalls),
+      cacheHits: Number(row.cacheHits),
+      totalTokens: Number(row.totalTokens),
+      estimatedCostUsd: Number(row.estimatedCostUsd),
+    }));
+    return { users, totals, models };
   }
 
   async getCoreProductAnalytics(input: {

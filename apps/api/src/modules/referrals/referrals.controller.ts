@@ -5,15 +5,17 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { SuperadminGuard } from '../auth/superadmin.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
 import type { RequestUser } from '../auth/auth.types';
-import { ApplyReferralCodeDto } from './referrals.dto';
+import { ApplyReferralCodeDto, UpdateReferralPolicyDto } from './referrals.dto';
 import { ReferralsService } from './referrals.service';
 
 @Controller('referrals')
@@ -41,5 +43,31 @@ export class ReferralsController {
       correlationId: getCorrelationId(req),
     });
     return successResponse(data, getCorrelationId(req));
+  }
+}
+
+@Controller('admin/referrals')
+@UseGuards(AuthGuard, SuperadminGuard)
+export class ReferralsAdminController {
+  constructor(private readonly referralsService: ReferralsService) {}
+
+  @Get('policy')
+  async getPolicy(@Req() req: Request): Promise<object> {
+    return successResponse(
+      await this.referralsService.getAdminReferralPolicy(),
+      getCorrelationId(req),
+    );
+  }
+
+  @Put('policy')
+  async updatePolicy(
+    @Req() req: Request,
+    @Body() dto: UpdateReferralPolicyDto,
+  ): Promise<object> {
+    const { id: actorUserId } = req.user as RequestUser;
+    return successResponse(
+      await this.referralsService.updateReferralPolicy(actorUserId, dto),
+      getCorrelationId(req),
+    );
   }
 }

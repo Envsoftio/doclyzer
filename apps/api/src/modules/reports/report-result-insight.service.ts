@@ -14,6 +14,7 @@ import {
   normalizePrintedRangeText,
   preferredPrintedRange,
 } from './report-reference-range';
+import { safeSummaryValues } from './report-summary/report-summary.service';
 
 export interface ReportResultInsight {
   testExplanation: string;
@@ -25,6 +26,53 @@ export interface ReportResultInsight {
 }
 
 type RangeStatus = 'below' | 'within' | 'above' | 'unknown';
+
+/** Include only directly relevant, validated observations from the same report. */
+export function relatedResultContext(
+  selected: ExtractedLabValueDto,
+  results: ExtractedLabValueDto[],
+): Array<{
+  parameterName: string;
+  value: string;
+  unit: string | null;
+  referenceRange: string | null;
+}> {
+  const selectedName = selected.parameterName.trim().toLowerCase();
+  if (
+    !/^(?:mchc(?:\s*\([^)]{1,20}\))?|mean corpuscular hemoglobin concentration|mean corpuscular haemoglobin concentration)$/.test(
+      selectedName,
+    )
+  )
+    return [];
+  const relevant =
+    /^(?:hb|hgb|hemoglobin|haemoglobin|mcv|mean corpuscular volume|rbc(?: count)?|red blood cell count|ferritin|mch|rdw)$/i;
+  const peers = results
+    .filter(
+      (row) =>
+        row !== selected &&
+        relevant.test(row.parameterName.trim()) &&
+        (!selected.sampleDate ||
+          !row.sampleDate ||
+          selected.sampleDate === row.sampleDate),
+    )
+    .slice(0, 12);
+  const names = peers.map((row) => row.parameterName.trim().toLowerCase());
+  return safeSummaryValues(
+    peers
+      .filter(
+        (row) =>
+          names.filter(
+            (name) => name === row.parameterName.trim().toLowerCase(),
+          ).length === 1,
+      )
+      .map((row) => ({
+        parameterName: row.parameterName,
+        value: row.value,
+        unit: row.unit ?? null,
+        referenceRange: row.referenceRange ?? null,
+      })),
+  ).filter((row) => row.unit !== null && row.referenceRange !== null);
+}
 
 // A display comparison only. The printed range may not apply to this person.
 export function comparePrintedRange(result: ExtractedLabValueDto): RangeStatus {
@@ -87,7 +135,7 @@ Do not diagnose, prescribe medicine or supplements, give doses, recommend starti
 
 Offer zero to two conditional lifestyle considerations only when clearly relevant. Explain why each might matter, and say that it depends on the underlying cause. Do not give specific diet restrictions or behavioral prescriptions based on an isolated result. Use calm, plain language and explain jargon. Avoid repeated disclaimers and unrelated details.
 
-Write a useful explanation with enough detail to answer a patient's next question. Aim for roughly 170–250 words across the fields when the test identity and supplied data support it; be shorter when they do not. Do not pad the answer or restate the same caution in every field. In testExplanation, use two or three sentences to explain what is measured, its role in the body, and why a clinician may check it. In resultExplanation, state the supplied value and unit, compare only with the supplied printed range when rangeStatus permits, and explain what that comparison does and does not show. In possibleSignificance, use three to five concrete sentences: explain the general significance of this direction for this specific test, give at most two well-established possibilities when appropriate, and identify the missing clinical context that would distinguish possibilities. Do not present a possibility as this person's diagnosis. If rangeStatus is unknown or the test identity is unclear, say exactly what prevents a confident interpretation and give only safe general information. In suggestedFollowup, give a proportionate verification or clinician discussion step, including what report details or context to bring. The dataUncertainties array should contain only material missing or contradictory data, or be empty.
+Write a useful, specific explanation with enough detail to answer a patient's next question. Aim for roughly 180–260 words across the fields when the test identity and supplied data support it; be shorter when they do not. A one-line field is insufficient for a well-identified result with a reliable comparison. Do not pad the answer or restate the same caution in every field. In testExplanation, use two or three sentences to expand the test name, explain what is measured and its role in the body. In resultExplanation, state the supplied value and unit, compare only with the supplied printed range when rangeStatus permits, and explain the direction in everyday language; do not call a deviation mild or severe without a validated threshold. If a standard descriptive term helps explain the pattern, define it plainly without treating it as a diagnosis. In possibleSignificance, use four or five concrete sentences: explain the general meaning of this direction for this test, give at most two well-established possibilities with a short reason for each when appropriate, then describe which related test results or clinical details would help distinguish them. Do not present a possibility as this person's diagnosis. relatedResults, when provided, are other extracted values from the same report; mention only a relevant, unambiguous value and its printed range, and never infer a missing result or independently classify its status. If relatedResults is empty, describe useful related markers as questions, not as known results. If rangeStatus is unknown or the test identity is unclear, say exactly what prevents a confident interpretation and give only safe general information. In suggestedFollowup, give a proportionate clinician discussion step and one or two specific questions or report details to bring. The dataUncertainties array should contain only material missing or contradictory data, or be empty. Use plain prose without Markdown, links, or citations because no verified source URLs were supplied.
 
 Return the required JSON fields: testExplanation, resultExplanation, possibleSignificance, lifestyleConsiderations, suggestedFollowup, and dataUncertainties. Before responding, check for invented facts, diagnoses, treatment, unsupported urgency, and false reassurance.`;
 
@@ -108,10 +156,11 @@ export class ReportResultInsightService {
     reportId: string,
     result: ExtractedLabValueDto,
     userId?: string,
+    reportResults: ExtractedLabValueDto[] = [],
   ): Promise<ReportResultInsight> {
     const model =
-      this.configService.get<string>('reports.labAiFallbackOpenaiModel') ||
-      'gpt-5-mini';
+      this.configService.get<string>('reports.reportNarrativeOpenaiModel') ||
+      'gpt-6.1-sol';
     const baseUrl =
       this.configService.get<string>('reports.labAiFallbackOpenaiBaseUrl') ||
       'https://api.openai.com/v1';
@@ -158,6 +207,7 @@ export class ReportResultInsightService {
           : 'unknown',
       labAbnormalFlag:
         typeof result.isAbnormal === 'boolean' ? result.isAbnormal : null,
+      relatedResults: relatedResultContext(result, reportResults),
     };
     const cacheKey = createHash('sha256')
       .update(
@@ -165,7 +215,7 @@ export class ReportResultInsightService {
           model,
           baseUrl,
           prompt: RESULT_INSIGHT_INSTRUCTIONS,
-          schemaVersion: 2,
+          schemaVersion: 3,
           input,
         }),
       )
@@ -177,8 +227,9 @@ export class ReportResultInsightService {
     try {
       const cached = await this.insightRepo.findOneBy({ reportId, cacheKey });
       if (cached) {
+        const saved = this.validate(cached.insight);
         if (userId)
-          void this.recordUsageSafely(
+          await this.recordUsageSafely(
             userId,
             reportId,
             cacheKey,
@@ -186,7 +237,7 @@ export class ReportResultInsightService {
             null,
             true,
           );
-        return this.validate(cached.insight);
+        return saved;
       }
     } catch {
       // A cache failure should not prevent a fresh explanation.
@@ -198,13 +249,14 @@ export class ReportResultInsightService {
     const task = this.generate(model, baseUrl, input)
       .then(async (insight) => {
         const { usage, ...data } = insight;
+        let saved = false;
         try {
           await this.insightRepo.upsert({ reportId, cacheKey, insight: data }, [
             'reportId',
             'cacheKey',
           ]);
+          saved = true;
         } catch {
-          // The response is still useful if persistence is unavailable.
           this.logger.warn('Result insight cache write failed');
         }
         if (userId)
@@ -216,6 +268,11 @@ export class ReportResultInsightService {
             usage ?? null,
             false,
           );
+        if (!saved)
+          throw new ServiceUnavailableException({
+            code: 'RESULT_INSIGHT_SAVE_UNAVAILABLE',
+            message: 'Explanation could not be saved. Please try again.',
+          });
         return data;
       })
       .finally(() => this.inFlight.delete(flightKey));
@@ -239,7 +296,7 @@ export class ReportResultInsightService {
     }
     const timeoutMs =
       this.configService.get<number>('reports.resultInsightTimeoutMs') ||
-      30_000;
+      60_000;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -296,13 +353,22 @@ export class ReportResultInsightService {
       if (!text) throw new Error('provider-empty');
       const root = payload as Record<string, unknown>;
       const usage = (root.usage ?? {}) as Record<string, unknown>;
+      const inputTokens = Number(usage.input_tokens);
+      const outputTokens = Number(usage.output_tokens);
+      const measuredUsage =
+        Number.isSafeInteger(inputTokens) &&
+        inputTokens >= 0 &&
+        Number.isSafeInteger(outputTokens) &&
+        outputTokens >= 0
+          ? {
+              inputTokens,
+              outputTokens,
+              totalTokens: inputTokens + outputTokens,
+            }
+          : undefined;
       return {
         ...this.validate(JSON.parse(text) as unknown),
-        usage: {
-          inputTokens: Number(usage.input_tokens ?? 0),
-          outputTokens: Number(usage.output_tokens ?? 0),
-          totalTokens: Number(usage.total_tokens ?? 0),
-        },
+        usage: measuredUsage,
       };
     } catch {
       // Never log the provider response or clinical input.
@@ -350,11 +416,11 @@ export class ReportResultInsightService {
     const outputTokens = usage?.outputTokens ?? 0;
     const inputRate =
       this.configService.get<number>(
-        'reports.resultInsightOpenaiInputPricePerMillion',
+        'reports.reportNarrativeInputPricePerMillion',
       ) ?? 0;
     const outputRate =
       this.configService.get<number>(
-        'reports.resultInsightOpenaiOutputPricePerMillion',
+        'reports.reportNarrativeOutputPricePerMillion',
       ) ?? 0;
     await this.usageRepo.insert({
       userId,

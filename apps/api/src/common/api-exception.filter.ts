@@ -73,9 +73,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
 
     if (status >= 500) {
       this.logger.error(
-        `Request failed with server error status=${status} path=${req.path}`,
-        undefined,
-        `correlationId=${correlationId} code=${code}`,
+        `Request failed with server error status=${status} path=${req.path} correlationId=${correlationId} code=${code}`,
       );
     } else {
       this.logger.warn(

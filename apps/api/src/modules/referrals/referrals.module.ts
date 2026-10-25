@@ -11,7 +11,10 @@ import { UserReferralProfileEntity } from '../../database/entities/user-referral
 import { UserEntity } from '../../database/entities/user.entity';
 import { OrderEntity } from '../../database/entities/order.entity';
 import { ReportEntity } from '../../database/entities/report.entity';
-import { ReferralsController } from './referrals.controller';
+import {
+  ReferralsAdminController,
+  ReferralsController,
+} from './referrals.controller';
 import { ReferralsService } from './referrals.service';
 
 @Module({
@@ -30,7 +33,7 @@ import { ReferralsService } from './referrals.service';
       OrderEntity,
     ]),
   ],
-  controllers: [ReferralsController],
+  controllers: [ReferralsController, ReferralsAdminController],
   providers: [ReferralsService],
   exports: [ReferralsService],
 })

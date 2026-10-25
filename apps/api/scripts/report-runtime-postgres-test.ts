@@ -371,6 +371,7 @@ async function main() {
       {} as never,
       { enforceRateLimit: () => {} } as never,
       streams,
+      {} as never,
     );
     const request = {
       user: { id: user },

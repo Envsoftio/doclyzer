@@ -41,6 +41,14 @@ export class ServiceIncidentAdminController {
     private readonly serviceIncidentService: ServiceIncidentService,
   ) {}
 
+  @Get()
+  async listActiveIncidents(@Req() req: Request): Promise<object> {
+    return successResponse(
+      await this.serviceIncidentService.listActiveIncidents(),
+      getCorrelationId(req),
+    );
+  }
+
   @Post()
   async upsertIncident(
     @Req() req: Request,
