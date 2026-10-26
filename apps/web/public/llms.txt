@@ -1,0 +1,13 @@
+# Doclyzer
+
+> Doclyzer is a health report organization service operated by Envsoft Solutions LLP. It helps people upload blood test and other laboratory reports, review extracted values against the original document, follow results over time, organize records in separate family profiles, and choose which reports or results to share.
+
+Doclyzer provides educational information about reports. It does not diagnose conditions, provide treatment, or replace advice from a qualified healthcare professional. Automated extraction and explanations can be inaccurate; users should check important values against their original laboratory report.
+
+## Public pages
+
+- [Doclyzer homepage](https://doclyzer.com/): Product overview, workflow, features, and frequently asked questions.
+- [Account deletion](https://doclyzer.com/delete-account): How to request account deletion and what happens afterward.
+- [Sitemap](https://doclyzer.com/sitemap.xml): Public URLs intended for search indexing.
+
+Private accounts, uploaded reports, shared report links, and administrator pages are not public reference material. The legal policy pages are drafts pending review and should not be treated as final policies.

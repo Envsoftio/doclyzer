@@ -163,6 +163,29 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _client.post(
+        'v1/auth/change-password',
+        body: {'currentPassword': currentPassword, 'newPassword': newPassword},
+      );
+      final data = response['data'] as Map<String, dynamic>;
+      final accessToken = data['accessToken'] as String;
+      final refreshToken = data['refreshToken'] as String;
+      await _tokenStorage.saveTokens(
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+      );
+      _client.setAccessToken(accessToken);
+    } on ApiException catch (error) {
+      throw AuthException(error.message);
+    }
+  }
+
   /// Restore session from stored tokens. Returns true if valid session restored.
   Future<bool> restoreSession() async {
     final accessToken = await _tokenStorage.getAccessToken();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/api_client.dart';
+import '../../../shared/ai_disclaimer_note.dart';
 import '../../../shared/app_date_format.dart';
 import '../reports_repository.dart';
 import '../result_palette.dart';
@@ -241,6 +242,8 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                 color: colors.onSurfaceVariant,
               ),
             ),
+            const SizedBox(height: 14),
+            const AiDisclaimerNote(key: Key('result-insight-disclaimer')),
             const SizedBox(height: 14),
             FutureBuilder<ResultInsight>(
               future: _insight,

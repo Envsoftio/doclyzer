@@ -117,6 +117,14 @@ void main() {
     expect(find.text('Personal information'), findsOneWidget);
     expect(find.byKey(const Key('account-profile-save')), findsOneWidget);
     expect(find.text('Change photo'), findsOneWidget);
+    await tester.tap(find.text('Change photo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Choose from gallery'), findsOneWidget);
+    expect(find.text('Take a photo'), findsOneWidget);
+    Navigator.of(
+      tester.element(find.byKey(const Key('profile-photo-camera'))),
+    ).pop();
+    await tester.pumpAndSettle();
     expect(find.text('Appearance'), findsNothing);
     await tester.enterText(
       find.byKey(const Key('account-profile-display-name')),

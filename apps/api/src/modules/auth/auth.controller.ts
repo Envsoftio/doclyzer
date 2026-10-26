@@ -16,6 +16,7 @@ import { AuthGuard } from '../../common/guards/auth.guard';
 import { getCorrelationId } from '../../common/correlation-id.middleware';
 import { successResponse } from '../../common/response-envelope';
 import {
+  ChangePasswordDto,
   ForgotPasswordDto,
   LoginDto,
   RefreshDto,
@@ -149,6 +150,23 @@ export class AuthController {
     const data = await this.recoveryService.confirmReset(
       body.token,
       body.newPassword,
+    );
+    return successResponse(data, getCorrelationId(req));
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+  async changePassword(
+    @Body() body: ChangePasswordDto,
+    @Req() req: Request,
+  ): Promise<object> {
+    const userId = (req as Request & { user: RequestUser }).user.id;
+    this.authService.enforceRateLimit('change-password', userId, 5);
+    const data = await this.authService.changePassword(
+      body.currentPassword,
+      body.newPassword,
+      this.betterAuthService.buildHeadersFromRequest(req),
     );
     return successResponse(data, getCorrelationId(req));
   }

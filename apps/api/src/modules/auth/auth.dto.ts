@@ -51,6 +51,16 @@ export class ResetPasswordDto {
   newPassword!: string;
 }
 
+export class ChangePasswordDto {
+  @IsString()
+  @IsNotEmpty({ message: 'Current password is required' })
+  currentPassword!: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'New password is required' })
+  newPassword!: string;
+}
+
 export class SuperadminMfaVerifyDto {
   @IsString()
   @IsNotEmpty()

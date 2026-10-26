@@ -238,6 +238,45 @@ export class AuthService {
     }
   }
 
+  async changePassword(
+    currentPassword: string,
+    newPassword: string,
+    headers: Headers,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    this.validatePasswordStrength(newPassword);
+    if (currentPassword === newPassword) {
+      throw new BadRequestException({
+        code: 'AUTH_PASSWORD_UNCHANGED',
+        message: 'Choose a different password',
+      });
+    }
+    const auth = await this.betterAuthService.getAuth();
+    try {
+      const result = await auth.api.changePassword({
+        body: { currentPassword, newPassword, revokeOtherSessions: true },
+        headers,
+      });
+      if (!result.token) {
+        throw new Error('Replacement session was not returned');
+      }
+      this.logger.log('Auth password changed');
+      return { accessToken: result.token, refreshToken: result.token };
+    } catch (error: unknown) {
+      const code = this.getBetterAuthErrorCode(error);
+      if (code === 'INVALID_PASSWORD') {
+        throw new UnauthorizedException({
+          code: 'AUTH_INVALID_CURRENT_PASSWORD',
+          message: 'Current password is incorrect',
+        });
+      }
+      this.throwMappedAuthError(error, {
+        status: HttpStatus.BAD_REQUEST,
+        code: 'AUTH_PASSWORD_CHANGE_FAILED',
+        message: 'Unable to change password',
+      });
+    }
+  }
+
   async refresh(
     refreshToken: string,
     headers: Headers,

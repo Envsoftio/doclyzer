@@ -50,11 +50,17 @@ class _Reports extends Fake implements ReportsRepository {
 }
 
 class _Account extends Fake implements AccountRepository {
+  _Account({this.photo, this.displayName = 'Priya Mehta Narayanan'});
+
+  final String? photo;
+  final String displayName;
+
   @override
   Future<AccountProfile> getProfile() async => AccountProfile(
     id: 'user-1',
     email: 'priya@example.com',
-    displayName: 'Priya Mehta Narayanan',
+    displayName: displayName,
+    avatarUrl: photo,
     createdAt: DateTime(2026),
   );
 }
@@ -67,6 +73,28 @@ class _Restriction extends Fake implements RestrictionRepository {
 
 class _Billing extends Fake implements BillingRepository {}
 
+Widget _home({String? photo, String accountName = 'Priya Mehta Narayanan'}) =>
+    MaterialApp(
+      theme: AppTheme.light,
+      home: HomeScreen(
+        onLogout: () async {},
+        onGoToAccount: () {},
+        onGoToProfiles: () {},
+        onGoToSessions: () {},
+        onGoToCommunicationPreferences: () {},
+        onGoToDataRights: () {},
+        onGoToUploadReport: () async {},
+        onGoToTimeline: () async {},
+        onGoToBilling: () {},
+        onGoToReferrals: () {},
+        restrictionRepository: _Restriction(),
+        reportsRepository: _Reports(),
+        profilesRepository: _Profiles(),
+        billingRepository: _Billing(),
+        accountRepository: _Account(photo: photo, displayName: accountName),
+      ),
+    );
+
 void main() {
   testWidgets('home header and upload card fit the Pen phone width', (
     tester,
@@ -75,31 +103,23 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        home: HomeScreen(
-          onLogout: () async {},
-          onGoToAccount: () {},
-          onGoToProfiles: () {},
-          onGoToSessions: () {},
-          onGoToCommunicationPreferences: () {},
-          onGoToDataRights: () {},
-          onGoToUploadReport: () async {},
-          onGoToTimeline: () async {},
-          onGoToBilling: () {},
-          onGoToReferrals: () {},
-          restrictionRepository: _Restriction(),
-          reportsRepository: _Reports(),
-          profilesRepository: _Profiles(),
-          billingRepository: _Billing(),
-          accountRepository: _Account(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(_home(accountName: 'Anita Rao'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(tester.takeException(), isNull);
     expect(find.text('A little clarity.\nAll in one place.'), findsOneWidget);
+    expect(find.text('PM'), findsOneWidget);
+  });
+
+  testWidgets('home header displays the uploaded account photo', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_home(photo: 'https://example.com/photo'));
+    await tester.pump();
+    final avatar = find.byKey(const Key('dashboard-account-avatar'));
+    final image = tester.widget<Image>(
+      find.descendant(of: avatar, matching: find.byType(Image)),
+    );
+    expect((image.image as NetworkImage).url, 'https://example.com/photo');
   });
 }

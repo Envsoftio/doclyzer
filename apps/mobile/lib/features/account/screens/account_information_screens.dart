@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/design_components.dart';
+import '../../../shared/ai_disclaimer_note.dart';
 import '../../support/support_models.dart';
 import '../../support/support_repository.dart';
 import '../../support/support_request_sheet.dart';
@@ -12,6 +13,8 @@ class PrivacySecurityScreen extends StatefulWidget {
     required this.onSharedLinks,
     required this.onExport,
     required this.onPrivacyPolicy,
+    required this.onChangePassword,
+    required this.onNotificationSettings,
     required this.onDeleteAccount,
     required this.appLockEnabled,
     required this.onAppLockChanged,
@@ -19,6 +22,8 @@ class PrivacySecurityScreen extends StatefulWidget {
   final VoidCallback onSharedLinks;
   final VoidCallback onExport;
   final VoidCallback onPrivacyPolicy;
+  final VoidCallback onChangePassword;
+  final VoidCallback onNotificationSettings;
   final VoidCallback onDeleteAccount;
   final bool appLockEnabled;
   final Future<bool> Function(bool) onAppLockChanged;
@@ -33,12 +38,19 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
   Future<void> _changeLock(bool enabled) async {
     setState(() => _changingLock = true);
-    final changed = await widget.onAppLockChanged(enabled);
-    if (mounted) {
-      setState(() {
-        _appLockEnabled = changed;
-        _changingLock = false;
-      });
+    try {
+      final changed = await widget.onAppLockChanged(enabled);
+      if (mounted) setState(() => _appLockEnabled = changed);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not change App lock. Try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _changingLock = false);
     }
   }
 
@@ -87,6 +99,12 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
           ),
         ),
         const SizedBox(height: 20),
+        _SettingsLink(
+          key: const Key('privacy-change-password'),
+          icon: Icons.lock_outline_rounded,
+          title: 'Change password',
+          onTap: widget.onChangePassword,
+        ),
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: Text('App lock', style: Theme.of(context).textTheme.titleSmall),
@@ -99,11 +117,16 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
           ),
         ),
         const Divider(),
-        const ListTile(
+        ListTile(
+          key: const Key('privacy-notification-settings'),
           contentPadding: EdgeInsets.zero,
-          title: Text('Hide sensitive previews'),
-          subtitle: Text('Report names and personal details stay hidden in notifications.'),
-          trailing: Icon(Icons.lock_outline),
+          leading: const Icon(Icons.notifications_outlined),
+          title: const Text('Notification previews'),
+          subtitle: const Text(
+            'Control lock-screen previews in your device settings.',
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: widget.onNotificationSettings,
         ),
         const Divider(),
         const SizedBox(height: 20),
@@ -326,9 +349,7 @@ class AboutDoclyzerScreen extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
               SizedBox(height: 8),
-              Text(
-                'Doclyzer does not diagnose conditions or replace a healthcare professional.',
-              ),
+              AiDisclaimerNote(key: Key('about-medical-disclaimer')),
             ],
           ),
         ),
@@ -474,6 +495,7 @@ class LegalSummaryScreen extends StatelessWidget {
 
 class _SettingsLink extends StatelessWidget {
   const _SettingsLink({
+    super.key,
     required this.icon,
     required this.title,
     required this.onTap,

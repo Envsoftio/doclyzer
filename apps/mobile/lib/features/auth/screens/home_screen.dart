@@ -8,6 +8,7 @@ import '../../reports/screens/trend_chart_screen.dart';
 import '../../profiles/profiles_repository.dart';
 import '../../billing/billing_repository.dart';
 import '../../account/account_repository.dart';
+import '../../account/account_avatar.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/design_components.dart';
@@ -390,21 +391,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      CircleAvatar(
-                                        radius: 21,
-                                        backgroundColor:
-                                            colors.primaryContainer,
-                                        child: Text(
-                                          profile == null
-                                              ? 'D'
-                                              : _initials(profile.name),
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                                color:
-                                                    colors.onPrimaryContainer,
-                                                fontWeight: FontWeight.w700,
-                                              ),
+                                      AccountAvatar(
+                                        key: const Key(
+                                          'dashboard-account-avatar',
                                         ),
+                                        profile: _accountProfile,
+                                        radius: 21,
+                                        fallbackInitials: profile == null
+                                            ? null
+                                            : _initials(profile.name),
                                       ),
                                       const SizedBox(width: 12),
                                       Flexible(

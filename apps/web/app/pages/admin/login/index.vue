@@ -27,7 +27,7 @@ async function handleLogin() {
 <template>
   <div class="login-page">
     <div class="login-card">
-      <div class="login-brand"><span class="login-brand__mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 2h7c5 0 9 4 9 10s-4 10-9 10h-7z"/><path d="M1 12h5l3-6 4 12 3-6h7"/></svg></span><span>doclyzer</span></div>
+      <div class="login-brand"><img src="/Doclyzer-logo.svg" width="856" height="183" alt="Doclyzer" /></div>
       <h1 class="login-title">Admin console</h1>
 
       <div v-if="error" class="error-box" role="alert" aria-live="assertive">
@@ -71,9 +71,8 @@ async function handleLogin() {
   max-width: 380px;
 }
 
-.login-brand { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--brand-ink); font-size: 22px; font-weight: 800; letter-spacing: -.045em; margin-bottom: 26px; }
-.login-brand__mark { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 11px; background: linear-gradient(90deg, var(--brand-teal-bright), var(--brand-blue)); }
-.login-brand__mark svg { width: 25px; height: 25px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.login-brand { display: flex; align-items: center; justify-content: center; margin-bottom: 26px; }
+.login-brand img { display: block; width: 180px; height: auto; }
 .login-title {
   font-size: 20px;
   font-weight: 700;

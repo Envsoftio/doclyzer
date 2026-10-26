@@ -225,10 +225,42 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
       _showBlockedMessage();
       return;
     }
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+              child: Text(
+                'Change profile photo',
+                style: Theme.of(sheetContext).textTheme.titleLarge,
+              ),
+            ),
+            ListTile(
+              key: const Key('profile-photo-gallery'),
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+            ),
+            ListTile(
+              key: const Key('profile-photo-camera'),
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Take a photo'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
     setState(() => _uploadingAvatar = true);
     try {
       final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
+        source: source,
         maxWidth: 512,
         maxHeight: 512,
         imageQuality: 85,
@@ -237,8 +269,11 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
       final updated = await widget.accountRepository.uploadAvatar(picked.path);
       // Stable storage keys can produce the same signed URL within a second.
       // Evict cached bytes so replacement photos become visible immediately.
-      if (updated.avatarUrl != null) {
-        await NetworkImage(_avatarUrl(updated.avatarUrl!)).evict();
+      final avatarUrl = updated.avatarUrl?.trim();
+      if (avatarUrl != null &&
+          avatarUrl.isNotEmpty &&
+          !avatarUrl.startsWith('data:')) {
+        await NetworkImage(_avatarUrl(avatarUrl)).evict();
       }
       if (!mounted) return;
       setState(() => _profile = updated);
@@ -650,7 +685,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                               onPressed: _uploadingAvatar
                                   ? null
                                   : _pickAndUploadAvatar,
-                              icon: const Icon(Icons.photo_library_outlined),
+                              icon: const Icon(Icons.add_a_photo_outlined),
                               label: Text(
                                 _uploadingAvatar
                                     ? 'Uploading photo…'

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Take a photo of a lab report to add it to your account.</string>
+	<string>Take a photo of a lab report or your profile picture.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Choose a photo of a lab report or a profile picture.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>

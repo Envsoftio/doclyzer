@@ -448,6 +448,17 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         incident != null &&
         incident.isActive &&
         incident.affectsSurface('mobile_app');
+    final content = switch (_state) {
+      _UploadState.idle => _buildIdle(),
+      _UploadState.selected => _buildSelected(),
+      _UploadState.uploading => _buildProgress('Uploading report…'),
+      _UploadState.reading => _buildProgress('Organizing your report…'),
+      _UploadState.success =>
+        _isParseFailure() ? _buildParseFailure() : _buildSuccess(),
+      _UploadState.duplicate => _buildDuplicateDialog(),
+      _UploadState.limit => _buildLimitWarning(),
+      _UploadState.error => _buildError(),
+    };
 
     return Scaffold(
       appBar: AppBar(
@@ -458,61 +469,36 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         ),
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.screenPadding),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: 520,
-                  minHeight:
-                      (constraints.maxHeight - 2 * AppSpacing.screenPadding)
-                          .clamp(0.0, double.infinity),
-                ),
-                child: Column(
-                  mainAxisAlignment:
-                      _state == _UploadState.idle && !showIncidentBanner
-                      ? MainAxisAlignment.center
-                      : MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (showIncidentBanner) ...[
-                      IncidentBanner(incident: incident),
-                      const SizedBox(height: AppSpacing.lg),
-                    ],
-                    if (_state != _UploadState.idle) ...[
-                      _buildDestination(),
-                      const SizedBox(height: AppSpacing.lg),
-                    ],
-                    AnimatedSwitcher(
-                      duration: MediaQuery.disableAnimationsOf(context)
-                          ? Duration.zero
-                          : const Duration(milliseconds: 240),
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
-                      child: KeyedSubtree(
-                        key: ValueKey(_state),
-                        child: switch (_state) {
-                          _UploadState.idle => _buildIdle(),
-                          _UploadState.selected => _buildSelected(),
-                          _UploadState.uploading => _buildProgress(
-                            'Uploading report…',
-                          ),
-                          _UploadState.reading => _buildProgress(
-                            'Organizing your report…',
-                          ),
-                          _UploadState.success =>
-                            _isParseFailure()
-                                ? _buildParseFailure()
-                                : _buildSuccess(),
-                          _UploadState.duplicate => _buildDuplicateDialog(),
-                          _UploadState.limit => _buildLimitWarning(),
-                          _UploadState.error => _buildError(),
-                        },
-                      ),
-                    ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.screenPadding),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (showIncidentBanner) ...[
+                    IncidentBanner(incident: incident),
+                    const SizedBox(height: AppSpacing.lg),
                   ],
-                ),
+                  if (_state != _UploadState.idle) ...[
+                    _buildDestination(),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                  AnimatedSwitcher(
+                    duration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 240),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    child: KeyedSubtree(
+                      key: ValueKey(_state),
+                      child: _state == _UploadState.idle
+                          ? content
+                          : _buildStateCard(content),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -532,6 +518,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+        border: Border.all(color: colors.outlineVariant),
       ),
       child: Row(
         children: [
@@ -607,10 +594,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        Material(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          clipBehavior: Clip.antiAlias,
+        Card(
           child: Column(
             children: [
               _buildSourceOption(
@@ -639,14 +623,45 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        Text(
-          'Supported formats: PDF, JPG, PNG',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: colors.onSurfaceVariant,
-          ),
-          textAlign: TextAlign.center,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.info_outline_rounded,
+              size: 16,
+              color: colors.onSurfaceVariant,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              'Supported formats: PDF, JPG, PNG',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       ],
+    );
+  }
+
+  Widget _buildStateCard(Widget child) => Card(
+    child: Padding(padding: const EdgeInsets.all(AppSpacing.lg), child: child),
+  );
+
+  Widget _buildStateIcon(IconData icon, {Color? color}) {
+    final colors = Theme.of(context).colorScheme;
+    final accent = color ?? colors.primary;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        ),
+        child: Icon(icon, color: accent, size: 28),
+      ),
     );
   }
 
@@ -713,25 +728,51 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     final path = _selectedPath;
     if (path == null) return _buildIdle();
     final fileName = path.split(RegExp(r'[/\\]')).last;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _buildStateIcon(Icons.description_outlined),
+        const SizedBox(height: AppSpacing.md),
+        Text('Check your report', style: theme.textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.xs),
         Text(
-          'Check your report',
-          style: Theme.of(context).textTheme.titleLarge,
+          'Make sure this is the file you want to add.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
         ),
-        const SizedBox(height: 12),
-        ListTile(
-          leading: const Icon(Icons.description_outlined),
-          title: Text(fileName),
-          subtitle: Text('For ${widget.activeProfileName}'),
+        const SizedBox(height: AppSpacing.lg),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.insert_drive_file_outlined, color: colors.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  fileName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall,
+                ),
+              ),
+              Icon(Icons.check_circle, color: colors.primary, size: 20),
+            ],
+          ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.lg),
         FilledButton(
           onPressed: () => _uploadFromPath(path),
           child: const Text('Add report'),
         ),
-        TextButton(
+        const SizedBox(height: AppSpacing.sm),
+        OutlinedButton(
           onPressed: () => setState(() {
             _selectedPath = null;
             _state = _UploadState.idle;
@@ -743,11 +784,26 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   }
 
   Widget _buildProgress(String message) {
+    final theme = Theme.of(context);
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const CircularProgressIndicator(),
-        const SizedBox(height: 16),
-        Text(message, key: const Key('upload-status')),
+        _buildStateIcon(Icons.hourglass_top_rounded),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          message,
+          key: const Key('upload-status'),
+          style: theme.textTheme.titleLarge,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          'This may take a moment. Please keep the app open.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        const LinearProgressIndicator(),
       ],
     );
   }
@@ -925,20 +981,23 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   }
 
   Widget _buildParseFailure() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Icon(
-          Icons.warning_amber_outlined,
-          color: Theme.of(context).colorScheme.error,
-          size: 48,
+        _buildStateIcon(
+          Icons.warning_amber_rounded,
+          color: theme.colorScheme.error,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
+        Text('Report needs attention', style: theme.textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           _parseFailureMessage(_result?.status),
           key: const Key('parse-failure-message'),
-          style: Theme.of(context).textTheme.titleMedium,
-          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
         if (_result?.status == 'content_not_recognized') ...[
           const SizedBox(height: 8),
@@ -947,13 +1006,11 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-            textAlign: TextAlign.center,
           ),
           if (_verifiedResultCount > 0) ...[
             const SizedBox(height: 8),
             Text(
               '$_verifiedResultCount verified result${_verifiedResultCount == 1 ? '' : 's'} saved.',
-              textAlign: TextAlign.center,
             ),
           ],
         ],
@@ -963,7 +1020,6 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             err,
             key: const Key('parse-failure-retry-error'),
             style: TextStyle(color: Theme.of(context).colorScheme.error),
-            textAlign: TextAlign.center,
           ),
         ],
         const SizedBox(height: 24),
@@ -1037,31 +1093,58 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         'No extracted test values were added. You can still open and share the document. Your trends are unchanged.',
       _ => null,
     };
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Icon(
-          processingInProgress ? Icons.hourglass_top : Icons.check_circle,
-          color: processingInProgress ? Colors.orange : Colors.green,
-          size: 48,
+        _buildStateIcon(
+          processingInProgress
+              ? Icons.hourglass_top_rounded
+              : Icons.check_circle_rounded,
+          color: processingInProgress ? colors.primary : colors.secondary,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         Text(
           originalOnly
               ? 'Your original is saved.'
               : r?.reused == true
               ? 'Report already in ${widget.activeProfileName}'
               : 'Report added to ${widget.activeProfileName}',
-          style: Theme.of(context).textTheme.titleMedium,
+          style: theme.textTheme.titleLarge,
         ),
-        if (r != null)
-          Text(r.fileName, style: Theme.of(context).textTheme.bodyMedium),
+        if (r != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: colors.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.description_outlined, color: colors.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    r.fileName,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         if (statusMessage != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.md),
           Text(
             statusMessage,
             key: const Key('upload-success-status-message'),
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
           ),
         ],
         if (_errorMessage case final error?) ...[
@@ -1110,6 +1193,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   }
 
   Widget _buildDuplicateDialog() {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     final existing = _existingReport;
     final name = existing?['originalFileName'] as String? ?? 'existing report';
     final createdAt = existing?['createdAt'] as String?;
@@ -1119,43 +1204,49 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Icon(
-          Icons.copy_outlined,
-          color: Theme.of(context).colorScheme.primary,
-          size: 48,
-        ),
-        const SizedBox(height: 16),
+        _buildStateIcon(Icons.content_copy_outlined),
+        const SizedBox(height: AppSpacing.md),
         Text(
           'This report looks like a duplicate',
           key: const Key('duplicate-dialog'),
-          style: Theme.of(context).textTheme.titleMedium,
-          textAlign: TextAlign.center,
+          style: theme.textTheme.titleLarge,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Text(
-          name,
-          style: Theme.of(context).textTheme.bodyMedium,
-          textAlign: TextAlign.center,
-        ),
-        if (subtitle != null) ...[
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: Theme.of(context).textTheme.bodySmall,
-            textAlign: TextAlign.center,
+          'This file may already be in your reports.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colors.onSurfaceVariant,
           ),
-        ],
-        const SizedBox(height: 24),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: theme.textTheme.titleSmall),
+              if (subtitle != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(subtitle, style: theme.textTheme.bodySmall),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
         FilledButton(
           key: const Key('duplicate-keep-existing'),
           onPressed: _onDuplicateKeepExisting,
           child: const Text('Keep existing'),
         ),
         const SizedBox(height: 8),
-        FilledButton(
+        OutlinedButton(
           key: const Key('duplicate-process-again'),
           onPressed: _onDuplicateProcessAgain,
-          child: const Text('Process PDF Again'),
+          child: const Text('Process PDF again'),
         ),
         const SizedBox(height: 8),
         OutlinedButton(
@@ -1177,17 +1268,24 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   }
 
   Widget _buildLimitWarning() {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     final usageText = (_limitCurrent != null && _limitMax != null)
         ? 'Using $_limitCurrent of $_limitMax reports.'
         : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Icon(Icons.info_outline, color: Theme.of(context).colorScheme.error),
-        const SizedBox(height: 16),
+        _buildStateIcon(Icons.info_outline_rounded, color: colors.error),
+        const SizedBox(height: AppSpacing.md),
+        Text('Report limit reached', style: theme.textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           _limitMessage ?? 'You have reached your report limit.',
           key: const Key('upload-limit-warning'),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
         ),
         if (usageText != null) ...[const SizedBox(height: 8), Text(usageText)],
         if (_limitUpgradeHint != null) ...[
@@ -1223,12 +1321,22 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   }
 
   Widget _buildError() {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error),
-        const SizedBox(height: 16),
-        Text(_errorMessage ?? 'Upload failed', key: const Key('upload-error')),
+        _buildStateIcon(Icons.cloud_off_outlined, color: colors.error),
+        const SizedBox(height: AppSpacing.md),
+        Text('Could not upload report', style: theme.textTheme.titleLarge),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          _errorMessage ?? 'Upload failed',
+          key: const Key('upload-error'),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(height: 24),
         if (_selectedPath != null)
           FilledButton(
@@ -1236,7 +1344,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             onPressed: () => _uploadFromPath(_selectedPath),
             child: const Text('Retry same file'),
           ),
-        TextButton(
+        OutlinedButton(
           onPressed: () => setState(() {
             _selectedPath = null;
             _state = _UploadState.idle;

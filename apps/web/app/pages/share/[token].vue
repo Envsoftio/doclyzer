@@ -247,12 +247,7 @@ const trendDates = computed(() => {
     <header class="site-header no-print">
       <div class="shell header-inner">
         <NuxtLink class="brand" to="/" aria-label="Doclyzer home">
-          <span class="brand-mark" aria-hidden="true"
-            ><svg viewBox="0 0 24 24">
-              <path d="M4 2h7c5 0 9 4 9 10s-4 10-9 10h-7z" />
-              <path d="M1 12h5l3-6 4 12 3-6h7" /></svg
-          ></span>
-          <span>doclyzer</span>
+          <img src="/Doclyzer-logo.svg" width="856" height="183" alt="" />
         </NuxtLink>
         <span class="header-label">SHARED HEALTH REPORTS</span>
       </div>
@@ -769,11 +764,7 @@ const trendDates = computed(() => {
     <footer class="site-footer no-print">
       <div class="shell footer-inner">
         <NuxtLink class="brand" to="/" aria-label="Doclyzer home"
-          ><span class="brand-mark" aria-hidden="true"
-            ><svg viewBox="0 0 24 24">
-              <path d="M4 2h7c5 0 9 4 9 10s-4 10-9 10h-7z" />
-              <path d="M1 12h5l3-6 4 12 3-6h7" /></svg></span
-          ><span>doclyzer</span></NuxtLink
+          ><img src="/Doclyzer-logo.svg" width="856" height="183" alt="" /></NuxtLink
         >
         <span>A shared view of health reports</span>
       </div>
@@ -820,30 +811,10 @@ const trendDates = computed(() => {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 11px;
   color: var(--ink);
   text-decoration: none;
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.045em;
 }
-.brand-mark {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  border-radius: 11px;
-  background: linear-gradient(90deg, #1ebeb6, #115278);
-}
-.brand-mark svg {
-  width: 25px;
-  height: 25px;
-  fill: none;
-  stroke: #fff;
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
+.brand img { display: block; width: 178px; height: auto; }
 .header-label,
 .eyebrow {
   font-size: 11px;
@@ -1411,18 +1382,7 @@ const trendDates = computed(() => {
   color: var(--muted);
   font-size: 11px;
 }
-.footer-inner .brand {
-  font-size: 20px;
-}
-.footer-inner .brand-mark {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-}
-.footer-inner .brand-mark svg {
-  width: 20px;
-  height: 20px;
-}
+.footer-inner .brand img { width: 150px; }
 @media (max-width: 900px) {
   .result-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1439,18 +1399,7 @@ const trendDates = computed(() => {
     font-size: 9px;
     text-align: right;
   }
-  .brand {
-    font-size: 23px;
-  }
-  .brand-mark {
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-  }
-  .brand-mark svg {
-    width: 21px;
-    height: 21px;
-  }
+  .brand img { width: 155px; }
   .main-content {
     padding-block: 24px 56px;
   }

@@ -6,14 +6,20 @@ export default defineNuxtConfig({
   devServer: {
     port: 3005,
   },
+  nitro: {
+    compressPublicAssets: { gzip: true, brotli: true },
+  },
   app: {
     head: {
+      htmlAttrs: { lang: 'en' },
       link: [
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
         {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap',
+          rel: 'preload',
+          href: '/fonts/plus-jakarta-sans-v12-latin.woff2',
+          as: 'font',
+          type: 'font/woff2',
+          crossorigin: '',
         },
       ],
     },
@@ -35,7 +41,17 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
+    '/fonts/**': { headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } },
+    '/landing/**': { headers: { 'Cache-Control': 'public, max-age=2592000' } },
     '/admin/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/privacy-policy': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/terms-and-conditions': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/refund-and-cancellation-policy': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/mobile': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/login': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/register': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/forgot-password': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/reset-password': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/home': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/reports': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/reports/**': { headers: { 'X-Robots-Tag': 'noindex, nofollow' } },

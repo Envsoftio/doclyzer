@@ -1,29 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../features/reports/reports_repository.dart';
 import '../../shared/app_date_format.dart';
-import 'app_theme.dart';
 
 class DoclyzerMark extends StatelessWidget {
   const DoclyzerMark({super.key, this.size = 58});
   final double size;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => Image.asset(
+    'assets/branding/app_mark.png',
     width: size,
     height: size,
-    decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [AppColors.teal, AppColors.blue],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      borderRadius: BorderRadius.circular(size * .29),
-    ),
-    child: Icon(
-      Icons.health_and_safety_outlined,
-      size: size * .55,
-      color: Colors.white,
-    ),
+    fit: BoxFit.contain,
+    filterQuality: FilterQuality.high,
   );
 }
 

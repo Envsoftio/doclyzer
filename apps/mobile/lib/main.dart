@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'core/api_client.dart';
 import 'core/api_config.dart';
+import 'core/device_notification_settings.dart';
 import 'core/feedback/status_messenger.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/design_components.dart';
@@ -36,6 +38,7 @@ import 'features/auth/sessions_repository.dart';
 import 'features/auth/forgot_password/forgot_password_screen.dart';
 import 'features/auth/reset_password/reset_password_screen.dart';
 import 'features/auth/screens/home_screen.dart';
+import 'features/auth/screens/change_password_screen.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/onboarding_screen.dart';
 import 'features/auth/screens/session_list_screen.dart';
@@ -152,20 +155,30 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   bool _savingAppearance = false;
   final LocalAuthentication _localAuthentication = LocalAuthentication();
   bool _appLockEnabled = false;
+  bool _appLockPreferenceLoaded = false;
+  bool _appLockLoadError = false;
   bool _appLocked = false;
   bool _unlocking = false;
 
   Future<void> _restoreAppLock() async {
     try {
       final enabled = await _appearanceStorage.read(key: 'doclyzer_app_lock');
-      if (mounted && enabled == 'true') {
+      if (mounted) {
         setState(() {
-          _appLockEnabled = true;
-          _appLocked = true;
+          _appLockEnabled = enabled == 'true';
+          _appLocked = enabled == 'true';
+          _appLockPreferenceLoaded = true;
+          _appLockLoadError = false;
         });
       }
     } catch (_) {
-      // Keep the lock off when secure storage cannot be read.
+      if (mounted) {
+        setState(() {
+          _appLockPreferenceLoaded = true;
+          _appLockLoadError = true;
+          _appLocked = true;
+        });
+      }
     }
   }
 
@@ -175,12 +188,14 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         if (!await _localAuthentication.isDeviceSupported()) {
           throw StateError('Set a device passcode before turning on App lock.');
         }
-        final confirmed = await _localAuthentication.authenticate(
-          localizedReason: 'Confirm App lock for Doclyzer',
-          options: const AuthenticationOptions(stickyAuth: true),
-        );
-        if (!confirmed) return _appLockEnabled;
       }
+      final confirmed = await _localAuthentication.authenticate(
+        localizedReason: enabled
+            ? 'Confirm App lock for Doclyzer'
+            : 'Confirm before turning off App lock',
+        options: const AuthenticationOptions(stickyAuth: true),
+      );
+      if (!confirmed) return _appLockEnabled;
       await _appearanceStorage.write(
         key: 'doclyzer_app_lock',
         value: enabled ? 'true' : 'false',
@@ -758,13 +773,60 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     ),
   );
 
+  Future<void> _openChangePasswordScreen() async {
+    final navigator = _navigatorKey.currentState;
+    final context = _navigatorKey.currentContext;
+    if (navigator == null || context == null) return;
+    final changed = await navigator.push<bool>(
+      designPageRoute<bool>(
+        ChangePasswordScreen(authRepository: _auth),
+        context,
+      ),
+    );
+    if (changed == true && navigator.mounted) {
+      StatusMessenger.showSuccess(navigator.context, 'Password changed');
+    }
+  }
+
+  Future<void> _openNotificationPreviewSettings() async {
+    if (!await openDeviceNotificationSettings()) {
+      _scaffoldMessengerKey.currentState?.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Open device Settings to manage notification previews.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    const siteUrl = String.fromEnvironment(
+      'PUBLIC_WEB_BASE_URL',
+      defaultValue: 'https://doclyzer.com',
+    );
+    try {
+      final opened = await launchUrl(
+        Uri.parse('${siteUrl.replaceFirst(RegExp(r'/$'), '')}/privacy-policy'),
+        mode: LaunchMode.externalApplication,
+      );
+      if (opened) return;
+    } catch (_) {
+      // Show the in-app summary when the browser is unavailable.
+    }
+    if (mounted) _openLegalScreen(LegalSummaryKind.privacy);
+  }
+
   void _openPrivacyScreen() => _pushAccountPage(
     PrivacySecurityScreen(
       appLockEnabled: _appLockEnabled,
       onAppLockChanged: _setAppLockEnabled,
       onSharedLinks: () => unawaited(_openSharedLinks()),
       onExport: _openExportScreen,
-      onPrivacyPolicy: () => _openLegalScreen(LegalSummaryKind.privacy),
+      onPrivacyPolicy: () => unawaited(_openPrivacyPolicy()),
+      onNotificationSettings: () =>
+          unawaited(_openNotificationPreviewSettings()),
+      onChangePassword: () => unawaited(_openChangePasswordScreen()),
       onDeleteAccount: _openDeleteScreen,
     ),
   );
@@ -966,7 +1028,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    if (!_initialized) {
+    if (!_initialized || !_appLockPreferenceLoaded) {
       return MaterialApp(
         title: 'Doclyzer',
         debugShowCheckedModeBanner: false,
@@ -1084,7 +1146,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
               ),
               child: child ?? const SizedBox.shrink(),
             ),
-            if (_appLocked &&
+            if ((_appLocked || _appLockLoadError) &&
                 _authView != _AuthView.login &&
                 _authView != _AuthView.onboarding &&
                 _authView != _AuthView.signup)
@@ -1101,22 +1163,36 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                             const DoclyzerMark(size: 72),
                             const SizedBox(height: 24),
                             Text(
-                              'Doclyzer is locked',
+                              _appLockLoadError
+                                  ? 'App lock is unavailable'
+                                  : 'Doclyzer is locked',
                               style: Theme.of(context).textTheme.headlineSmall,
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              'Use your device passcode or biometrics to continue.',
+                              _appLockLoadError
+                                  ? 'Could not read the saved App lock setting. Retry to continue.'
+                                  : 'Use your device passcode or biometrics to continue.',
                               textAlign: TextAlign.center,
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             const SizedBox(height: 28),
                             FilledButton(
-                              key: const Key('unlock-app'),
-                              onPressed: _unlocking ? null : _unlockApp,
+                              key: Key(
+                                _appLockLoadError
+                                    ? 'retry-app-lock'
+                                    : 'unlock-app',
+                              ),
+                              onPressed: _unlocking
+                                  ? null
+                                  : _appLockLoadError
+                                  ? _restoreAppLock
+                                  : _unlockApp,
                               child: _unlocking
                                   ? const CircularProgressIndicator()
-                                  : const Text('Unlock'),
+                                  : Text(
+                                      _appLockLoadError ? 'Retry' : 'Unlock',
+                                    ),
                             ),
                           ],
                         ),

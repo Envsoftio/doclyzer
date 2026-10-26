@@ -5,36 +5,58 @@ import 'account_repository.dart';
 
 /// Consistent account photo with a readable initial when no image is available.
 class AccountAvatar extends StatelessWidget {
-  const AccountAvatar({super.key, required this.profile, required this.radius});
+  const AccountAvatar({
+    super.key,
+    required this.profile,
+    required this.radius,
+    this.fallbackInitials,
+  });
 
   final AccountProfile? profile;
   final double radius;
+  final String? fallbackInitials;
+
+  static ImageProvider? imageFor(String? avatarUrl) {
+    final rawUrl = avatarUrl?.trim();
+    if (rawUrl == null || rawUrl.isEmpty) return null;
+    if (rawUrl.startsWith('data:')) {
+      try {
+        return MemoryImage(UriData.parse(rawUrl).contentAsBytes());
+      } on FormatException {
+        return null;
+      }
+    }
+    return NetworkImage(
+      rawUrl.startsWith('http') ? rawUrl : '$apiBaseUrl$rawUrl',
+    );
+  }
 
   static String initialFor(AccountProfile? profile) {
     final name = profile?.displayName?.trim();
-    final label = name != null && name.isNotEmpty
-        ? name
-        : profile?.email.trim();
-    if (label == null || label.isEmpty) return '?';
-    return String.fromCharCode(label.runes.first).toUpperCase();
+    if (name != null && name.isNotEmpty) {
+      return name
+          .split(RegExp(r'\s+'))
+          .where((part) => part.isNotEmpty)
+          .take(2)
+          .map((part) => String.fromCharCode(part.runes.first).toUpperCase())
+          .join();
+    }
+    final email = profile?.email.trim();
+    if (email == null || email.isEmpty) return '?';
+    return String.fromCharCode(email.runes.first).toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final rawUrl = profile?.avatarUrl?.trim();
-    final url = rawUrl == null || rawUrl.isEmpty
-        ? null
-        : rawUrl.startsWith('http')
-        ? rawUrl
-        : '$apiBaseUrl$rawUrl';
+    final image = imageFor(profile?.avatarUrl);
     final fallback = Center(
       child: Text(
-        initialFor(profile),
+        fallbackInitials ?? initialFor(profile),
         style: TextStyle(
           color: colors.onPrimaryContainer,
-          fontSize: radius * 0.9,
-          fontWeight: FontWeight.w600,
+          fontSize: radius * 1.1,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -42,13 +64,15 @@ class AccountAvatar extends StatelessWidget {
       radius: radius,
       backgroundColor: colors.primaryContainer,
       child: ClipOval(
-        child: url == null
+        child: image == null
             ? fallback
-            : Image.network(
-                url,
+            : Image(
+                image: image,
                 width: radius * 2,
                 height: radius * 2,
                 fit: BoxFit.cover,
+                frameBuilder: (_, child, frame, wasSynchronouslyLoaded) =>
+                    frame != null || wasSynchronouslyLoaded ? child : fallback,
                 errorBuilder: (_, _, _) => fallback,
               ),
       ),

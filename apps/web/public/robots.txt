@@ -1,4 +1,13 @@
 User-Agent: *
+Allow: /
+Disallow: /admin/
 Disallow: /share/
+Disallow: /home
+Disallow: /reports
+Disallow: /trends
+Disallow: /you
+
+# OAI-SearchBot can crawl the public pages under the wildcard rules above.
+# Private report and account URLs are excluded from discovery.
 
 Sitemap: https://doclyzer.com/sitemap.xml

@@ -4,7 +4,10 @@ class AiDisclaimerNote extends StatelessWidget {
   const AiDisclaimerNote({super.key});
 
   static const String copy =
-      'Informational only — not medical advice. Discuss with your doctor.';
+      'Doclyzer helps you organize and better understand your health reports. '
+      'The information provided is for educational purposes only and is not '
+      'medical advice, diagnosis, or treatment. Always consult a qualified '
+      'healthcare professional for medical guidance.';
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +24,8 @@ class AiDisclaimerNote extends StatelessWidget {
           child: Text(
             copy,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],

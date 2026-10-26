@@ -53,9 +53,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     <aside id="admin-sidebar" class="sidebar" :class="{ 'sidebar--open': sidebarOpen }">
       <div class="sidebar__header">
         <div class="sidebar__brand">
-          <span class="sidebar__brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 2h7c5 0 9 4 9 10s-4 10-9 10h-7z"/><path d="M1 12h5l3-6 4 12 3-6h7"/></svg></span>
           <div class="sidebar__brand-copy">
-            <div class="sidebar__brand-title">doclyzer</div>
+            <img class="sidebar__brand-logo" src="/Doclyzer-logo.svg" width="856" height="183" alt="Doclyzer" />
             <div class="sidebar__brand-subtitle">ADMIN CONSOLE</div>
           </div>
         </div>
@@ -156,22 +155,15 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   align-items: center;
 }
 
-.sidebar__brand-mark {
-  width: 39px;
-  height: 39px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(90deg, var(--brand-teal-bright), var(--brand-blue));
-  box-shadow: 0 5px 14px rgba(17, 82, 120, 0.2);
-}
-.sidebar__brand-mark svg { width: 25px; height: 25px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .sidebar__brand-copy { line-height: 1.1; }
-.sidebar__brand-title {
-  font-size: 19px;
-  font-weight: 750;
-  letter-spacing: -0.06em;
-  font-family: var(--font-display);
+.sidebar__brand-logo {
+  display: block;
+  width: 180px;
+  height: auto;
+  padding: 5px 7px;
+  border-radius: 8px;
+  background: #fff;
+  box-sizing: border-box;
 }
 
 .sidebar__brand-subtitle {

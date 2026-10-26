@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../../core/device_notification_settings.dart';
 
 import '../communication_preferences_repository.dart';
 import '../../support/support_models.dart';
@@ -101,25 +99,14 @@ class _CommunicationPreferencesScreenState
   }
 
   Future<void> _openDeviceSettings() async {
-    try {
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        await const MethodChannel(
-          'doclyzer/device_settings',
-        ).invokeMethod<void>('open');
-      } else {
-        final opened = await launchUrl(Uri.parse('app-settings:'));
-        if (!opened) throw PlatformException(code: 'UNAVAILABLE');
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Open the device Settings app to change notification access.',
-            ),
+    if (!await openDeviceNotificationSettings() && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Open the device Settings app to change notification access.',
           ),
-        );
-      }
+        ),
+      );
     }
   }
 

@@ -25,17 +25,7 @@ class StartupLoadingScreen extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          width: 104,
-                          height: 104,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: colors.primaryContainer,
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: colors.outlineVariant),
-                          ),
-                          child: const DoclyzerMark(size: 68),
-                        ),
+                        const DoclyzerMark(size: 104),
                         const SizedBox(height: 26),
                         Text(
                           'doclyzer',
