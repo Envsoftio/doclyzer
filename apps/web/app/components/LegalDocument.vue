@@ -2,24 +2,50 @@
 import privacy from '../../content/legal/Doclyzer_Privacy_Policy.md?raw'
 import terms from '../../content/legal/Doclyzer_Terms_and_Conditions.md?raw'
 import refunds from '../../content/legal/Doclyzer_Refund_and_Cancellation_Policy.md?raw'
+import medicalDisclaimer from '../../content/legal/Doclyzer_Medical_Disclaimer.md?raw'
 import { renderLegalMarkdown } from '../utils/renderLegalMarkdown'
 
-type Policy = 'privacy' | 'terms' | 'refunds'
+type Policy = 'privacy' | 'terms' | 'refunds' | 'medicalDisclaimer'
 const props = defineProps<{ policy: Policy }>()
 const documents = {
-  privacy: { title: 'Privacy Policy', route: '/privacy-policy', source: privacy },
-  terms: { title: 'Terms and Conditions', route: '/terms-and-conditions', source: terms },
-  refunds: { title: 'Refund and Cancellation Policy', route: '/refund-and-cancellation-policy', source: refunds },
+  privacy: {
+    title: 'Privacy Policy',
+    description: 'Learn how Doclyzer collects, uses, shares, and protects personal information and health reports.',
+    route: '/privacy-policy',
+    source: privacy,
+  },
+  terms: {
+    title: 'Terms and Conditions',
+    description: 'Read the terms for using Doclyzer to organize medical reports, access educational explanations, and manage credits.',
+    route: '/terms-and-conditions',
+    source: terms,
+  },
+  refunds: {
+    title: 'Refund and Cancellation Policy',
+    description: 'Learn how Doclyzer handles credit purchases, cancellations, failed payments, and refund requests.',
+    route: '/refund-and-cancellation-policy',
+    source: refunds,
+  },
+  medicalDisclaimer: {
+    title: 'Medical Disclaimer',
+    description: 'Understand the limits of Doclyzer report analysis and AI explanations, and when to seek professional medical advice.',
+    route: '/medical-disclaimer',
+    source: medicalDisclaimer,
+  },
 }
 const document = computed(() => documents[props.policy])
 const html = computed(() => renderLegalMarkdown(document.value.source))
 const siteUrl = useRuntimeConfig().public.siteUrl.replace(/\/+$/, '')
 useSeoMeta({
   title: () => `${document.value.title} | Doclyzer`,
-  description: () => `Read the Doclyzer ${document.value.title.toLowerCase()}.`,
-  robots: 'noindex, nofollow',
+  description: () => document.value.description,
   ogTitle: () => `${document.value.title} | Doclyzer`,
+  ogDescription: () => document.value.description,
   ogUrl: () => `${siteUrl}${document.value.route}`,
+  ogType: 'website',
+  twitterCard: 'summary',
+  twitterTitle: () => `${document.value.title} | Doclyzer`,
+  twitterDescription: () => document.value.description,
 })
 useHead({ link: [{ rel: 'canonical', href: () => `${siteUrl}${document.value.route}` }] })
 </script>
@@ -32,6 +58,7 @@ useHead({ link: [{ rel: 'canonical', href: () => `${siteUrl}${document.value.rou
         <NuxtLink to="/privacy-policy" :aria-current="policy === 'privacy' ? 'page' : undefined">Privacy</NuxtLink>
         <NuxtLink to="/terms-and-conditions" :aria-current="policy === 'terms' ? 'page' : undefined">Terms</NuxtLink>
         <NuxtLink to="/refund-and-cancellation-policy" :aria-current="policy === 'refunds' ? 'page' : undefined">Refunds</NuxtLink>
+        <NuxtLink to="/medical-disclaimer" :aria-current="policy === 'medicalDisclaimer' ? 'page' : undefined">Medical disclaimer</NuxtLink>
       </nav>
       <article class="document" v-html="html" />
     </main>

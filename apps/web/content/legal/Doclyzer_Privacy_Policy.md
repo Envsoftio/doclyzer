@@ -5,15 +5,11 @@
 
 
 
-Doclyzer is a digital platform designed to help users upload, organize, review, understand, track and securely share diagnostic and laboratory reports.
+**Doclyzer** ("we", "our" or "us"), operated by **Envsoft Solutions LLP**, is committed to protecting your privacy and the security of your personal and health-related information.
 
-Doclyzer is operated by **Envsoft Solutions LLP**, having its registered office at **[Full Registered Office Address], Mohali, Punjab, India** ("Doclyzer", "we", "us", or "our").
+This Privacy Policy explains how we collect, use, disclose, retain and safeguard your information when you use our medical report organization and analysis platform, including our mobile applications, website, APIs and related services (collectively, the "Services"). Doclyzer helps users upload, organize, review, understand, track and securely share diagnostic and laboratory reports.
 
-This Privacy Policy explains what personal data we collect, why we collect it, how we process and protect it, when it may be shared, how long it may be retained, and the choices and rights available to you.
-
-This Privacy Policy applies to the Doclyzer mobile applications, website, APIs and related services collectively referred to as the "Services".
-
-Doclyzer deals with health-related information. We therefore treat privacy, security, accuracy and user control as fundamental product requirements.
+By using the Services, you acknowledge this Privacy Policy. Where we rely on your consent to process personal data, we will ask for it through a separate, specific action. If you do not wish to provide information required for a feature, please do not use that feature.
 
 ---
 
@@ -77,7 +73,7 @@ For this purpose, Doclyzer may process structured information derived from your 
 
 We aim to send only the information reasonably required to provide the requested explanation.
 
-Doclyzer currently uses external AI infrastructure, including the OpenAI API, where applicable, to generate certain explanations.
+Some explanations are generated with the assistance of AI service providers acting on Doclyzer's behalf.
 
 Doclyzer does not use AI-generated explanations as a substitute for the original laboratory report or for professional medical advice.
 
@@ -179,15 +175,13 @@ Doclyzer may use artificial-intelligence models to convert structured report inf
 
 The AI system is not asked to independently diagnose you.
 
-Whenever technically feasible, our architecture is designed so that our own document-processing and validation systems identify report information before relevant structured data is supplied to the explanation model.
-
 An AI-generated response may still be incomplete or inaccurate.
 
 Doclyzer therefore does not guarantee that an AI explanation will be error-free.
 
 AI explanations should always be read together with the original report.
 
-Doclyzer may use business/API AI providers whose published terms state that API customer inputs and outputs are not used for model training by default. Doclyzer intends not to opt health-report data into voluntary model-training programmes.
+We do not opt health-report data into voluntary AI model-training programmes.
 
 We may change AI providers where necessary to improve security, availability, accuracy, cost or functionality, subject to this Privacy Policy and applicable law.
 
@@ -339,7 +333,7 @@ Doclyzer does not replace or alter the original document issued by the laborator
 
 Where available, you may delete individual reports from the relevant report-management screen.
 
-You may request deletion of your Doclyzer account through **[Settings → Privacy & Security → Delete Account]** or by contacting **hello@doclyzer.ai**.
+You may request deletion of your Doclyzer account through the account-deletion controls in the mobile or web app, or by contacting **hello@doclyzer.ai**.
 
 Deleting an account may result in loss of reports, historical charts, explanations, credit history and other account-associated information.
 
@@ -352,9 +346,8 @@ Certain billing, legal, security or fraud-prevention records may be retained whe
 If you have a privacy concern, contact Doclyzer first so that we have an opportunity to address it.
 
 **Grievance / Privacy Contact**  
-Name: **[Name of Grievance Officer / Authorized Privacy Contact]**  
-Email: **[grievance@yourdomain.com]**  
-Address: **[Full Business Address]**
+Name: ** Riya **  
+Email: ** hello@doclyzer.ai**  
 
 We will acknowledge and respond to grievances within the timelines required by applicable law.
 
@@ -454,7 +447,6 @@ Nothing in this Policy is intended to reduce any mandatory right available to yo
 For general privacy questions:
 
 **Doclyzer / Envsoft Solutions LLP**  
-Address: **[Full Registered Office Address, Mohali, Punjab, India]**  
 Privacy Email: **hello@doclyzer.ai**  
 Support Email: **hello@doclyzer.ai**  
 Grievance Email: **hello@doclyzer.ai**

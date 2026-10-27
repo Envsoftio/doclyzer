@@ -4,10 +4,22 @@
 
 Doclyzer provides educational information about reports. It does not diagnose conditions, provide treatment, or replace advice from a qualified healthcare professional. Automated extraction and explanations can be inaccurate; users should check important values against their original laboratory report.
 
-## Public pages
+The linked pages describe Doclyzer's product and legal policies. Check the effective date shown on each legal page. Doclyzer content is educational and should not be used to diagnose or treat a medical condition.
+
+## Product
 
 - [Doclyzer homepage](https://doclyzer.com/): Product overview, workflow, features, and frequently asked questions.
-- [Account deletion](https://doclyzer.com/delete-account): How to request account deletion and what happens afterward.
-- [Sitemap](https://doclyzer.com/sitemap.xml): Public URLs intended for search indexing.
 
-Private accounts, uploaded reports, shared report links, and administrator pages are not public reference material. The legal policy pages are drafts pending review and should not be treated as final policies.
+## Policies and medical safety
+
+- [Privacy Policy](https://doclyzer.com/privacy-policy): Personal and health-report information collected, used, shared, retained, and protected by Doclyzer.
+- [Terms and Conditions](https://doclyzer.com/terms-and-conditions): Rules for accounts, reports, AI explanations, credits, referrals, sharing, and use of the service.
+- [Refund and Cancellation Policy](https://doclyzer.com/refund-and-cancellation-policy): Credit purchases, payment problems, cancellations, and refund requests.
+- [Medical Disclaimer](https://doclyzer.com/medical-disclaimer): Limits of report extraction and AI explanations; Doclyzer does not provide medical advice, diagnosis, or treatment.
+
+## Account and discovery
+
+- [Account deletion](https://doclyzer.com/delete-account): How to request account deletion and what happens afterward.
+- [Sitemap](https://doclyzer.com/sitemap.xml): Canonical public URLs intended for search indexing.
+
+Private accounts, uploaded reports, shared report links, and administrator pages are not public reference material.

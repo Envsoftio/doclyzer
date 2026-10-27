@@ -1,15 +1,15 @@
 # Doclyzer Refund and Cancellation Policy
 
-**Effective Date:** [Effective Date]  
-**Last Updated:** [Last Updated Date]
+**Effective Date:** 1 Nov 2026   
+**Last Updated:** 1 Nov 2026 
 
-> **Draft for legal review.** This policy is designed for Doclyzer's token/credit-based digital service model. Replace all bracketed placeholders and verify that the final policy matches the actual payment gateway, Apple App Store, Google Play, billing, token, and customer-support implementation before publication.
 
-Doclyzer is operated by **Envsoft Solutions LLP**, having its registered office at **[Full Registered Office Address], Mohali, Punjab, India** ("Doclyzer", "we", "us", or "our").
+
+**Doclyzer** is a medical report organization and analysis platform operated by **Envsoft Solutions LLP**. In this Policy, "Doclyzer", "we", "us" and "our" refer to Envsoft Solutions LLP.
 
 This Refund and Cancellation Policy explains how payments, Doclyzer Credits/Tokens, failed transactions, duplicate transactions, promotional credits, referral credits, and refund requests are handled.
 
-By purchasing Doclyzer Credits/Tokens, completing a recharge, purchasing an eligible digital service, or otherwise making a payment through Doclyzer, you agree to this Policy in addition to the **Doclyzer Terms and Conditions** and **Privacy Policy**.
+By purchasing Doclyzer Credits/Tokens, completing a recharge, purchasing an eligible digital service, or otherwise making a payment through Doclyzer, you agree to this Policy and the **Doclyzer Terms and Conditions** and acknowledge the **Privacy Policy**.
 
 ---
 
@@ -212,7 +212,7 @@ A duplicate-payment correction is not treated as a discretionary change-of-mind 
 
 If you believe a payment was made without your authorization, contact your bank, card issuer, UPI provider, Google Play, Apple, payment gateway, or other applicable payment provider immediately.
 
-You should also notify Doclyzer at **[billing/support email]** so that we can review the associated account activity.
+You should also notify Doclyzer at **hello@doclyzer.ai** so that we can review the associated account activity.
 
 Unauthorized-payment claims may be subject to verification, fraud-prevention procedures, payment-provider rules, and applicable law.
 
@@ -394,8 +394,8 @@ Where a user believes a transaction qualifies for an exception required by appli
 
 Requests should be sent to:
 
-**Billing Support:** [billing@yourdomain.com]  
-**General Support:** [support@yourdomain.com]
+**Billing Support:** hello@doclyzer.ai  
+**General Support:** hello@doclyzer.ai
 
 We may request additional non-sensitive information reasonably necessary to verify the transaction.
 
@@ -528,11 +528,9 @@ Nothing in this section prevents a consumer from using a mandatory remedy availa
 For billing, payment, Credits/Tokens, or refund-related questions:
 
 **Doclyzer / Envsoft Solutions LLP**  
-Registered Office: **[Full Registered Office Address, Mohali, Punjab, India]**  
-Billing Support: **[billing@yourdomain.com]**  
-General Support: **[support@yourdomain.com]**  
-Legal: **[legal@yourdomain.com]**  
-Grievance Contact: **[grievance@yourdomain.com]**
+Privacy Email: **hello@doclyzer.ai**  
+Support Email: **hello@doclyzer.ai**  
+Grievance Email: **hello@doclyzer.ai**
 
 When contacting us about a transaction, include the transaction/order ID where possible.
 

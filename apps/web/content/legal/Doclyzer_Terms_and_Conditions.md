@@ -1,19 +1,19 @@
 # Doclyzer Terms and Conditions
 
-**Effective Date:** [Effective Date]  
-**Last Updated:** [Last Updated Date]
+**Effective Date:** 1 Nov 2026   
+**Last Updated:** 1 Nov 2026 
 
-> **Draft for legal review.** Replace all bracketed placeholders and verify that the product's actual pricing, credits, referral rules, refund process, medical disclaimers, and operational practices match these Terms before publication.
+
 
 These Terms and Conditions ("Terms") govern your access to and use of Doclyzer, including its mobile applications, website, report-processing functionality, AI-generated explanations, credits, referral programme and related services ("Service").
 
-Doclyzer is operated by **Envsoft Solutions LLP**, having its registered office at **[Full Registered Office Address], Mohali, Punjab, India** ("Doclyzer", "we", "us", or "our").
+**Doclyzer** is a medical report organization and analysis platform operated by **Envsoft Solutions LLP**. In these Terms, "Doclyzer", "we", "us" and "our" refer to Envsoft Solutions LLP.
 
 Please read these Terms carefully.
 
-By creating an account, purchasing credits, uploading a report or otherwise using Doclyzer, you agree to these Terms and our Privacy Policy.
+By creating an account, purchasing credits, uploading a report or otherwise using Doclyzer, you agree to these Terms and acknowledge our Privacy Policy. Where we rely on your consent to process personal data, we will request it separately.
 
-If you do not agree, you should not use the Service.
+If you do not agree to these Terms, you should not use the Service.
 
 ---
 
@@ -264,7 +264,7 @@ Credits already consumed for successfully completed report analyses are generall
 
 This does not limit rights you may have where the Service was not supplied, a transaction was duplicated, a payment was unauthorized, the Service was materially defective or applicable consumer law otherwise requires a remedy.
 
-For payment issues contact **[billing/support email]**.
+For payment issues contact **hello@doclyzer.ai**.
 
 ---
 
@@ -456,7 +456,7 @@ Failure by Doclyzer to enforce a provision immediately does not automatically wa
 
 ## 38. Entire agreement
 
-These Terms, the Privacy Policy, any specific purchase terms presented at checkout and any additional terms expressly applicable to a feature form the agreement governing your use of Doclyzer.
+These Terms, any specific purchase terms presented at checkout and any additional terms expressly applicable to a feature form the agreement governing your use of Doclyzer. The Privacy Policy explains how we process personal data.
 
 Where specific promotional terms conflict with these general Terms, the specific terms apply to that promotion only.
 
@@ -465,10 +465,8 @@ Where specific promotional terms conflict with these general Terms, the specific
 ## 39. Contact
 
 **Doclyzer / Envsoft Solutions LLP**  
-Registered Office: **[Full Registered Office Address, Mohali, Punjab, India]**  
-General Support: **[support@yourdomain.com]**  
-Legal: **[legal@yourdomain.com]**  
-Privacy: **[privacy@yourdomain.com]**  
-Grievance Officer: **[grievance@yourdomain.com]**
+Privacy Email: **hello@doclyzer.ai**  
+Support Email: **hello@doclyzer.ai**  
+Grievance Email: **hello@doclyzer.ai**
 
 For billing issues, include your transaction identifier but do not send complete card numbers, OTPs, banking passwords or other authentication credentials.
