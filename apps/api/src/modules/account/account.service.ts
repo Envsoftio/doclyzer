@@ -187,6 +187,7 @@ export class AccountService {
     const productEnabled = pref?.productEmailsEnabled ?? true;
     return {
       preferences: [
+        { category: 'marketingPush', enabled: pref?.marketingPushEnabled ?? false, mandatory: false },
         {
           category: COMM_PREF_CATEGORY.SECURITY,
           enabled: true,
@@ -229,6 +230,7 @@ export class AccountService {
     if (!pref) {
       pref = this.prefRepo.create({ userId, productEmailsEnabled: true });
     }
+    if (dto.marketingPush !== undefined) pref.marketingPushEnabled = dto.marketingPush;
     if (dto.productEmails !== undefined)
       pref.productEmailsEnabled = dto.productEmails;
     if (dto.reportReady !== undefined)
@@ -238,6 +240,8 @@ export class AccountService {
     if (dto.shareReminders !== undefined)
       pref.shareRemindersEnabled = dto.shareReminders;
     await this.prefRepo.save(pref);
+    if (dto.marketingPush === false) await this.prefRepo.manager.query(
+      `INSERT INTO push_events(actor_id,event_type) VALUES($1,'marketing_opt_out')`, [userId]);
     return this.getCommunicationPreferences(userId);
   }
 

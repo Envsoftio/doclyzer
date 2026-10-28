@@ -46,6 +46,7 @@ const service = new NotificationsService(
   { findOne: async () => null } as never,
   {} as never,
   {} as never,
+  {} as never,
 );
 
 async function main() {

@@ -22,6 +22,7 @@ export const PUSH_PLATFORMS = [
 ] as const satisfies readonly PushPlatform[];
 
 export const PUSH_NOTIFICATION_CATEGORIES = [
+  'marketing',
   'billing',
   'referrals',
   'product',
@@ -62,6 +63,10 @@ export class RegisterDeviceTokenDto {
   deviceLabel?: string;
 
   @IsOptional()
+  @IsIn(['authorized', 'denied', 'provisional', 'unknown'])
+  notificationPermission?: string;
+
+  @IsOptional()
   @IsObject()
   preferences?: Record<string, boolean>;
 
@@ -100,7 +105,14 @@ export class PushOpenDto {
 }
 
 export class AdminPushBroadcastDto {
-  @IsIn(['announcement', 'incident', 'support', 'billing', 'referral', 'system'])
+  @IsIn([
+    'announcement',
+    'incident',
+    'support',
+    'billing',
+    'referral',
+    'system',
+  ])
   notificationType!:
     | 'announcement'
     | 'incident'

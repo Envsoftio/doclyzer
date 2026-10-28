@@ -67,6 +67,7 @@ export interface RestrictionStatus {
 }
 
 export const COMM_PREF_CATEGORY = {
+  MARKETING_PUSH: 'marketingPush',
   SECURITY: 'security',
   COMPLIANCE: 'compliance',
   PRODUCT: 'product',

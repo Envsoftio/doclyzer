@@ -1,3 +1,4 @@
+import { CompletePushNotifications1730819400000 } from './1730819400000-CompletePushNotifications';
 import { CompleteReportProcessingRuntime1730818100000 } from './1730818100000-CompleteReportProcessingRuntime';
 import { AccountDeletionLifecycle1730818300000 } from './1730818300000-AccountDeletionLifecycle';
 import { RepairReportProviderSubmissionCount1730818200000 } from './1730818200000-RepairReportProviderSubmissionCount';
@@ -66,6 +67,7 @@ import { AddReportNotificationPreferences1730819200000 } from './1730819200000-A
 import { AddDataExportOptions1730819300000 } from './1730819300000-AddDataExportOptions';
 
 export const migrations = [
+  CompletePushNotifications1730819400000,
   InitialSchema1730812800000,
   AddDisplayName1730812900000,
   AddPolicyTypeToConsentRecords1730813000000,

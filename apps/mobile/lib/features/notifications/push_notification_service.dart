@@ -1,11 +1,27 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/token_storage.dart';
 import 'notifications_repository.dart';
+import 'api_notifications_repository.dart';
+import 'push_payload.dart';
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  // The OS renders background notification messages. No duplicate local notification or UI work.
+}
 
 class PushNotificationService {
   PushNotificationService({
@@ -13,159 +29,419 @@ class PushNotificationService {
     required TokenStorage tokenStorage,
   }) : _notificationsRepository = notificationsRepository,
        _tokenStorage = tokenStorage;
-
   final NotificationsRepository _notificationsRepository;
   final TokenStorage _tokenStorage;
-
+  final _local = FlutterLocalNotificationsPlugin();
+  FirebaseMessaging? _messaging;
   StreamSubscription<String>? _tokenRefreshSubscription;
   StreamSubscription<RemoteMessage>? _openSubscription;
-  bool _started = false;
-  Future<void> Function(String reportId)? onReportOpen;
-  VoidCallback? onForegroundReport;
   StreamSubscription<RemoteMessage>? _foregroundSubscription;
+  bool _started = false;
+  bool _localReady = false;
+  int _generation = 0;
+  Future<void> _registration = Future.value();
+  Future<void>? _starting;
+  Future<bool> Function(String reportId)? onReportOpen;
+  Future<void> Function(String path)? onDestinationOpen;
+  VoidCallback? onForegroundReport;
+  bool Function()? canNavigate;
+  final List<PushPayload> _pending = [];
+  final Set<String> _opened = {};
+  bool _navigating = false;
+  bool _discardRegistration = false;
 
-  Future<void> start() async {
-    if (_started) return;
-    _started = true;
-
-    final messaging = await _messagingOrNull();
-    if (messaging == null) {
-      _started = false;
+  static Future<void> initializeBackgroundHandling() async {
+    if (kIsWeb ||
+        ![
+          TargetPlatform.android,
+          TargetPlatform.iOS,
+        ].contains(defaultTargetPlatform)) {
       return;
     }
+    try {
+      await Firebase.initializeApp();
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    } catch (_) {
+      debugPrint('Push configuration unavailable');
+    }
+  }
 
-    await _registerCurrentToken(messaging);
+  Future<void> start() =>
+      _starting ??= _start().whenComplete(() => _starting = null);
+  Future<void> _start() async {
+    if (_started) {
+      await synchronize();
+      return;
+    }
+    if (kIsWeb ||
+        ![
+          TargetPlatform.android,
+          TargetPlatform.iOS,
+        ].contains(defaultTargetPlatform)) {
+      return;
+    }
+    final generation = _generation;
+    try {
+      if (Firebase.apps.isEmpty) await Firebase.initializeApp();
+      if (generation != _generation) return;
+      _discardRegistration = false;
+      _messaging = FirebaseMessaging.instance;
+      _started = true;
+      await _initializeLocal();
+      // Local notifications render the foreground on both platforms.
+      await _messaging!.setForegroundNotificationPresentationOptions(
+        alert: false,
+        badge: false,
+        sound: false,
+      );
+      if (generation != _generation) return;
+      _tokenRefreshSubscription = _messaging!.onTokenRefresh.listen(
+        (token) => unawaited(synchronize(token: token)),
+      );
+      _openSubscription = FirebaseMessaging.onMessageOpenedApp.listen(
+        (message) => _queueOpen(message.data),
+      );
+      _foregroundSubscription = FirebaseMessaging.onMessage.listen(
+        (message) => unawaited(_foreground(message)),
+      );
+      final initial = await _messaging!.getInitialMessage();
+      if (generation != _generation) return;
+      if (initial != null) _queueOpen(initial.data);
+      final launch = await _local.getNotificationAppLaunchDetails();
+      if (generation != _generation) return;
+      if (launch?.didNotificationLaunchApp == true) {
+        _localOpen(launch?.notificationResponse?.payload);
+      }
+      await synchronize();
+      await flushPendingNavigation();
+    } catch (_) {
+      _started = false;
+      await _tokenRefreshSubscription?.cancel();
+      await _openSubscription?.cancel();
+      await _foregroundSubscription?.cancel();
+      _tokenRefreshSubscription = null;
+      _openSubscription = null;
+      _foregroundSubscription = null;
+      debugPrint('Push initialization unavailable');
+    }
+  }
 
-    _tokenRefreshSubscription ??= messaging.onTokenRefresh.listen((token) {
-      unawaited(_registerProviderToken(token));
+  Future<void> _initializeLocal() async {
+    if (_localReady) return;
+    await _local.initialize(
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('ic_stat_doclyzer'),
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        ),
+      ),
+      onDidReceiveNotificationResponse: (response) =>
+          _localOpen(response.payload),
+    );
+    final android = _local
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    for (final channel in const [
+      AndroidNotificationChannel(
+        'transactional_high',
+        'Important service updates',
+        importance: Importance.high,
+      ),
+      AndroidNotificationChannel(
+        'transactional_normal',
+        'Service updates',
+        importance: Importance.defaultImportance,
+      ),
+      AndroidNotificationChannel(
+        'marketing',
+        'Offers and announcements',
+        importance: Importance.defaultImportance,
+      ),
+    ]) {
+      await android?.createNotificationChannel(channel);
+    }
+    _localReady = true;
+  }
+
+  Future<void> requestPermission() async {
+    await start();
+    if (_messaging == null) {
+      throw StateError('Push notifications are not configured for this build.');
+    }
+    final settings = await _messaging!.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    await _analytics('notification_permission_result', {
+      'status': settings.authorizationStatus.name,
     });
-    _openSubscription ??= FirebaseMessaging.onMessageOpenedApp.listen((
-      message,
-    ) {
-      unawaited(_trackOpen(message));
-    });
+    await synchronize();
+  }
 
-    _foregroundSubscription ??= FirebaseMessaging.onMessage.listen((message) {
-      if (message.data['notificationType'] == 'report.completed') {
-        onForegroundReport?.call();
+  Future<void> setMarketingConsent(bool enabled) async {
+    if (enabled) await requestPermission();
+    await synchronize();
+    final id = await _tokenStorage.getPushDeviceTokenId();
+    if (id == null && enabled) {
+      throw StateError(
+        'Device registration is not ready. Enable notifications and try again.',
+      );
+    }
+    if (id != null) {
+      await _notificationsRepository.updatePreferences(id, {
+        'marketing': enabled,
+      });
+    }
+  }
+
+  Future<void> synchronize({String? token}) {
+    final generation = _generation;
+    _registration = _registration.catchError((_) {}).then((_) async {
+      if (!_started || generation != _generation || _messaging == null) return;
+      try {
+        final settings = await _messaging!.getNotificationSettings();
+        if (defaultTargetPlatform == TargetPlatform.iOS &&
+            await _messaging!.getAPNSToken() == null) {
+          return;
+        }
+        final providerToken = token ?? await _messaging!.getToken();
+        if (providerToken == null || providerToken.isEmpty) return;
+        final installation = await _tokenStorage.getOrCreateInstallationId();
+        final package = await PackageInfo.fromPlatform();
+        final device = await DeviceInfoPlugin().deviceInfo;
+        final zone = await FlutterTimezone.getLocalTimezone();
+        final metadata = <String, String>{
+          'appBuildNumber': package.buildNumber,
+          'locale': WidgetsBinding.instance.platformDispatcher.locale
+              .toLanguageTag(),
+          'timezone': zone.identifier,
+          'osVersion': Platform.operatingSystemVersion,
+          'deviceModel': device is AndroidDeviceInfo
+              ? device.model
+              : device is IosDeviceInfo
+              ? device.utsname.machine
+              : 'unknown',
+          'deviceType':
+              device is IosDeviceInfo &&
+                  device.model.toLowerCase().contains('ipad')
+              ? 'tablet'
+              : 'unknown',
+        };
+        if (!_started || generation != _generation) return;
+        final registered = await _notificationsRepository.registerDeviceToken(
+          RegisterPushTokenInput(
+            token: providerToken,
+            platform: defaultTargetPlatform == TargetPlatform.iOS
+                ? 'ios'
+                : 'android',
+            installationId: installation,
+            appVersion: package.version,
+            metadata: metadata,
+            notificationPermission: switch (settings.authorizationStatus) {
+              AuthorizationStatus.authorized => 'authorized',
+              AuthorizationStatus.provisional => 'provisional',
+              AuthorizationStatus.denied => 'denied',
+              _ => 'unknown',
+            },
+          ),
+        );
+        // dispose waits for registration before logout revokes this exact installation.
+        if (!_discardRegistration) {
+          await _tokenStorage.savePushDeviceTokenId(registered.id);
+        }
+      } catch (_) {
+        debugPrint('Push registration deferred until next resume');
       }
     });
-
-    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-    if (initialMessage != null) {
-      await _trackOpen(initialMessage);
-    }
+    return _registration;
   }
 
-  Future<void> deactivateCurrentToken() async {
-    final deviceTokenId = await _tokenStorage.getPushDeviceTokenId();
-    if (deviceTokenId == null || deviceTokenId.isEmpty) return;
+  Future<void> _foreground(RemoteMessage message) async {
+    final generation = _generation;
+    if (!_started) return;
+    final payload = PushPayload.parse(message.data);
+    if (payload == null) return;
+    if (message.data['notificationType'] == 'report.completed') {
+      onForegroundReport?.call();
+    }
+    await _event(payload, 'received');
+    await _analytics('push_received', {
+      'notification_type': '${message.data['notificationType'] ?? ''}',
+    });
+    if (!_started || generation != _generation || message.notification == null) {
+      return;
+    }
+    final marketing = payload.data['category'] == 'marketing';
+    await _local.show(
+      id:
+          (message.data['recipientId'] ??
+                  message.data['notificationId'] ??
+                  message.messageId ??
+                  jsonEncode(message.data))
+              .hashCode &
+          0x7fffffff,
+      title: message.notification!.title,
+      body: message.notification!.body,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          marketing ? 'marketing' : 'transactional_high',
+          marketing ? 'Offers and announcements' : 'Important service updates',
+          importance: marketing
+              ? Importance.defaultImportance
+              : Importance.high,
+          priority: marketing ? Priority.defaultPriority : Priority.high,
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentSound: true,
+        ),
+      ),
+      payload: jsonEncode(message.data),
+    );
+  }
+
+  void _localOpen(String? raw) {
+    if (raw == null) return;
     try {
-      await _notificationsRepository.deactivateDeviceToken(deviceTokenId);
+      _queueOpen(Map<String, dynamic>.from(jsonDecode(raw) as Map));
     } catch (_) {
-      // Logout/session cleanup must continue even if the API token is already invalid.
-    } finally {
-      await _tokenStorage.clearPushDeviceTokenId();
+      /* Ignore malformed local payload. */
     }
   }
 
-  Future<void> dispose() async {
+  void _queueOpen(Map<String, dynamic> data) {
+    final payload = PushPayload.parse(data);
+    if (payload == null) return;
+    final key =
+        '${data['recipientId'] ?? data['notificationId'] ?? jsonEncode(data)}';
+    if (!_opened.add(key)) return;
+    _pending.add(payload);
+    unawaited(flushPendingNavigation());
+  }
+
+  Future<void> flushPendingNavigation() async {
+    if (_navigating || !_started || canNavigate?.call() != true) return;
+    _navigating = true;
+    final generation = _generation;
+    try {
+      while (_pending.isNotEmpty &&
+          _started &&
+          canNavigate?.call() == true &&
+          generation == _generation) {
+        final p = _pending.removeAt(0);
+        await _event(p, 'opened');
+        await _analytics('push_opened', {
+          'notification_type': '${p.data['notificationType'] ?? ''}',
+        });
+        if (!_started ||
+            generation != _generation ||
+            canNavigate?.call() != true) {
+          _pending.insert(0, p);
+          break;
+        }
+        var navigated = true;
+        if (p.reportId != null) {
+          navigated = await onReportOpen?.call(p.reportId!) ?? false;
+        } else {
+          await onDestinationOpen?.call(p.path);
+        }
+        if (!navigated) continue;
+        if (_started && generation == _generation) {
+          await _event(p, 'deep_link_opened');
+          await _analytics('push_action', {
+            'notification_type': '${p.data['notificationType'] ?? ''}',
+          });
+        }
+      }
+    } catch (_) {
+      debugPrint('Notification destination unavailable');
+    } finally {
+      _navigating = false;
+    }
+  }
+
+  Future<void> _event(PushPayload p, String type) async {
+    final repo = _notificationsRepository;
+    if (repo is ApiNotificationsRepository && p.data['recipientId'] is String) {
+      try {
+        await repo.trackRecipientEvent(p.data['recipientId'] as String, type);
+      } catch (_) {
+        /* Best-effort telemetry. */
+      }
+    }
+  }
+
+  Future<void> _analytics(String name, Map<String, Object> values) async {
+    try {
+      await FirebaseAnalytics.instance.logEvent(name: name, parameters: values);
+    } catch (_) {
+      /* Analytics cannot block navigation. */
+    }
+  }
+
+  Future<void> invalidateSession() async {
+    // This can be invoked by an API request inside _registration. Never await
+    // that same registration/start future here: it would deadlock on a 401.
+    _started = false;
+    _generation++;
+    _discardRegistration = true;
     await _tokenRefreshSubscription?.cancel();
     await _openSubscription?.cancel();
     await _foregroundSubscription?.cancel();
-    _foregroundSubscription = null;
     _tokenRefreshSubscription = null;
     _openSubscription = null;
+    _foregroundSubscription = null;
+    try {
+      await _messaging?.deleteToken();
+    } catch (_) {
+      debugPrint('Provider token revocation deferred');
+    }
+    if (_localReady) await _local.cancelAll();
+    await _tokenStorage.clearPushDeviceTokenId();
+    _pending.clear();
+    _opened.clear();
+  }
+
+  Future<void> deactivateCurrentToken() async {
+    await dispose();
+    final id = await _tokenStorage.getPushDeviceTokenId();
+    bool revoked = id == null;
+    try {
+      if (id != null) await _notificationsRepository.deactivateDeviceToken(id);
+      revoked = true;
+    } catch (_) {
+      /* Revoke provider token below if the session has expired. */
+    }
+    try {
+      await _messaging?.deleteToken();
+    } catch (_) {
+      if (!revoked) {
+        throw StateError(
+          'Connect to the internet to safely sign out of push notifications.',
+        );
+      }
+    }
+    if (_localReady) await _local.cancelAll();
+    await _tokenStorage.clearPushDeviceTokenId();
+    _pending.clear();
+    _opened.clear();
+  }
+
+  Future<void> dispose() async {
     _started = false;
-  }
-
-  Future<FirebaseMessaging?> _messagingOrNull() async {
-    try {
-      if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp();
-      }
-      final messaging = FirebaseMessaging.instance;
-      final settings = await messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      if (settings.authorizationStatus == AuthorizationStatus.denied) {
-        return null;
-      }
-      return messaging;
-    } catch (_) {
-      // Firebase project files/options are environment-specific. Missing config
-      // should never block login or navigation.
-      return null;
-    }
-  }
-
-  Future<void> _registerCurrentToken(FirebaseMessaging messaging) async {
-    try {
-      final providerToken = await messaging.getToken();
-      if (providerToken == null || providerToken.isEmpty) return;
-      await _registerProviderToken(providerToken);
-    } catch (_) {
-      return;
-    }
-  }
-
-  Future<void> _registerProviderToken(String providerToken) async {
-    try {
-      final installationId = await _tokenStorage.getOrCreateInstallationId();
-      final token = await _notificationsRepository.registerDeviceToken(
-        RegisterPushTokenInput(
-          token: providerToken,
-          platform: _platform,
-          installationId: installationId,
-          appVersion: const String.fromEnvironment(
-            'APP_VERSION',
-            defaultValue: '1.0.0+1',
-          ),
-        ),
-      );
-      await _tokenStorage.savePushDeviceTokenId(token.id);
-    } catch (_) {
-      return;
-    }
-  }
-
-  Future<void> _trackOpen(RemoteMessage message) async {
-    final reportId = message.data['reportId'];
-    if (message.data['notificationType'] == 'report.completed' &&
-        reportId is String &&
-        RegExp(
-          r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-        ).hasMatch(reportId)) {
-      await onReportOpen?.call(reportId);
-    }
-    try {
-      final deviceTokenId = await _tokenStorage.getPushDeviceTokenId();
-      await _notificationsRepository.trackPushOpen(
-        deviceTokenId: deviceTokenId,
-        pushSendAuditId: message.data['pushSendAuditId'],
-        providerMessageId: message.messageId,
-        deepLink: message.data['deepLink'],
-        metadata: {
-          'notificationType': message.data['notificationType'] ?? '',
-          'category': message.data['category'] ?? '',
-        },
-      );
-    } catch (_) {
-      return;
-    }
-  }
-
-  String get _platform {
-    if (kIsWeb) return 'web';
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.iOS:
-        return 'ios';
-      case TargetPlatform.android:
-        return 'android';
-      default:
-        return 'android';
-    }
+    _generation++;
+    await _starting;
+    await _tokenRefreshSubscription?.cancel();
+    await _openSubscription?.cancel();
+    await _foregroundSubscription?.cancel();
+    _tokenRefreshSubscription = null;
+    _openSubscription = null;
+    _foregroundSubscription = null;
+    await _registration;
+    _pending.clear();
   }
 }

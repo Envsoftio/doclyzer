@@ -1,3 +1,8 @@
+import { PushCampaignService } from '../../notifications/push-campaign.service';
+import {
+  isInvalidPushToken,
+  isRetryablePushFailure,
+} from '../../notifications/push-provider.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
@@ -18,6 +23,7 @@ export class ReportDispatcherService {
     private readonly email: NotificationPipelineService,
     private readonly referrals: ReferralsService,
     private readonly reports: ReportsService,
+    private readonly campaigns?: PushCampaignService,
   ) {}
   async run(signal: AbortSignal) {
     const s = processingSettings(this.config);
@@ -28,9 +34,13 @@ export class ReportDispatcherService {
       try {
         await this.materialize();
         await this.deliver();
+        await this.campaigns
+          ?.tick()
+          .catch(() => this.log.error('PUSH_CAMPAIGN_ITERATION_FAILED'));
         if (Date.now() > nextRetention) {
           nextRetention = Date.now() + 60000;
           await this.retain();
+          await this.campaigns?.retain();
         }
       } catch {
         this.log.error('REPORT_DISPATCH_ITERATION_FAILED');
@@ -140,7 +150,7 @@ export class ReportDispatcherService {
         const [device] = await this.db.query(
           `SELECT token.* FROM user_device_tokens token
            LEFT JOIN account_preferences pref ON pref.user_id = token.user_id
-           WHERE token.id=$1 AND token.user_id=$2 AND token.active
+           WHERE token.id=$1 AND token.user_id=$2 AND token.active AND token.notification_permission IN ('authorized','provisional')
              AND COALESCE((token.preferences->>'product')::boolean,true)
              AND (($3 = 'ready' AND COALESCE(pref.report_ready_enabled,true))
                OR ($3 <> 'ready' AND COALESCE(pref.upload_updates_enabled,true)))`,
@@ -161,6 +171,9 @@ export class ReportDispatcherService {
             collapseId: r.id,
             expiresAt: new Date(delivery.expires_at),
             data: {
+              version: '1',
+              category: 'transactional',
+              deepLink: `/reports/${r.report_id}`,
               notificationType: 'report.completed',
               reportId: r.report_id,
               profileId: r.profile_id,
@@ -188,14 +201,19 @@ export class ReportDispatcherService {
           );
           if (result.outcome === 'failed') {
             retryAfterMs = result.retryAfterMs ?? 0;
-            if (result.errorCode === 'UNREGISTERED') {
+            if (isInvalidPushToken(result.errorCode)) {
               await this.db.query(
                 'UPDATE user_device_tokens SET active=false,disabled_at=clock_timestamp() WHERE id=$1 AND user_id=$2 AND token_hash=$3',
                 [device.id, r.user_id, device.token_hash],
               );
               outcome = 'skipped';
               error = 'UNREGISTERED';
-            } else throw new Error(result.errorCode ?? 'PUSH_FAILED');
+            } else if (isRetryablePushFailure(result.errorCode))
+              throw new Error(result.errorCode ?? 'PUSH_FAILED');
+            else {
+              outcome = 'failed';
+              error = result.errorCode;
+            }
           }
         }
       } else if (delivery.channel === 'email') {

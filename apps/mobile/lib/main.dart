@@ -72,8 +72,9 @@ import 'features/sharing/screens/create_share_link_screen.dart';
 import 'features/support/api_support_repository.dart';
 import 'features/support/support_repository.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await PushNotificationService.initializeBackgroundHandling();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   runApp(const DoclyzerApp());
 }
@@ -408,6 +409,8 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       _refreshIncidentStatus();
       if (_apiClient?.accessToken != null) {
         ReportProcessingStore.instance.start(_apiClient!);
+        unawaited(_pushNotificationService.start());
+        unawaited(_pushNotificationService.flushPendingNavigation());
       }
     } else {
       if (_appLockEnabled &&
@@ -548,14 +551,52 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
 
   void _startReportServices() {
     if (_apiClient != null) ReportProcessingStore.instance.start(_apiClient!);
+    _pushNotificationService.canNavigate = () =>
+        mounted &&
+        !_appLocked &&
+        _initialized &&
+        _apiClient?.accessToken != null &&
+        _navigatorKey.currentState != null &&
+        _authView != _AuthView.login;
+    _pushNotificationService.onDestinationOpen = (path) async {
+      if (path == '/reports') {
+        await _selectTab(1);
+      } else if (path == '/account') {
+        setState(() => _authView = _AuthView.accountProfile);
+      } else {
+        _navigatorKey.currentState?.push<void>(
+          MaterialPageRoute(
+            builder: (_) => NotificationsScreen(
+              repository: _notificationsRepository,
+              onBack: () => _navigatorKey.currentState?.pop(),
+              onOpenRelated: _openNotificationRelated,
+              onManagePreferences: () {
+                _navigatorKey.currentState?.pop();
+                setState(() => _authView = _AuthView.communicationPreferences);
+              },
+            ),
+          ),
+        );
+      }
+    };
     _pushNotificationService.onReportOpen = (id) async {
-      if (_apiClient?.accessToken == null) return;
+      final session = _apiClient?.accessToken;
+      if (session == null || _appLocked) return false;
       try {
         final report = await _reportsRepository.getReport(id);
-        if (!mounted || _apiClient?.accessToken == null) return;
+        if (!mounted || _appLocked || _apiClient?.accessToken != session) {
+          return false;
+        }
+        final opened = Completer<bool>();
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || _apiClient?.accessToken == null) return;
-          _navigatorKey.currentState?.push(
+          if (!mounted ||
+              _appLocked ||
+              _apiClient?.accessToken != session ||
+              _navigatorKey.currentState == null) {
+            opened.complete(false);
+            return;
+          }
+          _navigatorKey.currentState!.push(
             MaterialPageRoute<void>(
               builder: (_) => ReportDetailScreen(
                 reportsRepository: _reportsRepository,
@@ -567,11 +608,15 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
               ),
             ),
           );
+          opened.complete(true);
         });
+        WidgetsBinding.instance.scheduleFrame();
+        return await opened.future;
       } catch (_) {
         _scaffoldMessengerKey.currentState?.showSnackBar(
           const SnackBar(content: Text('This report is no longer available.')),
         );
+        return false;
       }
     };
     _pushNotificationService.onForegroundReport = () =>
@@ -615,8 +660,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     try {
       _navigatorKey.currentState?.popUntil((route) => route.isFirst);
       ReportProcessingStore.instance.stop();
-      await _pushNotificationService.dispose();
-      await _pushNotificationService.deactivateCurrentToken();
+      await _pushNotificationService.invalidateSession();
       await _auth.logout();
       if (mounted) {
         setState(() {
@@ -1028,6 +1072,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_pushNotificationService.flushPendingNavigation());
+    });
     if (!_initialized || !_appLockPreferenceLoaded) {
       return MaterialApp(
         title: 'Doclyzer',
@@ -1445,6 +1492,8 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           },
         ),
         _AuthView.communicationPreferences => CommunicationPreferencesScreen(
+          onEnablePush: _pushNotificationService.requestPermission,
+          onMarketingChanged: _pushNotificationService.setMarketingConsent,
           communicationPreferencesRepository:
               _communicationPreferencesRepository,
           onBack: () {

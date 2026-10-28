@@ -1,6 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createSign, randomUUID } from 'node:crypto';
+import {
+  applicationDefault,
+  cert,
+  getApps,
+  initializeApp,
+} from 'firebase-admin/app';
+import { getMessaging, Message } from 'firebase-admin/messaging';
+import { randomUUID } from 'node:crypto';
 import type { PushConfig } from '../../config/push.config';
 
 export interface PushProviderMessage {
@@ -9,10 +16,11 @@ export interface PushProviderMessage {
   body: string;
   data?: Record<string, string>;
   deepLink?: string | null;
+  imageUrl?: string | null;
+  category?: string;
   collapseId?: string;
   expiresAt?: Date;
 }
-
 export interface PushProviderResult {
   outcome: 'sent' | 'failed';
   provider: string;
@@ -21,37 +29,42 @@ export interface PushProviderResult {
   errorMessage: string | null;
   retryAfterMs?: number;
 }
-
-interface FcmOAuthResponse {
-  access_token?: string;
-  expires_in?: number;
-  error?: string;
-  error_description?: string;
+export interface PushProvider {
+  send(message: PushProviderMessage): Promise<PushProviderResult>;
 }
-
-interface FcmSendResponse {
-  name?: string;
-  error?: {
-    status?: string;
-    message?: string;
-    details?: { errorCode?: string }[];
-  };
+export function isRetryablePushFailure(code: string | null): boolean {
+  return [
+    'UNAVAILABLE',
+    'INTERNAL',
+    'QUOTA_EXCEEDED',
+    'FCM_SEND_FAILED',
+    'messaging/server-unavailable',
+    'messaging/internal-error',
+    'messaging/quota-exceeded',
+    'messaging/message-rate-exceeded',
+    'messaging/device-message-rate-exceeded',
+    'app/network-error',
+    'app/network-timeout',
+  ].includes(code ?? '');
 }
-
+export function isInvalidPushToken(code: string | null): boolean {
+  return [
+    'UNREGISTERED',
+    'messaging/registration-token-not-registered',
+    'messaging/invalid-registration-token',
+  ].includes(code ?? '');
+}
 @Injectable()
-export class PushProviderService {
+export class PushProviderService implements PushProvider {
   private readonly logger = new Logger(PushProviderService.name);
-  private accessToken: string | null = null;
-  private accessTokenExpiresAt = 0;
-
   constructor(private readonly config: ConfigService) {}
-
   get providerName(): string {
-    return this.shouldUseFcm() ? 'fcm' : 'mock';
+    return this.config.get<PushConfig>('push')?.provider ?? 'mock';
   }
-
   async send(message: PushProviderMessage): Promise<PushProviderResult> {
-    if (!this.shouldUseFcm()) {
+    if (this.providerName === 'mock') {
+      if (this.config.get<string>('NODE_ENV') === 'production')
+        return this.failure('PUSH_NOT_CONFIGURED');
       return {
         outcome: 'sent',
         provider: 'mock',
@@ -60,185 +73,112 @@ export class PushProviderService {
         errorMessage: null,
       };
     }
-
     try {
-      return await this.sendFcm(message);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown FCM send error';
-      this.logger.warn('FCM push send failed');
-      return {
-        outcome: 'failed',
-        provider: 'fcm',
-        providerMessageId: null,
-        errorCode: 'FCM_SEND_FAILED',
-        errorMessage,
-      };
-    }
-  }
-
-  private shouldUseFcm(): boolean {
-    const push = this.config.get<PushConfig>('push');
-    return Boolean(
-      push?.provider === 'fcm' &&
-      push.fcm.projectId &&
-      push.fcm.clientEmail &&
-      push.fcm.privateKey,
-    );
-  }
-
-  private async sendFcm(
-    message: PushProviderMessage,
-  ): Promise<PushProviderResult> {
-    const push = this.config.getOrThrow<PushConfig>('push');
-    const token = await this.getAccessToken(push);
-    const response = await fetch(
-      `https://fcm.googleapis.com/v1/projects/${encodeURIComponent(
-        push.fcm.projectId,
-      )}/messages:send`,
-      {
-        method: 'POST',
-        signal: AbortSignal.timeout(30000),
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: {
-            token: message.token,
-            notification: {
-              title: message.title,
-              body: message.body,
-            },
-            data: message.data ?? {},
-            android: {
-              priority: 'HIGH',
-              ...(message.expiresAt
-                ? {
-                    ttl: `${Math.max(0, Math.floor((message.expiresAt.getTime() - Date.now()) / 1000))}s`,
-                  }
-                : {}),
-              notification: {
-                sound: 'default',
-                ...(message.collapseId ? { tag: message.collapseId } : {}),
-              },
-            },
-            apns: {
-              headers: {
-                ...(message.collapseId
-                  ? { 'apns-collapse-id': message.collapseId }
-                  : {}),
-                ...(message.expiresAt
-                  ? {
-                      'apns-expiration': String(
-                        Math.floor(message.expiresAt.getTime() / 1000),
-                      ),
-                    }
-                  : {}),
-              },
-              payload: {
-                aps: {
-                  sound: 'default',
-                },
-              },
-            },
-            webpush: message.deepLink
-              ? {
-                  fcmOptions: {
-                    link: message.deepLink,
-                  },
-                }
-              : undefined,
+      const push = this.config.getOrThrow<PushConfig>('push');
+      const app =
+        getApps().find((a) => a.name === 'doclyzer-push') ??
+        initializeApp(
+          {
+            projectId: push.fcm.projectId || undefined,
+            credential:
+              push.fcm.clientEmail && push.fcm.privateKey
+                ? cert({
+                    projectId: push.fcm.projectId,
+                    clientEmail: push.fcm.clientEmail,
+                    privateKey: push.fcm.privateKey,
+                  })
+                : applicationDefault(),
           },
-        }),
-      },
-    );
-
-    const payload = (await response
-      .json()
-      .catch(() => ({}))) as FcmSendResponse;
-    if (!response.ok) {
-      const retryAfter = response.headers.get('retry-after');
-      const retryAfterMs =
-        retryAfter == null
-          ? undefined
-          : /^\d+$/.test(retryAfter)
-            ? Number(retryAfter) * 1000
-            : Math.max(0, Date.parse(retryAfter) - Date.now());
-      return {
-        retryAfterMs: Number.isFinite(retryAfterMs) ? retryAfterMs : undefined,
-        outcome: 'failed',
-        provider: 'fcm',
-        providerMessageId: null,
-        errorCode:
-          payload.error?.details?.find((detail) => detail.errorCode)
-            ?.errorCode ??
-          payload.error?.status ??
-          `FCM_HTTP_${response.status}`,
-        errorMessage:
-          payload.error?.message ?? `FCM request failed (${response.status})`,
+          'doclyzer-push',
+        );
+      const marketing = [
+        'marketing',
+        'product',
+        'referrals',
+        'admin_announcements',
+      ].includes(message.category ?? message.data?.category ?? '');
+      const payload: Message = {
+        token: message.token,
+        notification: {
+          title: message.title,
+          body: message.body,
+          ...(message.imageUrl ? { imageUrl: message.imageUrl } : {}),
+        },
+        data: message.data ?? {},
+        fcmOptions: {
+          analyticsLabel: marketing ? 'marketing' : 'transactional',
+        },
+        android: {
+          priority: marketing ? 'normal' : 'high',
+          ...(message.expiresAt
+            ? { ttl: Math.max(0, message.expiresAt.getTime() - Date.now()) }
+            : {}),
+          notification: {
+            channelId: marketing ? 'marketing' : 'transactional_high',
+            icon: 'ic_stat_doclyzer',
+            ...(message.collapseId ? { tag: message.collapseId } : {}),
+          },
+        },
+        apns: {
+          headers: {
+            'apns-push-type': 'alert',
+            'apns-priority': marketing ? '5' : '10',
+            ...(message.collapseId
+              ? { 'apns-collapse-id': message.collapseId }
+              : {}),
+            ...(message.expiresAt
+              ? {
+                  'apns-expiration': String(
+                    Math.floor(message.expiresAt.getTime() / 1000),
+                  ),
+                }
+              : {}),
+          },
+          payload: { aps: { sound: 'default' } },
+        },
       };
-    }
-
-    return {
-      outcome: 'sent',
-      provider: 'fcm',
-      providerMessageId: payload.name ?? null,
-      errorCode: null,
-      errorMessage: null,
-    };
-  }
-
-  private async getAccessToken(push: PushConfig): Promise<string> {
-    const now = Math.floor(Date.now() / 1000);
-    if (this.accessToken && this.accessTokenExpiresAt - 60 > now) {
-      return this.accessToken;
-    }
-
-    const assertion = this.buildServiceAccountJwt(push, now);
-    const body = new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion,
-    });
-    const response = await fetch(push.fcm.oauthTokenUrl, {
-      method: 'POST',
-      signal: AbortSignal.timeout(30000),
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
-    });
-    const payload = (await response
-      .json()
-      .catch(() => ({}))) as FcmOAuthResponse;
-    if (!response.ok || !payload.access_token) {
-      throw new Error(
-        payload.error_description ??
-          payload.error ??
-          `FCM OAuth token request failed (${response.status})`,
+      const providerMessageId = await getMessaging(app).send(payload);
+      return {
+        outcome: 'sent',
+        provider: 'fcm',
+        providerMessageId,
+        errorCode: null,
+        errorMessage: null,
+      };
+    } catch (error) {
+      const code = (error as { code?: string }).code ?? 'FCM_SEND_FAILED';
+      this.logger.warn(
+        JSON.stringify({
+          action: 'PUSH_PROVIDER_FAILURE',
+          provider: 'fcm',
+          errorCode: code,
+        }),
       );
+      return this.failure(code);
     }
-
-    this.accessToken = payload.access_token;
-    this.accessTokenExpiresAt = now + (payload.expires_in ?? 3600);
-    return payload.access_token;
   }
-
-  private buildServiceAccountJwt(push: PushConfig, now: number): string {
-    const header = this.base64UrlJson({ alg: 'RS256', typ: 'JWT' });
-    const claims = this.base64UrlJson({
-      iss: push.fcm.clientEmail,
-      scope: push.fcm.scope,
-      aud: push.fcm.oauthTokenUrl,
-      iat: now,
-      exp: now + 3600,
-    });
-    const unsigned = `${header}.${claims}`;
-    const signature = createSign('RSA-SHA256')
-      .update(unsigned)
-      .sign(push.fcm.privateKey, 'base64url');
-    return `${unsigned}.${signature}`;
+  async sendBatch(
+    messages: PushProviderMessage[],
+  ): Promise<PushProviderResult[]> {
+    // Bound concurrency independently of the SDK's multicast limit.
+    const results: PushProviderResult[] = [];
+    for (let i = 0; i < messages.length; i += 10)
+      results.push(
+        ...(await Promise.all(
+          messages.slice(i, i + 10).map((m) => this.send(m)),
+        )),
+      );
+    return results;
   }
-
-  private base64UrlJson(value: Record<string, string | number>): string {
-    return Buffer.from(JSON.stringify(value)).toString('base64url');
+  private failure(code: string): PushProviderResult {
+    return {
+      outcome: 'failed',
+      provider: this.providerName,
+      providerMessageId: null,
+      errorCode: code,
+      errorMessage: null,
+      retryAfterMs:
+        code.includes('quota') || code.includes('rate') ? 60000 : undefined,
+    };
   }
 }

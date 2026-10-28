@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import PushCampaigns from '../../../components/admin/PushCampaigns.vue'
 import { formatDisplayDate } from '../../../utils/formatDisplayDate'
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 
 definePageMeta({ layout: 'admin' })
 useSeoMeta({ robots: 'noindex, nofollow', title: 'Notifications — Doclyzer Admin' })
@@ -48,20 +49,6 @@ const auditTotal = ref(0)
 const auditTotalPages = ref(1)
 const auditDryRun = ref('')
 
-const notificationType = ref<'announcement' | 'incident' | 'support' | 'billing' | 'referral' | 'system'>('announcement')
-const category = ref<'admin_announcements' | 'billing' | 'referrals' | 'product' | 'security' | 'compliance'>('admin_announcements')
-const recipientScope = ref<'all' | 'segment' | 'single'>('segment')
-const recipientSegment = ref('mobile')
-const recipientUserId = ref('')
-const title = ref('')
-const body = ref('')
-const deepLink = ref('')
-const approvalToken = ref('')
-
-const requiresApproval = computed(() => recipientScope.value !== 'single')
-const canDryRun = computed(() => title.value.trim().length >= 3 && body.value.trim().length >= 3)
-const canSendLive = computed(() => canDryRun.value && (!requiresApproval.value || approvalToken.value.trim().length > 0))
-
 async function loadNotifications() {
   loading.value = true
   error.value = ''
@@ -82,60 +69,6 @@ async function loadNotifications() {
 }
 function applyAuditFilter() { auditPage.value = 1; void loadNotifications() }
 function changeAuditPage(next: number) { auditPage.value = next; void loadNotifications() }
-
-function buildPayload(includeApproval: boolean) {
-  const payload: Record<string, unknown> = {
-    notificationType: notificationType.value,
-    category: category.value,
-    recipientScope: recipientScope.value,
-    title: title.value.trim(),
-    body: body.value.trim(),
-    idempotencyKey: `push-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  }
-  if (recipientScope.value === 'segment') payload.recipientSegment = recipientSegment.value.trim()
-  if (recipientScope.value === 'single') payload.recipientUserId = recipientUserId.value.trim()
-  if (deepLink.value.trim()) payload.deepLink = deepLink.value.trim()
-  if (includeApproval && approvalToken.value.trim()) payload.approvalToken = approvalToken.value.trim()
-  return payload
-}
-
-async function dryRunPush() {
-  if (!canDryRun.value) return
-  sending.value = true
-  error.value = ''
-  resultMessage.value = ''
-  try {
-    const res = await adminFetch<{ data: PushAuditItem }>('/admin/notifications/push/dry-run', {
-      method: 'POST',
-      body: buildPayload(false),
-    })
-    resultMessage.value = `Dry run matched ${res.data.targetCount} active tokens (${res.data.skippedCount} skipped by preferences).`
-    await loadNotifications()
-  } catch (e: unknown) {
-    error.value = (e instanceof Error ? e.message : String(e)) || 'Dry run failed'
-  } finally {
-    sending.value = false
-  }
-}
-
-async function sendLivePush() {
-  if (!canSendLive.value) return
-  sending.value = true
-  error.value = ''
-  resultMessage.value = ''
-  try {
-    const res = await adminFetch<{ data: PushAuditItem }>('/admin/notifications/push/send', {
-      method: 'POST',
-      body: buildPayload(true),
-    })
-    resultMessage.value = `Live push completed: ${res.data.sentCount} sent, ${res.data.failedCount} failed.`
-    await loadNotifications()
-  } catch (e: unknown) {
-    error.value = (e instanceof Error ? e.message : String(e)) || 'Live push failed'
-  } finally {
-    sending.value = false
-  }
-}
 
 async function enableCurrentBrowserPush() {
   webPushStatus.value = ''
@@ -165,6 +98,7 @@ onMounted(loadNotifications)
 
 <template>
   <div class="notifications-page">
+    <PushCampaigns />
     <div class="page-header">
       <div>
         <h2 class="page-title">Notifications</h2>
@@ -190,17 +124,17 @@ onMounted(loadNotifications)
       <div class="metric-card">
         <span class="metric-label">Opens</span>
         <strong>{{ metrics?.pushOpens ?? '—' }}</strong>
-        <small>Tracked by mobile push-open calls</small>
+        <small>Recorded app opens; campaign tests excluded</small>
       </div>
       <div class="metric-card">
         <span class="metric-label">Failures</span>
         <strong>{{ metrics?.deliveryByOutcome?.failed ?? 0 }}</strong>
-        <small>{{ metrics?.deliveryByOutcome?.sent ?? 0 }} sent deliveries</small>
+        <small>{{ metrics?.deliveryByOutcome?.sent ?? 0 }} provider-accepted requests</small>
       </div>
     </div>
 
     <section class="panel">
-      <h3 class="section-title">Broadcast</h3>
+      <h3 class="section-title">Browser registration</h3>
       <div class="browser-push-row">
         <div>
           <strong>Current browser</strong>
@@ -214,73 +148,6 @@ onMounted(loadNotifications)
         >
           Enable web push
         </button>
-      </div>
-      <div class="form-grid">
-        <label>
-          Type
-          <select v-model="notificationType">
-            <option value="announcement">Announcement</option>
-            <option value="incident">Incident</option>
-            <option value="support">Support</option>
-            <option value="billing">Billing</option>
-            <option value="referral">Referral</option>
-            <option value="system">System</option>
-          </select>
-        </label>
-        <label>
-          Category
-          <select v-model="category">
-            <option value="admin_announcements">Admin announcements</option>
-            <option value="billing">Billing</option>
-            <option value="referrals">Referrals</option>
-            <option value="product">Product</option>
-            <option value="security">Security</option>
-            <option value="compliance">Compliance</option>
-          </select>
-        </label>
-        <label>
-          Audience
-          <select v-model="recipientScope">
-            <option value="segment">Segment</option>
-            <option value="single">Single user</option>
-            <option value="all">All active tokens</option>
-          </select>
-        </label>
-        <label v-if="recipientScope === 'segment'">
-          Segment
-          <select v-model="recipientSegment">
-            <option value="mobile">Mobile apps</option>
-            <option value="android">Android</option>
-            <option value="ios">iOS</option>
-            <option value="web">Web browsers</option>
-            <option value="mobile_web">Mobile web</option>
-            <option value="all">All platforms</option>
-          </select>
-        </label>
-        <label v-if="recipientScope === 'single'">
-          User ID
-          <input v-model="recipientUserId" type="text" placeholder="User UUID" />
-        </label>
-        <label>
-          Deep link
-          <input v-model="deepLink" type="text" placeholder="doclyzer://..." />
-        </label>
-        <label class="span-2">
-          Title
-          <input v-model="title" type="text" maxlength="120" placeholder="Short notification title" />
-        </label>
-        <label class="span-2">
-          Body
-          <textarea v-model="body" rows="3" maxlength="280" placeholder="Notification body" />
-        </label>
-        <label v-if="requiresApproval" class="span-2">
-          Approval token
-          <input v-model="approvalToken" type="password" placeholder="Required for segment and all live sends" />
-        </label>
-      </div>
-      <div class="actions">
-        <button class="secondary-btn" :disabled="sending || !canDryRun" @click="dryRunPush">Dry run</button>
-        <button class="primary-btn" :disabled="sending || !canSendLive" @click="sendLivePush">Send push</button>
       </div>
     </section>
 

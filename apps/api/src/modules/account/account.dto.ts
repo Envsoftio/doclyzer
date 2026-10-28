@@ -73,6 +73,10 @@ export class UpdateAccountProfileDto {
 export class UpdateCommunicationPreferencesDto {
   @IsOptional()
   @IsBoolean()
+  marketingPush?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   productEmails?: boolean;
 
   @IsOptional()

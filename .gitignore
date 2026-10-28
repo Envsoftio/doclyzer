@@ -28,3 +28,10 @@ apps/mobile/pubspec.lock
 .local-models/
 Doclyzer-Complete-Redesign.pen
 Doclyzer-Landing-Page.pen
+
+# Firebase/APNs environment configuration and private credentials
+**/google-services.json
+**/GoogleService-Info.plist
+**/*.p8
+**/*service-account*.json
+**/*firebase-adminsdk*.json

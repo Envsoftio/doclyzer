@@ -45,7 +45,9 @@ class ApiNotificationsRepository implements NotificationsRepository {
         'provider': 'fcm',
         'installationId': input.installationId,
         'appVersion': input.appVersion,
-        'preferences': input.preferences,
+        if (input.preferences.isNotEmpty) 'preferences': input.preferences,
+        'notificationPermission': input.notificationPermission,
+        'metadata': input.metadata,
       },
     );
     return _tokenFromJson(res['data'] as Map<String, dynamic>);
@@ -85,6 +87,13 @@ class ApiNotificationsRepository implements NotificationsRepository {
     if (metadata != null) body['metadata'] = metadata;
 
     await _client.post('v1/notifications/push-open', body: body);
+  }
+
+  Future<void> trackRecipientEvent(String id, String type) async {
+    await _client.post(
+      'v1/notifications/events',
+      body: {'recipientId': id, 'eventType': type},
+    );
   }
 
   PushDeviceToken _tokenFromJson(Map<String, dynamic> json) {

@@ -12,11 +12,15 @@ class CommunicationPreferencesScreen extends StatefulWidget {
     required this.communicationPreferencesRepository,
     required this.onBack,
     required this.supportRepository,
+    this.onEnablePush,
+    this.onMarketingChanged,
   });
 
   final CommunicationPreferencesRepository communicationPreferencesRepository;
   final VoidCallback onBack;
   final SupportRepository supportRepository;
+  final Future<void> Function()? onEnablePush;
+  final Future<void> Function(bool)? onMarketingChanged;
 
   @override
   State<CommunicationPreferencesScreen> createState() =>
@@ -80,6 +84,11 @@ class _CommunicationPreferencesScreenState
     try {
       final result = await widget.communicationPreferencesRepository
           .updatePreferences(_pendingChanges);
+      if (_pendingChanges.containsKey('marketingPush')) {
+        await widget.onMarketingChanged?.call(
+          _pendingChanges['marketingPush']!,
+        );
+      }
       setState(() {
         _preferences = result.preferences;
         _pendingChanges.clear();
@@ -167,6 +176,24 @@ class _CommunicationPreferencesScreenState
                     ),
                   ),
                 ),
+                if (widget.onEnablePush != null)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Get report updates on this device'),
+                    subtitle: const Text(
+                      'Allow notifications to know when a report is ready. Marketing is a separate choice below.',
+                    ),
+                    trailing: TextButton(
+                      onPressed: () async {
+                        try {
+                          await widget.onEnablePush!();
+                        } catch (e) {
+                          if (mounted) setState(() => _error = e.toString());
+                        }
+                      },
+                      child: const Text('Enable'),
+                    ),
+                  ),
                 const SizedBox(height: 32),
                 Text(
                   'REPORT ACTIVITY',
@@ -283,6 +310,10 @@ class _PreferenceRow extends StatelessWidget {
     commPrefCategoryCompliance => (
       'Compliance notices',
       'Required account information.',
+    ),
+    'marketingPush' => (
+      'Marketing push notifications',
+      'Offers and announcements. Saving this choice also applies it to this device.',
     ),
     commPrefCategoryProduct => (
       'Product updates',

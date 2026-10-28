@@ -19,6 +19,9 @@ class ApiCommunicationPreferencesRepository
     Map<String, bool> updates,
   ) async {
     final body = <String, dynamic>{};
+    if (updates.containsKey('marketingPush')) {
+      body['marketingPush'] = updates['marketingPush'];
+    }
     if (updates.containsKey(commPrefCategoryProduct)) {
       body['productEmails'] = updates[commPrefCategoryProduct];
     }

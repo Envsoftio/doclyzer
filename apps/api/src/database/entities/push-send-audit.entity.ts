@@ -10,7 +10,15 @@ import {
 } from 'typeorm';
 import type { UserEntity } from './user.entity';
 
-export type PushSendStatus = 'pending' | 'completed' | 'failed';
+export type PushSendStatus =
+  | 'draft'
+  | 'queued'
+  | 'sending'
+  | 'cancelled'
+  | 'partially_failed'
+  | 'pending'
+  | 'completed'
+  | 'failed';
 
 @Entity('push_send_audit')
 @Index('IDX_push_send_audit_sender_created', ['senderUserId', 'createdAt'])

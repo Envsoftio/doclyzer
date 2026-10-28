@@ -1,3 +1,4 @@
+import { PushCampaignService } from './push-campaign.service';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AccountPreferenceEntity } from '../../database/entities/account-preference.entity';
@@ -31,7 +32,7 @@ import { PushProviderService } from './push-provider.service';
     ]),
   ],
   controllers: [NotificationsController, NotificationsAdminController],
-  providers: [NotificationsService, PushProviderService],
-  exports: [NotificationsService, PushProviderService],
+  providers: [PushCampaignService, NotificationsService, PushProviderService],
+  exports: [PushCampaignService, NotificationsService, PushProviderService],
 })
 export class NotificationsModule {}

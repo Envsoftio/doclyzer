@@ -48,7 +48,10 @@
     "start:report-worker:prod": "REPORT_PROCESS_ROLE=worker node dist/apps/api/src/report-worker.js",
     "start:report-dispatcher:prod": "REPORT_PROCESS_ROLE=dispatcher node dist/apps/api/src/report-worker.js",
     "account:avatar-test": "ts-node scripts/account-avatar-test.ts",
-    "account:avatar-b2-test": "ts-node scripts/account-avatar-b2-test.ts"
+    "account:avatar-b2-test": "ts-node scripts/account-avatar-b2-test.ts",
+    "notifications:push-test": "ts-node --files scripts/push-notifications-postgres-test.ts",
+    "start:push-worker": "ts-node --files src/push-worker.ts",
+    "start:push-worker:prod": "node dist/apps/api/src/push-worker.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1007.0",
@@ -62,6 +65,7 @@
     "better-auth": "^1.5.6",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "firebase-admin": "^14.5.0",
     "pdf-lib": "^1.17.1",
     "pg": "^8.20.0",
     "pg-mem": "^3.0.14",

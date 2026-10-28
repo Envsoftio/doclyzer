@@ -40,18 +40,17 @@ class RegisterPushTokenInput {
     required this.platform,
     required this.installationId,
     required this.appVersion,
-    this.preferences = const {
-      'billing': true,
-      'referrals': true,
-      'product': true,
-      'adminAnnouncements': true,
-    },
+    this.preferences = const {},
+    this.notificationPermission = 'unknown',
+    this.metadata = const {},
   });
 
   final String token;
   final String platform;
   final String installationId;
   final String appVersion;
+  final String notificationPermission;
+  final Map<String, String> metadata;
   final Map<String, bool> preferences;
 }
 

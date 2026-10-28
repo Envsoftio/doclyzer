@@ -20,6 +20,9 @@ export class AccountPreferenceEntity {
   @JoinColumn({ name: 'user_id' })
   user!: UserEntity;
 
+  @Column({ type: 'boolean', name: 'marketing_push_enabled', default: false })
+  marketingPushEnabled!: boolean;
+
   @Column({ type: 'boolean', name: 'product_emails_enabled', default: true })
   productEmailsEnabled!: boolean;
 

@@ -73,6 +73,7 @@ export const useWebPushRegistration = () => {
         provider: 'fcm',
         installationId: getOrCreateWebInstallationId(),
         appVersion: 'web',
+        notificationPermission: 'authorized',
         deviceLabel: navigator.userAgent.slice(0, 120),
         preferences: {
           billing: true,

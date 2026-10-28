@@ -1,3 +1,9 @@
+import { PushCampaignService } from './push-campaign.service';
+import {
+  PushCampaignDto,
+  SchedulePushCampaignDto,
+  PushRecipientEventDto,
+} from './push-campaign.dto';
 import {
   Body,
   Controller,
@@ -31,7 +37,10 @@ import { NotificationsService } from './notifications.service';
 @Controller('notifications')
 @UseGuards(AuthGuard)
 export class NotificationsController {
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(
+    private readonly notificationsService: NotificationsService,
+    private readonly campaigns: PushCampaignService,
+  ) {}
 
   @Get('inbox')
   async getInbox(@Req() req: Request): Promise<object> {
@@ -47,7 +56,11 @@ export class NotificationsController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
-    const data = await this.notificationsService.markInboxRead(userId, source, id);
+    const data = await this.notificationsService.markInboxRead(
+      userId,
+      source,
+      id,
+    );
     return successResponse(data, getCorrelationId(req));
   }
 
@@ -101,6 +114,14 @@ export class NotificationsController {
     return successResponse(data, getCorrelationId(req));
   }
 
+  @Post('events')
+  async event(@Req() req: Request, @Body() dto: PushRecipientEventDto) {
+    return successResponse(
+      await this.campaigns.recordEvent((req.user as RequestUser).id, dto),
+      getCorrelationId(req),
+    );
+  }
+
   @Post('push-open')
   @HttpCode(HttpStatus.CREATED)
   async trackPushOpen(
@@ -116,8 +137,84 @@ export class NotificationsController {
 @Controller('admin/notifications')
 @UseGuards(AuthGuard, SuperadminGuard)
 export class NotificationsAdminController {
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(
+    private readonly notificationsService: NotificationsService,
+    private readonly campaigns: PushCampaignService,
+  ) {}
 
+  @Get('campaigns')
+  async campaignsList(@Req() req: Request) {
+    return successResponse(await this.campaigns.list(), getCorrelationId(req));
+  }
+  @Post('campaigns')
+  async campaignCreate(@Req() req: Request, @Body() dto: PushCampaignDto) {
+    return successResponse(
+      await this.campaigns.create((req.user as RequestUser).id, dto),
+      getCorrelationId(req),
+    );
+  }
+  @Patch('campaigns/:id')
+  async campaignUpdate(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: PushCampaignDto,
+  ) {
+    return successResponse(
+      await this.campaigns.update((req.user as RequestUser).id, id, dto),
+      getCorrelationId(req),
+    );
+  }
+  @Get('campaigns/:id/preview')
+  async campaignPreview(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return successResponse(
+      await this.campaigns.preview(id),
+      getCorrelationId(req),
+    );
+  }
+  @Get('campaigns/:id/analytics')
+  async campaignAnalytics(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return successResponse(
+      await this.campaigns.analytics(id),
+      getCorrelationId(req),
+    );
+  }
+  @Post('campaigns/:id/schedule')
+  async campaignSchedule(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: SchedulePushCampaignDto,
+  ) {
+    return successResponse(
+      await this.campaigns.schedule((req.user as RequestUser).id, id, dto),
+      getCorrelationId(req),
+    );
+  }
+  @Post('campaigns/:id/test')
+  async campaignTest(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return successResponse(
+      await this.campaigns.test((req.user as RequestUser).id, id),
+      getCorrelationId(req),
+    );
+  }
+  @Post('campaigns/:id/cancel')
+  async campaignCancel(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return successResponse(
+      await this.campaigns.cancel((req.user as RequestUser).id, id),
+      getCorrelationId(req),
+    );
+  }
   @Get('metrics')
   async getMetrics(@Req() req: Request): Promise<object> {
     const data = await this.notificationsService.getMetrics();

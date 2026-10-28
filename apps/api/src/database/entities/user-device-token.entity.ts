@@ -14,6 +14,7 @@ export type PushPlatform = 'ios' | 'android' | 'web' | 'mobile_web';
 export type PushProviderName = 'fcm';
 
 export interface PushTokenPreferences {
+  marketing?: boolean;
   billing?: boolean;
   referrals?: boolean;
   product?: boolean;
@@ -21,6 +22,10 @@ export interface PushTokenPreferences {
 }
 
 @Entity('user_device_tokens')
+@Index('UQ_push_installation', ['installationId'], {
+  unique: true,
+  where: 'installation_id IS NOT NULL',
+})
 @Index('IDX_user_device_tokens_user_active', ['userId', 'active'])
 @Index('UQ_user_device_tokens_token_hash', ['tokenHash'], { unique: true })
 export class UserDeviceTokenEntity {
@@ -72,6 +77,21 @@ export class UserDeviceTokenEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   preferences!: PushTokenPreferences | null;
+
+  @Column({
+    type: 'varchar',
+    length: 24,
+    name: 'notification_permission',
+    default: 'unknown',
+  })
+  notificationPermission!: string;
+
+  @Column({
+    type: 'timestamptz',
+    name: 'token_updated_at',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  tokenUpdatedAt!: Date;
 
   @Column({ type: 'boolean', default: true })
   active!: boolean;

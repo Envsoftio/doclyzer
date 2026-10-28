@@ -1,16 +1,20 @@
+import { PushCampaignService } from './push-campaign.service';
+import { validatePushDestination } from './push-contract';
+import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
-  ForbiddenException,
-  HttpException,
-  HttpStatus,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { createHash, timingSafeEqual } from 'node:crypto';
-import { Between, MoreThanOrEqual, Repository, SelectQueryBuilder } from 'typeorm';
+import { createHash } from 'node:crypto';
+import {
+  Between,
+  EntityManager,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 import { AccountPreferenceEntity } from '../../database/entities/account-preference.entity';
 import { PushDeliveryEventEntity } from '../../database/entities/push-delivery-event.entity';
 import { PushOpenEventEntity } from '../../database/entities/push-open-event.entity';
@@ -33,18 +37,12 @@ import type {
 import { PushProviderService } from './push-provider.service';
 
 const DEFAULT_PUSH_PREFERENCES: Required<PushTokenPreferences> = {
+  marketing: false,
   billing: true,
   referrals: true,
   product: true,
   adminAnnouncements: true,
 };
-
-const ADMIN_PUSH_RATE_LIMIT = {
-  maxLiveSends: 10,
-  windowMinutes: 60,
-} as const;
-
-type PushRecipientScope = 'all' | 'segment' | 'single';
 
 interface ResolvedAudience {
   tokens: UserDeviceTokenEntity[];
@@ -53,8 +51,6 @@ interface ResolvedAudience {
 
 @Injectable()
 export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name);
-
   constructor(
     @InjectRepository(UserDeviceTokenEntity)
     private readonly deviceTokenRepo: Repository<UserDeviceTokenEntity>,
@@ -74,6 +70,7 @@ export class NotificationsService {
     private readonly accountPreferenceRepo: Repository<AccountPreferenceEntity>,
     private readonly pushProvider: PushProviderService,
     private readonly config: ConfigService,
+    private readonly campaigns: PushCampaignService,
   ) {}
 
   async listDeviceTokens(userId: string): Promise<object> {
@@ -87,33 +84,40 @@ export class NotificationsService {
   async getInbox(userId: string): Promise<object> {
     const now = new Date();
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const [deliveries, queueItems, expiringLinks, reads, accountPreference] = await Promise.all([
-      this.deliveryRepo
-        .createQueryBuilder('delivery')
-        .innerJoinAndSelect('delivery.pushSendAudit', 'audit')
-        .where('delivery.userId = :userId', { userId })
-        .andWhere('delivery.outcome = :outcome', { outcome: 'sent' })
-        .orderBy('delivery.occurredAt', 'DESC')
-        .take(100)
-        .getMany(),
-      this.emailQueueRepo
-        .createQueryBuilder('queue')
-        .where("queue.metadata ->> 'userId' = :userId", { userId })
-        .andWhere('queue.emailType IN (:...types)', {
-          types: ['report.upload_complete', 'report.review_required', 'report.parse_failed'],
-        })
-        .orderBy('queue.createdAt', 'DESC')
-        .take(100)
-        .getMany(),
-      this.shareLinkRepo.find({
-        where: { userId, isActive: true, expiresAt: Between(now, tomorrow) },
-        order: { expiresAt: 'ASC' },
-        take: 100,
-      }),
-      this.notificationReadRepo.find({ where: { userId } }),
-      this.accountPreferenceRepo.findOne({ where: { userId } }),
-    ]);
-    const readKeys = new Set(reads.map((read) => `${read.sourceType}:${read.sourceId}`));
+    const [deliveries, queueItems, expiringLinks, reads, accountPreference] =
+      await Promise.all([
+        this.deliveryRepo
+          .createQueryBuilder('delivery')
+          .innerJoinAndSelect('delivery.pushSendAudit', 'audit')
+          .where('delivery.userId = :userId', { userId })
+          .andWhere('delivery.outcome = :outcome', { outcome: 'sent' })
+          .orderBy('delivery.occurredAt', 'DESC')
+          .take(100)
+          .getMany(),
+        this.emailQueueRepo
+          .createQueryBuilder('queue')
+          .where("queue.metadata ->> 'userId' = :userId", { userId })
+          .andWhere('queue.emailType IN (:...types)', {
+            types: [
+              'report.upload_complete',
+              'report.review_required',
+              'report.parse_failed',
+            ],
+          })
+          .orderBy('queue.createdAt', 'DESC')
+          .take(100)
+          .getMany(),
+        this.shareLinkRepo.find({
+          where: { userId, isActive: true, expiresAt: Between(now, tomorrow) },
+          order: { expiresAt: 'ASC' },
+          take: 100,
+        }),
+        this.notificationReadRepo.find({ where: { userId } }),
+        this.accountPreferenceRepo.findOne({ where: { userId } }),
+      ]);
+    const readKeys = new Set(
+      reads.map((read) => `${read.sourceType}:${read.sourceId}`),
+    );
     const items: Array<{
       id: string;
       sourceType: string;
@@ -137,9 +141,10 @@ export class NotificationsService {
         body: audit.body,
         occurredAt: delivery.occurredAt.toISOString(),
         read: readKeys.has(`push:${audit.id}`),
-        deepLink: typeof audit.metadata?.deepLink === 'string'
-          ? audit.metadata.deepLink
-          : null,
+        deepLink:
+          typeof audit.metadata?.deepLink === 'string'
+            ? audit.metadata.deepLink
+            : null,
       });
     }
     const reportCopy: Record<string, { title: string; body: string }> = {
@@ -166,12 +171,15 @@ export class NotificationsService {
         ...copy,
         occurredAt: queued.createdAt.toISOString(),
         read: readKeys.has(`report:${queued.id}`),
-        deepLink: typeof queued.metadata?.reportId === 'string'
-          ? `/reports/${queued.metadata.reportId}`
-          : '/reports',
+        deepLink:
+          typeof queued.metadata?.reportId === 'string'
+            ? `/reports/${queued.metadata.reportId}`
+            : '/reports',
       });
     }
-    for (const link of accountPreference?.shareRemindersEnabled === false ? [] : expiringLinks) {
+    for (const link of accountPreference?.shareRemindersEnabled === false
+      ? []
+      : expiringLinks) {
       items.push({
         id: link.id,
         sourceType: 'share',
@@ -197,16 +205,25 @@ export class NotificationsService {
     }
     let owned = false;
     if (sourceType === 'push') {
-      owned = (await this.deliveryRepo.count({
-        where: { userId, pushSendAuditId: sourceId, outcome: 'sent' },
-      })) > 0;
+      owned =
+        (await this.deliveryRepo.count({
+          where: { userId, pushSendAuditId: sourceId, outcome: 'sent' },
+        })) > 0;
     } else if (sourceType === 'report') {
-      const queue = await this.emailQueueRepo.findOne({ where: { id: sourceId } });
-      owned = queue?.metadata?.userId === userId &&
-        ['report.upload_complete', 'report.review_required', 'report.parse_failed']
-          .includes(queue.emailType);
+      const queue = await this.emailQueueRepo.findOne({
+        where: { id: sourceId },
+      });
+      owned =
+        queue?.metadata?.userId === userId &&
+        [
+          'report.upload_complete',
+          'report.review_required',
+          'report.parse_failed',
+        ].includes(queue.emailType);
     } else {
-      owned = (await this.shareLinkRepo.count({ where: { id: sourceId, userId } })) > 0;
+      owned =
+        (await this.shareLinkRepo.count({ where: { id: sourceId, userId } })) >
+        0;
     }
     if (!owned) throw new NotFoundException('Notification not found');
     const readAt = new Date();
@@ -223,36 +240,65 @@ export class NotificationsService {
   ): Promise<object> {
     const providerToken = dto.token.trim();
     const tokenHash = this.hashProviderToken(providerToken);
-    const now = new Date();
-    const preferences = this.normalizePreferences(dto.preferences);
-    const metadata = this.sanitizeMetadata(dto.metadata);
-
-    const existing = await this.deviceTokenRepo.findOne({
-      where: { tokenHash },
-    });
-
-    const entity =
-      existing ??
-      this.deviceTokenRepo.create({
-        tokenHash,
-        createdAt: now,
+    const installationId = dto.installationId?.trim() || null;
+    // Serialize both token and installation identities, including concurrent account switches.
+    return this.deviceTokenRepo.manager.transaction(async (manager) => {
+      for (const key of [tokenHash, installationId].filter(Boolean).sort())
+        await manager.query(
+          'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
+          [key],
+        );
+      const repo = manager.getRepository(UserDeviceTokenEntity);
+      const identities = await repo
+        .createQueryBuilder('device')
+        .where(
+          'device.tokenHash = :tokenHash OR device.installationId = :installationId',
+          { tokenHash, installationId },
+        )
+        .orderBy('device.id', 'ASC')
+        .setLock('pessimistic_write')
+        .getMany();
+      const byToken = identities.find(
+        (device) => device.tokenHash === tokenHash,
+      );
+      const byInstallation = installationId
+        ? identities.find((device) => device.installationId === installationId)
+        : null;
+      const entity = byInstallation ?? byToken ?? repo.create({ tokenHash });
+      if (byToken && byToken.id !== entity.id) {
+        // Preserve analytics identity, but release the rotated token for its installation.
+        byToken.active = false;
+        byToken.disabledAt = new Date();
+        byToken.installationId = null;
+        byToken.providerToken = '';
+        byToken.tokenHash = this.hashProviderToken(`retired:${byToken.id}`);
+        await repo.save(byToken);
+      }
+      const sameAccount = entity.userId === userId;
+      const now = new Date();
+      if (entity.tokenHash !== tokenHash || !entity.tokenUpdatedAt)
+        entity.tokenUpdatedAt = now;
+      entity.tokenHash = tokenHash;
+      entity.userId = userId;
+      entity.providerToken = providerToken;
+      entity.platform = dto.platform;
+      entity.provider = dto.provider ?? 'fcm';
+      entity.installationId = installationId;
+      entity.appVersion = dto.appVersion?.trim() || null;
+      entity.deviceLabel = dto.deviceLabel?.trim() || null;
+      entity.preferences = this.normalizePreferences({
+        ...(sameAccount ? entity.preferences : {}),
+        ...dto.preferences,
       });
-
-    entity.userId = userId;
-    entity.providerToken = providerToken;
-    entity.platform = dto.platform;
-    entity.provider = dto.provider ?? 'fcm';
-    entity.installationId = dto.installationId?.trim() || null;
-    entity.appVersion = dto.appVersion?.trim() || null;
-    entity.deviceLabel = dto.deviceLabel?.trim() || null;
-    entity.preferences = preferences;
-    entity.active = true;
-    entity.disabledAt = null;
-    entity.lastSeenAt = now;
-    entity.metadata = metadata;
-
-    const saved = await this.deviceTokenRepo.save(entity);
-    return this.mapDeviceToken(saved);
+      entity.notificationPermission =
+        dto.notificationPermission ??
+        (sameAccount ? entity.notificationPermission : 'unknown');
+      entity.active = true;
+      entity.disabledAt = null;
+      entity.lastSeenAt = now;
+      entity.metadata = this.sanitizeMetadata(dto.metadata);
+      return this.mapDeviceToken(await repo.save(entity));
+    });
   }
 
   async updateDeviceTokenPreferences(
@@ -260,26 +306,53 @@ export class NotificationsService {
     deviceTokenId: string,
     dto: UpdateDeviceTokenPreferencesDto,
   ): Promise<object> {
-    const token = await this.findOwnedToken(userId, deviceTokenId);
-    token.preferences = this.normalizePreferences({
-      ...(token.preferences ?? DEFAULT_PUSH_PREFERENCES),
-      ...dto.preferences,
-    });
-    token.lastSeenAt = new Date();
-    const saved = await this.deviceTokenRepo.save(token);
-    return this.mapDeviceToken(saved);
+    return this.mutateOwnedToken(
+      userId,
+      deviceTokenId,
+      async (token, manager) => {
+        token.preferences = this.normalizePreferences({
+          ...(token.preferences ?? DEFAULT_PUSH_PREFERENCES),
+          ...dto.preferences,
+        });
+        token.lastSeenAt = new Date();
+        if (dto.preferences.marketing === false)
+          await manager.query(
+            `INSERT INTO push_events(actor_id,event_type,metadata) VALUES($1,'marketing_device_opt_out',$2)`,
+            [userId, JSON.stringify({ deviceId: token.id })],
+          );
+      },
+    );
   }
 
   async deactivateDeviceToken(
     userId: string,
     deviceTokenId: string,
   ): Promise<object> {
-    const token = await this.findOwnedToken(userId, deviceTokenId);
-    token.active = false;
-    token.disabledAt = new Date();
-    token.lastSeenAt = token.disabledAt;
-    const saved = await this.deviceTokenRepo.save(token);
-    return this.mapDeviceToken(saved);
+    return this.mutateOwnedToken(userId, deviceTokenId, async (token) => {
+      token.active = false;
+      token.disabledAt = new Date();
+      token.lastSeenAt = token.disabledAt;
+    });
+  }
+
+  private async mutateOwnedToken(
+    userId: string,
+    id: string,
+    mutate: (
+      token: UserDeviceTokenEntity,
+      manager: EntityManager,
+    ) => Promise<void>,
+  ): Promise<object> {
+    return this.deviceTokenRepo.manager.transaction(async (manager) => {
+      const repo = manager.getRepository(UserDeviceTokenEntity);
+      const token = await repo.findOne({
+        where: { id, userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!token) throw new NotFoundException('Device token not found');
+      await mutate(token, manager);
+      return this.mapDeviceToken(await repo.save(token));
+    });
   }
 
   async trackPushOpen(userId: string, dto: PushOpenDto): Promise<object> {
@@ -287,6 +360,23 @@ export class NotificationsService {
       await this.findOwnedToken(userId, dto.deviceTokenId);
     }
 
+    if (
+      !dto.pushSendAuditId ||
+      !(await this.deliveryRepo.count({
+        where: {
+          userId,
+          pushSendAuditId: dto.pushSendAuditId,
+          outcome: 'sent',
+          ...(dto.deviceTokenId ? { deviceTokenId: dto.deviceTokenId } : {}),
+        },
+      }))
+    )
+      throw new NotFoundException('Notification not found');
+    const existing = await this.openRepo.findOne({
+      where: { userId, pushSendAuditId: dto.pushSendAuditId },
+    });
+    if (existing)
+      return { id: existing.id, openedAt: existing.openedAt.toISOString() };
     const openedAt = new Date();
     const saved = await this.openRepo.save(
       this.openRepo.create({
@@ -346,7 +436,18 @@ export class NotificationsService {
       livePushSends: await this.pushAuditRepo.count({
         where: { dryRun: false },
       }),
-      pushOpens: await this.openRepo.count(),
+      pushOpens: Number(
+        (
+          await this.deviceTokenRepo.manager.query(`
+        SELECT count(*) AS count FROM (
+          SELECT r.id FROM push_recipients r JOIN push_campaigns c ON c.id=r.campaign_id
+            WHERE r.opened_at IS NOT NULL AND r.status='accepted' AND NOT c.is_test
+          UNION ALL
+          SELECT o.id FROM push_open_events o LEFT JOIN push_campaigns c ON c.id=o.push_send_audit_id
+            WHERE c.id IS NULL
+        ) opens`)
+        )[0].count,
+      ),
       deliveryByOutcome,
     };
   }
@@ -381,6 +482,7 @@ export class NotificationsService {
     dto: AdminPushBroadcastDto;
   }): Promise<object> {
     this.assertRecipientScope(input.dto);
+    validatePushDestination(input.dto.deepLink);
     const existing = await this.findExistingAudit(input.dto.idempotencyKey);
     if (existing) return this.mapPushAudit(existing);
 
@@ -417,110 +519,23 @@ export class NotificationsService {
   }): Promise<object> {
     const { dto } = input;
     this.assertRecipientScope(dto);
-    const existing = await this.findExistingAudit(dto.idempotencyKey);
-    if (existing) return this.mapPushAudit(existing);
-
-    const requiresApproval = dto.recipientScope !== 'single';
-    if (requiresApproval) {
-      this.validateApprovalToken(dto.approvalToken);
-    }
-    await this.enforceAdminPushRateLimit(input.actorUserId);
-
-    const audience = await this.resolveAudience(dto);
-    const audit = await this.pushAuditRepo.save(
-      this.pushAuditRepo.create({
-        senderUserId: input.actorUserId,
-        notificationType: dto.notificationType,
-        status: 'pending',
-        audienceFilter: this.buildAudienceFilter(dto),
-        title: dto.title.trim(),
-        body: dto.body.trim(),
-        dryRun: false,
-        targetCount: audience.tokens.length,
-        sentCount: 0,
-        failedCount: 0,
-        skippedCount: audience.skippedCount,
-        provider: this.pushProvider.providerName,
-        idempotencyKey: dto.idempotencyKey ?? null,
-        metadata: {
-          correlationId: input.correlationId,
-          category: this.getNotificationCategory(dto),
-          deepLink: dto.deepLink ?? null,
-          requiresApproval,
-          approvalToken: dto.approvalToken ? 'provided' : 'none',
-        },
-      }),
-    );
-
-    let sentCount = 0;
-    let failedCount = 0;
-    const category = this.getNotificationCategory(dto);
-    const data = this.buildPushData(dto, audit.id, input.correlationId);
-
-    for (const token of audience.tokens) {
-      const result = await this.pushProvider.send({
-        token: token.providerToken,
-        title: dto.title.trim(),
-        body: dto.body.trim(),
-        data,
-        deepLink: dto.deepLink ?? null,
-      });
-
-      if (result.outcome === 'sent') sentCount += 1;
-      else failedCount += 1;
-
-      await this.deliveryRepo.save(
-        this.deliveryRepo.create({
-          pushSendAuditId: audit.id,
-          userId: token.userId,
-          deviceTokenId: token.id,
-          notificationType: dto.notificationType,
-          recipientScope: dto.recipientScope,
-          outcome: result.outcome,
-          provider: result.provider,
-          providerMessageId: result.providerMessageId,
-          errorCode: result.errorCode,
-          occurredAt: new Date(),
-          metadata: {
-            category,
-            platform: token.platform,
-            correlationId: input.correlationId,
-            errorMessage: result.errorMessage,
-          },
-        }),
-      );
-
-      if (this.shouldDeactivateAfterProviderFailure(result.errorCode)) {
-        token.active = false;
-        token.disabledAt = new Date();
-        token.metadata = {
-          ...(token.metadata ?? {}),
-          disabledReason: result.errorCode,
-        };
-        await this.deviceTokenRepo.save(token);
-      }
-    }
-
-    audit.sentCount = sentCount;
-    audit.failedCount = failedCount;
-    audit.status =
-      audience.tokens.length > 0 && sentCount === 0 && failedCount > 0
-        ? 'failed'
-        : 'completed';
-    const saved = await this.pushAuditRepo.save(audit);
-
-    this.logger.log(
-      JSON.stringify({
-        action: 'PUSH_ADMIN_SEND',
-        pushSendAuditId: saved.id,
-        targetCount: saved.targetCount,
-        sentCount,
-        failedCount,
-        correlationId: input.correlationId,
-      }),
-    );
-
-    return this.mapPushAudit(saved);
+    const campaign = await this.campaigns.create(input.actorUserId, {
+      name: dto.title,
+      title: dto.title,
+      body: dto.body,
+      deepLink: dto.deepLink,
+      audience: dto.recipientScope === 'single' ? 'single' : 'all',
+      userId: dto.recipientUserId,
+      platform: ['ios', 'android', 'web', 'mobile_web'].includes(
+        dto.recipientSegment ?? '',
+      )
+        ? dto.recipientSegment
+        : 'all',
+      idempotencyKey: dto.idempotencyKey ?? randomUUID(),
+    });
+    return this.campaigns.schedule(input.actorUserId, campaign.id, {
+      approvalToken: dto.approvalToken,
+    });
   }
 
   hashProviderToken(token: string): string {
@@ -562,62 +577,6 @@ export class NotificationsService {
         code: 'PUSH_RECIPIENT_SEGMENT_REQUIRED',
         message: 'recipientSegment is required for segment push sends',
       });
-    }
-  }
-
-  private validateApprovalToken(token?: string): void {
-    if (!token) {
-      throw new ForbiddenException({
-        code: 'PUSH_ADMIN_APPROVAL_REQUIRED',
-        message: 'Approval token is required for this push audience',
-      });
-    }
-
-    const secret =
-      this.config.get<string>('push.adminApprovalSecret') ??
-      this.config.get<string>('PUSH_ADMIN_APPROVAL_SECRET') ??
-      '';
-    if (!secret) {
-      this.logger.error('PUSH_ADMIN_APPROVAL_SECRET is not configured');
-      throw new ForbiddenException({
-        code: 'PUSH_ADMIN_INVALID_APPROVAL_TOKEN',
-        message: 'Invalid approval token',
-      });
-    }
-
-    const tokenBuffer = Buffer.from(token);
-    const secretBuffer = Buffer.from(secret);
-    const valid =
-      tokenBuffer.length === secretBuffer.length &&
-      timingSafeEqual(tokenBuffer, secretBuffer);
-    if (!valid) {
-      throw new ForbiddenException({
-        code: 'PUSH_ADMIN_INVALID_APPROVAL_TOKEN',
-        message: 'Invalid approval token',
-      });
-    }
-  }
-
-  private async enforceAdminPushRateLimit(actorUserId: string): Promise<void> {
-    const windowStart = new Date();
-    windowStart.setMinutes(
-      windowStart.getMinutes() - ADMIN_PUSH_RATE_LIMIT.windowMinutes,
-    );
-    const count = await this.pushAuditRepo.count({
-      where: {
-        senderUserId: actorUserId,
-        dryRun: false,
-        createdAt: MoreThanOrEqual(windowStart),
-      },
-    });
-    if (count >= ADMIN_PUSH_RATE_LIMIT.maxLiveSends) {
-      throw new HttpException(
-        {
-          code: 'PUSH_ADMIN_RATE_LIMIT_EXCEEDED',
-          message: 'Admin push rate limit exceeded',
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
     }
   }
 
@@ -696,6 +655,18 @@ export class NotificationsService {
     category: PushNotificationCategory,
     accountPreference?: AccountPreferenceEntity,
   ): boolean {
+    if (!['authorized', 'provisional'].includes(token.notificationPermission))
+      return false;
+    if (
+      category === 'marketing' ||
+      category === 'product' ||
+      category === 'admin_announcements' ||
+      category === 'referrals'
+    )
+      return (
+        accountPreference?.marketingPushEnabled === true &&
+        token.preferences?.marketing === true
+      );
     if (category === 'security' || category === 'compliance') return true;
     if (accountPreference?.productEmailsEnabled === false) return false;
 
@@ -710,13 +681,9 @@ export class NotificationsService {
   }
 
   private getNotificationCategory(
-    dto: AdminPushBroadcastDto,
+    _dto: AdminPushBroadcastDto,
   ): PushNotificationCategory {
-    if (dto.category) return dto.category;
-    if (dto.notificationType === 'billing') return 'billing';
-    if (dto.notificationType === 'referral') return 'referrals';
-    if (dto.notificationType === 'incident') return 'compliance';
-    return 'admin_announcements';
+    return 'marketing';
   }
 
   private buildAudienceFilter(
@@ -730,37 +697,13 @@ export class NotificationsService {
     };
   }
 
-  private buildPushData(
-    dto: AdminPushBroadcastDto,
-    pushSendAuditId: string,
-    correlationId: string,
-  ): Record<string, string> {
-    const data: Record<string, string> = {
-      notificationType: dto.notificationType,
-      category: this.getNotificationCategory(dto),
-      pushSendAuditId,
-      correlationId,
-    };
-    if (dto.deepLink) data.deepLink = dto.deepLink;
-    if (dto.data) {
-      for (const [key, value] of Object.entries(dto.data)) {
-        if (value === null || value === undefined) continue;
-        data[key] = String(value);
-      }
-    }
-    return data;
-  }
-
-  private shouldDeactivateAfterProviderFailure(errorCode: string | null): boolean {
-    if (!errorCode) return false;
-    return errorCode === 'UNREGISTERED';
-  }
-
   private normalizePreferences(
     raw?: Record<string, boolean>,
   ): Required<PushTokenPreferences> {
     const preferences = { ...DEFAULT_PUSH_PREFERENCES };
     if (!raw) return preferences;
+    if (typeof raw.marketing === 'boolean')
+      preferences.marketing = raw.marketing;
     if (typeof raw.billing === 'boolean') preferences.billing = raw.billing;
     if (typeof raw.referrals === 'boolean') {
       preferences.referrals = raw.referrals;
@@ -794,6 +737,8 @@ export class NotificationsService {
     return {
       id: token.id,
       userId: token.userId,
+      notificationPermission: token.notificationPermission,
+      tokenUpdatedAt: token.tokenUpdatedAt?.toISOString(),
       platform: token.platform,
       provider: token.provider,
       installationId: token.installationId,
