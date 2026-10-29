@@ -15,8 +15,8 @@ interface WorkbenchData {
   profiles: { id: string; name: string; createdAt: string; reportCount: number }[]
   reports: { id: string; profileId: string; originalFileName: string; sizeBytes: number; status: string; createdAt: string; updatedAt: string }[]
   sessions: { id: string; ipAddress: string | null; userAgent: string | null; createdAt: string; expiresAt: string }[]
-  deviceSummary: { registrations: number; activeTokens: number; recentActiveTokens: number; marketingEligible: number; accountMarketingEnabled: boolean }
-  devices: {
+  deviceSummary?: { registrations: number; activeTokens: number; recentActiveTokens: number; marketingEligible: number; accountMarketingEnabled: boolean }
+  devices?: {
     id: string; platform: string; provider: string; deviceLabel: string | null; deviceModel: string | null
     appVersion: string | null; active: boolean; tokenPresent: boolean; notificationPermission: string
     marketingEnabled: boolean; marketingEligible: boolean; eligibilityReason: string | null
@@ -113,7 +113,7 @@ const STATUS_COLORS: Record<string, string> = {
       </div>
 
       <!-- Push device registrations -->
-      <section class="admin-ops__card section">
+      <section v-if="data.deviceSummary && data.devices" class="admin-ops__card section">
         <h3 class="section-title">Devices and push tokens</h3>
         <p class="device-note">A device is counted when its registration has an active provider token. Marketing eligibility also requires recent activity, notification permission, and both account and device opt-in. Provider acceptance does not confirm delivery.</p>
         <div class="device-stats">
@@ -138,6 +138,10 @@ const STATUS_COLORS: Record<string, string> = {
             </tr>
           </tbody>
         </table></div>
+      </section>
+      <section v-else class="admin-ops__card section">
+        <h3 class="section-title">Devices and push tokens</h3>
+        <p class="device-note">Device details are unavailable from the current API. Update or restart the API, then refresh this page.</p>
       </section>
 
       <!-- Profiles -->

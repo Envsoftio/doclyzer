@@ -134,7 +134,7 @@ function formatDate(iso: string | null): string {
               <td>{{ formatDate(user.createdAt) }}</td>
               <td>{{ user.profileCount }}</td>
               <td>{{ user.reportCount }}</td>
-              <td>{{ user.activeDeviceCount }}</td>
+              <td>{{ user.activeDeviceCount ?? '—' }}</td>
               <td>{{ formatDate(user.lastLoginAt) }}</td>
               <td class="actions-cell"><NuxtLink :to="`/admin/users/${user.id}`">Workbench</NuxtLink><NuxtLink :to="`/admin/reports?userId=${user.id}`">Reports</NuxtLink></td>
             </tr>
