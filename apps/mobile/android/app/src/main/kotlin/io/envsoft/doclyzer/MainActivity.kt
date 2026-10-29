@@ -1,4 +1,4 @@
-package com.envsoft.doclyzer.mobile
+package io.envsoft.doclyzer
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine

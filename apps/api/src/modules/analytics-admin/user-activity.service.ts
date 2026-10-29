@@ -173,15 +173,29 @@ export class UserActivityService {
       .leftJoin(SessionEntity, 's', 's.user_id = u.id')
       .groupBy('u.id');
 
-    if (query.search) {
-      qb.where('u.email ILIKE :search', { search: `%${query.search}%` });
+    const normalizedSearch = query.search?.trim();
+    const search = normalizedSearch
+      ? `%${normalizedSearch.replace(/[\\%_]/g, '\\$&')}%`
+      : null;
+    if (search) {
+      qb.where(
+        `(u.email ILIKE :search ESCAPE '\\'
+          OR COALESCE(u.display_name, '') ILIKE :search ESCAPE '\\'
+          OR CAST(u.id AS text) ILIKE :search ESCAPE '\\')`,
+        { search },
+      );
     }
 
     const countQb = this.userRepo
       .createQueryBuilder('u')
       .select('COUNT(u.id)', 'count');
-    if (query.search) {
-      countQb.where('u.email ILIKE :search', { search: `%${query.search}%` });
+    if (search) {
+      countQb.where(
+        `(u.email ILIKE :search ESCAPE '\\'
+          OR COALESCE(u.display_name, '') ILIKE :search ESCAPE '\\'
+          OR CAST(u.id AS text) ILIKE :search ESCAPE '\\')`,
+        { search },
+      );
     }
     const countRow = await countQb.getRawOne<CountRawRow>();
     const total = Number(countRow?.count ?? 0);

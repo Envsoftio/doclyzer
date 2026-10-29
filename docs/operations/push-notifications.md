@@ -67,7 +67,7 @@ Retention: devices inactive for 90 days are deactivated and lose descriptive met
 
 ## Apple/Firebase setup
 
-**Resolve the existing bundle-ID mismatch before registering the Firebase Apple app:** this repository uses `com.envsoft.doclyzer.mobile` for Debug/Release and `io.envsoft.doclyzer` for Profile. They were not silently changed because the Apple provisioning/App Store identity is unknown. Align the intended configurations with the registered Apple/Firebase app, or maintain deliberate separate configurations and matching plist files.
+**Register the Firebase Apple app with `io.envsoft.doclyzer`.** The iOS Runner Debug, Release and Profile configurations use this bundle ID. Confirm that the Apple App ID, provisioning profiles and any App Store Connect app use the same identifier. An app published under a different bundle ID cannot be updated under this one.
 
 1. Register the chosen Apple bundle ID with Firebase. Add `GoogleService-Info.plist` to `ios/Runner` through Xcode and ensure Runner target membership / Copy Bundle Resources. The file is ignored by git.
 2. In the Apple Developer portal enable Push Notifications for that App ID and refresh its provisioning profiles.

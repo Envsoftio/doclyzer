@@ -82,8 +82,13 @@ npm install
 # Run database migrations
 npm run migration:run
 
-# Run with REPORT_ASYNC_RUNTIME_ENABLED=true and the worker/dispatcher available
-REPORT_ASYNC_RUNTIME_ENABLED=true REPORT_ASYNC_ACCEPTANCE_ENABLED=true npm run start:dev
+# Starts the API, report worker, and report/push dispatcher together.
+# If any required process exits, the development stack fails instead of
+# silently leaving queued work unprocessed.
+npm run start:dev
+
+# API only, for focused debugging when workers run elsewhere:
+npm run start:dev:api-only
 ```
 
 The Compose API from Step 2 is already available at **http://localhost:4002**.

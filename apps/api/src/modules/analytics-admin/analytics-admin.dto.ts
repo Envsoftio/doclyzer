@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -52,6 +53,7 @@ export class UserDirectoryQueryDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   search?: string;
 }
 

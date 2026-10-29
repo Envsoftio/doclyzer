@@ -31,7 +31,7 @@ if (releaseTaskRequested) {
 }
 
 android {
-    namespace = "com.envsoft.doclyzer.mobile"
+    namespace = "io.envsoft.doclyzer"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

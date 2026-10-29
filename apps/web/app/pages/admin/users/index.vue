@@ -89,8 +89,8 @@ function formatDate(iso: string | null): string {
 
     <section class="admin-ops__card">
       <form class="admin-ops__row filters" @submit.prevent="applyFilters">
-        <label class="admin-ops__field filter-search">Search email
-          <input v-model="search" class="admin-ops__input" type="search" placeholder="name@example.com" autocomplete="off" />
+        <label class="admin-ops__field filter-search">Search accounts
+          <input v-model="search" class="admin-ops__input" type="search" placeholder="Name, email, or UUID" autocomplete="off" />
         </label>
         <label class="admin-ops__field">Sort by
           <select v-model="sortBy" class="admin-ops__select" @change="applyFilters">

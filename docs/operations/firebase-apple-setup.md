@@ -1,12 +1,12 @@
 # Firebase and Apple setup for Doclyzer push notifications
 
-**[Certain] Resolve the iOS bundle-ID mismatch in Step 1 before registering the Apple app in Firebase.** The repository currently uses two different identifiers across build configurations.
+**[Certain] Register the Apple app in Firebase with `io.envsoft.doclyzer`.** The Android application ID and all iOS Runner build configurations use this identifier.
 
 This guide covers the console settings, downloaded files, backend environment values and device checks required by the notification implementation already in this repository. It does not contain actual credentials. Console instructions were checked against official documentation on 29 October 2026; labels may vary slightly by account.
 
 ## Setup order
 
-1. Confirm the existing Apple app identity and align Xcode configurations.
+1. Confirm the Apple App ID and signing configuration use `io.envsoft.doclyzer`.
 2. Select the Firebase project and register its Android and Apple apps.
 3. Enable push for the Apple App ID and configure APNs authentication keys.
 4. Upload those APNs keys to Firebase.
@@ -14,20 +14,18 @@ This guide covers the console settings, downloaded files, backend environment va
 6. Configure the backend Firebase credentials and restart the relevant processes.
 7. Test through Doclyzer on physical devices.
 
-## 1. Confirm the correct iOS bundle ID
+## 1. Confirm the iOS bundle ID and signing
 
 These values come from the current repository:
 
 | Configuration | Current application identifier |
 | --- | --- |
 | Android | `io.envsoft.doclyzer` |
-| iOS Debug | `com.envsoft.doclyzer.mobile` |
-| iOS Release | `com.envsoft.doclyzer.mobile` |
+| iOS Debug | `io.envsoft.doclyzer` |
+| iOS Release | `io.envsoft.doclyzer` |
 | iOS Profile | `io.envsoft.doclyzer` |
 
-The Android and iOS identifiers can differ. The issue is that the **iOS configurations differ from one another**.
-
-If Doclyzer already has an Apple App ID, provisioning profiles or an App Store Connect app, use that existing app's bundle ID. Do not choose a new identifier just to match Android. If this is a completely new Apple app, choose its permanent identifier first.
+All Runner configurations now use `io.envsoft.doclyzer`. If an Apple App ID, provisioning profile, or App Store Connect app was previously created under another identifier, create or update the Apple-side app identity and signing setup for this ID. Apple treats a different bundle ID as a different app identity; an existing published app cannot be updated under a new bundle ID.
 
 From the repository root:
 
@@ -39,11 +37,9 @@ In Xcode:
 
 1. Select the blue **Runner** project, then the **Runner application target**.
 2. Open **Build Settings** and search for **Product Bundle Identifier**.
-3. Expand the setting and set Debug, Release and Profile to the chosen Apple bundle ID, unless separate apps/flavors are intentional.
-4. Leave the `RunnerTests` target's test identifier separate.
-5. Record the chosen identifier; use exactly that value throughout this guide.
-
-For deliberately separate iOS apps, register each identifier separately in Firebase and supply the correct configuration file for each build. The following steps assume one Apple app identity.
+3. Verify Debug, Release and Profile all show `io.envsoft.doclyzer`.
+4. The `RunnerTests` target uses the distinct test identifier `io.envsoft.doclyzer.RunnerTests`; it does not need its own Firebase app registration.
+5. Check that the Apple Team and provisioning profiles are for `io.envsoft.doclyzer`.
 
 ## 2. Firebase: choose the project and enable messaging
 
@@ -74,7 +70,7 @@ The repository already declares the Google Services Gradle plugin and applies it
 ## 4. Firebase: register Apple and download its file
 
 1. In the same project's **Your apps**, choose **Add app → Apple/iOS**.
-2. Enter the exact bundle ID chosen in Step 1.
+2. Enter bundle ID **`io.envsoft.doclyzer`**.
 3. Use a nickname such as `Doclyzer iOS`. The App Store ID can be supplied if the app already has one.
 4. Register the app and download **`GoogleService-Info.plist`**.
 5. Save it here:

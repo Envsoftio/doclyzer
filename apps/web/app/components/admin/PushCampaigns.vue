@@ -42,6 +42,11 @@ interface Analytics {
   failures: { failure_code: string; count: number }[];
   events: { event_type: string; created_at: string }[];
 }
+interface AccountOption {
+  id: string;
+  email: string;
+  displayName: string | null;
+}
 const rows = ref<Campaign[]>([]),
   selected = ref<Campaign | null>(null);
 const preview = ref<Preview | null>(null),
@@ -57,6 +62,15 @@ const form = ref({
   platform: "all",
 });
 const editing = ref("");
+const accountSearch = ref("");
+const accountOptions = ref<AccountOption[]>([]);
+const selectedAccount = ref<AccountOption | null>(null);
+const accountPickerOpen = ref(false);
+const accountSearchLoading = ref(false);
+const accountSearchError = ref("");
+const activeAccountIndex = ref(-1);
+let accountSearchTimer: ReturnType<typeof setTimeout> | undefined;
+let accountRequestVersion = 0;
 const key = ref(""),
   schedule = ref(""),
   approval = ref(""),
@@ -73,6 +87,107 @@ async function request<T>(
     body ? { method, body } : {},
   );
   return res.data;
+}
+function accountLabel(account: AccountOption): string {
+  return account.displayName?.trim() || account.email;
+}
+async function loadAccounts(query = accountSearch.value, open = true) {
+  const version = ++accountRequestVersion;
+  accountSearchLoading.value = true;
+  accountSearchError.value = "";
+  try {
+    const params = new URLSearchParams({
+      page: "1",
+      limit: "10",
+      sortBy: "email",
+      sortDir: "ASC",
+    });
+    if (query.trim()) params.set("search", query.trim());
+    const response = await adminFetch<{
+      data: { users: AccountOption[] };
+    }>(`/admin/analytics/users?${params}`);
+    if (version !== accountRequestVersion) return;
+    accountOptions.value = response.data.users;
+    activeAccountIndex.value = accountOptions.value.findIndex(
+      (account) => account.id === form.value.userId,
+    );
+    if (open) accountPickerOpen.value = true;
+  } catch (cause) {
+    if (version !== accountRequestVersion) return;
+    accountOptions.value = [];
+    accountSearchError.value =
+      cause instanceof Error ? cause.message : "Could not search accounts.";
+    if (open) accountPickerOpen.value = true;
+  } finally {
+    if (version === accountRequestVersion) accountSearchLoading.value = false;
+  }
+}
+function scheduleAccountSearch() {
+  if (
+    selectedAccount.value &&
+    accountSearch.value !== accountLabel(selectedAccount.value)
+  ) {
+    selectedAccount.value = null;
+    form.value.userId = "";
+  }
+  if (accountSearchTimer) clearTimeout(accountSearchTimer);
+  accountPickerOpen.value = true;
+  activeAccountIndex.value = -1;
+  accountSearchTimer = setTimeout(() => void loadAccounts(), 250);
+}
+function selectAccount(account: AccountOption) {
+  selectedAccount.value = account;
+  form.value.userId = account.id;
+  accountSearch.value = accountLabel(account);
+  accountPickerOpen.value = false;
+  activeAccountIndex.value = -1;
+}
+async function resolveAccount(accountId: string) {
+  if (!accountId) return;
+  await loadAccounts(accountId, false);
+  const match = accountOptions.value.find(
+    (account) => account.id === accountId,
+  );
+  if (match) selectAccount(match);
+}
+function accountPickerKeydown(event: KeyboardEvent) {
+  if (event.key === "Escape") {
+    accountPickerOpen.value = false;
+    return;
+  }
+  if (!["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) return;
+  if (!accountPickerOpen.value) {
+    accountPickerOpen.value = true;
+    return;
+  }
+  if (event.key === "Enter") {
+    const account = accountOptions.value[activeAccountIndex.value];
+    if (account) {
+      event.preventDefault();
+      selectAccount(account);
+    }
+    return;
+  }
+  event.preventDefault();
+  const direction = event.key === "ArrowDown" ? 1 : -1;
+  const last = accountOptions.value.length - 1;
+  if (last < 0) return;
+  if (activeAccountIndex.value < 0) {
+    activeAccountIndex.value = direction > 0 ? 0 : last;
+    return;
+  }
+  activeAccountIndex.value =
+    (activeAccountIndex.value + direction + accountOptions.value.length) %
+    accountOptions.value.length;
+}
+function closeAccountPicker(event: FocusEvent) {
+  const container = event.currentTarget as HTMLElement;
+  if (
+    event.relatedTarget instanceof Node &&
+    container.contains(event.relatedTarget)
+  )
+    return;
+  accountPickerOpen.value = false;
 }
 async function refresh() {
   rows.value = await request<Campaign[]>("");
@@ -91,6 +206,8 @@ async function action(fn: () => Promise<void>) {
 }
 async function create() {
   await action(async () => {
+    if (form.value.audience === "single" && !form.value.userId)
+      throw new Error("Select an account from the search results.");
     if (!key.value) key.value = crypto.randomUUID();
     const { id } = await request<{ id: string }>(
       editing.value ? `/${editing.value}` : "",
@@ -129,6 +246,9 @@ function editDraft(c: Campaign) {
     userId: c.audience_filter.userId ?? "",
     platform: c.audience_filter.platform,
   };
+  selectedAccount.value = null;
+  accountSearch.value = c.audience_filter.userId ?? "";
+  void resolveAccount(form.value.userId);
 }
 async function inspect(c: Campaign) {
   selected.value = c;
@@ -173,6 +293,9 @@ async function cancel(c: Campaign) {
   });
 }
 onMounted(() => action(refresh));
+onUnmounted(() => {
+  if (accountSearchTimer) clearTimeout(accountSearchTimer);
+});
 </script>
 <template>
   <section class="campaigns">
@@ -224,9 +347,78 @@ onMounted(() => action(refresh));
           <option value="single">Specific account</option>
         </select></label
       >
-      <label v-if="form.audience === 'single'"
-        >Account UUID<input v-model="form.userId" required
-      /></label>
+      <div
+        v-if="form.audience === 'single'"
+        class="account-picker"
+        @focusout="closeAccountPicker"
+      >
+        <label for="campaign-account">Account</label>
+        <input
+          id="campaign-account"
+          v-model="accountSearch"
+          type="search"
+          role="combobox"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Search name, email, or UUID"
+          :aria-expanded="accountPickerOpen"
+          aria-controls="campaign-account-results"
+          :aria-activedescendant="
+            activeAccountIndex >= 0
+              ? `campaign-account-${activeAccountIndex}`
+              : undefined
+          "
+          :aria-invalid="form.audience === 'single' && !form.userId"
+          @focus="
+            accountPickerOpen = true;
+            if (!accountOptions.length) loadAccounts();
+          "
+          @input="scheduleAccountSearch"
+          @keydown="accountPickerKeydown"
+        />
+        <div
+          v-if="accountPickerOpen"
+          id="campaign-account-results"
+          class="account-results"
+          role="listbox"
+        >
+          <p v-if="accountSearchLoading" class="account-state">
+            Searching accounts…
+          </p>
+          <p v-else-if="accountSearchError" class="account-state error">
+            {{ accountSearchError }}
+          </p>
+          <p v-else-if="!accountOptions.length" class="account-state">
+            No matching accounts.
+          </p>
+          <template v-else>
+            <button
+              v-for="(account, index) in accountOptions"
+              :id="`campaign-account-${index}`"
+              :key="account.id"
+              type="button"
+              role="option"
+              class="account-option"
+              :class="{
+                'account-option--active': index === activeAccountIndex,
+              }"
+              :aria-selected="account.id === form.userId"
+              @mouseenter="activeAccountIndex = index"
+              @click="selectAccount(account)"
+            >
+              <strong>{{ accountLabel(account) }}</strong>
+              <span v-if="account.displayName">{{ account.email }}</span>
+              <code>{{ account.id }}</code>
+            </button>
+          </template>
+        </div>
+        <p v-if="selectedAccount" class="selected-account">
+          Selected UUID: <code>{{ selectedAccount.id }}</code>
+        </p>
+        <p v-else class="account-help">
+          Choose a result to attach its UUID to this campaign.
+        </p>
+      </div>
       <label
         >Platform<select v-model="form.platform">
           <option value="all">All platforms</option>
@@ -236,7 +428,9 @@ onMounted(() => action(refresh));
         </select></label
       >
       <div class="wide">
-        <button :disabled="busy">
+        <button
+          :disabled="busy || (form.audience === 'single' && !form.userId)"
+        >
           {{ editing ? "Save draft changes" : "Save draft" }}
         </button>
         <button v-if="editing" type="button" @click="editing = ''">
@@ -388,6 +582,71 @@ onMounted(() => action(refresh));
   flex-direction: column;
   gap: 6px;
   font-size: 14px;
+}
+.account-picker {
+  position: relative;
+  min-width: 0;
+}
+.account-picker > label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+.account-picker > input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.account-results {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% - 20px);
+  right: 0;
+  left: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 12px 28px rgb(15 23 42 / 14%);
+}
+.account-option {
+  display: grid;
+  width: 100%;
+  gap: 2px;
+  padding: 9px 10px;
+  border: 0;
+  text-align: left;
+  background: transparent;
+}
+.account-option:hover,
+.account-option--active {
+  background: #f1f5f9;
+}
+.account-option strong,
+.account-option span,
+.account-option code {
+  overflow-wrap: anywhere;
+}
+.account-option span,
+.account-option code,
+.account-state,
+.account-help,
+.selected-account {
+  color: #64748b;
+  font-size: 12px;
+}
+.account-option code,
+.selected-account code {
+  font-variant-numeric: tabular-nums;
+}
+.account-state {
+  margin: 0;
+  padding: 10px;
+}
+.account-help,
+.selected-account {
+  margin: 6px 0 0;
 }
 .wide {
   grid-column: 1/-1;
