@@ -48,7 +48,7 @@ Use `PUSH_PROVIDER=fcm`. `mock` is for development only; sending in production w
 
 Prefer Firebase Admin application default credentials: workload identity on Google Cloud, or `GOOGLE_APPLICATION_CREDENTIALS` pointing to a mounted service-account secret. Set `FCM_PROJECT_ID` to the intended project. Alternatively use server-only `FCM_PROJECT_ID`, `FCM_CLIENT_EMAIL`, and `FCM_PRIVATE_KEY`; escaped newlines in the private key are supported. Do not set only half of the email/private-key pair. The old `FCM_OAUTH_TOKEN_URL`/`FCM_SCOPE` overrides are no longer used.
 
-Set a strong `PUSH_ADMIN_APPROVAL_SECRET` for the existing broadcast approval policy. This is distinct from Firebase credentials. Admin routes retain AuthGuard and SuperadminGuard. Broadcasts require the approval secret, including scheduled sends. There is a serialized limit of ten schedules/test sends per admin per hour.
+Admin push routes retain AuthGuard and SuperadminGuard. There is a serialized limit of ten schedules/test sends per admin per hour. Marketing campaigns deliver only to accounts and devices with marketing push consent and OS notification permission.
 
 The report dispatcher already runs `PushCampaignService.tick()`. Existing report push additionally requires the report completion push setting from `processing-settings.ts` (`REPORT_COMPLETION_PUSH_ENABLED`). If a deployment does not run the report dispatcher, run `npm run start:push-worker:prod`. Do not run a queue consumer against a database whose migration is pending. The standalone consumer inherits the existing application environment/configuration.
 
@@ -83,10 +83,12 @@ Optional campaign images are sent in the FCM notification payload (Android suppo
 
 Users enable OS notification access explicitly in Account → Notification preferences. Marketing is a separate opt-in toggle. Saving that toggle updates account intent and this installation's marketing preference. Other devices must independently opt in. Token refresh/resume does not overwrite existing consent. Account switching resets the installation's device preferences. Normal logout waits for in-flight registration, revokes its backend record, deletes the FCM token and clears local notifications; if both backend and provider revocation fail, explicit logout reports an error instead of silently promising revocation. Expired-session cleanup avoids waiting on its own failed API request and attempts provider-token revocation. No distributed implementation can retract a push already handed to APNs/FCM; message copy must remain generic.
 
+On resume, denied or undetermined OS permission deactivates the stored device before APNs/FCM token retrieval. This is retried on a later resume if the server is unreachable. Granting permission registers the installation again and preserves its existing consent. Same-account legacy registration without an installation ID preserves the stored identity.
+
 In Admin → Notifications:
 
-1. Create a campaign with a name, generic lock-screen title/body, allowed internal destination, optional HTTPS image, platform and either all eligible accounts or a particular account UUID.
-2. Save draft; use Edit for changes. Preview shows eligible account/device counts. Audience filters never execute administrator-supplied queries.
+1. Enter a generic lock-screen title/body and select all opted-in accounts or search for one account. Campaign name is optional and defaults to the title. More options contains destination, platform and HTTPS image.
+2. Choose Review notification to save the draft and inspect eligible account/device counts. Subsequent edits update that draft through Save and review; unsaved edits block its send/test actions. Audience filters never execute administrator-supplied queries.
 3. Test on my devices queues a separately labeled test campaign for the authenticated admin only. The admin needs a registered mobile device and explicit account/device marketing consent; tests do not bypass consent. Tests have their own IDs and metrics and never increment the source campaign's statistics.
 4. Enter the approval token for a broadcast. Leave the local datetime empty for Send now, or choose a future local date/time. The browser sends UTC. Scheduling freezes the draft.
 5. Cancel a draft or queued campaign before the dispatcher starts it. Once sending has begun it cannot be cancelled through this workflow.

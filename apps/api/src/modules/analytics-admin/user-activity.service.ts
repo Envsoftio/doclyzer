@@ -8,6 +8,8 @@ import {
   type ReportStatus,
 } from '../../database/entities/report.entity';
 import { SessionEntity } from '../../database/entities/session.entity';
+import { UserDeviceTokenEntity } from '../../database/entities/user-device-token.entity';
+import { AccountPreferenceEntity } from '../../database/entities/account-preference.entity';
 import type { UserDirectoryQueryDto } from './analytics-admin.dto';
 
 export interface UserActivityMetrics {
@@ -27,6 +29,7 @@ export interface UserDirectoryItem {
   createdAt: string;
   profileCount: number;
   reportCount: number;
+  activeDeviceCount: number;
   lastLoginAt: string | null;
 }
 
@@ -67,6 +70,31 @@ export interface UserWorkbench {
     createdAt: string;
     expiresAt: string;
   }[];
+  deviceSummary: {
+    registrations: number;
+    activeTokens: number;
+    recentActiveTokens: number;
+    marketingEligible: number;
+    accountMarketingEnabled: boolean;
+  };
+  devices: {
+    id: string;
+    platform: string;
+    provider: string;
+    deviceLabel: string | null;
+    deviceModel: string | null;
+    appVersion: string | null;
+    active: boolean;
+    tokenPresent: boolean;
+    notificationPermission: string;
+    marketingEnabled: boolean;
+    marketingEligible: boolean;
+    eligibilityReason: string | null;
+    createdAt: string;
+    lastSeenAt: string;
+    tokenUpdatedAt: string | null;
+    disabledAt: string | null;
+  }[];
   reportStatusSummary: Record<string, number>;
 }
 
@@ -91,6 +119,7 @@ interface UserDirectoryRawRow {
   createdAt: Date | string;
   profileCount: string | number | null;
   reportCount: string | number | null;
+  activeDeviceCount: string | number | null;
   lastLoginAt: Date | string | null;
 }
 
@@ -114,6 +143,10 @@ export class UserActivityService {
     private readonly reportRepo: Repository<ReportEntity>,
     @InjectRepository(SessionEntity)
     private readonly sessionRepo: Repository<SessionEntity>,
+    @InjectRepository(UserDeviceTokenEntity)
+    private readonly deviceTokenRepo: Repository<UserDeviceTokenEntity>,
+    @InjectRepository(AccountPreferenceEntity)
+    private readonly accountPreferenceRepo: Repository<AccountPreferenceEntity>,
   ) {}
 
   async getUserActivityMetrics(): Promise<UserActivityMetrics> {
@@ -167,6 +200,10 @@ export class UserActivityService {
       .addSelect('u.created_at', 'createdAt')
       .addSelect('COUNT(DISTINCT p.id)', 'profileCount')
       .addSelect('COUNT(DISTINCT r.id)', 'reportCount')
+      .addSelect(
+        "(SELECT COUNT(*) FROM user_device_tokens d WHERE d.user_id = u.id AND d.active AND d.provider_token <> '')",
+        'activeDeviceCount',
+      )
       .addSelect('MAX(s.created_at)', 'lastLoginAt')
       .leftJoin(ProfileEntity, 'p', 'p.user_id = u.id')
       .leftJoin(ReportEntity, 'r', 'r.user_id = u.id')
@@ -222,6 +259,7 @@ export class UserActivityService {
           : String(row.createdAt),
       profileCount: Number(row.profileCount ?? 0),
       reportCount: Number(row.reportCount ?? 0),
+      activeDeviceCount: Number(row.activeDeviceCount ?? 0),
       lastLoginAt: row.lastLoginAt
         ? new Date(row.lastLoginAt).toISOString()
         : null,
@@ -238,15 +276,71 @@ export class UserActivityService {
         message: 'User not found',
       });
 
-    const [profiles, reports, sessions] = await Promise.all([
-      this.profileRepo.find({ where: { userId }, order: { createdAt: 'ASC' } }),
-      this.reportRepo.find({ where: { userId }, order: { createdAt: 'DESC' } }),
-      this.sessionRepo.find({
-        where: { userId },
-        order: { createdAt: 'DESC' },
-        take: 50,
-      }),
-    ]);
+    const [profiles, reports, sessions, devices, accountPreference] =
+      await Promise.all([
+        this.profileRepo.find({
+          where: { userId },
+          order: { createdAt: 'ASC' },
+        }),
+        this.reportRepo.find({
+          where: { userId },
+          order: { createdAt: 'DESC' },
+        }),
+        this.sessionRepo.find({
+          where: { userId },
+          order: { createdAt: 'DESC' },
+          take: 50,
+        }),
+        this.deviceTokenRepo.find({
+          where: { userId },
+          order: { lastSeenAt: 'DESC' },
+        }),
+        this.accountPreferenceRepo.findOne({ where: { userId } }),
+      ]);
+
+    const accountMarketingEnabled =
+      accountPreference?.marketingPushEnabled === true;
+    const recentSince = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    const deviceRows = devices.map((device) => {
+      const tokenPresent = Boolean(device.providerToken);
+      const recent = device.lastSeenAt.getTime() > recentSince;
+      const permissionAllowed = ['authorized', 'provisional'].includes(
+        device.notificationPermission,
+      );
+      const marketingEnabled = device.preferences?.marketing === true;
+      const eligibilityReason = !device.active
+        ? 'Inactive registration'
+        : !tokenPresent
+          ? 'Token missing'
+          : !recent
+            ? 'Not seen in 90 days'
+            : !permissionAllowed
+              ? 'Notification permission unavailable'
+              : !marketingEnabled
+                ? 'Device marketing opt-in off'
+                : !accountMarketingEnabled
+                  ? 'Account marketing opt-in off'
+                  : null;
+      const model = device.metadata?.deviceModel;
+      return {
+        id: device.id,
+        platform: device.platform,
+        provider: device.provider,
+        deviceLabel: device.deviceLabel,
+        deviceModel: typeof model === 'string' ? model : null,
+        appVersion: device.appVersion,
+        active: device.active,
+        tokenPresent,
+        notificationPermission: device.notificationPermission,
+        marketingEnabled,
+        marketingEligible: eligibilityReason === null,
+        eligibilityReason,
+        createdAt: device.createdAt.toISOString(),
+        lastSeenAt: device.lastSeenAt.toISOString(),
+        tokenUpdatedAt: device.tokenUpdatedAt?.toISOString() ?? null,
+        disabledAt: device.disabledAt?.toISOString() ?? null,
+      };
+    });
 
     // Profile report counts
     const profileReportCounts = new Map<string, number>();
@@ -293,6 +387,23 @@ export class UserActivityService {
         createdAt: s.createdAt.toISOString(),
         expiresAt: s.expiresAt.toISOString(),
       })),
+      deviceSummary: {
+        registrations: deviceRows.length,
+        activeTokens: deviceRows.filter(
+          (device) => device.active && device.tokenPresent,
+        ).length,
+        recentActiveTokens: deviceRows.filter(
+          (device) =>
+            device.active &&
+            device.tokenPresent &&
+            new Date(device.lastSeenAt).getTime() > recentSince,
+        ).length,
+        marketingEligible: deviceRows.filter(
+          (device) => device.marketingEligible,
+        ).length,
+        accountMarketingEnabled,
+      },
+      devices: deviceRows,
       reportStatusSummary,
     };
   }

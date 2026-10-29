@@ -73,27 +73,39 @@ class _Restriction extends Fake implements RestrictionRepository {
 
 class _Billing extends Fake implements BillingRepository {}
 
-Widget _home({String? photo, String accountName = 'Priya Mehta Narayanan'}) =>
-    MaterialApp(
-      theme: AppTheme.light,
-      home: HomeScreen(
-        onLogout: () async {},
-        onGoToAccount: () {},
-        onGoToProfiles: () {},
-        onGoToSessions: () {},
-        onGoToCommunicationPreferences: () {},
-        onGoToDataRights: () {},
-        onGoToUploadReport: () async {},
-        onGoToTimeline: () async {},
-        onGoToBilling: () {},
-        onGoToReferrals: () {},
-        restrictionRepository: _Restriction(),
-        reportsRepository: _Reports(),
-        profilesRepository: _Profiles(),
-        billingRepository: _Billing(),
-        accountRepository: _Account(photo: photo, displayName: accountName),
-      ),
-    );
+Widget _home({
+  String? photo,
+  String accountName = 'Priya Mehta Narayanan',
+  Future<bool> Function()? shouldOfferPushPermission,
+  Future<bool> Function()? shouldOpenPushPermissionSettings,
+  Future<bool> Function()? onEnablePushPermission,
+  Future<bool> Function()? onOpenPushSettings,
+  VoidCallback? onPushPermissionPromptHandled,
+}) => MaterialApp(
+  theme: AppTheme.light,
+  home: HomeScreen(
+    onLogout: () async {},
+    onGoToAccount: () {},
+    onGoToProfiles: () {},
+    onGoToSessions: () {},
+    onGoToCommunicationPreferences: () {},
+    onGoToDataRights: () {},
+    onGoToUploadReport: () async {},
+    onGoToTimeline: () async {},
+    onGoToBilling: () {},
+    onGoToReferrals: () {},
+    restrictionRepository: _Restriction(),
+    reportsRepository: _Reports(),
+    profilesRepository: _Profiles(),
+    billingRepository: _Billing(),
+    accountRepository: _Account(photo: photo, displayName: accountName),
+    shouldOfferPushPermission: shouldOfferPushPermission,
+    shouldOpenPushPermissionSettings: shouldOpenPushPermissionSettings,
+    onEnablePushPermission: onEnablePushPermission,
+    onOpenPushSettings: onOpenPushSettings,
+    onPushPermissionPromptHandled: onPushPermissionPromptHandled,
+  ),
+);
 
 void main() {
   testWidgets('home header and upload card fit the Pen phone width', (
@@ -121,5 +133,89 @@ void main() {
       find.descendant(of: avatar, matching: find.byType(Image)),
     );
     expect((image.image as NetworkImage).url, 'https://example.com/photo');
+  });
+
+  testWidgets('dashboard asks before requesting notification permission', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    var permissionRequests = 0;
+    var promptHandled = false;
+    await tester.pumpWidget(
+      _home(
+        shouldOfferPushPermission: () async => true,
+        onEnablePushPermission: () async {
+          permissionRequests++;
+          return true;
+        },
+        onPushPermissionPromptHandled: () => promptHandled = true,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byKey(const Key('dashboard-push-permission')), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(permissionRequests, 0);
+    expect(
+      find.textContaining('Marketing stays off unless you choose it.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('dashboard-enable-push')));
+    await tester.pumpAndSettle();
+    expect(permissionRequests, 1);
+    expect(find.byKey(const Key('dashboard-push-permission')), findsNothing);
+    expect(promptHandled, true);
+  });
+
+  testWidgets('dashboard notification prompt can be dismissed', (tester) async {
+    var promptHandled = false;
+    await tester.pumpWidget(
+      _home(
+        shouldOfferPushPermission: () async => true,
+        onEnablePushPermission: () async => true,
+        onPushPermissionPromptHandled: () => promptHandled = true,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.byKey(const Key('dashboard-dismiss-push')));
+    await tester.pumpAndSettle();
+
+    expect(promptHandled, true);
+    expect(find.byKey(const Key('dashboard-push-permission')), findsNothing);
+  });
+
+  testWidgets('denied notification permission offers device settings', (
+    tester,
+  ) async {
+    var permissionRequests = 0;
+    var settingsOpens = 0;
+    await tester.pumpWidget(
+      _home(
+        shouldOfferPushPermission: () async => true,
+        shouldOpenPushPermissionSettings: () async => true,
+        onEnablePushPermission: () async {
+          permissionRequests++;
+          return false;
+        },
+        onOpenPushSettings: () async {
+          settingsOpens++;
+          return true;
+        },
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Open settings'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.byKey(const Key('dashboard-enable-push')));
+    await tester.pumpAndSettle();
+    expect(settingsOpens, 1);
+    expect(permissionRequests, 0);
   });
 }

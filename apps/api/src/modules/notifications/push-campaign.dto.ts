@@ -26,7 +26,6 @@ export class PushCampaignDto {
 }
 export class SchedulePushCampaignDto {
   @IsOptional() @IsISO8601({ strict: true }) scheduledAt?: string;
-  @IsOptional() @IsString() @MaxLength(128) approvalToken?: string;
 }
 export class PushRecipientEventDto {
   @IsUUID() recipientId!: string;

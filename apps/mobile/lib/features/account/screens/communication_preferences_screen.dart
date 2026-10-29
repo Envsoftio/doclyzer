@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../../core/device_notification_settings.dart';
 
@@ -6,6 +8,10 @@ import '../../support/support_models.dart';
 import '../../support/support_repository.dart';
 import '../../support/support_request_sheet.dart';
 
+enum DeviceNotificationActionResult { enabled, settingsOpened, denied }
+
+enum _PushFeedbackTone { success, warning, error }
+
 class CommunicationPreferencesScreen extends StatefulWidget {
   const CommunicationPreferencesScreen({
     super.key,
@@ -13,14 +19,18 @@ class CommunicationPreferencesScreen extends StatefulWidget {
     required this.onBack,
     required this.supportRepository,
     this.onEnablePush,
+    this.getPushEnabled,
     this.onMarketingChanged,
+    this.saveTimeout = const Duration(seconds: 15),
   });
 
   final CommunicationPreferencesRepository communicationPreferencesRepository;
   final VoidCallback onBack;
   final SupportRepository supportRepository;
-  final Future<void> Function()? onEnablePush;
+  final Future<DeviceNotificationActionResult> Function()? onEnablePush;
+  final Future<bool> Function()? getPushEnabled;
   final Future<void> Function(bool)? onMarketingChanged;
+  final Duration saveTimeout;
 
   @override
   State<CommunicationPreferencesScreen> createState() =>
@@ -28,9 +38,17 @@ class CommunicationPreferencesScreen extends StatefulWidget {
 }
 
 class _CommunicationPreferencesScreenState
-    extends State<CommunicationPreferencesScreen> {
+    extends State<CommunicationPreferencesScreen>
+    with WidgetsBindingObserver {
   bool _loading = true;
+  bool _saving = false;
+  bool _checkingPush = false;
+  bool _enablingPush = false;
+  bool _pushEnabled = false;
+  String? _pushFeedback;
+  _PushFeedbackTone? _pushFeedbackTone;
   String? _error;
+  String? _warning;
   SupportRequestContext? _supportContext;
   String? _supportErrorMessage;
   String? _successMessage;
@@ -40,7 +58,98 @@ class _CommunicationPreferencesScreenState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadPreferences();
+    unawaited(_refreshPushStatus());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_enablingPush) {
+      unawaited(_refreshPushStatus());
+    }
+  }
+
+  Future<void> _refreshPushStatus() async {
+    final getPushEnabled = widget.getPushEnabled;
+    if (getPushEnabled == null || _checkingPush) return;
+    setState(() => _checkingPush = true);
+    try {
+      final enabled = await getPushEnabled();
+      if (mounted) {
+        setState(() {
+          if (enabled && !_pushEnabled && _pushFeedback != null) {
+            _pushFeedback = 'Report notifications enabled on this device';
+            _pushFeedbackTone = _PushFeedbackTone.success;
+          }
+          _pushEnabled = enabled;
+        });
+      }
+    } catch (_) {
+      // Permission status is supplementary; the enable action can still retry.
+    } finally {
+      if (mounted) setState(() => _checkingPush = false);
+    }
+  }
+
+  Future<void> _enablePush() async {
+    final onEnablePush = widget.onEnablePush;
+    if (onEnablePush == null ||
+        _checkingPush ||
+        _enablingPush ||
+        _pushEnabled) {
+      return;
+    }
+    setState(() {
+      _enablingPush = true;
+      _error = null;
+      _warning = null;
+      _successMessage = null;
+      _pushFeedback = null;
+      _pushFeedbackTone = null;
+    });
+    try {
+      final result = await onEnablePush();
+      if (!mounted) return;
+      setState(() {
+        switch (result) {
+          case DeviceNotificationActionResult.enabled:
+            _pushEnabled = true;
+            _pushFeedback = 'Report notifications enabled on this device';
+            _pushFeedbackTone = _PushFeedbackTone.success;
+            break;
+          case DeviceNotificationActionResult.settingsOpened:
+            _pushFeedback =
+                'Device settings opened. Allow notifications for Doclyzer, then return here.';
+            _pushFeedbackTone = _PushFeedbackTone.warning;
+            break;
+          case DeviceNotificationActionResult.denied:
+            _pushFeedback =
+                'Notifications are still off. Allow them in device settings to receive report updates.';
+            _pushFeedbackTone = _PushFeedbackTone.warning;
+            break;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _pushFeedback =
+            'Could not enable notifications. Check your connection and try again.';
+        _pushFeedbackTone = _PushFeedbackTone.error;
+        _supportContext = buildSupportRequestContext(
+          actionType: SupportActionType.notificationPreferences,
+        );
+        _supportErrorMessage = e.toString();
+      });
+    } finally {
+      if (mounted) setState(() => _enablingPush = false);
+    }
   }
 
   Future<void> _loadPreferences() async {
@@ -76,34 +185,70 @@ class _CommunicationPreferencesScreenState
   }
 
   Future<void> _save() async {
+    if (_loading || _saving || _preferences.isEmpty) return;
+    final changes = Map<String, bool>.from(_pendingChanges);
+    // Save explicitly reapplies the displayed choice to this installation,
+    // including retries after account save succeeded but device sync failed.
+    for (final item in _preferences) {
+      if (item.category == 'marketingPush') {
+        changes['marketingPush'] = _effectiveEnabled(item);
+      }
+    }
+    if (changes.isEmpty) return;
     setState(() {
-      _loading = true;
+      _saving = true;
       _error = null;
+      _warning = null;
       _successMessage = null;
     });
     try {
       final result = await widget.communicationPreferencesRepository
-          .updatePreferences(_pendingChanges);
-      if (_pendingChanges.containsKey('marketingPush')) {
-        await widget.onMarketingChanged?.call(
-          _pendingChanges['marketingPush']!,
-        );
-      }
+          .updatePreferences(changes)
+          .timeout(widget.saveTimeout);
+      if (!mounted) return;
       setState(() {
         _preferences = result.preferences;
         _pendingChanges.clear();
-        _loading = false;
         _successMessage = 'Preferences saved';
       });
+
+      if (changes.containsKey('marketingPush') &&
+          widget.onMarketingChanged != null) {
+        try {
+          await widget.onMarketingChanged!
+              .call(changes['marketingPush']!)
+              .timeout(widget.saveTimeout);
+        } on TimeoutException {
+          if (mounted) {
+            setState(() {
+              _warning = changes['marketingPush']!
+                  ? 'Your account choice was saved, but this device did not finish registering for marketing push. Marketing remains blocked on this device; check notification permission and try saving again.'
+                  : 'Your account choice was saved. This device could not confirm its local preference yet, but marketing remains blocked at account level.';
+            });
+          }
+        } catch (_) {
+          if (mounted) {
+            setState(() {
+              _warning = changes['marketingPush']!
+                  ? 'Your account choice was saved, but this device could not enable marketing push. Check notification permission and try again.'
+                  : 'Your account choice was saved. This device could not confirm its local preference yet, but marketing remains blocked at account level.';
+            });
+          }
+        }
+      }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _error = e.toString();
-        _loading = false;
+        _error = e is TimeoutException
+            ? 'Saving took too long. Check your connection and try again.'
+            : e.toString();
         _supportContext = buildSupportRequestContext(
           actionType: SupportActionType.notificationPreferences,
         );
         _supportErrorMessage = e.toString();
       });
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -146,8 +291,15 @@ class _CommunicationPreferencesScreenState
           children: [
             FilledButton(
               key: const Key('pref-save'),
-              onPressed: _loading || _pendingChanges.isEmpty ? null : _save,
-              child: const Text('Save preferences'),
+              onPressed: _loading || _saving || _preferences.isEmpty
+                  ? null
+                  : _save,
+              child: _saving
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Save preferences'),
             ),
             TextButton(
               onPressed: _openDeviceSettings,
@@ -176,24 +328,55 @@ class _CommunicationPreferencesScreenState
                     ),
                   ),
                 ),
-                if (widget.onEnablePush != null)
+                if (widget.onEnablePush != null) ...[
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Get report updates on this device'),
                     subtitle: const Text(
                       'Allow notifications to know when a report is ready. Marketing is a separate choice below.',
                     ),
-                    trailing: TextButton(
-                      onPressed: () async {
-                        try {
-                          await widget.onEnablePush!();
-                        } catch (e) {
-                          if (mounted) setState(() => _error = e.toString());
-                        }
-                      },
-                      child: const Text('Enable'),
+                    trailing: TextButton.icon(
+                      key: const Key('enable-report-notifications'),
+                      onPressed: _checkingPush || _enablingPush || _pushEnabled
+                          ? null
+                          : _enablePush,
+                      icon: _checkingPush || _enablingPush
+                          ? const SizedBox.square(
+                              dimension: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Icon(
+                              _pushEnabled
+                                  ? Icons.check_circle_outline
+                                  : Icons.notifications_active_outlined,
+                              size: 18,
+                            ),
+                      label: Text(_pushEnabled ? 'Enabled' : 'Enable'),
                     ),
                   ),
+                  if (_pushFeedback != null)
+                    Semantics(
+                      liveRegion: true,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          _pushFeedback!,
+                          key: const Key('push-permission-feedback'),
+                          style: TextStyle(
+                            color: switch (_pushFeedbackTone) {
+                              _PushFeedbackTone.success =>
+                                theme.colorScheme.primary,
+                              _PushFeedbackTone.warning =>
+                                theme.colorScheme.tertiary,
+                              _PushFeedbackTone.error =>
+                                theme.colorScheme.error,
+                              null => null,
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
                 const SizedBox(height: 32),
                 Text(
                   'REPORT ACTIVITY',
@@ -210,7 +393,7 @@ class _CommunicationPreferencesScreenState
                   _PreferenceRow(
                     item: item,
                     effectiveEnabled: _effectiveEnabled(item),
-                    onChanged: item.mandatory || _loading
+                    onChanged: item.mandatory || _loading || _saving
                         ? null
                         : (value) => setState(
                             () => _pendingChanges[item.category] = value,
@@ -237,7 +420,7 @@ class _CommunicationPreferencesScreenState
                     _PreferenceRow(
                       item: item,
                       effectiveEnabled: _effectiveEnabled(item),
-                      onChanged: item.mandatory || _loading
+                      onChanged: item.mandatory || _loading || _saving
                           ? null
                           : (value) => setState(
                               () => _pendingChanges[item.category] = value,
@@ -251,6 +434,15 @@ class _CommunicationPreferencesScreenState
                       _successMessage!,
                       key: const Key('communication-preferences-success'),
                       style: TextStyle(color: theme.colorScheme.primary),
+                    ),
+                  ),
+                if (_warning != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      _warning!,
+                      key: const Key('communication-preferences-warning'),
+                      style: TextStyle(color: theme.colorScheme.tertiary),
                     ),
                   ),
                 if (_error != null) ...[

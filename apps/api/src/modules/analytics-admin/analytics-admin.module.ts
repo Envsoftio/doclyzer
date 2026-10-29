@@ -22,6 +22,8 @@ import { ConsentRecordEntity } from '../../database/entities/consent-record.enti
 import { UserSharePolicyEntity } from '../../database/entities/user-share-policy.entity';
 import { ReportResultInsightUsageEntity } from '../../database/entities/report-result-insight-usage.entity';
 import { SubscriptionEntity } from '../../database/entities/subscription.entity';
+import { UserDeviceTokenEntity } from '../../database/entities/user-device-token.entity';
+import { AccountPreferenceEntity } from '../../database/entities/account-preference.entity';
 import { AuditIncidentModule } from '../audit-incident/audit-incident.module';
 import { StorageModule } from '../../common/storage/storage.module';
 import { EntitlementsModule } from '../entitlements/entitlements.module';
@@ -48,6 +50,8 @@ import { EntitlementsModule } from '../entitlements/entitlements.module';
       ConsentRecordEntity,
       UserSharePolicyEntity,
       ReportResultInsightUsageEntity,
+      UserDeviceTokenEntity,
+      AccountPreferenceEntity,
     ]),
   ],
   controllers: [AnalyticsAdminController, AdminReportsController],

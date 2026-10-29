@@ -15,6 +15,13 @@ interface WorkbenchData {
   profiles: { id: string; name: string; createdAt: string; reportCount: number }[]
   reports: { id: string; profileId: string; originalFileName: string; sizeBytes: number; status: string; createdAt: string; updatedAt: string }[]
   sessions: { id: string; ipAddress: string | null; userAgent: string | null; createdAt: string; expiresAt: string }[]
+  deviceSummary: { registrations: number; activeTokens: number; recentActiveTokens: number; marketingEligible: number; accountMarketingEnabled: boolean }
+  devices: {
+    id: string; platform: string; provider: string; deviceLabel: string | null; deviceModel: string | null
+    appVersion: string | null; active: boolean; tokenPresent: boolean; notificationPermission: string
+    marketingEnabled: boolean; marketingEligible: boolean; eligibilityReason: string | null
+    createdAt: string; lastSeenAt: string; tokenUpdatedAt: string | null; disabledAt: string | null
+  }[]
   reportStatusSummary: Record<string, number>
 }
 
@@ -105,6 +112,34 @@ const STATUS_COLORS: Record<string, string> = {
         </div>
       </div>
 
+      <!-- Push device registrations -->
+      <section class="admin-ops__card section">
+        <h3 class="section-title">Devices and push tokens</h3>
+        <p class="device-note">A device is counted when its registration has an active provider token. Marketing eligibility also requires recent activity, notification permission, and both account and device opt-in. Provider acceptance does not confirm delivery.</p>
+        <div class="device-stats">
+          <div><strong>{{ data.deviceSummary.activeTokens }}</strong><span>Active tokens</span></div>
+          <div><strong>{{ data.deviceSummary.recentActiveTokens }}</strong><span>Seen in 90 days</span></div>
+          <div><strong>{{ data.deviceSummary.marketingEligible }}</strong><span>Marketing eligible</span></div>
+          <div><strong>{{ data.deviceSummary.registrations }}</strong><span>All registrations</span></div>
+        </div>
+        <p class="device-note">Account marketing push: <strong>{{ data.deviceSummary.accountMarketingEnabled ? 'On' : 'Off' }}</strong></p>
+        <div v-if="data.devices.length === 0" class="admin-ops__empty">No push device registrations for this account.</div>
+        <div v-else class="admin-ops__table-wrap"><table class="admin-ops__table">
+          <thead><tr><th>Device</th><th>Token</th><th>Permission</th><th>Device opt-in</th><th>Marketing send</th><th>Last seen</th><th>Token refreshed</th></tr></thead>
+          <tbody>
+            <tr v-for="device in data.devices" :key="device.id">
+              <td><strong>{{ device.deviceLabel || device.deviceModel || device.platform }}</strong><small class="device-subline">{{ device.platform }} · {{ device.provider }} · app {{ device.appVersion || 'unknown' }}</small><small class="device-subline">Registered {{ fmtDate(device.createdAt) }} · ID {{ device.id }}</small></td>
+              <td><span class="admin-ops__badge" :class="device.active && device.tokenPresent ? 'badge--green' : 'badge--grey'">{{ device.active && device.tokenPresent ? 'Active' : 'Inactive' }}</span><small v-if="device.disabledAt" class="device-subline">Disabled {{ fmtDate(device.disabledAt) }}</small></td>
+              <td>{{ device.notificationPermission.replaceAll('_', ' ') }}</td>
+              <td>{{ device.marketingEnabled ? 'On' : 'Off' }}</td>
+              <td><span class="admin-ops__badge" :class="device.marketingEligible ? 'badge--green' : 'badge--amber'">{{ device.marketingEligible ? 'Eligible' : 'Not eligible' }}</span><small v-if="device.eligibilityReason" class="device-subline">{{ device.eligibilityReason }}</small></td>
+              <td>{{ fmtDate(device.lastSeenAt) }}</td>
+              <td>{{ device.tokenUpdatedAt ? fmtDate(device.tokenUpdatedAt) : '—' }}</td>
+            </tr>
+          </tbody>
+        </table></div>
+      </section>
+
       <!-- Profiles -->
       <section class="admin-ops__card section">
         <h3 class="section-title">Profiles ({{ data.profiles.length }})</h3>
@@ -172,6 +207,13 @@ const STATUS_COLORS: Record<string, string> = {
 .dot { color: var(--brand-border); }
 .status-summary { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 20px; }
 .status-chip { padding: 6px 11px; border-radius: 999px; background: var(--brand-mint); color: var(--brand-ink); font-size: 13px; }
+.device-note { margin: 0 0 14px; color: var(--brand-muted); font-size: 13px; line-height: 1.5; }
+.device-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 15px; }
+.device-stats > div { padding: 12px; border: 1px solid var(--brand-border); border-radius: 10px; }
+.device-stats strong, .device-stats span { display: block; }
+.device-stats strong { font-size: 24px; color: var(--brand-ink); }
+.device-stats span { font-size: 12px; color: var(--brand-muted); }
+.device-subline { display: block; margin-top: 4px; color: var(--brand-muted); font-size: 12px; overflow-wrap: anywhere; }
 .section { margin-bottom: 0; }
 .section-title { margin: 0 0 14px; color: var(--brand-ink); font-size: 19px; font-weight: 700; }
 .report-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
@@ -188,5 +230,6 @@ const STATUS_COLORS: Record<string, string> = {
 .skeleton-block { height: 360px; border-radius: 16px; background: var(--brand-mint); animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .55; } }
 @media (max-width: 640px) { .user-header { align-items: flex-start; } .user-header > a { width: 100%; text-align: center; } }
+@media (max-width: 640px) { .device-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { .skeleton-block { animation: none; } }
 </style>

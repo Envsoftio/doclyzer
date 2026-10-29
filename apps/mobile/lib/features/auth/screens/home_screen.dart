@@ -40,6 +40,11 @@ class HomeScreen extends StatefulWidget {
     required this.accountRepository,
     this.incidentStatus,
     this.onShareReport,
+    this.shouldOfferPushPermission,
+    this.shouldOpenPushPermissionSettings,
+    this.onEnablePushPermission,
+    this.onOpenPushSettings,
+    this.onPushPermissionPromptHandled,
   });
 
   final Future<void> Function() onLogout;
@@ -61,6 +66,11 @@ class HomeScreen extends StatefulWidget {
   final AccountRepository accountRepository;
   final PublicIncidentStatus? incidentStatus;
   final ValueChanged<Report>? onShareReport;
+  final Future<bool> Function()? shouldOfferPushPermission;
+  final Future<bool> Function()? shouldOpenPushPermissionSettings;
+  final Future<bool> Function()? onEnablePushPermission;
+  final Future<bool> Function()? onOpenPushSettings;
+  final VoidCallback? onPushPermissionPromptHandled;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -79,6 +89,114 @@ class _HomeScreenState extends State<HomeScreen> {
   AccountProfile? _accountProfile;
   bool _loading = true;
   bool _loadFailed = false;
+  bool _showPushPermissionPrompt = false;
+  bool _pushPermissionRequiresSettings = false;
+  bool _requestingPushPermission = false;
+
+  Future<void> _checkPushPermission() async {
+    final check = widget.shouldOfferPushPermission;
+    if (check == null) return;
+    try {
+      final result = await Future.wait([
+        check(),
+        widget.shouldOpenPushPermissionSettings?.call() ?? Future.value(false),
+      ]).timeout(const Duration(seconds: 10));
+      debugPrint(
+        'Push permission prompt: offer=${result[0]}, settings=${result[1]}',
+      );
+      if (mounted && result[0]) {
+        setState(() {
+          _pushPermissionRequiresSettings = result[1];
+        });
+        final enable = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            key: const Key('dashboard-push-permission'),
+            title: const Text('Enable notifications?'),
+            content: Text(
+              result[1]
+                  ? 'Notifications are disabled for Doclyzer. Open device Settings to allow report-ready and account updates. Marketing stays off unless you choose it.'
+                  : 'Get report-ready and account updates on this device. Marketing stays off unless you choose it.',
+            ),
+            actions: [
+              TextButton(
+                key: const Key('dashboard-dismiss-push'),
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Not now'),
+              ),
+              FilledButton(
+                key: const Key('dashboard-enable-push'),
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(
+                  result[1] ? 'Open settings' : 'Enable notifications',
+                ),
+              ),
+            ],
+          ),
+        );
+        if (!mounted) return;
+        if (enable == true) {
+          await _enablePushPermission();
+        } else {
+          _dismissPushPermission();
+        }
+      }
+    } catch (error, stack) {
+      debugPrint('Push permission prompt failed: $error\n$stack');
+      // Push setup should never block the dashboard.
+    }
+  }
+
+  Future<void> _enablePushPermission() async {
+    if (_requestingPushPermission) return;
+    final action = _pushPermissionRequiresSettings
+        ? widget.onOpenPushSettings
+        : widget.onEnablePushPermission;
+    if (action == null) return;
+    setState(() => _requestingPushPermission = true);
+    try {
+      final completed = await action().timeout(const Duration(seconds: 15));
+      if (!mounted) return;
+      if (completed) {
+        widget.onPushPermissionPromptHandled?.call();
+        setState(() => _showPushPermissionPrompt = false);
+      }
+      if (_pushPermissionRequiresSettings) {
+        if (!completed) {
+          StatusMessenger.showWarning(
+            context,
+            'Open device Settings and allow notifications for Doclyzer.',
+          );
+        }
+      } else if (completed) {
+        StatusMessenger.showSuccess(context, 'Report notifications enabled');
+      } else {
+        setState(() {
+          _showPushPermissionPrompt = true;
+          _pushPermissionRequiresSettings = true;
+        });
+        StatusMessenger.showWarning(
+          context,
+          'Notifications remain off. You can enable them later in device settings.',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _showPushPermissionPrompt = true);
+        StatusMessenger.showError(
+          context,
+          'Could not enable notifications. Check your connection and try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _requestingPushPermission = false);
+    }
+  }
+
+  void _dismissPushPermission() {
+    widget.onPushPermissionPromptHandled?.call();
+    setState(() => _showPushPermissionPrompt = false);
+  }
 
   Future<void> _refresh() async {
     setState(() {
@@ -339,6 +457,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     ReportProcessingStore.instance.addListener(_processingChanged);
     _refresh();
+    _checkPushPermission();
   }
 
   Future<void> _loadRestrictionStatus() async {
@@ -571,6 +690,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                           ),
+                          if (_showPushPermissionPrompt) ...[
+                            const SizedBox(height: 16),
+                            _PushPermissionCard(
+                              requesting: _requestingPushPermission,
+                              requiresSettings: _pushPermissionRequiresSettings,
+                              onEnable: _enablePushPermission,
+                              onDismiss: _dismissPushPermission,
+                            ),
+                          ],
                           const SizedBox(height: 20),
                           DesignSectionHeading(
                             title: 'Recent report',
@@ -674,6 +802,89 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PushPermissionCard extends StatelessWidget {
+  const _PushPermissionCard({
+    required this.requesting,
+    required this.requiresSettings,
+    required this.onEnable,
+    required this.onDismiss,
+  });
+
+  final bool requesting;
+  final bool requiresSettings;
+  final VoidCallback onEnable;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      key: const Key('dashboard-push-permission'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.notifications_active_outlined,
+            color: theme.colorScheme.onSecondaryContainer,
+            size: 22,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Know when your report is ready',
+                  style: theme.textTheme.titleSmall,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  requiresSettings
+                      ? 'Notifications are off for this device. Open Settings to receive report-ready and account updates.'
+                      : 'Get report-ready and account updates on this device. Marketing stays off unless you choose it.',
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton(
+                      key: const Key('dashboard-enable-push'),
+                      onPressed: requesting ? null : onEnable,
+                      child: requesting
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(
+                              requiresSettings
+                                  ? 'Open settings'
+                                  : 'Enable notifications',
+                            ),
+                    ),
+                    TextButton(
+                      key: const Key('dashboard-dismiss-push'),
+                      onPressed: requesting ? null : onDismiss,
+                      child: const Text('Not now'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

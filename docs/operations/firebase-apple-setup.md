@@ -165,7 +165,6 @@ GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/firebase-service-account.json
 FCM_CLIENT_EMAIL=
 FCM_PRIVATE_KEY=
 REPORT_COMPLETION_PUSH_ENABLED=true
-PUSH_ADMIN_APPROVAL_SECRET=<a-new-random-secret>
 ```
 
 The file must actually exist at `GOOGLE_APPLICATION_CREDENTIALS` **inside each sending process/container**. A host path is not automatically accessible inside Docker. Mount the secret read-only into the API and report-dispatcher containers (and a standalone push worker, if used).
@@ -181,7 +180,6 @@ The current backend also supports this route:
 | `FCM_CLIENT_EMAIL` | JSON `client_email` |
 | `FCM_PRIVATE_KEY` | JSON `private_key`, including its PEM header/footer |
 | `REPORT_COMPLETION_PUSH_ENABLED` | Set to `true` for automatic report pushes |
-| `PUSH_ADMIN_APPROVAL_SECRET` | Generate your own random secret; Firebase does not provide it |
 
 Use a quoted single-line private-key value with escaped `\n` line breaks. The backend converts those escapes into real line breaks. Do not paste the Apple `.p8` key into this setting. Choose one credential route; the code selects explicit email/private-key credentials when both are present, otherwise application default credentials.
 

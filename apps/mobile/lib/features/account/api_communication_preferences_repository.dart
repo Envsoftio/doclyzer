@@ -50,10 +50,13 @@ class ApiCommunicationPreferencesRepository
   }
 
   CommunicationPreferenceItem _itemFromJson(Map<String, dynamic> json) {
+    final mandatory = json['mandatory'] as bool? ?? false;
     return CommunicationPreferenceItem(
       category: json['category'] as String,
-      enabled: json['enabled'] as bool? ?? true,
-      mandatory: json['mandatory'] as bool? ?? false,
+      // Optional preferences must fail closed. A malformed or older response
+      // must never manufacture marketing consent on the device.
+      enabled: json['enabled'] as bool? ?? mandatory,
+      mandatory: mandatory,
     );
   }
 }

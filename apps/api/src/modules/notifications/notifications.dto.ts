@@ -161,10 +161,6 @@ export class AdminPushBroadcastDto {
   @MaxLength(128)
   idempotencyKey?: string;
 
-  @IsOptional()
-  @IsString()
-  @MaxLength(128)
-  approvalToken?: string;
 }
 
 export class PushAuditQueryDto {

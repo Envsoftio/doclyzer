@@ -57,7 +57,7 @@ async function main() {
       [user, other],
     );
     const config = new ConfigService({
-      push: { provider: 'mock', adminApprovalSecret: 'test-approval' },
+      push: { provider: 'mock' },
     });
     let calls = 0,
       failure: string | null = null;
@@ -74,7 +74,7 @@ async function main() {
         };
       },
     } as unknown as PushProviderService;
-    const campaigns = new PushCampaignService(db, provider, config);
+    const campaigns = new PushCampaignService(db, provider);
     const registry = new NotificationsService(
       db.getRepository(UserDeviceTokenEntity),
       {} as never,
@@ -120,6 +120,48 @@ async function main() {
       true,
       'refresh preserves opt-in',
     );
+    await registry.registerDeviceToken(user, {
+      token: 'token-two'.padEnd(24, 'x'),
+      platform: 'android',
+    });
+    assert.equal(
+      (
+        await db
+          .getRepository(UserDeviceTokenEntity)
+          .findOneByOrFail({ id: first.id })
+      ).installationId,
+      'install-one',
+      'legacy refresh must preserve installation identity',
+    );
+    await assert.rejects(
+      () =>
+        registry.registerDeviceToken(user, {
+          token: ' '.repeat(20),
+          platform: 'android',
+        }),
+      /Invalid device token/,
+    );
+    await registry.deactivateDeviceToken(user, first.id);
+    const permissionDraft = await campaigns.create(user, {
+      name: 'Permission test',
+      title: 'Permission test',
+      body: 'Permission test',
+      audience: 'single',
+      userId: user,
+      idempotencyKey: randomUUID(),
+    });
+    assert.equal(
+      (await campaigns.preview(permissionDraft.id)).devices,
+      0,
+      'revoked permission excludes the device',
+    );
+    await register(user, 'install-one', 'token-two');
+    assert.equal(
+      (await campaigns.preview(permissionDraft.id)).devices,
+      1,
+      'permission restoration reuses the device and its consent',
+    );
+    await campaigns.remove(user, permissionDraft.id);
     const second = await register(user, 'install-two', 'token-three', {
       marketing: true,
     });
@@ -144,20 +186,42 @@ async function main() {
       2,
       'account consent required',
     );
-    await assert.rejects(() => campaigns.schedule(user, a.id, {}), /approval/);
     await campaigns.schedule(user, a.id, {
       scheduledAt: new Date(Date.now() + 3600000).toISOString(),
-      approvalToken: 'test-approval',
     });
     await campaigns.tick();
     assert.equal(calls, 0, 'future schedule does not send');
     await campaigns.cancel(user, a.id);
     await assert.rejects(
-      () => campaigns.schedule(user, a.id, { approvalToken: 'test-approval' }),
+      () => campaigns.schedule(user, a.id, {}),
       /draft/,
     );
+    await campaigns.remove(user, a.id);
+    assert.equal(
+      (
+        await db.query(
+          'SELECT count(*)::int n FROM push_campaigns WHERE id=$1',
+          [a.id],
+        )
+      )[0].n,
+      0,
+      'cancelled campaign is removed',
+    );
+    const [retainedAudit] = await db.query(
+      'SELECT metadata FROM push_send_audit WHERE id=$1',
+      [a.id],
+    );
+    assert.equal(
+      retainedAudit.metadata.campaignDeletedBy,
+      user,
+      'send audit records who deleted the campaign',
+    );
     const live = await campaigns.create(user, draft());
-    await campaigns.schedule(user, live.id, { approvalToken: 'test-approval' });
+    await campaigns.schedule(user, live.id, {});
+    await assert.rejects(
+      () => campaigns.remove(user, live.id),
+      /Cancel the campaign/,
+    );
     await Promise.all([campaigns.tick(), campaigns.tick()]);
     assert.equal(calls, 2, 'concurrent workers do not double claim');
     const [r] = await db.query(
@@ -211,9 +275,7 @@ async function main() {
     assert.equal((await campaigns.preview(live.id)).devices, 1);
     // Re-check consent after materialization, before delivery.
     const suppressed = await campaigns.create(user, draft());
-    await campaigns.schedule(user, suppressed.id, {
-      approvalToken: 'test-approval',
-    });
+    await campaigns.schedule(user, suppressed.id, {});
     await (campaigns as any).materialize();
     await registry.updateDeviceTokenPreferences(user, second.id, {
       preferences: { marketing: false },
@@ -227,9 +289,7 @@ async function main() {
     });
     failure = 'messaging/server-unavailable';
     const retry = await campaigns.create(user, draft());
-    await campaigns.schedule(user, retry.id, {
-      approvalToken: 'test-approval',
-    });
+    await campaigns.schedule(user, retry.id, {});
     await campaigns.tick();
     assert.equal(
       (
@@ -249,7 +309,7 @@ async function main() {
     assert.equal((await campaigns.analytics(retry.id)).accepted, 1);
     failure = 'messaging/registration-token-not-registered';
     const dead = await campaigns.create(user, draft());
-    await campaigns.schedule(user, dead.id, { approvalToken: 'test-approval' });
+    await campaigns.schedule(user, dead.id, {});
     await campaigns.tick();
     assert.equal(
       (
@@ -351,9 +411,7 @@ async function main() {
       ...draft(),
       name: 'Edited draft',
     });
-    await campaigns.schedule(user, large.id, {
-      approvalToken: 'test-approval',
-    });
+    await campaigns.schedule(user, large.id, {});
     await assert.rejects(
       () => campaigns.update(user, large.id, draft()),
       /draft/,

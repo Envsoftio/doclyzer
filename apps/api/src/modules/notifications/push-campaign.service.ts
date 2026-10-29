@@ -1,14 +1,12 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
   HttpException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { DataSource, EntityManager } from 'typeorm';
-import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import {
   PushProviderService,
   isInvalidPushToken,
@@ -27,7 +25,6 @@ export class PushCampaignService {
   constructor(
     private readonly db: DataSource,
     private readonly push: PushProviderService,
-    private readonly config: ConfigService,
   ) {}
 
   async create(actor: string, dto: PushCampaignDto) {
@@ -158,8 +155,6 @@ export class PushCampaignService {
       const c = await this.campaign(id, m, true);
       if (c.status !== 'draft')
         throw new BadRequestException('Only draft campaigns can be sent');
-      if (c.audience_filter.audience !== 'single')
-        this.approve(dto.approvalToken);
       await this.rateLimit(m, actor);
       await m.query('UPDATE push_campaigns SET scheduled_at=$2 WHERE id=$1', [
         id,
@@ -222,6 +217,28 @@ export class PushCampaignService {
       );
       await this.event(m, id, null, actor, 'campaign.cancelled');
       return { id, status: 'cancelled' };
+    });
+  }
+  async remove(actor: string, id: string) {
+    return this.db.transaction(async (m) => {
+      const c = await this.campaign(id, m, true);
+      if (['queued', 'sending'].includes(c.status))
+        throw new BadRequestException('Cancel the campaign before deleting it');
+      if (c.started_at && !c.completed_at)
+        throw new BadRequestException('An active campaign cannot be deleted');
+      const deletedAt = new Date().toISOString();
+      await m.query(
+        `UPDATE push_send_audit SET metadata=COALESCE(metadata,'{}'::jsonb)||$2::jsonb,updated_at=now() WHERE id=$1`,
+        [
+          id,
+          JSON.stringify({
+            campaignDeletedAt: deletedAt,
+            campaignDeletedBy: actor,
+          }),
+        ],
+      );
+      await m.query('DELETE FROM push_campaigns WHERE id=$1', [id]);
+      return { id, deleted: true, deletedAt };
     });
   }
   async recordEvent(user: string, dto: PushRecipientEventDto) {
@@ -484,16 +501,6 @@ export class PushCampaignService {
     await this.db.query(
       `DELETE FROM push_events WHERE recipient_id IS NOT NULL AND event_type IN ('send_attempted','provider_rejected') AND created_at<now()-interval '90 days'`,
     );
-  }
-  private approve(token?: string) {
-    const secret = this.config.get<string>('push.adminApprovalSecret') ?? '';
-    if (
-      !secret ||
-      !token ||
-      Buffer.byteLength(secret) !== Buffer.byteLength(token) ||
-      !timingSafeEqual(Buffer.from(secret), Buffer.from(token))
-    )
-      throw new ForbiddenException('Valid broadcast approval token required');
   }
   private async rateLimit(m: EntityManager, actor: string) {
     const [r] = await m.query(

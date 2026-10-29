@@ -14,6 +14,7 @@ interface UserItem {
   createdAt: string
   profileCount: number
   reportCount: number
+  activeDeviceCount: number
   lastLoginAt: string | null
 }
 
@@ -125,7 +126,7 @@ function formatDate(iso: string | null): string {
       <p v-else-if="users.length === 0" class="admin-ops__empty">No users match the current search.</p>
       <div v-else class="admin-ops__table-wrap">
         <table class="admin-ops__table">
-          <thead><tr><th scope="col">Account</th><th scope="col">Role</th><th scope="col">Signed up</th><th scope="col">Profiles</th><th scope="col">Reports</th><th scope="col">Last login</th><th scope="col">Actions</th></tr></thead>
+          <thead><tr><th scope="col">Account</th><th scope="col">Role</th><th scope="col">Signed up</th><th scope="col">Profiles</th><th scope="col">Reports</th><th scope="col">Active push devices</th><th scope="col">Last login</th><th scope="col">Actions</th></tr></thead>
           <tbody>
             <tr v-for="user in users" :key="user.id">
               <td class="account-cell"><strong>{{ user.email }}</strong><small>{{ user.displayName || 'No display name' }}</small></td>
@@ -133,6 +134,7 @@ function formatDate(iso: string | null): string {
               <td>{{ formatDate(user.createdAt) }}</td>
               <td>{{ user.profileCount }}</td>
               <td>{{ user.reportCount }}</td>
+              <td>{{ user.activeDeviceCount }}</td>
               <td>{{ formatDate(user.lastLoginAt) }}</td>
               <td class="actions-cell"><NuxtLink :to="`/admin/users/${user.id}`">Workbench</NuxtLink><NuxtLink :to="`/admin/reports?userId=${user.id}`">Reports</NuxtLink></td>
             </tr>

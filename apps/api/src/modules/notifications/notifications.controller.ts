@@ -215,6 +215,16 @@ export class NotificationsAdminController {
       getCorrelationId(req),
     );
   }
+  @Delete('campaigns/:id')
+  async campaignDelete(
+    @Req() req: Request,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return successResponse(
+      await this.campaigns.remove((req.user as RequestUser).id, id),
+      getCorrelationId(req),
+    );
+  }
   @Get('metrics')
   async getMetrics(@Req() req: Request): Promise<object> {
     const data = await this.notificationsService.getMetrics();

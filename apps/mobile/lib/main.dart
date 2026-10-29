@@ -306,6 +306,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   String? _timelineProfileName;
   bool _initialized = false;
   bool _isHandlingUnauthorized = false;
+  bool _pushPermissionPromptHandled = false;
   PublicIncidentStatus? _incidentStatus;
   DateTime? _incidentFetchedAt;
 
@@ -631,6 +632,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     if (closure?.status != 'pending') _startReportServices();
     if (mounted) {
       setState(() {
+        _pushPermissionPromptHandled = false;
         _authView = closure?.status == 'pending'
             ? _AuthView.dataRights
             : _AuthView.home;
@@ -648,6 +650,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     if (mounted) {
       setState(() {
         _authView = _AuthView.login;
+        _pushPermissionPromptHandled = false;
         _hasInterruptedUpload = false;
         _uploadInFlight = false;
       });
@@ -1309,6 +1312,25 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         ),
         _AuthView.home => HomeScreen(
           onShareReport: _shareReport,
+          shouldOfferPushPermission: () async {
+            if (_pushPermissionPromptHandled) return false;
+            return _pushNotificationService.shouldOfferPermissionPrompt();
+          },
+          shouldOpenPushPermissionSettings: () =>
+              _pushNotificationService.shouldOpenPermissionSettings(),
+          onEnablePushPermission: () async {
+            final granted = await _pushNotificationService.requestPermission();
+            _pushPermissionPromptHandled = true;
+            return granted;
+          },
+          onOpenPushSettings: () async {
+            final opened = await openDeviceNotificationSettings();
+            if (opened) _pushPermissionPromptHandled = true;
+            return opened;
+          },
+          onPushPermissionPromptHandled: () {
+            _pushPermissionPromptHandled = true;
+          },
           onGoToNotifications: () {
             _navigatorKey.currentState?.push<void>(
               MaterialPageRoute(
@@ -1492,7 +1514,19 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           },
         ),
         _AuthView.communicationPreferences => CommunicationPreferencesScreen(
-          onEnablePush: _pushNotificationService.requestPermission,
+          onEnablePush: () async {
+            if (await _pushNotificationService.shouldOpenPermissionSettings()) {
+              final opened = await openDeviceNotificationSettings();
+              return opened
+                  ? DeviceNotificationActionResult.settingsOpened
+                  : DeviceNotificationActionResult.denied;
+            }
+            final granted = await _pushNotificationService.requestPermission();
+            return granted
+                ? DeviceNotificationActionResult.enabled
+                : DeviceNotificationActionResult.denied;
+          },
+          getPushEnabled: _pushNotificationService.isPermissionGranted,
           onMarketingChanged: _pushNotificationService.setMarketingConsent,
           communicationPreferencesRepository:
               _communicationPreferencesRepository,

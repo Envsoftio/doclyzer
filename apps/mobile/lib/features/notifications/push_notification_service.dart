@@ -49,6 +49,31 @@ class PushNotificationService {
   final Set<String> _opened = {};
   bool _navigating = false;
   bool _discardRegistration = false;
+  Timer? _registrationRetry;
+  int _registrationRetryAttempt = 0;
+
+  void _retryRegistration(int generation) {
+    if (!_started ||
+        generation != _generation ||
+        _registrationRetry != null ||
+        _registrationRetryAttempt >= 3) {
+      return;
+    }
+    const delays = [2, 5, 15];
+    _registrationRetry = Timer(
+      Duration(seconds: delays[_registrationRetryAttempt++]),
+      () {
+        _registrationRetry = null;
+        if (_started && generation == _generation) unawaited(synchronize());
+      },
+    );
+  }
+
+  static void _logFailure(String stage, Object error) {
+    // Do not log exception messages: network errors may contain private data.
+    final code = error is FirebaseException ? error.code : error.runtimeType;
+    debugPrint('Push $stage failed ($code)');
+  }
 
   static Future<void> initializeBackgroundHandling() async {
     if (kIsWeb ||
@@ -61,8 +86,8 @@ class PushNotificationService {
     try {
       await Firebase.initializeApp();
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    } catch (_) {
-      debugPrint('Push configuration unavailable');
+    } catch (error) {
+      _logFailure('Firebase configuration', error);
     }
   }
 
@@ -102,7 +127,11 @@ class PushNotificationService {
         (message) => _queueOpen(message.data),
       );
       _foregroundSubscription = FirebaseMessaging.onMessage.listen(
-        (message) => unawaited(_foreground(message)),
+        (message) => unawaited(
+          _foreground(message).catchError((Object error) {
+            _logFailure('foreground display', error);
+          }),
+        ),
       );
       final initial = await _messaging!.getInitialMessage();
       if (generation != _generation) return;
@@ -114,7 +143,8 @@ class PushNotificationService {
       }
       await synchronize();
       await flushPendingNavigation();
-    } catch (_) {
+    } catch (error) {
+      _logFailure('initialization', error);
       _started = false;
       await _tokenRefreshSubscription?.cancel();
       await _openSubscription?.cancel();
@@ -166,26 +196,100 @@ class PushNotificationService {
     _localReady = true;
   }
 
-  Future<void> requestPermission() async {
-    await start();
-    if (_messaging == null) {
+  Future<bool> shouldOfferPermissionPrompt() async {
+    final messaging = await _permissionMessaging();
+    if (messaging == null) return false;
+    final settings = await messaging.getNotificationSettings();
+    debugPrint('Push permission status: ${settings.authorizationStatus.name}');
+    return shouldOfferForStatus(settings.authorizationStatus);
+  }
+
+  Future<bool> shouldOpenPermissionSettings() async {
+    final messaging = await _permissionMessaging();
+    if (messaging == null) return false;
+    final settings = await messaging.getNotificationSettings();
+    return shouldOpenSettingsForStatus(
+      settings.authorizationStatus,
+      platform: defaultTargetPlatform,
+    );
+  }
+
+  Future<bool> isPermissionGranted() async {
+    final messaging = await _permissionMessaging();
+    if (messaging == null) return false;
+    final settings = await messaging.getNotificationSettings();
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+  }
+
+  static bool canReceiveForStatus(AuthorizationStatus status) =>
+      status == AuthorizationStatus.authorized ||
+      status == AuthorizationStatus.provisional;
+
+  static bool shouldOfferForStatus(AuthorizationStatus status) =>
+      switch (status) {
+        AuthorizationStatus.notDetermined ||
+        AuthorizationStatus.denied ||
+        AuthorizationStatus.deniedPermanently => true,
+        AuthorizationStatus.authorized ||
+        AuthorizationStatus.provisional => false,
+      };
+
+  static bool shouldOpenSettingsForStatus(
+    AuthorizationStatus status, {
+    required TargetPlatform platform,
+  }) =>
+      status == AuthorizationStatus.deniedPermanently ||
+      (status == AuthorizationStatus.denied && platform == TargetPlatform.iOS);
+
+  Future<bool> requestPermission() async {
+    final messaging = await _permissionMessaging();
+    if (messaging == null) {
       throw StateError('Push notifications are not configured for this build.');
     }
-    final settings = await _messaging!.requestPermission(
+    final settings = await messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
-    await _analytics('notification_permission_result', {
-      'status': settings.authorizationStatus.name,
-    });
-    await synchronize();
+    unawaited(
+      _analytics('notification_permission_result', {
+        'status': settings.authorizationStatus.name,
+      }),
+    );
+    unawaited(start());
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
+  }
+
+  // Permission UI must not wait for network-dependent token registration.
+  Future<FirebaseMessaging?> _permissionMessaging() async {
+    if (kIsWeb ||
+        ![
+          TargetPlatform.android,
+          TargetPlatform.iOS,
+        ].contains(defaultTargetPlatform)) {
+      return null;
+    }
+    if (Firebase.apps.isEmpty) await Firebase.initializeApp();
+    return _messaging ??= FirebaseMessaging.instance;
   }
 
   Future<void> setMarketingConsent(bool enabled) async {
-    if (enabled) await requestPermission();
-    await synchronize();
-    final id = await _tokenStorage.getPushDeviceTokenId();
+    var id = await _tokenStorage.getPushDeviceTokenId();
+    if (enabled) {
+      if (!await requestPermission()) {
+        throw StateError(
+          'Allow notifications in device settings, then save again.',
+        );
+      }
+      // An existing registration can save consent immediately. Token refresh
+      // must not block this PATCH behind Firebase/network registration work.
+      if (id == null) {
+        await start().timeout(const Duration(seconds: 10));
+        id = await _tokenStorage.getPushDeviceTokenId();
+      }
+    }
     if (id == null && enabled) {
       throw StateError(
         'Device registration is not ready. Enable notifications and try again.',
@@ -204,12 +308,31 @@ class PushNotificationService {
       if (!_started || generation != _generation || _messaging == null) return;
       try {
         final settings = await _messaging!.getNotificationSettings();
+        debugPrint(
+          'Push registration permission: ${settings.authorizationStatus.name}',
+        );
+        // Revoke server eligibility before touching APNs/FCM: token retrieval
+        // may fail after the user disables notifications in system settings.
+        if (!canReceiveForStatus(settings.authorizationStatus)) {
+          final id = await _tokenStorage.getPushDeviceTokenId();
+          if (!_started || generation != _generation) return;
+          if (id != null) {
+            await _notificationsRepository.deactivateDeviceToken(id);
+          }
+          return;
+        }
         if (defaultTargetPlatform == TargetPlatform.iOS &&
             await _messaging!.getAPNSToken() == null) {
+          debugPrint('Push registration waiting for APNs token');
+          _retryRegistration(generation);
           return;
         }
         final providerToken = token ?? await _messaging!.getToken();
-        if (providerToken == null || providerToken.isEmpty) return;
+        if (providerToken == null || providerToken.isEmpty) {
+          debugPrint('Push registration waiting for FCM token');
+          _retryRegistration(generation);
+          return;
+        }
         final installation = await _tokenStorage.getOrCreateInstallationId();
         final package = await PackageInfo.fromPlatform();
         final device = await DeviceInfoPlugin().deviceInfo;
@@ -252,9 +375,14 @@ class PushNotificationService {
         // dispose waits for registration before logout revokes this exact installation.
         if (!_discardRegistration) {
           await _tokenStorage.savePushDeviceTokenId(registered.id);
+          _registrationRetry?.cancel();
+          _registrationRetry = null;
+          _registrationRetryAttempt = 0;
+          debugPrint('Push device registered with server');
         }
-      } catch (_) {
-        debugPrint('Push registration deferred until next resume');
+      } catch (error) {
+        _logFailure('registration', error);
+        _retryRegistration(generation);
       }
     });
     return _registration;
@@ -264,15 +392,24 @@ class PushNotificationService {
     final generation = _generation;
     if (!_started) return;
     final payload = PushPayload.parse(message.data);
-    if (payload == null) return;
+    if (payload == null) {
+      debugPrint('Push foreground message ignored: unsupported payload');
+      return;
+    }
+    debugPrint('Push foreground message received');
     if (message.data['notificationType'] == 'report.completed') {
       onForegroundReport?.call();
     }
-    await _event(payload, 'received');
-    await _analytics('push_received', {
-      'notification_type': '${message.data['notificationType'] ?? ''}',
-    });
-    if (!_started || generation != _generation || message.notification == null) {
+    // Receipt/analytics requests must never delay the local notification.
+    unawaited(_event(payload, 'received'));
+    unawaited(
+      _analytics('push_received', {
+        'notification_type': '${message.data['notificationType'] ?? ''}',
+      }),
+    );
+    if (!_started ||
+        generation != _generation ||
+        message.notification == null) {
       return;
     }
     final marketing = payload.data['category'] == 'marketing';
@@ -388,6 +525,9 @@ class PushNotificationService {
     // that same registration/start future here: it would deadlock on a 401.
     _started = false;
     _generation++;
+    _registrationRetry?.cancel();
+    _registrationRetry = null;
+    _registrationRetryAttempt = 0;
     _discardRegistration = true;
     await _tokenRefreshSubscription?.cancel();
     await _openSubscription?.cancel();
@@ -434,6 +574,9 @@ class PushNotificationService {
   Future<void> dispose() async {
     _started = false;
     _generation++;
+    _registrationRetry?.cancel();
+    _registrationRetry = null;
+    _registrationRetryAttempt = 0;
     await _starting;
     await _tokenRefreshSubscription?.cancel();
     await _openSubscription?.cancel();

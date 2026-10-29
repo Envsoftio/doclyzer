@@ -239,6 +239,8 @@ export class NotificationsService {
     dto: RegisterDeviceTokenDto,
   ): Promise<object> {
     const providerToken = dto.token.trim();
+    if (providerToken.length < 16 || /\s/.test(providerToken))
+      throw new BadRequestException('Invalid device token');
     const tokenHash = this.hashProviderToken(providerToken);
     const installationId = dto.installationId?.trim() || null;
     // Serialize both token and installation identities, including concurrent account switches.
@@ -283,7 +285,8 @@ export class NotificationsService {
       entity.providerToken = providerToken;
       entity.platform = dto.platform;
       entity.provider = dto.provider ?? 'fcm';
-      entity.installationId = installationId;
+      entity.installationId =
+        installationId ?? (sameAccount ? entity.installationId : null);
       entity.appVersion = dto.appVersion?.trim() || null;
       entity.deviceLabel = dto.deviceLabel?.trim() || null;
       entity.preferences = this.normalizePreferences({
@@ -533,9 +536,7 @@ export class NotificationsService {
         : 'all',
       idempotencyKey: dto.idempotencyKey ?? randomUUID(),
     });
-    return this.campaigns.schedule(input.actorUserId, campaign.id, {
-      approvalToken: dto.approvalToken,
-    });
+    return this.campaigns.schedule(input.actorUserId, campaign.id, {});
   }
 
   hashProviderToken(token: string): string {
