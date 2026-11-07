@@ -1,10 +1,8 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 class VerificationScreen extends StatelessWidget {
-  const VerificationScreen({
-    super.key,
-    required this.onContinueToLogin,
-  });
+  const VerificationScreen({super.key, required this.onContinueToLogin});
 
   final VoidCallback onContinueToLogin;
 
@@ -13,26 +11,24 @@ class VerificationScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(onPressed: onContinueToLogin),
-        title: const Text('Verification Required'),
+        title: Text(context.l10n.verificationRequired),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Verification Required',
+            Text(
+              context.l10n.verificationRequired,
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Your account was created successfully. Continue to login.',
-            ),
+            Text(context.l10n.accountCreatedLogin),
             const SizedBox(height: 16),
             FilledButton(
               key: const Key('verification-continue-login'),
               onPressed: onContinueToLogin,
-              child: const Text('Continue to login'),
+              child: Text(context.l10n.continueLogin),
             ),
           ],
         ),

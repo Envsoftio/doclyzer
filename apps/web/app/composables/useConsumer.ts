@@ -1,3 +1,4 @@
+import { supportedLanguage } from '~~/shared/languages'
 export interface ConsumerProfile { id: string; name: string; isActive: boolean; relation?: string | null; dateOfBirth?: string | null }
 export interface LabResult { id: string; parameterName: string; value: string; unit?: string | null; sampleDate?: string | null; referenceRange?: string | null; isAbnormal?: boolean; reviewState?: string; reviewVersion: number; canonicalTestId?: string | null }
 export interface ConsumerReport { id: string; profileId: string; originalFileName: string; contentType: string; status: string; processingState?: string; createdAt: string; collectionDate?: string; collectionDateStatus?: string; summary?: string; extractedLabValues: LabResult[]; deletedAt?: string; purgeAfterAt?: string }
@@ -9,6 +10,8 @@ export function useConsumer() {
   const profiles = useState<ConsumerProfile[]>('consumer-profiles', () => [])
   const profileId = useState<string>('consumer-profile-id', () => '')
   const router = useRouter()
+  const { setLocale } = useI18n()
+  const languageLoaded = useState<boolean>('consumer-language-loaded', () => false)
 
   function restore() {
     if (import.meta.client && !token.value) token.value = sessionStorage.getItem('doclyzerConsumerAccessToken') ?? ''
@@ -18,6 +21,7 @@ export function useConsumer() {
     token.value = ''
     profiles.value = []
     profileId.value = ''
+    languageLoaded.value = false
     if (import.meta.client) {
       sessionStorage.removeItem('doclyzerConsumerAccessToken')
       sessionStorage.removeItem('doclyzerConsumerRefreshToken')
@@ -60,6 +64,11 @@ export function useConsumer() {
   }
   async function requireSession() {
     if (!restore()) { await router.replace('/login'); return false }
+    if (!languageLoaded.value) {
+      const account = await request<{ preferredLanguage?: string }>('/account/profile')
+      await setLocale(supportedLanguage(account.preferredLanguage))
+      languageLoaded.value = true
+    }
     if (!profiles.value.length) await loadProfiles()
     return true
   }

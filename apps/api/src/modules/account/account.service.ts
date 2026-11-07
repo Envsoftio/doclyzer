@@ -1,3 +1,4 @@
+import { requireLanguage } from '../../common/language';
 import {
   BadRequestException,
   ConflictException,
@@ -175,6 +176,7 @@ export class AccountService {
       id: user.id,
       email: user.email,
       displayName: user.displayName,
+      preferredLanguage: user.preferredLanguage ?? 'en',
       avatarUrl,
       createdAt: user.createdAt,
     };
@@ -260,6 +262,7 @@ export class AccountService {
           message: 'Account not found',
         });
       if (dto.displayName !== undefined) user.displayName = dto.displayName;
+      if (dto.preferredLanguage !== undefined) user.preferredLanguage = requireLanguage(dto.preferredLanguage);
       if (dto.avatarUrl !== undefined) {
         if (user.avatarUrl)
           await this.fileStorage.delete(user.avatarUrl, { allVersions: true });

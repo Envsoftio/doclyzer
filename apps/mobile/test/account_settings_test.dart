@@ -9,7 +9,10 @@ import 'package:mobile/features/billing/billing_repository.dart';
 class _Account extends Fake implements AccountRepository {
   String name = 'Test';
   @override
-  Future<AccountProfile> updateProfile({String? displayName}) async {
+  Future<AccountProfile> updateProfile({
+    String? displayName,
+    String? preferredLanguage,
+  }) async {
     name = displayName ?? name;
     return getProfile();
   }

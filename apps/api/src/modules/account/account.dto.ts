@@ -1,6 +1,8 @@
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '../../common/language';
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
+  IsIn,
   IsDateString,
   IsOptional,
   IsString,
@@ -46,6 +48,10 @@ function avatarUrlMustBeNull(value: unknown): boolean {
 }
 
 export class UpdateAccountProfileDto {
+  @ValidateIf((o: UpdateAccountProfileDto) => o.preferredLanguage !== undefined)
+  @IsIn(SUPPORTED_LANGUAGES)
+  preferredLanguage?: SupportedLanguage;
+
   @IsOptional()
   @Transform(({ value }: { value: unknown }) => {
     if (typeof value === 'string') {

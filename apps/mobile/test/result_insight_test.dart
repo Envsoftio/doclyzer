@@ -355,6 +355,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Explanation unavailable'), 200);
     expect(find.text('Explanation unavailable'), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('result-insight-retry')));
     await tester.pumpAndSettle();
@@ -410,6 +411,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.textContaining('could not be matched to a saved result'),
+      200,
+    );
     expect(
       find.textContaining('could not be matched to a saved result'),
       findsOneWidget,
@@ -436,6 +441,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.textContaining('has not been reviewed'),
+      200,
+    );
     expect(find.textContaining('has not been reviewed'), findsOneWidget);
     expect(find.byKey(const Key('result-insight-retry')), findsNothing);
     await tester.ensureVisible(find.text('Check original report').first);

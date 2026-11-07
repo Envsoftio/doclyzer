@@ -1,7 +1,9 @@
+import type { SupportedLanguage } from '../../common/language';
 export interface RegisterRequest {
   email: string;
   password: string;
   referralCode?: string;
+  preferredLanguage?: SupportedLanguage;
 }
 
 export interface RegisterResponse {

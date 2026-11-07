@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/api_client.dart';
 import '../../../shared/ai_disclaimer_note.dart';
+import '../../../shared/language_selector.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/app_date_format.dart';
 import '../reports_repository.dart';
 import '../result_palette.dart';
@@ -12,6 +14,7 @@ class ResultInsightScreen extends StatefulWidget {
     super.key,
     required this.result,
     required this.loadInsight,
+    this.loadLocalizedInsight,
     required this.onViewTrend,
     this.onViewOriginal,
     this.onReviewResult,
@@ -19,6 +22,7 @@ class ResultInsightScreen extends StatefulWidget {
 
   final ExtractedLabValue result;
   final Future<ResultInsight> Function() loadInsight;
+  final Future<ResultInsight> Function(String locale)? loadLocalizedInsight;
   final VoidCallback onViewTrend;
   final VoidCallback? onViewOriginal;
   final VoidCallback? onReviewResult;
@@ -29,16 +33,28 @@ class ResultInsightScreen extends StatefulWidget {
 
 class _ResultInsightScreenState extends State<ResultInsightScreen> {
   late Future<ResultInsight> _insight;
+  String _language = 'en';
+  String? _preferred;
 
   @override
-  void initState() {
-    super.initState();
-    _insight = widget.loadInsight();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final preferred = supportedLanguage(
+      Localizations.localeOf(context).languageCode,
+    );
+    if (_preferred != preferred) {
+      _preferred = preferred;
+      _language = widget.loadLocalizedInsight == null ? 'en' : preferred;
+      _insight = _load();
+    }
   }
+
+  Future<ResultInsight> _load() =>
+      widget.loadLocalizedInsight?.call(_language) ?? widget.loadInsight();
 
   void _retry() {
     setState(() {
-      _insight = widget.loadInsight();
+      _insight = _load();
     });
   }
 
@@ -50,14 +66,14 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
     final position = compareWithPrintedRange(result);
     final palette = ResultPalette.forPosition(context, position);
     final status = switch (position) {
-      RangePosition.below => "Below this lab's reference range",
-      RangePosition.within => "Within this lab's reference range",
-      RangePosition.above => "Above this lab's reference range",
-      RangePosition.unknown => 'Cannot compare with the lab range',
+      RangePosition.below => context.l10n.belowLabRange,
+      RangePosition.within => context.l10n.withinLabRange,
+      RangePosition.above => context.l10n.aboveLabRange,
+      RangePosition.unknown => context.l10n.cannotCompare,
     };
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Understand this result')),
+      appBar: AppBar(title: Text(context.l10n.understandResult)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
@@ -82,7 +98,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                       ),
                       const SizedBox(width: 7),
                       Text(
-                        'YOUR RESULT',
+                        context.l10n.yourResult,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: colors.primary,
                           fontWeight: FontWeight.w800,
@@ -167,7 +183,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                       preferredPrintedRange(result.referenceRange ?? '') !=
                           null) ...[
                     Text(
-                      'This comparison uses the preferred category printed by the lab. Check that the category applies to you.',
+                      context.l10n.categoryComparisonHelp,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colors.onSurfaceVariant,
                       ),
@@ -188,15 +204,15 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                   Divider(color: colors.outlineVariant),
                   const SizedBox(height: 4),
                   _ResultFact(
-                    label: 'Lab reference range',
+                    label: context.l10n.labReferenceRange,
                     value: result.referenceRange?.trim().isNotEmpty == true
                         ? '${result.referenceRange} ${result.unit ?? ''}'.trim()
-                        : 'Not available in this result',
+                        : context.l10n.resultUnavailable,
                   ),
                   if (result.sampleDate?.trim().isNotEmpty == true) ...[
                     const SizedBox(height: 8),
                     _ResultFact(
-                      label: 'Sample date',
+                      label: context.l10n.sampleDate,
                       value: AppDateFormat.fromRawWithRelative(
                         result.sampleDate!,
                       ),
@@ -215,37 +231,62 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                   key: const Key('result-insight-trend'),
                   onPressed: widget.onViewTrend,
                   icon: const Icon(Icons.show_chart_outlined),
-                  label: const Text('Result history'),
+                  label: Text(context.l10n.resultHistory),
                 ),
                 if (widget.onViewOriginal != null)
                   OutlinedButton.icon(
                     key: const Key('result-insight-original'),
                     onPressed: widget.onViewOriginal,
                     icon: const Icon(Icons.description_outlined),
-                    label: const Text('Original report'),
+                    label: Text(context.l10n.originalReport),
                   ),
                 if (widget.onReviewResult != null)
                   TextButton.icon(
                     key: const Key('result-insight-review'),
                     onPressed: widget.onReviewResult,
                     icon: const Icon(Icons.edit_outlined),
-                    label: const Text('Review value'),
+                    label: Text(context.l10n.reviewValue),
                   ),
               ],
             ),
             const SizedBox(height: 22),
-            Text('Understand your result', style: theme.textTheme.titleLarge),
+            Text(
+              context.l10n.understandYourResult,
+              style: theme.textTheme.titleLarge,
+            ),
             const SizedBox(height: 5),
             Text(
-              'Educational context to help you discuss this result.',
+              context.l10n.educationalContext,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colors.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 14),
             const AiDisclaimerNote(key: Key('result-insight-disclaimer')),
+            if (widget.loadLocalizedInsight != null) ...[
+              const SizedBox(height: 12),
+              LanguageSelector(
+                value: _language,
+                description: true,
+                onChanged: (value) {
+                  setState(() {
+                    _language = value;
+                    _insight = _load();
+                  });
+                },
+              ),
+              if (_language != 'en')
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    context.l10n.translationNote,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+            ],
             const SizedBox(height: 14),
             FutureBuilder<ResultInsight>(
+              key: ValueKey(_language),
               future: _insight,
               builder: (context, snapshot) {
                 if (snapshot.connectionState != ConnectionState.done) {
@@ -273,18 +314,20 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                           'RESULT_INSIGHT_UNSAFE_INPUT';
                   return _InsightSection(
                     icon: Icons.info_outline,
-                    title: 'Explanation unavailable',
+                    title: context.l10n.explanationUnavailable,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           notSaved
-                              ? 'This value could not be matched to a saved result. Check the original report or refresh this report.'
+                              ? context.l10n.missingSavedResult
                               : unreviewed
-                              ? 'This test has not been reviewed for AI explanations yet. Check the original report and discuss the result with your clinician.'
+                              ? context.l10n.unreviewedTest
                               : unsafeInput
-                              ? 'The extracted result is unclear, so it cannot be safely explained. Check the original report.'
-                              : 'We could not load an explanation right now.',
+                              ? context.l10n.unsafeResult
+                              : _language != 'en'
+                              ? context.l10n.translationFailed
+                              : context.l10n.explanationFailed,
                         ),
                         const SizedBox(height: 10),
                         if ((notSaved || unreviewed || unsafeInput) &&
@@ -292,13 +335,13 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                           OutlinedButton.icon(
                             onPressed: widget.onViewOriginal,
                             icon: const Icon(Icons.description_outlined),
-                            label: const Text('Check original report'),
+                            label: Text(context.l10n.checkOriginal),
                           )
                         else if (!notSaved && !unreviewed && !unsafeInput)
                           OutlinedButton(
                             key: const Key('result-insight-retry'),
                             onPressed: _retry,
-                            child: const Text('Try again'),
+                            child: Text(context.l10n.tryAgain),
                           ),
                       ],
                     ),
@@ -311,7 +354,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: Text(
-                        'AI-GENERATED GUIDANCE',
+                        context.l10n.aiGuidance,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: colors.onSurfaceVariant,
                           fontWeight: FontWeight.w700,
@@ -321,7 +364,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                     ),
                     _InsightSection(
                       icon: Icons.manage_search_outlined,
-                      title: 'Understanding this result',
+                      title: context.l10n.understandingResult,
                       highlighted: true,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,7 +372,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                           Text(insight.resultExplanation),
                           const SizedBox(height: 16),
                           Text(
-                            'What it could mean',
+                            context.l10n.possibleMeaning,
                             style: theme.textTheme.titleSmall,
                           ),
                           const SizedBox(height: 7),
@@ -342,28 +385,25 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                     ),
                     _InsightSection(
                       icon: Icons.biotech_outlined,
-                      title: 'What this test measures',
+                      title: context.l10n.whatTestMeasures,
                       child: Text(insight.testExplanation),
                     ),
                     _InsightSection(
                       icon: Icons.forum_outlined,
-                      title: 'Suggested next step',
+                      title: context.l10n.suggestedNextStep,
                       child: Text(insight.suggestedFollowup),
                     ),
                     _InsightSection(
                       icon: Icons.rule_outlined,
-                      title: 'What this result cannot tell you',
+                      title: context.l10n.resultLimitations,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'One result alone cannot diagnose a condition '
-                            'or explain symptoms.',
-                          ),
+                          Text(context.l10n.oneResultLimit),
                           if (insight.dataUncertainties.isNotEmpty) ...[
                             const SizedBox(height: 14),
                             Text(
-                              'Details to check',
+                              context.l10n.detailsToCheck,
                               style: theme.textTheme.titleSmall,
                             ),
                             const SizedBox(height: 7),
@@ -375,7 +415,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                     if (insight.lifestyleConsiderations.isNotEmpty)
                       _InsightSection(
                         icon: Icons.restaurant_outlined,
-                        title: 'Lifestyle factors to discuss',
+                        title: context.l10n.lifestyleFactors,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: insight.lifestyleConsiderations
@@ -390,11 +430,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
             ),
             _ContextNote(
               icon: Icons.verified_user_outlined,
-              text:
-                  'This value was extracted from your report. Check the '
-                  'original if the name, value, unit or range looks wrong. '
-                  'AI explanations are educational and cannot tell you '
-                  'which treatment you need.',
+              text: context.l10n.insightContext,
             ),
           ],
         ),

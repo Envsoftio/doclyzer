@@ -10,6 +10,20 @@
 	<string>Choose a photo of a lab report or a profile picture.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>hi</string>
+		<string>kn</string>
+		<string>te</string>
+		<string>ml</string>
+		<string>ta</string>
+		<string>bn</string>
+		<string>or</string>
+		<string>gu</string>
+		<string>mr</string>
+		<string>pa</string>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>NSFaceIDUsageDescription</key>

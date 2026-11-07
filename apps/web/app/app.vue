@@ -4,6 +4,8 @@ const readyCount = computed(() => Object.values(processing.value).filter(r => r.
 const dismissing = ref(false)
 const dismissError = ref('')
 const config = useRuntimeConfig()
+const { locale } = useI18n()
+useHead({ htmlAttrs: { lang: () => locale.value } })
 async function dismissReady() {
   dismissing.value = true
   dismissError.value = ''

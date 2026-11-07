@@ -346,6 +346,9 @@ abstract class ReportsRepository {
   /// Generate a summary, or explicitly replace a saved one; the server saves it.
   Future<void> requestSummary(String reportId, {bool refresh = false});
 
+  /// Returns a persisted translation of the current saved summary.
+  Future<String> getLocalizedSummary(String reportId, String locale);
+
   /// Save a reviewed result. The server rejects stale review versions.
   Future<Report> correctResult(
     String reportId,
@@ -360,8 +363,9 @@ abstract class ReportsRepository {
   /// Generate an explanation for a saved result. The API selects the value.
   Future<ResultInsight> getResultInsight(
     String reportId,
-    ExtractedLabValue result,
-  );
+    ExtractedLabValue result, {
+    String locale = 'en',
+  });
 
   /// Retry parsing for a report that failed. Returns updated report.
   Future<Report> retryParse(String reportId, {bool force = false});

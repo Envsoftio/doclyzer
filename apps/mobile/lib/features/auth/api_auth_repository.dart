@@ -49,9 +49,15 @@ class ApiAuthRepository implements AuthRepository {
     required String email,
     required String password,
     String? referralCode,
+    String preferredLanguage = 'en',
   }) async {
     try {
-      return await _registerImpl(email, password, referralCode);
+      return await _registerImpl(
+        email,
+        password,
+        referralCode,
+        preferredLanguage,
+      );
     } on ApiException catch (e) {
       throw AuthException(e.message);
     }
@@ -61,12 +67,14 @@ class ApiAuthRepository implements AuthRepository {
     String email,
     String password,
     String? referralCode,
+    String preferredLanguage,
   ) async {
     final normalizedReferralCode = referralCode?.trim().toUpperCase();
     final data = await _client.post(
       'v1/auth/register',
       body: {
         'email': email.trim().toLowerCase(),
+        'preferredLanguage': preferredLanguage,
         'password': password,
         if (normalizedReferralCode != null && normalizedReferralCode.isNotEmpty)
           'referralCode': normalizedReferralCode,

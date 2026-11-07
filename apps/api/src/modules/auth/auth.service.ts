@@ -1,3 +1,4 @@
+import { requireLanguage } from '../../common/language';
 import {
   BadRequestException,
   ConflictException,
@@ -66,6 +67,7 @@ export class AuthService {
   }
 
   async register(payload: RegisterRequest): Promise<RegisterResponse> {
+    const preferredLanguage = requireLanguage(payload.preferredLanguage);
     this.validateEmail(payload.email);
     this.validatePassword(payload.password);
     if (payload.referralCode?.trim()) {
@@ -96,6 +98,7 @@ export class AuthService {
         );
       }
 
+      await this.userRepo.update(userId, { preferredLanguage });
       await this.createDefaultProfile(userId, displayName);
       await this.referralsService.ensureReferralProfileForUser(userId);
       if (payload.referralCode?.trim()) {

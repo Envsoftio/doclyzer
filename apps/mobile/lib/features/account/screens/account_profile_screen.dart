@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../shared/language_selector.dart';
+import '../../../l10n/l10n.dart';
 
 import '../../../core/api_client.dart';
 import '../../../core/api_config.dart';
@@ -36,6 +38,9 @@ class AccountProfileScreen extends StatefulWidget {
     this.onGoToSharedLinks,
     this.supportRepository,
     this.onLogout,
+    this.language = 'en',
+    this.onLanguageChanged,
+    this.isSavingLanguage = false,
   });
 
   final AccountRepository accountRepository;
@@ -59,6 +64,9 @@ class AccountProfileScreen extends StatefulWidget {
   final VoidCallback? onGoToSharedLinks;
   final SupportRepository? supportRepository;
   final VoidCallback? onLogout;
+  final String language;
+  final Future<void> Function(String)? onLanguageChanged;
+  final bool isSavingLanguage;
 
   @override
   State<AccountProfileScreen> createState() => _AccountProfileScreenState();
@@ -82,12 +90,12 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
       }
       return error.message.isNotEmpty
           ? error.message
-          : 'Something went wrong. Please try again.';
+          : context.l10n.genericError;
     }
     if (error is AccountException) {
       return error.message;
     }
-    return 'Something went wrong. Please try again.';
+    return context.l10n.genericError;
   }
 
   bool _isActionBlocked(String action) {
@@ -200,7 +208,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           _profile = updated;
           _saving = false;
         });
-        StatusMessenger.showSuccess(context, 'Profile updated');
+        StatusMessenger.showSuccess(context, context.l10n.profileUpdated);
       }
     } on AccountException catch (e) {
       if (mounted) {
@@ -235,20 +243,20 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
               child: Text(
-                'Change profile photo',
+                context.l10n.changePhoto,
                 style: Theme.of(sheetContext).textTheme.titleLarge,
               ),
             ),
             ListTile(
               key: const Key('profile-photo-gallery'),
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
+              title: Text(context.l10n.gallery),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
             ),
             ListTile(
               key: const Key('profile-photo-camera'),
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('Take a photo'),
+              title: Text(context.l10n.camera),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
             ),
             const SizedBox(height: 8),
@@ -277,14 +285,14 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
       }
       if (!mounted) return;
       setState(() => _profile = updated);
-      StatusMessenger.showSuccess(context, 'Profile photo updated');
+      StatusMessenger.showSuccess(context, context.l10n.photoUpdated);
     } catch (error) {
       if (mounted) {
         StatusMessenger.showError(
           context,
           error is ApiException || error is AccountException
               ? _friendlyErrorMessage(error)
-              : 'Could not update your photo. Please try again.',
+              : context.l10n.photoFailed,
         );
       }
     } finally {
@@ -329,15 +337,15 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                     Text(
                       _profile?.displayName?.trim().isNotEmpty == true
                           ? _profile!.displayName!
-                          : 'Your account',
+                          : context.l10n.yourAccount,
                       style: theme.textTheme.titleLarge,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       _profile?.email ??
                           (_loading
-                              ? 'Loading profile…'
-                              : 'Tap to load your profile'),
+                              ? context.l10n.profileLoading
+                              : context.l10n.profileLoadAction),
                       style: theme.textTheme.bodySmall,
                     ),
                   ],
@@ -409,7 +417,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'ACCOUNT & DATA',
+          context.l10n.accountData,
           style: theme.textTheme.labelSmall?.copyWith(
             letterSpacing: 1.2,
             color: theme.colorScheme.onSurfaceVariant,
@@ -419,27 +427,47 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
         const SizedBox(height: 12),
         _settingsTile(
           icon: Icons.person_outline_rounded,
-          label: 'Personal information',
+          label: context.l10n.personalInformation,
           onTap: _openProfileEditor,
         ),
+        LanguageSelector(
+          value: widget.language,
+          settings: true,
+          saving: widget.isSavingLanguage,
+          onChanged: widget.onLanguageChanged == null
+              ? null
+              : (language) async {
+                  try {
+                    await widget.onLanguageChanged!(language);
+                  } catch (_) {
+                    if (mounted) {
+                      StatusMessenger.showError(
+                        context,
+                        context.l10n.languageSaveFailed,
+                      );
+                    }
+                  }
+                },
+        ),
+
         _settingsTile(
           icon: Icons.notifications_none_rounded,
-          label: 'Notification preferences',
+          label: context.l10n.notificationPreferences,
           onTap: widget.onGoToNotifications,
         ),
         _settingsTile(
           icon: Icons.shield_outlined,
-          label: 'Privacy & security',
+          label: context.l10n.privacySecurity,
           onTap: widget.onGoToPrivacy ?? widget.onGoToDataRights,
         ),
         _settingsTile(
           icon: Icons.link_outlined,
-          label: 'Shared links',
+          label: context.l10n.sharedLinks,
           onTap: widget.onGoToSharedLinks,
         ),
         _settingsTile(
           icon: Icons.download_outlined,
-          label: 'Export your data',
+          label: context.l10n.exportData,
           onTap: widget.onGoToExport ?? widget.onGoToDataRights,
         ),
         if (widget.onGoToProfiles != null ||
@@ -467,14 +495,14 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Additional account information',
+                        context.l10n.additionalAccount,
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: theme.colorScheme.onPrimaryContainer,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Family, plan, referrals, sessions and appearance',
+                        context.l10n.additionalAccountHelp,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onPrimaryContainer,
                         ),
@@ -490,8 +518,8 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             _settingsTile(
               key: const Key('account-family-profiles'),
               icon: Icons.people_outline,
-              label: 'Family profiles',
-              subtitle: 'Switch or manage profiles',
+              label: context.l10n.familyProfiles,
+              subtitle: context.l10n.manageProfiles,
               onTap: widget.onGoToProfiles,
             ),
           if (widget.onGoToBilling != null)
@@ -502,12 +530,12 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                 return _settingsTile(
                   key: const Key('account-credits'),
                   icon: Icons.account_balance_wallet_outlined,
-                  label: 'Plan & credits',
+                  label: context.l10n.planCredits,
                   subtitle: summary != null
                       ? '${summary.planName} · ${summary.creditBalance.toStringAsFixed(summary.creditBalance % 1 == 0 ? 0 : 1)} credits'
                       : snapshot.hasError
-                      ? 'View your plan and balance'
-                      : 'Loading balance…',
+                      ? context.l10n.viewPlanBalance
+                      : context.l10n.balanceLoading,
                   onTap: widget.onGoToBilling,
                 );
               },
@@ -516,28 +544,36 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
             _settingsTile(
               key: const Key('account-referrals'),
               icon: Icons.card_giftcard_outlined,
-              label: 'Refer friends',
-              subtitle: 'Invites and referral rewards',
+              label: context.l10n.referFriends,
+              subtitle: context.l10n.referralRewards,
               onTap: widget.onGoToReferrals,
             ),
           if (widget.onGoToSessions != null)
             _settingsTile(
               icon: Icons.devices_outlined,
-              label: 'Active sessions',
+              label: context.l10n.activeSessions,
               onTap: widget.onGoToSessions,
             ),
           if (widget.onThemeChanged != null) ...[
             const SizedBox(height: 16),
-            Text('Appearance', style: theme.textTheme.titleLarge),
+            Text(context.l10n.appearance, style: theme.textTheme.titleLarge),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 for (final choice in [
-                  (ThemeMode.system, 'System', Icons.brightness_auto_outlined),
-                  (ThemeMode.light, 'Light', Icons.light_mode_outlined),
-                  (ThemeMode.dark, 'Dark', Icons.dark_mode_outlined),
+                  (
+                    ThemeMode.system,
+                    context.l10n.system,
+                    Icons.brightness_auto_outlined,
+                  ),
+                  (
+                    ThemeMode.light,
+                    context.l10n.light,
+                    Icons.light_mode_outlined,
+                  ),
+                  (ThemeMode.dark, context.l10n.dark, Icons.dark_mode_outlined),
                 ])
                   ChoiceChip(
                     key: Key('appearance-${choice.$1.name}'),
@@ -554,7 +590,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
         const Divider(height: 32),
         _settingsTile(
           icon: Icons.help_outline_rounded,
-          label: 'Help & support',
+          label: context.l10n.helpSupport,
           onTap:
               widget.onGoToHelp ??
               (widget.supportRepository == null
@@ -569,17 +605,13 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
         ),
         _settingsTile(
           icon: Icons.info_outline_rounded,
-          label: 'About Doclyzer',
+          label: context.l10n.aboutDoclyzer,
           onTap:
               widget.onGoToAbout ??
               () => showAboutDialog(
                 context: context,
                 applicationName: 'Doclyzer',
-                children: const [
-                  Text(
-                    'Keep reports organized by person and review extracted results against the original.',
-                  ),
-                ],
+                children: [Text(context.l10n.aboutCopy)],
               ),
         ),
         if (widget.onLogout != null) ...[
@@ -587,7 +619,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
           TextButton.icon(
             onPressed: widget.onLogout,
             icon: const Icon(Icons.logout_rounded),
-            label: const Text('Log out'),
+            label: Text(context.l10n.logOut),
           ),
         ],
       ],
@@ -601,7 +633,11 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(widget.editProfile ? 'Personal information' : 'Profile'),
+        title: Text(
+          widget.editProfile
+              ? context.l10n.personalInformation
+              : context.l10n.profile,
+        ),
         leading: widget.showBackButton
             ? BackButton(onPressed: widget.onBack)
             : null,
@@ -618,7 +654,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.check_rounded),
-                label: const Text('Save changes'),
+                label: Text(context.l10n.saveChanges),
               ),
             )
           : null,
@@ -649,13 +685,13 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Account Restricted',
+                              Text(
+                                context.l10n.accountRestricted,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.red,
                                 ),
-                                semanticsLabel: 'Account Restricted',
+                                semanticsLabel: context.l10n.accountRestricted,
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -688,8 +724,8 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                               icon: const Icon(Icons.add_a_photo_outlined),
                               label: Text(
                                 _uploadingAvatar
-                                    ? 'Uploading photo…'
-                                    : 'Change photo',
+                                    ? context.l10n.photoUploading
+                                    : context.l10n.changePhotoShort,
                               ),
                             ),
                           ],
@@ -697,7 +733,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Account details',
+                        context.l10n.accountDetails,
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 12),
@@ -714,11 +750,10 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        decoration: const InputDecoration(
-                          labelText: 'Email address',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.emailAddress,
                           prefixIcon: Icon(Icons.mail_outline_rounded),
-                          helperText:
-                              'Used for account access. Contact support to change it.',
+                          helperText: context.l10n.emailHelp,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -730,8 +765,8 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        decoration: const InputDecoration(
-                          labelText: 'Account name',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.accountName,
                           prefixIcon: Icon(Icons.person_outline_rounded),
                         ),
                         maxLength: 100,

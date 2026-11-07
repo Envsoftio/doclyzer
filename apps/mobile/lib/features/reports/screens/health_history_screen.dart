@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/design_components.dart';
 import '../../../shared/app_date_format.dart';
@@ -63,7 +64,9 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
       final allParams = result.parameters.toList()
         ..sort((a, b) {
           final count = b.dataPoints.length.compareTo(a.dataPoints.length);
-          return count != 0 ? count : a.parameterName.compareTo(b.parameterName);
+          return count != 0
+              ? count
+              : a.parameterName.compareTo(b.parameterName);
         });
       if (mounted) {
         setState(() {
@@ -121,7 +124,7 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
         _state == _HealthHistoryState.loaded && _params.isNotEmpty;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Trends'),
+        title: Text(context.l10n.trends),
         leading: widget.onBack == null
             ? null
             : BackButton(onPressed: widget.onBack),
@@ -142,9 +145,9 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
               TextField(
                 key: const Key('trends-search'),
                 controller: _searchController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   prefixIcon: Icon(Icons.search),
-                  hintText: 'Search tests',
+                  hintText: context.l10n.searchTests,
                 ),
                 onChanged: (value) => setState(() => _query = value),
               ),
@@ -182,12 +185,12 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              _errorMessage ?? 'Something went wrong',
+              _errorMessage ?? context.l10n.somethingWrong,
               style: TextStyle(color: Colors.red.shade700),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            FilledButton(onPressed: _loadData, child: const Text('Retry')),
+            FilledButton(onPressed: _loadData, child: Text(context.l10n.retry)),
           ],
         ),
       );
@@ -201,21 +204,23 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
             color: Theme.of(context).colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Text(
-            'No health data yet. Upload a report to see your health history.',
-            textAlign: TextAlign.center,
-          ),
+          child: Text(context.l10n.noHealthData, textAlign: TextAlign.center),
         ),
       );
     }
-    final visible = _params.where((param) =>
-      param.parameterName.toLowerCase().contains(_query.trim().toLowerCase())).toList();
+    final visible = _params
+        .where(
+          (param) => param.parameterName.toLowerCase().contains(
+            _query.trim().toLowerCase(),
+          ),
+        )
+        .toList();
     if (visible.isEmpty) {
       return DesignEmptyState(
         icon: Icons.search_off_outlined,
-        title: 'No tests found',
-        message: 'Try a shorter test name.',
-        action: 'Clear search',
+        title: context.l10n.noTestsFound,
+        message: context.l10n.shorterTestName,
+        action: context.l10n.clearSearch,
         onAction: () => setState(() {
           _searchController.clear();
           _query = '';
@@ -274,9 +279,9 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
                           label: 'No chartable result yet',
                         ),
                       if (param.unit == null)
-                        const _InfoBadge(
+                        _InfoBadge(
                           icon: Icons.straighten,
-                          label: 'Unit unavailable',
+                          label: context.l10n.unitUnavailable,
                         ),
                       if (param.unplottedCount > 0)
                         _InfoBadge(

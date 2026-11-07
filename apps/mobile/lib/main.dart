@@ -3,6 +3,7 @@ import 'features/reports/screens/report_detail_screen.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'l10n/l10n.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
@@ -150,6 +151,77 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       GlobalKey<ScaffoldMessengerState>();
 
   ThemeMode _themeMode = ThemeMode.system;
+  Locale _locale = const Locale('en');
+  int _languageVersion = 0;
+  bool _savingLanguage = false;
+
+  Future<void> _restoreLanguage() async {
+    final version = _languageVersion;
+    String? saved;
+    try {
+      saved = await _appearanceStorage.read(key: 'doclyzer_language');
+    } catch (_) {}
+    if (!mounted || version != _languageVersion) return;
+    setState(
+      () => _locale = Locale(
+        supportedLanguage(
+          saved ??
+              WidgetsBinding.instance.platformDispatcher.locale.languageCode,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _setLocalLanguage(String language) async {
+    ++_languageVersion;
+    if (mounted) setState(() => _locale = Locale(supportedLanguage(language)));
+    try {
+      await _appearanceStorage.write(
+        key: 'doclyzer_language',
+        value: _locale.languageCode,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _loadAccountLanguage() async {
+    final version = ++_languageVersion;
+    try {
+      final profile = await _accountRepository.getProfile();
+      if (mounted && version == _languageVersion) {
+        await _setLocalLanguage(profile.preferredLanguage);
+      }
+    } catch (_) {
+      /* An unavailable preference must not prevent signing in. */
+    }
+  }
+
+  Future<void> _changeLanguage(String language) async {
+    if (_savingLanguage || language == _locale.languageCode) return;
+    final previous = _locale;
+    final version = ++_languageVersion;
+    setState(() {
+      _locale = Locale(supportedLanguage(language));
+      _savingLanguage = true;
+    });
+    try {
+      final profile = await _accountRepository
+          .updateProfile(preferredLanguage: language)
+          .timeout(const Duration(seconds: 15));
+      if (!mounted || version != _languageVersion) return;
+      if (profile.preferredLanguage != language) {
+        throw const AccountException('Language preference was not saved.');
+      }
+      await _setLocalLanguage(language);
+    } catch (_) {
+      if (mounted && version == _languageVersion) {
+        setState(() => _locale = previous);
+      }
+      rethrow;
+    } finally {
+      if (mounted) setState(() => _savingLanguage = false);
+    }
+  }
+
   static const _appearanceStorage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
@@ -316,6 +388,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     unawaited(_restoreAppearance());
+    unawaited(_restoreLanguage());
     unawaited(_restoreAppLock());
     WidgetsBinding.instance.addObserver(this);
     if (widget.authRepository != null) {
@@ -455,6 +528,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       // Secure storage can fail after a device restore; offer a fresh login.
     }
     if (restored && mounted) {
+      await _loadAccountLanguage();
       ClosureRequest? closure;
       try {
         closure = await _dataRightsRepository.getClosureRequest();
@@ -532,6 +606,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       email: email,
       password: password,
       referralCode: referralCode,
+      preferredLanguage: _locale.languageCode,
     );
 
     if (result.requiresVerification && mounted) {
@@ -627,6 +702,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
 
   Future<void> _login(String email, String password) async {
     await _auth.login(email: email, password: password);
+    await _loadAccountLanguage();
     final closure = await _dataRightsRepository.getClosureRequest();
     final interrupted = await _readInterruptedUpload();
     if (closure?.status != 'pending') _startReportServices();
@@ -1080,6 +1156,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     });
     if (!_initialized || !_appLockPreferenceLoaded) {
       return MaterialApp(
+        locale: _locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         title: 'Doclyzer',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
@@ -1094,6 +1173,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     }
 
     return MaterialApp(
+      locale: _locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       title: 'Doclyzer',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
@@ -1300,6 +1382,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           supportRepository: _supportRepository,
         ),
         _AuthView.signup => SignupScreen(
+          language: _locale.languageCode,
+          onLanguageChanged: (language) =>
+              unawaited(_setLocalLanguage(language)),
           onSignup: _register,
           onGoToLogin: () {
             setState(() => _authView = _AuthView.login);
@@ -1409,6 +1494,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           incidentStatus: _incidentStatus,
         ),
         _AuthView.accountProfile => AccountProfileScreen(
+          language: _locale.languageCode,
+          onLanguageChanged: _savingLanguage ? null : _changeLanguage,
+          isSavingLanguage: _savingLanguage,
           supportRepository: _supportRepository,
           onGoToPrivacy: _openPrivacyScreen,
           onGoToExport: _openExportScreen,

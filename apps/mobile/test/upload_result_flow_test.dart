@@ -91,6 +91,13 @@ void main() {
       await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('report-detail-scaffold')), findsOneWidget);
+      await tester.tap(find.text('Summary'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Blood test results are ready.'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Blood test results are ready.'), findsOneWidget);
     },
   );
@@ -126,6 +133,13 @@ void main() {
 
     expect(reports.requestedReportId, 'report-1');
     expect(find.byKey(const Key('report-detail-scaffold')), findsOneWidget);
+    await tester.tap(find.text('Summary'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Blood test results are ready.'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Blood test results are ready.'), findsOneWidget);
   });
 
@@ -187,6 +201,13 @@ void main() {
     await tester.tap(find.byKey(const Key('report-detail-check-status')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('report-detail-check-status')), findsNothing);
+    await tester.tap(find.text('Summary'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Blood test results are ready.'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Blood test results are ready.'), findsOneWidget);
   });
 

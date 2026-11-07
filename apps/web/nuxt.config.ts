@@ -1,5 +1,14 @@
+import { languages } from './shared/languages'
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  modules: ['@nuxtjs/i18n'],
+  i18n: {
+    strategy: 'no_prefix',
+    defaultLocale: 'en',
+    locales: languages.map(language => ({ ...language })),
+    detectBrowserLanguage: { useCookie: true, cookieKey: 'doclyzer_language', redirectOn: 'all' },
+    vueI18n: './i18n.config.ts',
+  },
   css: ['~/assets/brand.css'],
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },

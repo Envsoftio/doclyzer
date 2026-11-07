@@ -1,23 +1,24 @@
 <script setup lang="ts">
+const { t, locale } = useI18n()
 const { profiles, profileId, selectProfile, signOut } = useConsumer()
 const route = useRoute()
 const switchError = ref('')
 async function switchProfile(id: string) { switchError.value = ''; try { await selectProfile(id) } catch (cause) { switchError.value = (cause as Error).message } }
 useHead({ meta: [{ name: 'robots', content: 'noindex, nofollow' }] })
-const nav = [
-  { to: '/home', label: 'Home' }, { to: '/reports', label: 'Reports' },
-  { to: '/trends', label: 'Trends' }, { to: '/you', label: 'You' },
-]
+const nav = computed(() => [
+  { to: '/home', label: t('home') }, { to: '/reports', label: t('reports') },
+  { to: '/trends', label: t('trends') }, { to: '/you', label: t('you') },
+])
 </script>
 <template>
   <div class="consumer">
     <aside class="side">
       <NuxtLink to="/home" class="logo" aria-label="Doclyzer home"><img src="/Doclyzer-logo.svg" width="856" height="183" alt="" /></NuxtLink>
-      <nav aria-label="Main navigation"><NuxtLink v-for="item in nav" :key="item.to" :to="item.to" :class="{ selected: route.path === item.to || route.path.startsWith(`${item.to}/`) }">{{ item.label }}</NuxtLink></nav>
-      <div class="side-bottom"><label v-if="profiles.length">Viewing results for<select :value="profileId" @change="switchProfile(($event.target as HTMLSelectElement).value)"><option v-for="profile in profiles" :key="profile.id" :value="profile.id">{{ profile.name }}</option></select></label><button type="button" class="text-button" @click="signOut">Sign out</button></div>
+      <nav :aria-label="t('mainNavigation')"><NuxtLink v-for="item in nav" :key="item.to" :to="item.to" :class="{ selected: route.path === item.to || route.path.startsWith(`${item.to}/`) }">{{ item.label }}</NuxtLink></nav>
+      <div class="side-bottom"><label v-if="profiles.length">{{ t('viewingResultsFor') }}<select :value="profileId" @change="switchProfile(($event.target as HTMLSelectElement).value)"><option v-for="profile in profiles" :key="profile.id" :value="profile.id">{{ profile.name }}</option></select></label><button type="button" class="text-button" @click="signOut">{{ t('signOut') }}</button></div>
     </aside>
     <div class="main-area"><header class="mobile-head"><NuxtLink to="/home" class="logo" aria-label="Doclyzer home"><img src="/Doclyzer-logo.svg" width="856" height="183" alt="" /></NuxtLink><span v-if="profiles.length">{{ profiles.find(p => p.id === profileId)?.name }}</span></header><main class="content"><p v-if="switchError" role="alert" class="alert error">{{ switchError }}</p><slot /></main></div>
-    <nav class="bottom-nav" aria-label="Main navigation"><NuxtLink v-for="item in nav" :key="item.to" :to="item.to" :aria-current="route.path === item.to || route.path.startsWith(`${item.to}/`) ? 'page' : undefined">{{ item.label }}</NuxtLink></nav>
+    <nav class="bottom-nav" :aria-label="t('mainNavigation')"><NuxtLink v-for="item in nav" :key="item.to" :to="item.to" :aria-current="route.path === item.to || route.path.startsWith(`${item.to}/`) ? 'page' : undefined">{{ item.label }}</NuxtLink></nav>
   </div>
 </template>
 <style>

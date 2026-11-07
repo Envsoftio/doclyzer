@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/design_components.dart';
 import '../auth_repository.dart';
+import '../../../shared/language_selector.dart';
+import '../../../l10n/l10n.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({
     super.key,
     required this.onSignup,
     required this.onGoToLogin,
+    this.language = 'en',
+    this.onLanguageChanged,
   });
 
   final Future<void> Function(
@@ -18,6 +22,8 @@ class SignupScreen extends StatefulWidget {
   )
   onSignup;
   final VoidCallback onGoToLogin;
+  final String language;
+  final ValueChanged<String>? onLanguageChanged;
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -55,7 +61,7 @@ class _SignupScreenState extends State<SignupScreen> {
     if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email) ||
         password.isEmpty) {
       setState(() {
-        _error = 'Enter a valid email address and password';
+        _error = context.l10n.invalidCredentialsInput;
         _isLoading = false;
       });
       return;
@@ -78,11 +84,22 @@ class _SignupScreenState extends State<SignupScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e is Exception ? e.toString() : 'Unable to create account';
+        _error = e is Exception ? e.toString() : context.l10n.signupFailed;
         _isLoading = false;
       });
     }
   }
+
+  Widget _labelledField(String label, Widget field) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      ExcludeSemantics(
+        child: Text(label, style: Theme.of(context).textTheme.labelLarge),
+      ),
+      const SizedBox(height: 8),
+      Semantics(label: label, child: field),
+    ],
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +129,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   const DoclyzerMark(),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'A clearer view\nstarts here.',
+                    context.l10n.signupTitle,
                     style: theme.textTheme.displaySmall?.copyWith(
                       fontSize: 31,
                       height: 1.22,
@@ -120,49 +137,65 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    'Create an account to keep your reports and results together.',
+                    context.l10n.signupIntro,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  TextField(
-                    key: const Key('signup-email'),
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    onSubmitted: (_) => _passwordFocus.requestFocus(),
-                    decoration: const InputDecoration(
-                      labelText: 'Email address',
-                      hintText: 'you@example.com',
-                      prefixIcon: Icon(Icons.email_outlined),
+                  LanguageSelector(
+                    value: widget.language,
+                    onChanged: _isLoading ? null : widget.onLanguageChanged,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    context.l10n.languageHelp,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _labelledField(
+                    context.l10n.emailAddress,
+                    TextField(
+                      key: const Key('signup-email'),
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) => _passwordFocus.requestFocus(),
+                      decoration: InputDecoration(
+                        hintText: 'you@example.com',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    key: const Key('signup-password'),
-                    controller: _passwordController,
-                    focusNode: _passwordFocus,
-                    obscureText: true,
-                    textInputAction: TextInputAction.next,
-                    onSubmitted: (_) => _referralFocus.requestFocus(),
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock_outline_rounded),
+                  _labelledField(
+                    context.l10n.password,
+                    TextField(
+                      key: const Key('signup-password'),
+                      controller: _passwordController,
+                      focusNode: _passwordFocus,
+                      obscureText: true,
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) => _referralFocus.requestFocus(),
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(Icons.lock_outline_rounded),
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    key: const Key('signup-referral-code'),
-                    controller: _referralController,
-                    focusNode: _referralFocus,
-                    textCapitalization: TextCapitalization.characters,
-                    autocorrect: false,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _submit(),
-                    decoration: const InputDecoration(
-                      labelText: 'Referral code (optional)',
-                      prefixIcon: Icon(Icons.card_giftcard_rounded),
+                  _labelledField(
+                    context.l10n.referralCode,
+                    TextField(
+                      key: const Key('signup-referral-code'),
+                      controller: _referralController,
+                      focusNode: _referralFocus,
+                      textCapitalization: TextCapitalization.characters,
+                      autocorrect: false,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _submit(),
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(Icons.card_giftcard_rounded),
+                      ),
                     ),
                   ),
                   if (_error != null) ...[
@@ -184,14 +217,15 @@ class _SignupScreenState extends State<SignupScreen> {
                             width: 22,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Create account'),
+                        : Text(context.l10n.createAccount),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
-                        'Already have an account? ',
+                        context.l10n.alreadyAccount,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -205,7 +239,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text('Sign in'),
+                        child: Text(context.l10n.signIn),
                       ),
                     ],
                   ),

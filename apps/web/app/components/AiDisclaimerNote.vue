@@ -1,8 +1,11 @@
+<script setup lang="ts">
+const { t } = useI18n()
+</script>
 <template>
   <p class="ai-disclaimer" role="note">
     <span class="ai-disclaimer__icon" aria-hidden="true">i</span>
     <span class="ai-disclaimer__text">
-      Informational only — not medical advice. Discuss with your doctor.
+      {{ t('aiDisclaimer') }}
     </span>
   </p>
 </template>

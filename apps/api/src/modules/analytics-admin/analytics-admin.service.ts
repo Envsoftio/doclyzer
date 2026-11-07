@@ -104,10 +104,12 @@ export class AnalyticsAdminService {
       .addSelect('COUNT(*)', 'requests').addSelect('COUNT(*) FILTER (WHERE u.cache_hit = false)', 'providerCalls')
       .addSelect('COALESCE(SUM(u.input_tokens), 0)', 'inputTokens').addSelect('COALESCE(SUM(u.output_tokens), 0)', 'outputTokens')
       .addSelect('COALESCE(SUM(u.total_tokens), 0)', 'totalTokens').addSelect('COALESCE(SUM(u.estimated_cost_usd), 0)', 'estimatedCostUsd')
-      .addSelect("COUNT(*) FILTER (WHERE u.cache_key NOT LIKE 'range:%' AND u.cache_key NOT LIKE 'summary:%')", 'explanationRequests')
-      .addSelect("COUNT(*) FILTER (WHERE u.cache_key NOT LIKE 'range:%' AND u.cache_key NOT LIKE 'summary:%' AND u.cache_hit = false)", 'explanationProviderCalls')
-      .addSelect("COUNT(*) FILTER (WHERE u.cache_key NOT LIKE 'range:%' AND u.cache_key NOT LIKE 'summary:%' AND u.cache_hit = true)", 'explanationCacheHits')
-      .addSelect("COALESCE(SUM(u.estimated_cost_usd) FILTER (WHERE u.cache_key NOT LIKE 'range:%' AND u.cache_key NOT LIKE 'summary:%'), 0)", 'explanationCostUsd')
+      .addSelect("COUNT(*) FILTER (WHERE u.cache_key NOT LIKE 'range:%' AND u.cache_key NOT LIKE 'summary:%' AND u.cache_key NOT LIKE 'translation:%')", 'explanationRequests')
+      .addSelect("COUNT(*) FILTER (WHERE u.cache_key NOT LIKE 'range:%' AND u.cache_key NOT LIKE 'summary:%' AND u.cache_key NOT LIKE 'translation:%' AND u.cache_hit = false)", 'explanationProviderCalls')
+      .addSelect("COUNT(*) FILTER (WHERE u.cache_key NOT LIKE 'range:%' AND u.cache_key NOT LIKE 'summary:%' AND u.cache_key NOT LIKE 'translation:%' AND u.cache_hit = true)", 'explanationCacheHits')
+      .addSelect("COALESCE(SUM(u.estimated_cost_usd) FILTER (WHERE u.cache_key NOT LIKE 'range:%' AND u.cache_key NOT LIKE 'summary:%' AND u.cache_key NOT LIKE 'translation:%'), 0)", 'explanationCostUsd')
+      .addSelect("COUNT(*) FILTER (WHERE u.cache_key LIKE 'translation:%')", 'translationRequests')
+      .addSelect("COALESCE(SUM(u.estimated_cost_usd) FILTER (WHERE u.cache_key LIKE 'translation:%'), 0)", 'translationCostUsd')
       .addSelect("COUNT(*) FILTER (WHERE u.cache_key LIKE 'summary:%')", 'summaryRequests')
       .addSelect("COALESCE(SUM(u.total_tokens) FILTER (WHERE u.cache_key LIKE 'summary:%'), 0)", 'summaryTokens')
       .addSelect("COALESCE(SUM(u.estimated_cost_usd) FILTER (WHERE u.cache_key LIKE 'summary:%'), 0)", 'summaryCostUsd')
@@ -120,7 +122,7 @@ export class AnalyticsAdminService {
     const numericFields = [
       'requests', 'providerCalls', 'inputTokens', 'outputTokens', 'totalTokens',
       'estimatedCostUsd', 'explanationRequests', 'explanationProviderCalls', 'explanationCacheHits', 'explanationCostUsd',
-      'summaryRequests', 'summaryTokens', 'summaryCostUsd',
+      'summaryRequests', 'summaryTokens', 'summaryCostUsd', 'translationRequests', 'translationCostUsd',
       'rangeRequests', 'rangeTokens', 'rangeCostUsd', 'unpricedProviderCalls',
     ] as const;
     const users = rows.map((row) => {
@@ -131,7 +133,7 @@ export class AnalyticsAdminService {
     const totals: Record<string, number> = {};
     for (const field of numericFields)
       totals[field] = rows.reduce((sum, row) => sum + Number(row[field]), 0);
-    const workload = "CASE WHEN u.cache_key LIKE 'summary:%' THEN 'Report summary' ELSE 'Test explanation' END";
+    const workload = "CASE WHEN u.cache_key LIKE 'translation:%' THEN 'Description translation' WHEN u.cache_key LIKE 'summary:%' THEN 'Report summary' ELSE 'Test explanation' END";
     const modelRows = await this.insightUsageRepo.createQueryBuilder('u')
       .select(workload, 'workload').addSelect('u.model', 'model')
       .addSelect('COUNT(*) FILTER (WHERE u.cache_hit = false)', 'providerCalls')

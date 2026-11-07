@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/feedback/status_messenger.dart';
@@ -65,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email) ||
         password.isEmpty) {
       setState(() {
-        _error = 'Enter a valid email address and password';
+        _error = context.l10n.invalidCredentialsInput;
         _isLoading = false;
       });
       return;
@@ -88,8 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _showStatus(error.message);
     } catch (_) {
       if (!mounted) return;
-      const message =
-          'Unable to sign in. Please check your connection and try again.';
+      final message = context.l10n.loginFailed;
       setState(() {
         _error = message;
         _isLoading = false;
@@ -134,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const DoclyzerMark(),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'A clearer view\nstarts here.',
+                    context.l10n.signupTitle,
                     style: theme.textTheme.displaySmall?.copyWith(
                       fontSize: 31,
                       height: 1.22,
@@ -142,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    'Sign in to access and understand your health reports.',
+                    context.l10n.loginIntro,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -154,8 +154,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     onSubmitted: (_) => _passwordFocus.requestFocus(),
-                    decoration: const InputDecoration(
-                      labelText: 'Email address',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.emailAddress,
                       hintText: 'you@example.com',
                       prefixIcon: Icon(Icons.email_outlined),
                     ),
@@ -169,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _submit(),
                     decoration: InputDecoration(
-                      labelText: 'Password',
+                      labelText: context.l10n.password,
                       prefixIcon: const Icon(Icons.lock_outline_rounded),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -183,8 +183,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           });
                         },
                         tooltip: _obscurePassword
-                            ? 'Show password'
-                            : 'Hide password',
+                            ? context.l10n.showPassword
+                            : context.l10n.hidePassword,
                       ),
                     ),
                   ),
@@ -220,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             errorMessage: _supportErrorMessage,
                           );
                         },
-                        child: const Text('Need help?'),
+                        child: Text(context.l10n.needHelp),
                       ),
                     ],
                   ],
@@ -230,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: TextButton(
                       key: const Key('go-to-forgot-password'),
                       onPressed: widget.onGoToForgotPassword,
-                      child: const Text('Forgot password?'),
+                      child: Text(context.l10n.forgotPassword),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -243,14 +243,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 22,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Sign in'),
+                        : Text(context.l10n.signIn),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
-                        "Don't have an account? ",
+                        context.l10n.noAccount,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -265,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text('Create account'),
+                        child: Text(context.l10n.createAccount),
                       ),
                     ],
                   ),

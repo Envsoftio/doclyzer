@@ -55,8 +55,9 @@ class _Reports extends Fake implements ReportsRepository {
   @override
   Future<ResultInsight> getResultInsight(
     String reportId,
-    ExtractedLabValue result,
-  ) async => const ResultInsight(
+    ExtractedLabValue result, {
+    String locale = 'en',
+  }) async => const ResultInsight(
     testExplanation: 'A measured lab value.',
     resultExplanation: 'Compare with the listed lab range.',
     possibleSignificance: 'This requires clinical context.',
@@ -235,10 +236,14 @@ void main() {
     );
     expect(find.byKey(const Key('report-detail-summary-retry')), findsNothing);
     expect(reports.summaryRequests, 0);
+    await tester.ensureVisible(
+      find.byKey(const Key('report-detail-summary-refresh')),
+    );
     await tester.tap(find.byKey(const Key('report-detail-summary-refresh')));
     await tester.pumpAndSettle();
     expect(reports.summaryRequests, 1);
     expect(reports.lastSummaryRefresh, isTrue);
+    await tester.ensureVisible(find.text('Test values'));
     await tester.tap(find.text('Test values'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('report-detail-lab-values')), findsOneWidget);

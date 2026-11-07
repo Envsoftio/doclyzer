@@ -28,6 +28,18 @@ abstract class AppSpacing {
 }
 
 class AppTheme {
+  static const scriptFonts = [
+    'Noto Sans Devanagari',
+    'Noto Sans Kannada',
+    'Noto Sans Telugu',
+    'Noto Sans Malayalam',
+    'Noto Sans Tamil',
+    'Noto Sans Bengali',
+    'Noto Sans Oriya',
+    'Noto Sans Gujarati',
+    'Noto Sans Gurmukhi',
+  ];
+
   static ThemeData get light => _build(Brightness.light);
   static ThemeData get dark => _build(Brightness.dark);
 
@@ -89,6 +101,7 @@ class AppTheme {
         systemOverlayStyle: systemBars(brightness),
         titleTextStyle: TextStyle(
           fontFamily: 'Plus Jakarta Sans',
+          fontFamilyFallback: scriptFonts,
           fontSize: 22,
           fontWeight: FontWeight.w700,
           color: ink,
@@ -138,6 +151,7 @@ class AppTheme {
           ),
           textStyle: const TextStyle(
             fontFamily: 'Plus Jakarta Sans',
+            fontFamilyFallback: scriptFonts,
             fontSize: 15,
             fontWeight: FontWeight.w700,
           ),
@@ -153,6 +167,7 @@ class AppTheme {
           ),
           textStyle: const TextStyle(
             fontFamily: 'Plus Jakarta Sans',
+            fontFamilyFallback: scriptFonts,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -171,6 +186,7 @@ class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontFamily: 'Plus Jakarta Sans',
+            fontFamilyFallback: scriptFonts,
             color: states.contains(WidgetState.selected) ? primary : muted,
             fontSize: 10.5,
             fontWeight: states.contains(WidgetState.selected)
@@ -184,6 +200,7 @@ class AppTheme {
         backgroundColor: dark ? const Color(0xFFEAF6F5) : AppColors.ink,
         contentTextStyle: TextStyle(
           fontFamily: 'Plus Jakarta Sans',
+          fontFamilyFallback: scriptFonts,
           fontSize: 14,
           fontWeight: FontWeight.w600,
           color: dark ? AppColors.ink : Colors.white,
@@ -196,6 +213,7 @@ class AppTheme {
   static TextTheme _textTheme(Color ink, Color muted) => TextTheme(
     displaySmall: TextStyle(
       fontFamily: 'Plus Jakarta Sans',
+      fontFamilyFallback: scriptFonts,
       fontSize: 28,
       fontWeight: FontWeight.w700,
       letterSpacing: -0.5,
@@ -203,48 +221,56 @@ class AppTheme {
     ),
     headlineSmall: TextStyle(
       fontFamily: 'Plus Jakarta Sans',
+      fontFamilyFallback: scriptFonts,
       fontSize: 22,
       fontWeight: FontWeight.w700,
       color: ink,
     ),
     titleLarge: TextStyle(
       fontFamily: 'Plus Jakarta Sans',
+      fontFamilyFallback: scriptFonts,
       fontSize: 18,
       fontWeight: FontWeight.w700,
       color: ink,
     ),
     titleMedium: TextStyle(
       fontFamily: 'Plus Jakarta Sans',
+      fontFamilyFallback: scriptFonts,
       fontSize: 16,
       fontWeight: FontWeight.w700,
       color: ink,
     ),
     titleSmall: TextStyle(
       fontFamily: 'Plus Jakarta Sans',
+      fontFamilyFallback: scriptFonts,
       fontSize: 14,
       fontWeight: FontWeight.w700,
       color: ink,
     ),
     bodyLarge: TextStyle(
       fontFamily: 'Plus Jakarta Sans',
+      fontFamilyFallback: scriptFonts,
       fontSize: 16,
       height: 1.4,
       color: ink,
     ),
     bodyMedium: TextStyle(
       fontFamily: 'Plus Jakarta Sans',
+      fontFamilyFallback: scriptFonts,
       fontSize: 14,
       height: 1.4,
       color: ink,
     ),
     bodySmall: TextStyle(
       fontFamily: 'Plus Jakarta Sans',
+      fontFamilyFallback: scriptFonts,
       fontSize: 12,
       height: 1.4,
       color: muted,
     ),
     labelLarge: TextStyle(
       fontFamily: 'Plus Jakarta Sans',
+      fontFamilyFallback: scriptFonts,
       fontSize: 14,
       fontWeight: FontWeight.w700,
       color: ink,

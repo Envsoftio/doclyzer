@@ -18,3 +18,82 @@
   --brand-canvas: #fafcfb;
   --brand-font: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
+
+@font-face {
+  font-family: 'Noto Sans Devanagari';
+  src: url('/fonts/NotoSansDevanagari.ttf') format('truetype');
+  unicode-range: U+0900-097F, U+A8E0-A8FF;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Kannada';
+  src: url('/fonts/NotoSansKannada.ttf') format('truetype');
+  unicode-range: U+0C80-0CFF;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Telugu';
+  src: url('/fonts/NotoSansTelugu.ttf') format('truetype');
+  unicode-range: U+0C00-0C7F;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Malayalam';
+  src: url('/fonts/NotoSansMalayalam.ttf') format('truetype');
+  unicode-range: U+0D00-0D7F;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Tamil';
+  src: url('/fonts/NotoSansTamil.ttf') format('truetype');
+  unicode-range: U+0B80-0BFF;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Bengali';
+  src: url('/fonts/NotoSansBengali.ttf') format('truetype');
+  unicode-range: U+0980-09FF;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Oriya';
+  src: url('/fonts/NotoSansOriya.ttf') format('truetype');
+  unicode-range: U+0B00-0B7F;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Gujarati';
+  src: url('/fonts/NotoSansGujarati.ttf') format('truetype');
+  unicode-range: U+0A80-0AFF;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noto Sans Gurmukhi';
+  src: url('/fonts/NotoSansGurmukhi.ttf') format('truetype');
+  unicode-range: U+0A00-0A7F;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+:root { --indic-fonts: 'Noto Sans Devanagari', 'Noto Sans Kannada', 'Noto Sans Telugu', 'Noto Sans Malayalam', 'Noto Sans Tamil', 'Noto Sans Bengali', 'Noto Sans Oriya', 'Noto Sans Gujarati', 'Noto Sans Gurmukhi'; }
+:where(:lang(hi), :lang(mr), :lang(kn), :lang(te), :lang(ml), :lang(ta), :lang(bn), :lang(or), :lang(gu), :lang(pa)) {
+  font-family: var(--indic-fonts), system-ui, sans-serif;
+  letter-spacing: normal;
+}
+.language-picker, .language-picker select { font-family: var(--brand-font), var(--indic-fonts); }

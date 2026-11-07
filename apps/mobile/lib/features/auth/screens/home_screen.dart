@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import '../../reports/report_processing_store.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
@@ -112,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
           context: context,
           builder: (dialogContext) => AlertDialog(
             key: const Key('dashboard-push-permission'),
-            title: const Text('Enable notifications?'),
+            title: Text(context.l10n.enableNotificationsConfirm),
             content: Text(
               result[1]
                   ? 'Notifications are disabled for Doclyzer. Open device Settings to allow report-ready and account updates. Marketing stays off unless you choose it.'
@@ -122,13 +123,15 @@ class _HomeScreenState extends State<HomeScreen> {
               TextButton(
                 key: const Key('dashboard-dismiss-push'),
                 onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Not now'),
+                child: Text(context.l10n.notNow),
               ),
               FilledButton(
                 key: const Key('dashboard-enable-push'),
                 onPressed: () => Navigator.of(dialogContext).pop(true),
                 child: Text(
-                  result[1] ? 'Open settings' : 'Enable notifications',
+                  result[1]
+                      ? context.l10n.openSettings
+                      : context.l10n.enableNotifications,
                 ),
               ),
             ],
@@ -169,24 +172,18 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       } else if (completed) {
-        StatusMessenger.showSuccess(context, 'Report notifications enabled');
+        StatusMessenger.showSuccess(context, context.l10n.notificationsEnabled);
       } else {
         setState(() {
           _showPushPermissionPrompt = true;
           _pushPermissionRequiresSettings = true;
         });
-        StatusMessenger.showWarning(
-          context,
-          'Notifications remain off. You can enable them later in device settings.',
-        );
+        StatusMessenger.showWarning(context, context.l10n.notificationsStayOff);
       }
     } catch (_) {
       if (mounted) {
         setState(() => _showPushPermissionPrompt = true);
-        StatusMessenger.showError(
-          context,
-          'Could not enable notifications. Check your connection and try again.',
-        );
+        StatusMessenger.showError(context, context.l10n.notificationsFailed);
       }
     } finally {
       if (mounted) setState(() => _requestingPushPermission = false);
@@ -326,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
                 child: Text(
-                  'Switch profile',
+                  context.l10n.switchProfile,
                   style: Theme.of(sheetContext).textTheme.titleLarge,
                 ),
               ),
@@ -334,7 +331,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ListTile(
                   title: Text(profile.name),
                   subtitle: Text(
-                    profile.isActive ? 'Current profile' : 'View this profile',
+                    profile.isActive
+                        ? context.l10n.currentProfile
+                        : context.l10n.viewProfile,
                   ),
                   leading: CircleAvatar(child: Text(_initials(profile.name))),
                   trailing: profile.isActive
@@ -344,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ListTile(
                 leading: const Icon(Icons.person_add_outlined),
-                title: const Text('Manage family'),
+                title: Text(context.l10n.manageFamily),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   widget.onGoToProfiles();
@@ -373,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
           context,
           error is ApiException && error.message.isNotEmpty
               ? 'Unable to switch profiles. ${error.message}'
-              : 'Unable to switch profiles. Please try again.',
+              : context.l10n.switchProfileFailed,
         );
       }
     }
@@ -406,7 +405,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if (mounted) {
                 StatusMessenger.showError(
                   context,
-                  'Unable to open source report.',
+                  context.l10n.sourceReportFailed,
                 );
               }
             }
@@ -530,7 +529,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               profile?.name ??
                                                   _accountProfile
                                                       ?.displayName ??
-                                                  'Your profile',
+                                                  context.l10n.yourProfile,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: theme.textTheme.titleSmall
@@ -538,8 +537,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                             Text(
                                               profile == null
-                                                  ? 'Choose a profile'
-                                                  : 'Your profile',
+                                                  ? context.l10n.chooseProfile
+                                                  : context.l10n.yourProfile,
                                               style: theme.textTheme.bodySmall,
                                             ),
                                           ],
@@ -556,7 +555,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const Spacer(),
                               IconButton.filledTonal(
-                                tooltip: 'Notifications',
+                                tooltip: context.l10n.notifications,
                                 onPressed:
                                     widget.onGoToNotifications ??
                                     widget.onGoToCommunicationPreferences,
@@ -568,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 28),
                           Text(
-                            'A little clarity.\nAll in one place.',
+                            context.l10n.homeTitle,
                             style: theme.textTheme.displaySmall?.copyWith(
                               height: 1.2,
                             ),
@@ -625,11 +624,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                     color: Colors.white,
                                   ),
                                 ),
-                                const Positioned(
+                                Positioned(
                                   left: 20,
                                   top: 20,
                                   child: Text(
-                                    'Your next report,\nready when you are.',
+                                    context.l10n.nextReportTitle,
                                     style: TextStyle(
                                       fontSize: 19,
                                       fontWeight: FontWeight.w700,
@@ -638,11 +637,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                 ),
-                                const Positioned(
+                                Positioned(
                                   left: 20,
                                   top: 74,
                                   child: Text(
-                                    'PDFs, photos and family records.',
+                                    context.l10n.homeSubtitle,
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFFDDEEF2),
@@ -659,7 +658,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       key: const Key('go-to-upload-report'),
                                       onTap: _upload,
                                       borderRadius: BorderRadius.circular(9),
-                                      child: const Padding(
+                                      child: Padding(
                                         padding: EdgeInsets.symmetric(
                                           horizontal: 12,
                                           vertical: 7,
@@ -674,7 +673,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                             SizedBox(width: 5),
                                             Text(
-                                              'Upload report',
+                                              context.l10n.uploadReport,
                                               style: TextStyle(
                                                 fontSize: 11.5,
                                                 color: AppColors.blue,
@@ -701,8 +700,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                           const SizedBox(height: 20),
                           DesignSectionHeading(
-                            title: 'Recent report',
-                            action: 'View all',
+                            title: context.l10n.recentReport,
+                            action: context.l10n.viewAll,
                             onAction: _openTimeline,
                           ),
                           const SizedBox(height: 8),
@@ -727,12 +726,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                       padding: const EdgeInsets.all(16),
                                       child: Column(
                                         children: [
-                                          const Text(
-                                            'Reports are unavailable. Try again when connected.',
-                                          ),
+                                          Text(context.l10n.reportsUnavailable),
                                           TextButton(
                                             onPressed: _refresh,
-                                            child: const Text('Try again'),
+                                            child: Text(context.l10n.tryAgain),
                                           ),
                                         ],
                                       ),
@@ -743,10 +740,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     key: const Key('home-empty'),
                                     child: DesignEmptyState(
                                       icon: Icons.folder_open_outlined,
-                                      title: 'Your story starts here',
-                                      message:
-                                          'Upload your first report to begin a clear history of your records.',
-                                      action: 'Upload your first report',
+                                      title: context.l10n.emptyHomeTitle,
+                                      message: context.l10n.emptyHomeHelp,
+                                      action: context.l10n.uploadFirstReport,
                                       onAction: _upload,
                                     ),
                                   )
@@ -759,14 +755,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (reports != null && reports.isNotEmpty) ...[
                             const SizedBox(height: 22),
                             DesignSectionHeading(
-                              title: 'Latest results',
-                              action: 'All trends',
+                              title: context.l10n.latestResults,
+                              action: context.l10n.allTrends,
                               onAction: widget.onGoToTrends ?? _openTimeline,
                             ),
                             const SizedBox(height: 8),
                             if (latest.isEmpty)
                               Text(
-                                'Reviewed results will appear here when available.',
+                                context.l10n.reviewedResultsHelp,
                                 style: theme.textTheme.bodySmall,
                               )
                             else
@@ -787,7 +783,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (_loadFailed && reports != null) ...[
                             const SizedBox(height: 12),
                             Text(
-                              'Some information could not be refreshed. Pull down to try again.',
+                              context.l10n.partialRefreshFailed,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: colors.error,
                               ),
@@ -845,7 +841,7 @@ class _PushPermissionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Know when your report is ready',
+                  context.l10n.knowReportReady,
                   style: theme.textTheme.titleSmall,
                 ),
                 const SizedBox(height: 4),
@@ -870,14 +866,14 @@ class _PushPermissionCard extends StatelessWidget {
                             )
                           : Text(
                               requiresSettings
-                                  ? 'Open settings'
-                                  : 'Enable notifications',
+                                  ? context.l10n.openSettings
+                                  : context.l10n.enableNotifications,
                             ),
                     ),
                     TextButton(
                       key: const Key('dashboard-dismiss-push'),
                       onPressed: requesting ? null : onDismiss,
-                      child: const Text('Not now'),
+                      child: Text(context.l10n.notNow),
                     ),
                   ],
                 ),
@@ -957,7 +953,7 @@ class _ResultPreview extends StatelessWidget {
                 )
               else
                 Text(
-                  '${parameter.dataPoints.length == 1 ? 'One result' : 'Same-day results'} · ${AppDateFormat.dateWithRelative(point.date, hasTime: false)}',
+                  '${parameter.dataPoints.length == 1 ? context.l10n.oneResult : context.l10n.sameDayResults} · ${AppDateFormat.dateWithRelative(point.date, hasTime: false)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall,
@@ -1071,7 +1067,7 @@ class _RestrictionBanner extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                'Account Restricted',
+                context.l10n.accountRestricted,
                 style: theme.textTheme.titleSmall?.copyWith(
                   color: theme.colorScheme.error,
                   fontWeight: FontWeight.w600,

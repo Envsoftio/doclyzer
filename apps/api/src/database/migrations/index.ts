@@ -1,3 +1,6 @@
+import { AddPunjabiLanguage1730819700000 } from './1730819700000-AddPunjabiLanguage';
+import { ExtendIndianLanguages1730819600000 } from './1730819600000-ExtendIndianLanguages';
+import { AddPreferredLanguageAndNarrativeTranslations1730819500000 } from './1730819500000-AddPreferredLanguageAndNarrativeTranslations';
 import { CompletePushNotifications1730819400000 } from './1730819400000-CompletePushNotifications';
 import { CompleteReportProcessingRuntime1730818100000 } from './1730818100000-CompleteReportProcessingRuntime';
 import { AccountDeletionLifecycle1730818300000 } from './1730818300000-AccountDeletionLifecycle';
@@ -67,6 +70,9 @@ import { AddReportNotificationPreferences1730819200000 } from './1730819200000-A
 import { AddDataExportOptions1730819300000 } from './1730819300000-AddDataExportOptions';
 
 export const migrations = [
+  AddPreferredLanguageAndNarrativeTranslations1730819500000,
+  ExtendIndianLanguages1730819600000,
+  AddPunjabiLanguage1730819700000,
   CompletePushNotifications1730819400000,
   InitialSchema1730812800000,
   AddDisplayName1730812900000,

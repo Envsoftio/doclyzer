@@ -1,0 +1,24 @@
+{
+  "synthetic": true,
+  "note": "Automated review is not a clinical accuracy certification. Native clinical review is pending.",
+  "model": "gpt-6.1-sol",
+  "generatedAt": "2026-11-07T05:04:11.440Z",
+  "source": {
+    "numericComparison": "Haemoglobin is 10.5 g/dL. The printed reference range is 12–16 g/dL. This value is below this laboratory’s printed range. This result alone does not diagnose a condition or establish its cause.",
+    "uncertainty": "A result within the reference range does not guarantee health. The comparison may not apply if the unit or range was extracted incorrectly. The available report does not include symptoms or medical history. Discuss these limitations with your clinician.",
+    "negation": "A negative result does not always rule out a condition. A possible explanation is not a confirmed diagnosis. Do not change medicines based only on this explanation."
+  },
+  "results": [
+    {
+      "locale": "pa",
+      "language": "Punjabi",
+      "automatedReview": "accepted",
+      "humanClinicalReview": "pending",
+      "translation": {
+        "numericComparison": "Haemoglobin ਦਾ ਨਤੀਜਾ 10.5 g/dL ਹੈ। ਛਪੀ ਹੋਈ ਹਵਾਲਾ ਹੱਦ 12–16 g/dL ਹੈ। ਇਹ ਮੁੱਲ ਇਸ ਲੈਬ ਦੀ ਛਪੀ ਹੋਈ ਹੱਦ ਤੋਂ ਘੱਟ ਹੈ। ਇਕੱਲਾ ਇਹ ਨਤੀਜਾ ਕਿਸੇ ਬਿਮਾਰੀ ਦੀ ਪੁਸ਼ਟੀ ਨਹੀਂ ਕਰਦਾ ਅਤੇ ਨਾ ਹੀ ਉਸ ਦਾ ਕਾਰਨ ਸਾਬਤ ਕਰਦਾ ਹੈ।",
+        "uncertainty": "ਹਵਾਲਾ ਹੱਦ ਦੇ ਅੰਦਰ ਆਉਣ ਵਾਲਾ ਨਤੀਜਾ ਚੰਗੀ ਸਿਹਤ ਦੀ ਗਾਰੰਟੀ ਨਹੀਂ ਦਿੰਦਾ। ਜੇ ਰਿਪੋਰਟ ਵਿੱਚੋਂ ਇਕਾਈ ਜਾਂ ਹੱਦ ਗਲਤ ਕੱਢੀ ਗਈ ਹੋਵੇ, ਤਾਂ ਇਹ ਤੁਲਨਾ ਲਾਗੂ ਨਹੀਂ ਹੋ ਸਕਦੀ। ਉਪਲਬਧ ਰਿਪੋਰਟ ਵਿੱਚ ਲੱਛਣ ਜਾਂ ਪਿਛਲੀ ਸਿਹਤ ਸੰਬੰਧੀ ਜਾਣਕਾਰੀ ਸ਼ਾਮਲ ਨਹੀਂ ਹੈ। ਇਨ੍ਹਾਂ ਸੀਮਾਵਾਂ ਬਾਰੇ ਆਪਣੇ ਡਾਕਟਰ ਨਾਲ ਗੱਲ ਕਰੋ।",
+        "negation": "ਨੈਗੇਟਿਵ ਨਤੀਜੇ ਦਾ ਮਤਲਬ ਹਮੇਸ਼ਾ ਇਹ ਨਹੀਂ ਹੁੰਦਾ ਕਿ ਬਿਮਾਰੀ ਨਹੀਂ ਹੈ। ਕੋਈ ਸੰਭਾਵੀ ਵਜ੍ਹਾ ਦੱਸਣ ਦਾ ਮਤਲਬ ਬਿਮਾਰੀ ਦੀ ਪੁਸ਼ਟੀ ਹੋਣਾ ਨਹੀਂ ਹੈ। ਸਿਰਫ਼ ਇਸ ਵਿਆਖਿਆ ਦੇ ਆਧਾਰ 'ਤੇ ਦਵਾਈਆਂ ਨਾ ਬਦਲੋ।"
+      }
+    }
+  ]
+}

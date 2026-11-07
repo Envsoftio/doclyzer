@@ -31,6 +31,7 @@ abstract class AuthRepository {
     required String email,
     required String password,
     String? referralCode,
+    String preferredLanguage = 'en',
   });
 
   Future<LoginResult> login({required String email, required String password});

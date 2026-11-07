@@ -1,3 +1,4 @@
+import '../../l10n/l10n.dart';
 import '../../core/api_client.dart';
 import 'account_repository.dart';
 
@@ -14,10 +15,16 @@ class ApiAccountRepository implements AccountRepository {
   }
 
   @override
-  Future<AccountProfile> updateProfile({String? displayName}) async {
+  Future<AccountProfile> updateProfile({
+    String? displayName,
+    String? preferredLanguage,
+  }) async {
     final data = await _client.patch(
       'v1/account/profile',
-      body: {'displayName': displayName},
+      body: {
+        'displayName': ?displayName,
+        'preferredLanguage': ?preferredLanguage,
+      },
     );
     final d = data['data'] as Map<String, dynamic>;
     return _profileFromJson(d);
@@ -38,6 +45,9 @@ class ApiAccountRepository implements AccountRepository {
     final createdAt = json['createdAt'] as String?;
     return AccountProfile(
       id: json['id'] as String,
+      preferredLanguage: supportedLanguage(
+        json['preferredLanguage'] as String?,
+      ),
       email: json['email'] as String,
       displayName: json['displayName'] as String?,
       avatarUrl: json['avatarUrl'] as String?,

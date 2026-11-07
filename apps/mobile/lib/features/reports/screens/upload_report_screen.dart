@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -451,8 +452,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     final content = switch (_state) {
       _UploadState.idle => _buildIdle(),
       _UploadState.selected => _buildSelected(),
-      _UploadState.uploading => _buildProgress('Uploading report…'),
-      _UploadState.reading => _buildProgress('Organizing your report…'),
+      _UploadState.uploading => _buildProgress(context.l10n.uploadingReport),
+      _UploadState.reading => _buildProgress(context.l10n.organizingReport),
       _UploadState.success =>
         _isParseFailure() ? _buildParseFailure() : _buildSuccess(),
       _UploadState.duplicate => _buildDuplicateDialog(),
@@ -462,7 +463,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Upload report'),
+        title: Text(context.l10n.uploadReport),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: _state == _UploadState.uploading ? null : widget.onBack,
@@ -574,10 +575,10 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        Text('Upload a report', style: theme.textTheme.headlineSmall),
+        Text(context.l10n.uploadAReport, style: theme.textTheme.headlineSmall),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Choose a PDF or a clear photo. You can check details before saving.',
+          context.l10n.uploadHelp,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: colors.onSurfaceVariant,
           ),
@@ -586,7 +587,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         _buildDestination(),
         const SizedBox(height: AppSpacing.lg),
         Text(
-          'CHOOSE A SOURCE',
+          context.l10n.chooseSource,
           style: theme.textTheme.labelSmall?.copyWith(
             color: colors.onSurfaceVariant,
             letterSpacing: 1.1,
@@ -600,23 +601,23 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
               _buildSourceOption(
                 key: const Key('upload-report-pick'),
                 icon: Icons.upload_file_outlined,
-                title: 'Upload PDF or image',
-                subtitle: 'Choose a report from your files',
+                title: context.l10n.uploadPdfImage,
+                subtitle: context.l10n.chooseReportFiles,
                 onTap: _pickAndUpload,
               ),
               Divider(height: 1, indent: 72, color: colors.outlineVariant),
               _buildSourceOption(
                 icon: Icons.photo_library_outlined,
-                title: 'Choose from gallery',
-                subtitle: 'Select one or more report pages',
+                title: context.l10n.gallery,
+                subtitle: context.l10n.selectReportPages,
                 onTap: _pickGalleryPages,
               ),
               Divider(height: 1, indent: 72, color: colors.outlineVariant),
               _buildSourceOption(
                 key: const Key('upload-report-camera'),
                 icon: Icons.photo_camera_outlined,
-                title: 'Take a photo',
-                subtitle: 'Capture a complete page',
+                title: context.l10n.camera,
+                subtitle: context.l10n.capturePage,
                 onTap: _captureAndUpload,
               ),
             ],
@@ -633,7 +634,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              'Supported formats: PDF, JPG, PNG',
+              context.l10n.supportedFormats,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colors.onSurfaceVariant,
               ),
@@ -738,7 +739,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         Text('Check your report', style: theme.textTheme.titleLarge),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Make sure this is the file you want to add.',
+          context.l10n.confirmFile,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: colors.onSurfaceVariant,
           ),
@@ -769,7 +770,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         const SizedBox(height: AppSpacing.lg),
         FilledButton(
           onPressed: () => _uploadFromPath(path),
-          child: const Text('Add report'),
+          child: Text(context.l10n.addReport),
         ),
         const SizedBox(height: AppSpacing.sm),
         OutlinedButton(
@@ -777,7 +778,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             _selectedPath = null;
             _state = _UploadState.idle;
           }),
-          child: const Text('Choose a different file'),
+          child: Text(context.l10n.chooseDifferentFile),
         ),
       ],
     );
@@ -797,7 +798,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          'This may take a moment. Please keep the app open.',
+          context.l10n.uploadWait,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -824,7 +825,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
 
   String _parseFailureMessage(String? status) {
     if (status == 'failed_transient') {
-      return 'Processing stopped before it finished. Your file is saved. Tap Retry to try again.';
+      return context.l10n.processingRetryHelp;
     }
     if (status == 'content_not_recognized') {
       return 'Some results need review. Your original report is saved.';
@@ -990,7 +991,10 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           color: theme.colorScheme.error,
         ),
         const SizedBox(height: AppSpacing.md),
-        Text('Report needs attention', style: theme.textTheme.titleLarge),
+        Text(
+          context.l10n.reportNeedsAttention,
+          style: theme.textTheme.titleLarge,
+        ),
         const SizedBox(height: AppSpacing.sm),
         Text(
           _parseFailureMessage(_result?.status),
@@ -1002,7 +1006,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         if (_result?.status == 'content_not_recognized') ...[
           const SizedBox(height: 8),
           Text(
-            'Check detected results against the original report before saving them.',
+            context.l10n.verifyBeforeSaving,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -1031,8 +1035,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
                 : _onReviewReport,
             child: Text(
               _verifiedResultCount > 0
-                  ? 'View verified results'
-                  : 'Review detected results',
+                  ? context.l10n.viewVerifiedResults
+                  : context.l10n.reviewResults,
             ),
           ),
           const SizedBox(height: 8),
@@ -1040,20 +1044,20 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         FilledButton(
           key: const Key('view-pdf-button'),
           onPressed: _onViewPdf,
-          child: const Text('View original report'),
+          child: Text(context.l10n.viewOriginalReport),
         ),
         const SizedBox(height: 8),
         FilledButton(
           key: const Key('parse-failure-retry'),
           onPressed: _onRetry,
-          child: const Text('Retry'),
+          child: Text(context.l10n.retry),
         ),
         if (_result?.status != 'content_not_recognized') ...[
           const SizedBox(height: 8),
           OutlinedButton(
             key: const Key('parse-failure-keep-file'),
             onPressed: _onKeepFile,
-            child: const Text('Keep file anyway'),
+            child: Text(context.l10n.keepFile),
           ),
         ],
         if (_supportContext != null) ...[
@@ -1069,7 +1073,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
                 errorMessage: _supportErrorMessage,
               );
             },
-            child: const Text('Need help?'),
+            child: Text(context.l10n.needHelp),
           ),
         ],
       ],
@@ -1163,7 +1167,9 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
               processingInProgress ? Icons.schedule : Icons.analytics_outlined,
             ),
             label: Text(
-              processingInProgress ? 'View report status' : 'View results',
+              processingInProgress
+                  ? context.l10n.viewReportStatus
+                  : context.l10n.viewResults,
             ),
           ),
         const SizedBox(height: 8),
@@ -1171,7 +1177,9 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           key: const Key('view-pdf-button'),
           onPressed: _onViewPdf,
           child: Text(
-            originalOnly ? 'View original report' : 'View original file',
+            originalOnly
+                ? context.l10n.viewOriginalReport
+                : context.l10n.viewOriginalFile,
           ),
         ),
         if (originalOnly) ...[
@@ -1179,14 +1187,14 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           OutlinedButton(
             key: const Key('original-only-retry'),
             onPressed: _onRetry,
-            child: const Text('Retry extraction'),
+            child: Text(context.l10n.retryExtraction),
           ),
         ],
         const SizedBox(height: 8),
         TextButton(
           key: const Key('upload-report-done'),
           onPressed: widget.onComplete,
-          child: const Text('Done'),
+          child: Text(context.l10n.done),
         ),
       ],
     );
@@ -1207,13 +1215,13 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         _buildStateIcon(Icons.content_copy_outlined),
         const SizedBox(height: AppSpacing.md),
         Text(
-          'This report looks like a duplicate',
+          context.l10n.duplicateReport,
           key: const Key('duplicate-dialog'),
           style: theme.textTheme.titleLarge,
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          'This file may already be in your reports.',
+          context.l10n.duplicateHelp,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: colors.onSurfaceVariant,
           ),
@@ -1240,19 +1248,19 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         FilledButton(
           key: const Key('duplicate-keep-existing'),
           onPressed: _onDuplicateKeepExisting,
-          child: const Text('Keep existing'),
+          child: Text(context.l10n.keepExisting),
         ),
         const SizedBox(height: 8),
         OutlinedButton(
           key: const Key('duplicate-process-again'),
           onPressed: _onDuplicateProcessAgain,
-          child: const Text('Process PDF again'),
+          child: Text(context.l10n.processAgain),
         ),
         const SizedBox(height: 8),
         OutlinedButton(
           key: const Key('duplicate-upload-anyway'),
           onPressed: _onDuplicateUploadAnyway,
-          child: const Text('Upload as new copy'),
+          child: Text(context.l10n.uploadNewCopy),
         ),
         if (_errorMessage != null) ...[
           const SizedBox(height: 8),
@@ -1278,10 +1286,13 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       children: [
         _buildStateIcon(Icons.info_outline_rounded, color: colors.error),
         const SizedBox(height: AppSpacing.md),
-        Text('Report limit reached', style: theme.textTheme.titleLarge),
+        Text(
+          context.l10n.reportLimitReached,
+          style: theme.textTheme.titleLarge,
+        ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          _limitMessage ?? 'You have reached your report limit.',
+          _limitMessage ?? context.l10n.reportLimitHelp,
           key: const Key('upload-limit-warning'),
           style: theme.textTheme.bodyMedium?.copyWith(
             color: colors.onSurfaceVariant,
@@ -1296,10 +1307,13 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         FilledButton(
           key: const Key('upload-limit-upgrade'),
           onPressed: widget.onUpgrade,
-          child: const Text('Upgrade'),
+          child: Text(context.l10n.upgrade),
         ),
         const SizedBox(height: 8),
-        OutlinedButton(onPressed: widget.onBack, child: const Text('Back')),
+        OutlinedButton(
+          onPressed: widget.onBack,
+          child: Text(context.l10n.back),
+        ),
         if (_supportContext != null) ...[
           const SizedBox(height: 8),
           TextButton(
@@ -1313,7 +1327,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
                 errorMessage: _supportErrorMessage,
               );
             },
-            child: const Text('Need help?'),
+            child: Text(context.l10n.needHelp),
           ),
         ],
       ],
@@ -1328,10 +1342,10 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       children: [
         _buildStateIcon(Icons.cloud_off_outlined, color: colors.error),
         const SizedBox(height: AppSpacing.md),
-        Text('Could not upload report', style: theme.textTheme.titleLarge),
+        Text(context.l10n.uploadFailedTitle, style: theme.textTheme.titleLarge),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          _errorMessage ?? 'Upload failed',
+          _errorMessage ?? context.l10n.uploadFailed,
           key: const Key('upload-error'),
           style: theme.textTheme.bodyMedium?.copyWith(
             color: colors.onSurfaceVariant,
@@ -1342,7 +1356,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           FilledButton(
             key: const Key('upload-retry-same-file'),
             onPressed: () => _uploadFromPath(_selectedPath),
-            child: const Text('Retry same file'),
+            child: Text(context.l10n.retrySameFile),
           ),
         OutlinedButton(
           onPressed: () => setState(() {
@@ -1351,7 +1365,9 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
             _errorMessage = null;
           }),
           child: Text(
-            _selectedPath == null ? 'Try again' : 'Choose another file',
+            _selectedPath == null
+                ? context.l10n.tryAgain
+                : context.l10n.chooseAnotherFile,
           ),
         ),
         if (_supportContext != null) ...[
@@ -1367,7 +1383,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
                 errorMessage: _supportErrorMessage,
               );
             },
-            child: const Text('Need help?'),
+            child: Text(context.l10n.needHelp),
           ),
         ],
       ],

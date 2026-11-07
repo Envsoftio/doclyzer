@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ConflictException,
   Delete,
   Get,
   HttpCode,
@@ -29,6 +30,8 @@ import { AuthService } from '../auth/auth.service';
 import { ReportsService, type CorrectLabValueInput } from './reports.service';
 import { ReportVlShadowService } from './processing/report-vl-shadow.service';
 import { ReportResultInsightService } from './report-result-insight.service';
+import { NarrativeTranslationService } from './narrative-translation.service';
+import { safeSummaryValues } from './report-summary/report-summary.service';
 import { selectStoredResult } from './report-result-selector';
 import { Logger } from '@nestjs/common';
 import {
@@ -56,7 +59,46 @@ export class ReportsController {
     private readonly authService: AuthService,
     private readonly resultInsightService: ReportResultInsightService,
     private readonly vlShadow: ReportVlShadowService,
+    private readonly translations: NarrativeTranslationService,
   ) {}
+
+  /** Only saved educational prose and allowlisted clinical terms reach translation. */
+  private narrativeSource(report: Awaited<ReturnType<ReportsService['getReport']>>) {
+    const results = report.extractedLabValues.length > 0
+      ? report.extractedLabValues
+      : (report.structuredReport?.sections ?? []).flatMap((section) => section.tests);
+    return {
+      revision: JSON.stringify(results),
+      terms: safeSummaryValues(results.map((row) => ({
+        parameterName: row.parameterName, value: row.value,
+        unit: row.unit ?? null, referenceRange: row.referenceRange ?? null,
+      }))).flatMap((row) => [row.parameterName, row.unit ?? '', row.referenceRange ?? '']),
+    };
+  }
+
+  @Post(':id/summary/language')
+  async getLocalizedSummary(
+    @Param('id') reportId: string,
+    @Body() body: { locale?: string },
+    @Req() req: Request,
+  ): Promise<object> {
+    const { id: userId } = req.user as RequestUser;
+    this.authService.enforceRateLimit('narrative-language', userId, 30);
+    const report = await this.reportsService.getReport(userId, reportId);
+    const locale = await this.translations.resolveLanguage(userId, body?.locale);
+    if (!report.summary?.trim()) {
+      return successResponse({ locale, summary: null, status: report.summaryStatus ?? 'not_requested' }, getCorrelationId(req));
+    }
+    const source = this.narrativeSource(report);
+    const translated = await this.translations.translate({
+      userId, reportId, kind: 'summary', locale, source: { summary: report.summary }, ...source,
+    });
+    const current = await this.reportsService.getReport(userId, reportId);
+    if (current.summary !== report.summary || this.narrativeSource(current).revision !== source.revision) {
+      throw new ConflictException({ code: 'NARRATIVE_SOURCE_CHANGED', message: 'Report results changed. Reload the report.' });
+    }
+    return successResponse({ ...translated, locale, status: 'ready' }, getCorrelationId(req));
+  }
 
   @Get('lab-trends')
   async getLabTrends(
@@ -366,12 +408,13 @@ export class ReportsController {
   @Post(':id/results/insight')
   async getResultInsight(
     @Param('id') reportId: string,
-    @Body() body: { parameterName?: string; value?: string; unit?: string },
+    @Body() body: { parameterName?: string; value?: string; unit?: string; locale?: string },
     @Req() req: Request,
   ): Promise<object> {
     const { id: userId } = req.user as RequestUser;
     this.authService.enforceRateLimit('result-insight', userId, 10);
     const report = await this.reportsService.getReport(userId, reportId);
+    const locale = await this.translations.resolveLanguage(userId, body?.locale);
     const results = report.extractedLabValues.length > 0
       ? report.extractedLabValues
       : (report.structuredReport?.sections ?? []).flatMap((section) => section.tests);
@@ -388,7 +431,15 @@ export class ReportsController {
       userId,
       results,
     );
-    return successResponse(data, getCorrelationId(req));
+    const source = this.narrativeSource(report);
+    const translated = await this.translations.translate({
+      userId, reportId, kind: 'insight', locale, source: { ...data }, ...source,
+    });
+    const current = await this.reportsService.getReport(userId, reportId);
+    if (this.narrativeSource(current).revision !== source.revision) {
+      throw new ConflictException({ code: 'NARRATIVE_SOURCE_CHANGED', message: 'Report results changed. Reload the report.' });
+    }
+    return successResponse({ ...translated, locale }, getCorrelationId(req));
   }
 
   @Post(':id/retry')

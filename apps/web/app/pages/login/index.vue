@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t, locale } = useI18n()
 import { computed, reactive, ref } from 'vue'
 import { FetchError } from 'ofetch'
 import { useRouter } from '#app'
@@ -8,6 +9,7 @@ const baseApiUrl = config.public.apiBaseUrl.replace(/\/+$/, '')
 const router = useRouter()
 const route = useRoute()
 const consumerToken = useState<string>('consumer-token', () => '')
+const languageLoaded = useState<boolean>('consumer-language-loaded', () => false)
 
 type FormErrors = {
   email?: string
@@ -77,6 +79,7 @@ const persistTokens = (tokens: { accessToken: string; refreshToken?: string }) =
   window.localStorage.removeItem('doclyzerAuthTokens')
   window.sessionStorage.setItem('doclyzerConsumerAccessToken', tokens.accessToken)
   consumerToken.value = tokens.accessToken
+  languageLoaded.value = false
   if (tokens.refreshToken) window.sessionStorage.setItem('doclyzerConsumerRefreshToken', tokens.refreshToken)
 }
 
@@ -119,22 +122,20 @@ const submitForm = async () => {
 <template>
   <main class="login-page">
     <section class="intro">
-      <p class="eyebrow">Welcome back</p>
-      <h1>Sign in to Doclyzer</h1>
-      <p>
-        Enter the email and password you used during registration to view your reports.
-      </p>
+      <p class="eyebrow">{{ t('welcomeBack') }}</p>
+      <h1>{{ t('signInDoclyzer') }}</h1>
+      <p>{{ t('webLoginIntro') }}</p>
     </section>
 
     <div v-if="generalError" class="alert error" role="alert">
       {{ generalError }}
     </div>
-    <p v-if="route.query.expired" role="status" class="alert error">Your session expired. Sign in again.</p>
-    <p v-if="route.query.registered" role="status" class="alert">Account created. Sign in to continue.</p>
+    <p v-if="route.query.expired" role="status" class="alert error">{{ t('sessionExpired') }}</p>
+    <p v-if="route.query.registered" role="status" class="alert">{{ t('accountCreated') }}</p>
 
     <form class="login-form" @submit.prevent="submitForm" novalidate>
       <label class="form-control">
-        <span>Email</span>
+        <span>{{ t('email') }}</span>
         <input
           v-model="form.email"
           type="email"
@@ -148,7 +149,7 @@ const submitForm = async () => {
       </label>
 
       <label class="form-control">
-        <span>Password</span>
+        <span>{{ t('password') }}</span>
         <input
           v-model="form.password"
           type="password"
@@ -159,24 +160,24 @@ const submitForm = async () => {
           :disabled="isSubmitting"
           required
         />
-        <p class="helper-text">Passwords must include uppercase, lowercase, digits, and a symbol.</p>
+        <p class="helper-text">{{ t('passwordRules') }}</p>
         <p v-if="fieldErrors.password" class="field-error" role="alert">
           {{ fieldErrors.password }}
         </p>
       </label>
 
       <button type="submit" class="primary" :disabled="!canSubmit">
-        <span v-if="isSubmitting">Submitting…</span>
-        <span v-else>Log in</span>
+        <span v-if="isSubmitting">{{ t('submitting') }}</span>
+        <span v-else>{{ t('logIn') }}</span>
       </button>
     </form>
 
     <p class="support-note">
-      Need to create an account? <NuxtLink to="/register">Register</NuxtLink>.
+      Need to create an account? <NuxtLink to="/register">{{ t('register') }}</NuxtLink>.
     </p>
-    <p class="support-note"><NuxtLink to="/forgot-password">Forgot password?</NuxtLink></p>
+    <p class="support-note"><NuxtLink to="/forgot-password">{{ t('forgotPassword') }}</NuxtLink></p>
     <p class="support-note">
-      <NuxtLink to="/">Back to home</NuxtLink>
+      <NuxtLink to="/">{{ t('backHome') }}</NuxtLink>
     </p>
   </main>
 </template>

@@ -34,6 +34,7 @@ import { ReportValueSuggestionService } from './report-value-suggestion.service'
 import { ImageToPdfService } from './image-to-pdf.service';
 import { PaddleOcrClient } from './paddle-ocr.client';
 import { DoclingOcrClient } from './docling-ocr.client';
+import { NarrativeTranslationService } from './narrative-translation.service';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { DoclingOcrClient } from './docling-ocr.client';
     ReportsController,
   ],
   providers: [
+    NarrativeTranslationService,
     ReportVlShadowService,
     ReportsService,
     ReportWorkerService,

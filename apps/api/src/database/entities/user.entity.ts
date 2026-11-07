@@ -1,3 +1,4 @@
+import type { SupportedLanguage } from '../../common/language';
 import {
   Column,
   CreateDateColumn,
@@ -36,6 +37,9 @@ export class UserEntity {
     default: false,
   })
   emailVerified!: boolean;
+
+  @Column({ type: 'varchar', name: 'preferred_language', length: 10, default: 'en' })
+  preferredLanguage!: SupportedLanguage;
 
   @Column({
     type: 'varchar',

@@ -11,6 +11,7 @@
     "test:report-stream": "node --test test/report-stream.test.mjs"
   },
   "dependencies": {
+    "@nuxtjs/i18n": "^10.6.0",
     "nuxt": "^4.4.2",
     "vue": "^3.5.30",
     "vue-router": "^5.0.3"

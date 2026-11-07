@@ -5,8 +5,10 @@ class AccountProfile {
     required this.displayName,
     required this.createdAt,
     this.avatarUrl,
+    this.preferredLanguage = 'en',
   });
 
+  final String preferredLanguage;
   final String id;
   final String email;
   final String? displayName;
@@ -26,7 +28,10 @@ class AccountException implements Exception {
 abstract class AccountRepository {
   Future<AccountProfile> getProfile();
 
-  Future<AccountProfile> updateProfile({String? displayName});
+  Future<AccountProfile> updateProfile({
+    String? displayName,
+    String? preferredLanguage,
+  });
 
   Future<AccountProfile> uploadAvatar(String filePath);
 }

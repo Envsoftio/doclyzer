@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'dart:async';
 
 import '../report_processing_store.dart';
@@ -8,6 +9,7 @@ import '../reports_repository.dart';
 import '../result_palette.dart';
 import '../result_range.dart';
 import '../../../shared/ai_disclaimer_note.dart';
+import '../../../shared/localized_description.dart';
 import '../../../shared/app_date_format.dart';
 import 'health_history_screen.dart';
 import 'compare_reports_screen.dart';
@@ -157,7 +159,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
               : _ReportDetailState.loaded;
           _refreshing = false;
           _errorMessage = e is TimeoutException
-              ? 'The report is taking longer than expected to load. Check your connection and try again.'
+              ? context.l10n.reportLoadSlow
               : e.toString().replaceFirst('Exception: ', '');
         });
       }
@@ -186,8 +188,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
       if (mounted) {
         setState(() {
           _summaryError = refresh
-              ? 'We could not update the summary right now. The saved summary is still available.'
-              : 'We could not create the summary right now. Your results are still available below.';
+              ? context.l10n.summaryUpdateFailed
+              : context.l10n.summaryCreateFailed;
         });
       }
     } finally {
@@ -230,6 +232,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
             widget.reportId,
             result,
           ),
+          loadLocalizedInsight: (locale) => widget.reportsRepository
+              .getResultInsight(widget.reportId, result, locale: locale),
           onViewTrend: () => _openTrendChart(result.parameterName, result.unit),
           onViewOriginal: _openPdf,
           onReviewResult: result.id == null
@@ -336,7 +340,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                       .where((profile) => profile.id == widget.profileId)
                       .firstOrNull
                       ?.name ??
-                  'Your profile',
+                  context.l10n.yourProfile,
               reportsRepository: widget.reportsRepository,
             ),
           ),
@@ -414,11 +418,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
           _state = _ReportDetailState.loaded;
           _errorMessage = null;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not reassign report. Try again.'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.reassignFailed)));
       }
     }
   }
@@ -429,18 +431,16 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Move to recycle bin?'),
-        content: const Text(
-          'You can restore this report from Reports > Recycle Bin for 30 days. After that, it will be permanently deleted.',
-        ),
+        title: Text(context.l10n.confirmRecycle),
+        content: Text(context.l10n.recycleHelp),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -453,9 +453,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
     try {
       await widget.reportsRepository.deleteReport(report.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Report moved to recycle bin')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.reportRecycled)));
       widget.onBack();
     } catch (_) {
       if (!mounted) return;
@@ -463,9 +463,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
         _state = _ReportDetailState.loaded;
         _errorMessage = null;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not delete report. Try again.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.reportDeleteFailed)));
     }
   }
 
@@ -479,23 +479,19 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
     if (otherProfiles.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Add another family profile before moving this report.',
-          ),
-        ),
+        SnackBar(content: Text(context.l10n.addProfileBeforeMove)),
       );
       return;
     }
     final selected = await showDialog<Profile>(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: const Text('Move report'),
+        title: Text(context.l10n.moveReport),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
             child: Text(
-              'Choose another family member if this report was added to the wrong profile.',
+              context.l10n.moveReportHelp,
               style: Theme.of(ctx).textTheme.bodyMedium,
             ),
           ),
@@ -512,18 +508,18 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Move this report?'),
+        title: Text(context.l10n.confirmMoveReport),
         content: Text(
           '${report.originalFileName} will appear under ${selected.name} instead of the current profile.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Move report'),
+            child: Text(context.l10n.moveReport),
           ),
         ],
       ),
@@ -535,40 +531,40 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('About sample dates'),
+        title: Text(context.l10n.aboutSampleDates),
         content: Text(
           hasMultipleDates
-              ? 'This report has results from more than one sample date. Open a result to check its date against the original report.'
-              : 'The sample date is when the sample was taken. We could not find a reliable date in this report. It is different from the upload date. Open a result to check or correct its date.',
+              ? context.l10n.multipleDatesHelp
+              : context.l10n.missingDateHelp,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Got it'),
+            child: Text(context.l10n.gotIt),
           ),
         ],
       ),
     );
   }
 
-  static String _statusLabel(String status) {
+  String _statusLabel(String status) {
     switch (status) {
       case 'uploading':
-        return 'Uploading';
+        return context.l10n.uploading;
       case 'queued':
-        return 'Waiting to process';
+        return context.l10n.waitingToProcess;
       case 'parsing':
-        return 'Reading report';
+        return context.l10n.readingReport;
       case 'parsed':
-        return 'Ready to review';
+        return context.l10n.readyToReview;
       case 'content_not_recognized':
-        return 'Some results need review';
+        return context.l10n.someResultsNeedReview;
       case 'unparsed':
-        return 'Could not read report';
+        return context.l10n.couldNotReadReport;
       case 'failed_transient':
-        return 'Processing stopped';
+        return context.l10n.processingStopped;
       case 'failed_terminal':
-        return 'Could not process report';
+        return context.l10n.couldNotProcessReport;
       default:
         return status;
     }
@@ -594,7 +590,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
     return Scaffold(
       key: const Key('report-detail-scaffold'),
       appBar: AppBar(
-        title: const Text('Report details'),
+        title: Text(context.l10n.reportDetails),
         leading: IconButton(
           key: const Key('report-detail-back'),
           icon: const Icon(Icons.arrow_back),
@@ -605,46 +601,46 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
             if (_report!.status == 'parsed' && widget.onShareReport != null)
               IconButton(
                 key: const Key('report-detail-share'),
-                tooltip: 'Share report',
+                tooltip: context.l10n.shareReport,
                 onPressed: () => widget.onShareReport!(_report!),
                 icon: const Icon(Icons.share_outlined),
               ),
             PopupMenuButton<_ReportAction>(
               key: const Key('report-detail-more-actions'),
-              tooltip: 'More report actions',
+              tooltip: context.l10n.moreReportActions,
               onSelected: _onReportAction,
               itemBuilder: (context) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: _ReportAction.attempts,
                   child: ListTile(
                     leading: Icon(Icons.history),
-                    title: Text('Attempt history'),
+                    title: Text(context.l10n.attemptHistory),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: _ReportAction.compare,
                   child: ListTile(
                     leading: Icon(Icons.show_chart),
-                    title: Text('Compare reports'),
+                    title: Text(context.l10n.compareReports),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
                 if (_profiles.any((p) => p.id != _report!.profileId))
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: _ReportAction.reassign,
                     child: ListTile(
                       leading: Icon(Icons.swap_horiz),
-                      title: Text('Move report'),
+                      title: Text(context.l10n.moveReport),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
                 if (_report!.parsedTranscript?.trim().isNotEmpty == true)
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: _ReportAction.readParsed,
                     child: ListTile(
                       leading: Icon(Icons.menu_book_outlined),
-                      title: Text('Read parsed report'),
+                      title: Text(context.l10n.readParsedReport),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
@@ -657,7 +653,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                       color: Theme.of(context).colorScheme.error,
                     ),
                     title: Text(
-                      'Move to recycle bin',
+                      context.l10n.moveRecycle,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
                       ),
@@ -676,11 +672,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
             const LinearProgressIndicator(key: Key('report-detail-refreshing')),
           if (_errorMessage != null && _report != null)
             MaterialBanner(
-              content: const Text(
-                'Could not refresh this report. Showing the last loaded result.',
-              ),
+              content: Text(context.l10n.reportRefreshFailed),
               actions: [
-                TextButton(onPressed: _loadReport, child: const Text('Retry')),
+                TextButton(
+                  onPressed: _loadReport,
+                  child: Text(context.l10n.retry),
+                ),
               ],
             ),
           Expanded(
@@ -715,7 +712,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Report summary',
+                    context.l10n.reportSummary,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -725,7 +722,14 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
             ),
             const SizedBox(height: 12),
             if (hasSummary) ...[
-              _ReportSummaryBody(summary: summary),
+              LocalizedDescription(
+                english: summary,
+                load: (locale) => widget.reportsRepository.getLocalizedSummary(
+                  widget.reportId,
+                  locale,
+                ),
+                builder: (text) => _ReportSummaryBody(summary: text),
+              ),
               const SizedBox(height: 12),
               const AiDisclaimerNote(
                 key: Key('report-detail-summary-disclaimer'),
@@ -737,7 +741,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                     ? null
                     : () => _requestSummary(refresh: true),
                 icon: const Icon(Icons.refresh),
-                label: const Text('Update summary'),
+                label: Text(context.l10n.updateSummary),
               ),
               if (_summaryRequesting) const LinearProgressIndicator(),
               if (_summaryError != null) Text(_summaryError!),
@@ -746,21 +750,21 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                 key: Key('report-detail-summary-progress'),
               ),
               const SizedBox(height: 12),
-              const Text('Putting your results into plain language…'),
+              Text(context.l10n.summaryLoading),
               if (!_summaryRequesting) ...[
                 const SizedBox(height: 8),
                 TextButton.icon(
                   onPressed: _loadReport,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Check summary'),
+                  label: Text(context.l10n.checkSummary),
                 ),
               ],
             ] else ...[
               Text(
                 _summaryError ??
                     (report.summaryStatus == 'failed'
-                        ? 'We could not create the summary. You can try again.'
-                        : 'A plain language explanation of the key results will appear here.'),
+                        ? context.l10n.summaryFailed
+                        : context.l10n.summaryPlaceholder),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 12),
@@ -770,8 +774,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                 icon: const Icon(Icons.refresh),
                 label: Text(
                   report.summaryStatus == 'failed' || _summaryError != null
-                      ? 'Try summary again'
-                      : 'Generate summary',
+                      ? context.l10n.retrySummary
+                      : context.l10n.generateSummary,
                 ),
               ),
             ],
@@ -783,14 +787,14 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
 
   Widget _buildBody() {
     if (_state == _ReportDetailState.loading) {
-      return const Center(
+      return Center(
         key: Key('report-detail-loading'),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 20),
-            Text('Loading report results…', textAlign: TextAlign.center),
+            Text(context.l10n.loadingResults, textAlign: TextAlign.center),
           ],
         ),
       );
@@ -802,12 +806,15 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              _errorMessage ?? 'Something went wrong',
+              _errorMessage ?? context.l10n.somethingWrong,
               style: TextStyle(color: Colors.red.shade700),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            FilledButton(onPressed: _loadReport, child: const Text('Retry')),
+            FilledButton(
+              onPressed: _loadReport,
+              child: Text(context.l10n.retry),
+            ),
           ],
         ),
       );
@@ -894,7 +901,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                                         ?.extractionReview
                                         ?.required ==
                                     true
-                                ? 'Some results need review'
+                                ? context.l10n.someResultsNeedReview
                                 : _statusLabel(report.status),
                           ),
                         ],
@@ -923,8 +930,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                               children: [
                                 TextSpan(
                                   text: hasMultipleSampleDates
-                                      ? 'Multiple sample dates '
-                                      : 'Sample date not found ',
+                                      ? context.l10n.multipleSampleDates
+                                      : context.l10n.missingSampleDate,
                                 ),
                                 WidgetSpan(
                                   alignment: PlaceholderAlignment.middle,
@@ -959,13 +966,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                   key: const Key('report-detail-open-trends'),
                   onPressed: _openTrends,
                   icon: const Icon(Icons.show_chart_outlined, size: 18),
-                  label: const Text('View trends'),
+                  label: Text(context.l10n.viewTrends),
                 ),
                 TextButton.icon(
                   key: const Key('report-detail-open-original'),
                   onPressed: _openPdf,
                   icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
-                  label: const Text('Original file'),
+                  label: Text(context.l10n.originalFile),
                 ),
               ],
             ),
@@ -998,12 +1005,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                   context,
                 ).colorScheme.onSurfaceVariant,
                 tabs: [
-                  const Tab(text: 'Test values'),
+                  Tab(text: context.l10n.testValues),
                   Tab(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Flexible(child: Text('Summary')),
+                        Flexible(child: Text(context.l10n.summary)),
                         if (report.summaryStatus == 'failed' &&
                             report.summary == null) ...[
                           const SizedBox(width: 5),
@@ -1032,7 +1039,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
               report.status == 'parsing') ...[
             const SizedBox(height: 16),
             Text(
-              'We are analyzing this report. You can leave this screen; results will appear when ready.',
+              context.l10n.reportAnalyzing,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 8),
@@ -1040,7 +1047,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
               key: const Key('report-detail-check-status'),
               onPressed: _loadReport,
               icon: const Icon(Icons.refresh),
-              label: const Text('Check status'),
+              label: Text(context.l10n.checkStatus),
             ),
           ],
           if (report.structuredReport?.extractionReview?.required == true) ...[
@@ -1053,13 +1060,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'We could not extract all results reliably',
+                      context.l10n.extractionIncompleteTitle,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Automatic extraction was incomplete. Check detected rows against the original report before saving them.',
-                    ),
+                    Text(context.l10n.extractionIncompleteHelp),
                     for (final reason
                         in report
                             .structuredReport!
@@ -1072,7 +1077,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                     TextButton.icon(
                       onPressed: _openPdf,
                       icon: const Icon(Icons.picture_as_pdf_outlined),
-                      label: const Text('View original'),
+                      label: Text(context.l10n.viewOriginal),
                     ),
                   ],
                 ),
@@ -1084,7 +1089,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
             const SizedBox(height: 12),
             Text(
               report.status == 'content_not_recognized'
-                  ? 'Verified results'
+                  ? context.l10n.verifiedResults
                   : 'Test values (${results.length})',
               style: Theme.of(
                 context,
@@ -1093,8 +1098,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
             const SizedBox(height: 4),
             Text(
               report.status == 'content_not_recognized'
-                  ? 'These rows were checked against the original. Other rows may still need review.'
-                  : 'Tap a result to understand what the test measures.',
+                  ? context.l10n.verifiedRowsHelp
+                  : context.l10n.resultTapHelp,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -1116,7 +1121,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'No test values were found in this report. Open the original file to check its contents.',
+                  context.l10n.noTestValues,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
@@ -1128,14 +1133,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
               report.status == 'failed_terminal') ...[
             const SizedBox(height: 12),
             if (report.status == 'failed_transient') ...[
-              const Text(
-                'Processing stopped before it finished. Your file is saved. Tap Retry to try again.',
-              ),
+              Text(context.l10n.processingRetryHelp),
               const SizedBox(height: 8),
             ],
             if (report.status == 'content_not_recognized') ...[
               Text(
-                'Some results need a check against the original report. You can review the detected rows below.',
+                context.l10n.resultsNeedCheck,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -1158,7 +1161,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                 key: const Key('report-detail-review-results'),
                 onPressed: _openReview,
                 icon: const Icon(Icons.fact_check_outlined),
-                label: const Text('Review detected results'),
+                label: Text(context.l10n.reviewResults),
               ),
               const SizedBox(height: 8),
             ],
@@ -1166,14 +1169,14 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
               FilledButton(
                 key: const Key('report-detail-retry'),
                 onPressed: _onRetryParse,
-                child: const Text('Retry'),
+                child: Text(context.l10n.retry),
               ),
             if (report.status != 'content_not_recognized') ...[
               const SizedBox(height: 8),
               OutlinedButton(
                 key: const Key('report-detail-keep-file'),
                 onPressed: _onKeepFile,
-                child: const Text('Keep file anyway'),
+                child: Text(context.l10n.keepFile),
               ),
             ],
           ],
@@ -1183,7 +1186,10 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                       .trim()
                       .isNotEmpty))) ...[
             const SizedBox(height: 24),
-            const _SectionTitle('Patient details', icon: Icons.person_outline),
+            _SectionTitle(
+              context.l10n.patientDetails,
+              icon: Icons.person_outline,
+            ),
             const SizedBox(height: 8),
             _SectionCard(
               child: Wrap(
@@ -1192,22 +1198,22 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                 children: [
                   if (report.structuredReport!.patientDetails.name != null)
                     _InfoPill(
-                      label: 'Name',
+                      label: context.l10n.name,
                       value: report.structuredReport!.patientDetails.name!,
                     ),
                   if (report.structuredReport!.patientDetails.age != null)
                     _InfoPill(
-                      label: 'Age',
+                      label: context.l10n.age,
                       value: report.structuredReport!.patientDetails.age!,
                     ),
                   if (report.structuredReport!.patientDetails.gender != null)
                     _InfoPill(
-                      label: 'Gender',
+                      label: context.l10n.gender,
                       value: report.structuredReport!.patientDetails.gender!,
                     ),
                   if (report.structuredReport!.patientDetails.bookingId != null)
                     _InfoPill(
-                      label: 'Booking ID',
+                      label: context.l10n.bookingId,
                       value: report.structuredReport!.patientDetails.bookingId!,
                     ),
                   if (report
@@ -1216,7 +1222,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                           .sampleCollectionDate !=
                       null)
                     _InfoPill(
-                      label: 'Sample Collection',
+                      label: context.l10n.sampleCollection,
                       value: AppDateFormat.fromRawWithRelative(
                         report
                             .structuredReport!
@@ -1231,8 +1237,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                 .trim()
                 .isNotEmpty)) ...[
               const SizedBox(height: 16),
-              const _SectionTitle(
-                'Lab details',
+              _SectionTitle(
+                context.l10n.labDetails,
                 icon: Icons.local_hospital_outlined,
               ),
               const SizedBox(height: 8),
@@ -1243,27 +1249,27 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                   children: [
                     if (report.structuredReport!.labDetails!.name != null)
                       _InfoPill(
-                        label: 'Lab Name',
+                        label: context.l10n.labName,
                         value: report.structuredReport!.labDetails!.name!,
                       ),
                     if (report.structuredReport!.labDetails!.address != null)
                       _InfoPill(
-                        label: 'Address',
+                        label: context.l10n.address,
                         value: report.structuredReport!.labDetails!.address!,
                       ),
                     if (report.structuredReport!.labDetails!.phone != null)
                       _InfoPill(
-                        label: 'Phone',
+                        label: context.l10n.phone,
                         value: report.structuredReport!.labDetails!.phone!,
                       ),
                     if (report.structuredReport!.labDetails!.email != null)
                       _InfoPill(
-                        label: 'Email',
+                        label: context.l10n.email,
                         value: report.structuredReport!.labDetails!.email!,
                       ),
                     if (report.structuredReport!.labDetails!.location != null)
                       _InfoPill(
-                        label: 'Location',
+                        label: context.l10n.location,
                         value: report.structuredReport!.labDetails!.location!,
                       ),
                   ],
@@ -1275,7 +1281,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
               report.parsedTranscript!.trim().isNotEmpty) ...[
             const SizedBox(height: 20),
             Text(
-              'Parsed report is available in Reader mode for easier access and better readability.',
+              context.l10n.readerModeHelp,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -1364,10 +1370,10 @@ class _ResultCard extends StatelessWidget {
     final position = compareWithPrintedRange(result);
     final palette = ResultPalette.forPosition(context, position);
     final status = switch (position) {
-      RangePosition.below => 'Below range',
-      RangePosition.above => 'Above range',
-      RangePosition.within => 'In listed range',
-      RangePosition.unknown => 'Range unclear',
+      RangePosition.below => context.l10n.belowRange,
+      RangePosition.above => context.l10n.aboveRange,
+      RangePosition.within => context.l10n.withinRange,
+      RangePosition.unknown => context.l10n.rangeUnclear,
     };
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -1423,8 +1429,8 @@ class _ResultCard extends StatelessWidget {
                         ? 'Value checked by AI during processing. Original OCR: ${result.sourceSnapshot?['originalValue']}. Confirm it against the report.'
                         : result.sourceSnapshot?['rangeSource'] ==
                               'ai_suggestion'
-                        ? 'Range interpreted by AI during processing. Check the original report.'
-                        : 'Check this result against the original report before relying on it.',
+                        ? context.l10n.aiRangeHelp
+                        : context.l10n.checkResultHelp,
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -1485,7 +1491,7 @@ class _ResultCard extends StatelessWidget {
                         null) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Compared with the preferred category printed by the lab; confirm it applies to you.',
+                    context.l10n.preferredRangeHelp,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
@@ -1493,7 +1499,7 @@ class _ResultCard extends StatelessWidget {
                 ],
                 const SizedBox(height: 10),
                 Text(
-                  'Understand this result  →',
+                  context.l10n.understandResultAction,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.primary,
                     fontWeight: FontWeight.w700,
@@ -1560,7 +1566,7 @@ class _ParsedReportReaderScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final blocks = _toBlocks(rawText);
     return Scaffold(
-      appBar: AppBar(title: const Text('Parsed Report')),
+      appBar: AppBar(title: Text(context.l10n.parsedReport)),
       body: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         itemCount: blocks.length,

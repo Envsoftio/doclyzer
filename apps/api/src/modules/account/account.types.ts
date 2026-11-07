@@ -1,7 +1,9 @@
+import type { SupportedLanguage } from '../../common/language';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 export { ACCOUNT_SUSPENDED_RESTRICTED_ACTIONS } from '../../common/restriction/restriction.constants';
 
 export interface AccountProfile {
+  preferredLanguage: SupportedLanguage;
   id: string;
   email: string;
   displayName: string | null;

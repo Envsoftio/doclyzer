@@ -12,6 +12,37 @@ class ApiReportsRepository implements ReportsRepository {
   final ApiClient _client;
   final TokenStorage _tokenStorage;
 
+  Future<Map<String, dynamic>> _narrativeRequest(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    for (var attempt = 0; ; attempt++) {
+      try {
+        return await _client.post(path, body: body);
+      } on ApiException catch (error) {
+        if (error.code != 'NARRATIVE_PENDING' || attempt >= 10) rethrow;
+        await Future<void>.delayed(const Duration(seconds: 12));
+      }
+    }
+  }
+
+  @override
+  Future<String> getLocalizedSummary(String reportId, String locale) async {
+    final response = await _narrativeRequest(
+      'v1/reports/${Uri.encodeComponent(reportId)}/summary/language',
+      {'locale': locale},
+    );
+    final data = response['data'] as Map<String, dynamic>;
+    if (data['summary'] is! String || data['locale'] != locale) {
+      throw ApiException(
+        'NARRATIVE_SOURCE_CHANGED',
+        'Reload the report to see its latest summary.',
+        response,
+      );
+    }
+    return data['summary'] as String;
+  }
+
   @override
   Future<void> requestSummary(String reportId, {bool refresh = false}) async {
     await _client.post(
@@ -481,11 +512,13 @@ class ApiReportsRepository implements ReportsRepository {
   @override
   Future<ResultInsight> getResultInsight(
     String reportId,
-    ExtractedLabValue result,
-  ) async {
-    final response = await _client.post(
+    ExtractedLabValue result, {
+    String locale = 'en',
+  }) async {
+    final response = await _narrativeRequest(
       'v1/reports/${Uri.encodeComponent(reportId)}/results/insight',
-      body: {
+      {
+        'locale': locale,
         'parameterName': result.parameterName,
         'value': result.value,
         'unit': result.unit ?? '',

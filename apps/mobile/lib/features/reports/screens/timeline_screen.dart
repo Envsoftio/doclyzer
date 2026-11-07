@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'dart:async';
 
 import '../report_processing_store.dart';
@@ -239,6 +240,19 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
+  String _choiceLabel(String value) => switch (value) {
+    'All reports' => context.l10n.allReports,
+    'Reviewed' => context.l10n.filterReviewed,
+    'Needs review' => context.l10n.filterNeedsReview,
+    'Processing' => context.l10n.filterProcessing,
+    'Original only' => context.l10n.filterOriginalOnly,
+    'Report date · newest' => context.l10n.reportDateNewest,
+    'Report date · oldest' => context.l10n.reportDateOldest,
+    'Upload date · newest' => context.l10n.uploadDateNewest,
+    'Upload date · oldest' => context.l10n.uploadDateOldest,
+    _ => value,
+  };
+
   bool _matchesFilter(Report report) => switch (_filter) {
     'Reviewed' =>
       report.status == 'parsed' &&
@@ -275,7 +289,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
               child: Text(
-                'Filter reports',
+                context.l10n.filterReports,
                 style: Theme.of(ctx).textTheme.titleLarge,
               ),
             ),
@@ -287,7 +301,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               'Original only',
             ])
               ListTile(
-                title: Text(value),
+                title: Text(_choiceLabel(value)),
                 trailing: value == _filter
                     ? const Icon(Icons.check_rounded)
                     : null,
@@ -311,7 +325,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
               child: Text(
-                'Sort reports',
+                context.l10n.sortReports,
                 style: Theme.of(ctx).textTheme.titleLarge,
               ),
             ),
@@ -322,7 +336,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               'Upload date · oldest',
             ])
               ListTile(
-                title: Text(value),
+                title: Text(_choiceLabel(value)),
                 trailing: value == _sort
                     ? const Icon(Icons.check_rounded)
                     : null,
@@ -346,7 +360,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Reports'),
+        title: Text(context.l10n.reports),
         leading: widget.showBackButton
             ? IconButton(
                 key: const Key('timeline-back'),
@@ -357,7 +371,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
         actions: [
           IconButton(
             key: const Key('timeline-compare-button'),
-            tooltip: 'Compare reports',
+            tooltip: context.l10n.compareReports,
             icon: const Icon(Icons.compare_arrows_rounded),
             onPressed: () => Navigator.of(context).push(
               designPageRoute(
@@ -373,13 +387,13 @@ class _TimelineScreenState extends State<TimelineScreen> {
           IconButton(
             key: const Key('timeline-recycle-bin-button'),
             icon: const Icon(Icons.delete_outline_rounded),
-            tooltip: 'Recycle bin',
+            tooltip: context.l10n.recycleBin,
             onPressed: _openRecycleBin,
           ),
           IconButton(
             key: const Key('timeline-health-history-button'),
             icon: const Icon(Icons.health_and_safety_outlined),
-            tooltip: 'Health History',
+            tooltip: context.l10n.healthHistory,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => HealthHistoryScreen(
@@ -394,7 +408,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
           IconButton(
             key: const Key('timeline-share-button'),
             icon: const Icon(Icons.share_outlined),
-            tooltip: 'Share Profile',
+            tooltip: context.l10n.shareProfile,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => CreateShareLinkScreen(
@@ -417,7 +431,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               key: const Key('timeline-upload-report'),
               onPressed: widget.onUploadReport,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Upload report'),
+              label: Text(context.l10n.uploadReport),
             ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -446,11 +460,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
         key: const Key('timeline-error'),
         child: DesignEmptyState(
           icon: Icons.cloud_off_outlined,
-          title: 'Reports unavailable',
-          message:
-              _errorMessage ??
-              'Unable to load reports. Try again when connected.',
-          action: 'Try again',
+          title: context.l10n.reportsUnavailableTitle,
+          message: _errorMessage ?? context.l10n.reportsLoadFailed,
+          action: context.l10n.tryAgain,
           onAction: _loadReports,
         ),
       );
@@ -471,7 +483,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
             (value) => value.parameterName.toLowerCase().contains(query),
           );
     }).toList();
-    final byUpload = _sort.startsWith('Upload');
+    final byUpload = _sort.startsWith(context.l10n.upload);
     final oldest = _sort.endsWith('oldest');
     visible.sort((a, b) {
       final first = byUpload ? a.createdAt : _reportDate(a);
@@ -550,7 +562,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'REPORTS FOR',
+                        context.l10n.reportsFor,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.onPrimaryContainer,
                           letterSpacing: 1,
@@ -570,7 +582,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 if (_profiles.length > 1) ...[
                   const SizedBox(width: 8),
                   Text(
-                    'Switch',
+                    context.l10n.switchAction,
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: theme.colorScheme.onPrimaryContainer,
                     ),
@@ -589,9 +601,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
         TextField(
           key: ValueKey('timeline-search-${widget.profileId}'),
           controller: _searchController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             prefixIcon: Icon(Icons.search),
-            hintText: 'Search reports or labs',
+            hintText: context.l10n.searchReports,
           ),
           onChanged: _changeQuery,
         ),
@@ -603,7 +615,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 onPressed: () => setState(() => _filter = 'All reports'),
                 style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
                 child: Text(
-                  _filter,
+                  _choiceLabel(_filter),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 12),
@@ -618,13 +630,13 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 10),
               ),
               icon: const Icon(Icons.tune, size: 18),
-              label: const Text('Filters', style: TextStyle(fontSize: 12)),
+              label: Text(context.l10n.filters, style: TextStyle(fontSize: 12)),
             ),
             const SizedBox(width: 10),
             IconButton.outlined(
               onPressed: _chooseSort,
               icon: const Icon(Icons.sort_rounded),
-              tooltip: 'Sort reports',
+              tooltip: context.l10n.sortReports,
             ),
           ],
         ),
@@ -634,20 +646,20 @@ class _TimelineScreenState extends State<TimelineScreen> {
               ? DesignEmptyState(
                   key: const Key('timeline-empty'),
                   icon: Icons.folder_open_outlined,
-                  title: 'No reports yet',
+                  title: context.l10n.noReportsYet,
                   message:
                       'Upload a report for ${widget.profileName} to start this library.',
                   action: widget.onUploadReport == null
                       ? null
-                      : 'Upload report',
+                      : context.l10n.uploadReport,
                   onAction: widget.onUploadReport,
                 )
               : entries.isEmpty
               ? DesignEmptyState(
                   icon: Icons.search_off_outlined,
-                  title: 'No reports match your search.',
-                  message: 'Try a different test, laboratory or filter.',
-                  action: 'Clear search and filters',
+                  title: context.l10n.noMatchingReports,
+                  message: context.l10n.differentSearch,
+                  action: context.l10n.clearFilters,
                   onAction: () => setState(() {
                     _searchController.clear();
                     _query = '';
@@ -717,7 +729,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                                 ),
                                 TextButton(
                                   onPressed: () => _openOriginal(report),
-                                  child: const Text('Original'),
+                                  child: Text(context.l10n.original),
                                 ),
                               ],
                             ),
@@ -744,14 +756,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
               child: Text(
-                'Switch active profile',
+                context.l10n.switchActiveProfile,
                 style: Theme.of(ctx).textTheme.titleLarge,
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
               child: Text(
-                'View another person’s reports. Your active profile for uploads and trends will change too.',
+                context.l10n.switchProfileHelp,
                 style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(ctx).colorScheme.onSurfaceVariant,
                 ),
@@ -786,11 +798,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   String _collectionLabel(Report report) {
     if (report.collectionDateStatus == 'multiple') {
-      return 'Multiple collection dates';
+      return context.l10n.multipleCollectionDates;
     }
     final date = report.collectionDate?.trim();
     return date == null || date.isEmpty
-        ? 'Unknown collection date'
+        ? context.l10n.unknownCollectionDate
         : AppDateFormat.fromRaw(date);
   }
 }

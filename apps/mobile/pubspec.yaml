@@ -31,6 +31,10 @@ dependencies:
   flutter:
     sdk: flutter
 
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+
   cupertino_icons: ^1.0.8
   crypto: ^3.0.0
   http: ^1.2.0
@@ -70,6 +74,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
@@ -77,6 +82,33 @@ flutter:
   assets:
     - assets/branding/app_mark.png
   fonts:
+    - family: Noto Sans Devanagari
+      fonts:
+        - asset: assets/fonts/NotoSansDevanagari.ttf
+    - family: Noto Sans Kannada
+      fonts:
+        - asset: assets/fonts/NotoSansKannada.ttf
+    - family: Noto Sans Telugu
+      fonts:
+        - asset: assets/fonts/NotoSansTelugu.ttf
+    - family: Noto Sans Malayalam
+      fonts:
+        - asset: assets/fonts/NotoSansMalayalam.ttf
+    - family: Noto Sans Tamil
+      fonts:
+        - asset: assets/fonts/NotoSansTamil.ttf
+    - family: Noto Sans Bengali
+      fonts:
+        - asset: assets/fonts/NotoSansBengali.ttf
+    - family: Noto Sans Oriya
+      fonts:
+        - asset: assets/fonts/NotoSansOriya.ttf
+    - family: Noto Sans Gurmukhi
+      fonts:
+        - asset: assets/fonts/NotoSansGurmukhi.ttf
+    - family: Noto Sans Gujarati
+      fonts:
+        - asset: assets/fonts/NotoSansGujarati.ttf
     - family: Plus Jakarta Sans
       fonts:
         - asset: assets/fonts/PlusJakartaSans.ttf

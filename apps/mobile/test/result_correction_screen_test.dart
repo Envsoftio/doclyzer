@@ -46,8 +46,9 @@ class _ReportWithCorrection extends _Corrections {
   @override
   Future<ResultInsight> getResultInsight(
     String reportId,
-    ExtractedLabValue result,
-  ) async => const ResultInsight(
+    ExtractedLabValue result, {
+    String locale = 'en',
+  }) async => const ResultInsight(
     testExplanation: '',
     resultExplanation: '',
     possibleSignificance: '',

@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/api_client.dart';
@@ -70,7 +71,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'Failed to load profiles. Please try again.';
+        _error = context.l10n.profileLoadFailed;
         _loading = false;
       });
     }
@@ -84,7 +85,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
       if (mounted) {
         setState(
           () => _error =
-              'Unable to switch profiles. ${error is ApiException && error.message.isNotEmpty ? error.message : 'Please try again.'}',
+              'Unable to switch profiles. ${error is ApiException && error.message.isNotEmpty ? error.message : context.l10n.pleaseTryAgain}',
         );
       }
     }
@@ -95,15 +96,13 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         key: const Key('profile-delete-dialog'),
-        title: const Text('Delete profile?'),
-        content: const Text(
-          'This profile will be removed. Any data linked to it will be affected.',
-        ),
+        title: Text(context.l10n.deleteProfileConfirm),
+        content: Text(context.l10n.deleteProfileHelp),
         actions: [
           TextButton(
             key: const Key('profile-delete-cancel'),
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             key: const Key('profile-delete-confirm'),
@@ -111,7 +110,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(ctx).colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -122,7 +121,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
         await _loadProfiles();
       } catch (e) {
         setState(() {
-          _error = 'Failed to delete profile. Please try again.';
+          _error = context.l10n.profileDeleteFailed;
         });
       }
     }
@@ -137,7 +136,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Family'),
+        title: Text(context.l10n.family),
         leading: widget.showBackButton
             ? IconButton(
                 icon: const Icon(Icons.arrow_back_rounded),
@@ -165,7 +164,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
                   key: const Key('profile-create-new'),
                   onPressed: widget.onCreateProfile,
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text('Add family member'),
+                  label: Text(context.l10n.addFamilyMember),
                 ),
               ),
             )
@@ -177,9 +176,9 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
     if (_error != null && _profiles.isEmpty) {
       return DesignEmptyState(
         icon: Icons.cloud_off_outlined,
-        title: 'Family profiles unavailable',
+        title: context.l10n.familyUnavailable,
         message: _error!,
-        action: 'Try again',
+        action: context.l10n.tryAgain,
         onAction: _loadProfiles,
       );
     }
@@ -221,7 +220,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Reports and trends, organized by person',
+                          context.l10n.familyIntro,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onPrimaryContainer,
                           ),
@@ -287,10 +286,13 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    Text('No profiles yet', style: theme.textTheme.titleLarge),
+                    Text(
+                      context.l10n.noProfilesYet,
+                      style: theme.textTheme.titleLarge,
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Add a profile to organize reports for yourself or family members.',
+                      context.l10n.noProfilesHelp,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -305,7 +307,10 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-              child: Text('Your family', style: theme.textTheme.titleMedium),
+              child: Text(
+                context.l10n.yourFamily,
+                style: theme.textTheme.titleMedium,
+              ),
             ),
           ),
         if (_profiles.isNotEmpty)
@@ -347,7 +352,7 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
                 onPressed: () {
                   // TODO: Navigate to upgrade/paywall when Epic 4 is implemented
                 },
-                child: const Text('Upgrade to add more profiles'),
+                child: Text(context.l10n.upgradeProfiles),
               ),
             ),
           ),
@@ -436,13 +441,13 @@ class _ProfileCard extends StatelessWidget {
                       if (action == 'delete') onDelete();
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'edit',
                         child: ListTile(
                           dense: true,
                           contentPadding: EdgeInsets.zero,
                           leading: Icon(Icons.edit_outlined),
-                          title: Text('Edit profile'),
+                          title: Text(context.l10n.editProfile),
                         ),
                       ),
                       PopupMenuItem(
@@ -454,7 +459,7 @@ class _ProfileCard extends StatelessWidget {
                             Icons.delete_outline_rounded,
                             color: theme.colorScheme.error,
                           ),
-                          title: Text('Delete profile'),
+                          title: Text(context.l10n.deleteProfile),
                         ),
                       ),
                     ],
@@ -476,7 +481,7 @@ class _ProfileCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'Active',
+                        context.l10n.active,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: theme.colorScheme.onPrimaryContainer,
                         ),
@@ -493,14 +498,14 @@ class _ProfileCard extends StatelessWidget {
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      child: const Text('Set active'),
+                      child: Text(context.l10n.setActive),
                     ),
                   const Spacer(),
                   TextButton.icon(
                     onPressed: onOpenReports,
                     iconAlignment: IconAlignment.end,
                     icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                    label: const Text('View reports'),
+                    label: Text(context.l10n.viewReports),
                   ),
                 ],
               ),

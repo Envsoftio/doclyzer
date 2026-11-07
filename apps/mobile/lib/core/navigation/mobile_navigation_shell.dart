@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Main destinations only; pushed details keep the full screen and native back.
@@ -69,14 +70,18 @@ class MobileNavigationShell extends StatelessWidget {
               child: Scaffold(
                 key: const Key('tab-loading-page'),
                 appBar: AppBar(
-                  title: Text(selectedIndex == 1 ? 'Reports' : 'Trends'),
+                  title: Text(
+                    selectedIndex == 1
+                        ? context.l10n.reports
+                        : context.l10n.trends,
+                  ),
                   leading: selectedIndex == 0
                       ? null
                       : BackButton(onPressed: onBackToHome),
                 ),
-                body: const Center(
+                body: Center(
                   child: CircularProgressIndicator(
-                    semanticsLabel: 'Opening page',
+                    semanticsLabel: context.l10n.openingPage,
                   ),
                 ),
               ),
@@ -89,33 +94,44 @@ class MobileNavigationShell extends StatelessWidget {
             : const Duration(milliseconds: 180),
         selectedIndex: selectedIndex,
         onDestinationSelected: onDestinationSelected,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.description_outlined),
-            selectedIcon: Icon(Icons.description_rounded),
-            label: 'Reports',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.show_chart_outlined),
-            selectedIcon: Icon(Icons.show_chart_rounded),
-            label: 'Trends',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline_rounded),
-            selectedIcon: Icon(Icons.people_rounded),
-            label: 'Family',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_circle_outlined),
-            selectedIcon: Icon(Icons.account_circle_rounded),
-            label: 'Profile',
-          ),
-        ],
+        destinations:
+            <Widget>[
+                  NavigationDestination(
+                    icon: Icon(Icons.home_outlined),
+                    selectedIcon: Icon(Icons.home_rounded),
+                    label: context.l10n.home,
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.description_outlined),
+                    selectedIcon: Icon(Icons.description_rounded),
+                    label: context.l10n.reports,
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.show_chart_outlined),
+                    selectedIcon: Icon(Icons.show_chart_rounded),
+                    label: context.l10n.trends,
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.people_outline_rounded),
+                    selectedIcon: Icon(Icons.people_rounded),
+                    label: context.l10n.family,
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.account_circle_outlined),
+                    selectedIcon: Icon(Icons.account_circle_rounded),
+                    label: context.l10n.profile,
+                  ),
+                ]
+                .map(
+                  (destination) => DefaultTextStyle.merge(
+                    // Keep long translations inside the existing navigation bar.
+                    // NavigationDestination retains the full label in its tooltip.
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    child: destination,
+                  ),
+                )
+                .toList(),
       ),
     ),
   );

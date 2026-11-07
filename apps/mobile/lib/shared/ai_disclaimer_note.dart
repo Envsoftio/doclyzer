@@ -1,3 +1,4 @@
+import '../l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 class AiDisclaimerNote extends StatelessWidget {
@@ -22,7 +23,7 @@ class AiDisclaimerNote extends StatelessWidget {
         const SizedBox(width: 6),
         Expanded(
           child: Text(
-            copy,
+            context.l10n.aiDisclaimer,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
