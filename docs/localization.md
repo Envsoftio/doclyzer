@@ -91,6 +91,12 @@ and catalog parity, placeholder multiplicity, numeric literals, plural branches,
 and scripts. `python3 scripts/check-locale-fonts.py` checks the bundled fonts
 cover every catalog letter and combining mark.
 
+`node scripts/audit-mobile-localization.mjs` lists direct English UI literals
+that are still outside the mobile catalogs. Its findings and coverage limits
+are recorded in `localization/mobile-ui-audit.md` and
+`localization/mobile-ui-audit.json`. Catalog parity does not imply complete UI
+coverage.
+
 An opt-in live provider check uses only synthetic passages:
 
 ```sh

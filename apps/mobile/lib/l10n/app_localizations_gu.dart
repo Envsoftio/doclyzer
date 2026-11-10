@@ -9,6 +9,50 @@ class AppLocalizationsGu extends AppLocalizations {
   AppLocalizationsGu([String locale = 'gu']) : super(locale);
 
   @override
+  String get trendLatestResult => 'નવીનતમ પરિણામ';
+
+  @override
+  String get trendPreviousResult => 'પાછલું પરિણામ';
+
+  @override
+  String get trendSourceUnit => 'આ મર્યાદાનું મૂળ એકમ';
+
+  @override
+  String get trendNoSavedResults => 'આ તપાસ માટે હજી કોઈ સાચવેલું પરિણામ નથી.';
+
+  @override
+  String get trendNoPlottableResults =>
+      'નમૂનાની તારીખ સાથેનું ચોક્કસ આંકડાકીય પરિણામ ચાર્ટમાં બતાવી શકાતું નથી.';
+
+  @override
+  String get trendOneResultHelp =>
+      'એક પરિણામ સાચવેલું છે. ફેરફાર જોવા બીજો રિપોર્ટ ઉમેરો.';
+
+  @override
+  String get trendMultipleResultsHelp =>
+      'તારીખો વીતેલા સમય પ્રમાણે બતાવવામાં આવી છે. મૂલ્ય જોવા બિંદુ પર ટૅપ કરો.';
+
+  @override
+  String trendUnplottedNote(int count) {
+    return 'નમૂનાની તારીખ અથવા ચોક્કસ આંકડાકીય મૂલ્ય ન હોવાથી $count પરિણામો ચાર્ટમાં બતાવાયા નથી.';
+  }
+
+  @override
+  String trendChartLabel(String testName, int count) {
+    return '$count પરિણામો સાથે $testNameના ફેરફારનો ચાર્ટ';
+  }
+
+  @override
+  String get trendDateReview =>
+      'નમૂનાની તારીખ અગાઉ કાઢેલી માહિતીમાંથી છે. મૂળ રિપોર્ટમાં તપાસો.';
+
+  @override
+  String get trendNotPlotted => 'ચાર્ટમાં બતાવાયું નથી';
+
+  @override
+  String get trendExactNumberUnavailable => 'પરિણામ ચોક્કસ સંખ્યા નથી';
+
+  @override
   String get preferredLanguage => 'પસંદગીની ભાષા';
 
   @override
@@ -1052,4 +1096,34 @@ class AppLocalizationsGu extends AppLocalizations {
 
   @override
   String get switchAction => 'બદલો';
+
+  @override
+  String get collectionDate => 'નમૂનો લીધાની તારીખ';
+
+  @override
+  String get copy => 'કૉપિ કરો';
+
+  @override
+  String get history => 'ઇતિહાસ';
+
+  @override
+  String get loadingReport => 'રિપોર્ટ લોડ થઈ રહ્યો છે…';
+
+  @override
+  String get restore => 'પુનઃસ્થાપિત કરો';
+
+  @override
+  String get revoke => 'લિંક રદ કરો';
+
+  @override
+  String get testName => 'તપાસનું નામ';
+
+  @override
+  String get viewReport => 'રિપોર્ટ જુઓ';
+
+  @override
+  String get closeAccount => 'ખાતું બંધ કરો';
+
+  @override
+  String get createShareLink => 'શેર કરવા માટે લિંક બનાવો';
 }

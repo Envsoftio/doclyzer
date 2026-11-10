@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
 
@@ -151,7 +152,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Plan & Credits'),
+        title: Text(context.l10n.planCredits),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: widget.onBack,
@@ -182,7 +183,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
             const SizedBox(height: 16),
             FilledButton.tonal(
               onPressed: _loadSummary,
-              child: const Text('Retry'),
+              child: Text(context.l10n.retry),
             ),
           ],
         ),
@@ -451,7 +452,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(48),
             ),
-            child: const Text('Upgrade'),
+            child: Text(context.l10n.upgrade),
           ),
         if (summary.isFreeTier) const SizedBox(height: 12),
         FilledButton.tonal(

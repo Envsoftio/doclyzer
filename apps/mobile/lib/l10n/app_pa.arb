@@ -1,5 +1,34 @@
 {
   "@@locale": "pa",
+  "trendLatestResult": "ਨਵੀਨਤਮ ਨਤੀਜਾ",
+  "trendPreviousResult": "ਪਿਛਲਾ ਨਤੀਜਾ",
+  "trendSourceUnit": "ਇਸ ਸੀਮਾ ਦੀ ਅਸਲ ਇਕਾਈ",
+  "trendNoSavedResults": "ਇਸ ਟੈਸਟ ਲਈ ਹਾਲੇ ਕੋਈ ਸੰਭਾਲਿਆ ਨਤੀਜਾ ਨਹੀਂ ਹੈ।",
+  "trendNoPlottableResults": "ਨਮੂਨੇ ਦੀ ਤਾਰੀਖ ਵਾਲੇ ਸਹੀ ਸੰਖਿਆਤਮਕ ਨਤੀਜੇ ਚਾਰਟ ਵਿੱਚ ਨਹੀਂ ਦਿਖਾਏ ਜਾ ਸਕਦੇ।",
+  "trendOneResultHelp": "ਇੱਕ ਨਤੀਜਾ ਸੰਭਾਲਿਆ ਗਿਆ ਹੈ। ਬਦਲਾਅ ਵੇਖਣ ਲਈ ਇੱਕ ਹੋਰ ਰਿਪੋਰਟ ਜੋੜੋ।",
+  "trendMultipleResultsHelp": "ਤਾਰੀਖਾਂ ਬੀਤੇ ਸਮੇਂ ਦੇ ਅਨੁਸਾਰ ਦਿਖਾਈਆਂ ਗਈਆਂ ਹਨ। ਮੁੱਲ ਵੇਖਣ ਲਈ ਬਿੰਦੂ ਨੂੰ ਟੈਪ ਕਰੋ।",
+  "trendUnplottedNote": "ਨਮੂਨੇ ਦੀ ਤਾਰੀਖ ਜਾਂ ਸਹੀ ਸੰਖਿਆਤਮਕ ਮੁੱਲ ਨਾ ਹੋਣ ਕਰਕੇ {count} ਨਤੀਜੇ ਚਾਰਟ ਵਿੱਚ ਨਹੀਂ ਦਿਖਾਏ ਗਏ।",
+  "@trendUnplottedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendChartLabel": "{count} ਨਤੀਜਿਆਂ ਨਾਲ {testName} ਦਾ ਬਦਲਾਅ ਚਾਰਟ",
+  "@trendChartLabel": {
+    "placeholders": {
+      "testName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendDateReview": "ਨਮੂਨੇ ਦੀ ਤਾਰੀਖ ਪਿਛਲੀ ਜਾਣਕਾਰੀ ਕੱਢਣ ਤੋਂ ਮਿਲੀ ਹੈ। ਅਸਲ ਰਿਪੋਰਟ ਵਿੱਚ ਜਾਂਚੋ।",
+  "trendNotPlotted": "ਚਾਰਟ ਵਿੱਚ ਨਹੀਂ ਦਿਖਾਇਆ ਗਿਆ",
+  "trendExactNumberUnavailable": "ਨਤੀਜਾ ਸਹੀ ਸੰਖਿਆ ਨਹੀਂ ਹੈ",
   "preferredLanguage": "ਪਸੰਦੀਦਾ ਭਾਸ਼ਾ",
   "descriptionLanguage": "ਵੇਰਵੇ ਦੀ ਭਾਸ਼ਾ",
   "languageHelp": "ਐਪ ਦੇ ਲੇਬਲਾਂ ਅਤੇ ਰਿਪੋਰਟ ਦੀਆਂ ਵਿਆਖਿਆਵਾਂ ਲਈ ਵਰਤੀ ਜਾਂਦੀ ਹੈ। ਤੁਸੀਂ ਕਿਸੇ ਵੀ ਸਮੇਂ ਵਿਆਖਿਆ ਦੀ ਭਾਸ਼ਾ ਬਦਲ ਸਕਦੇ ਹੋ।",
@@ -358,5 +387,15 @@
   "reportDateOldest": "ਰਿਪੋਰਟ ਦੀ ਤਾਰੀਖ · ਪੁਰਾਣੀਆਂ ਪਹਿਲਾਂ",
   "uploadDateNewest": "ਅੱਪਲੋਡ ਦੀ ਤਾਰੀਖ · ਨਵੀਆਂ ਪਹਿਲਾਂ",
   "uploadDateOldest": "ਅੱਪਲੋਡ ਦੀ ਤਾਰੀਖ · ਪੁਰਾਣੀਆਂ ਪਹਿਲਾਂ",
-  "switchAction": "ਬਦਲੋ"
+  "switchAction": "ਬਦਲੋ",
+  "collectionDate": "ਨਮੂਨਾ ਲੈਣ ਦੀ ਤਾਰੀਖ",
+  "copy": "ਕਾਪੀ ਕਰੋ",
+  "history": "ਇਤਿਹਾਸ",
+  "loadingReport": "ਰਿਪੋਰਟ ਲੋਡ ਹੋ ਰਹੀ ਹੈ…",
+  "restore": "ਬਹਾਲ ਕਰੋ",
+  "revoke": "ਰੱਦ ਕਰੋ",
+  "testName": "ਟੈਸਟ ਦਾ ਨਾਮ",
+  "viewReport": "ਰਿਪੋਰਟ ਦੇਖੋ",
+  "closeAccount": "ਖਾਤਾ ਬੰਦ ਕਰੋ",
+  "createShareLink": "ਸਾਂਝਾ ਕਰਨ ਲਈ ਲਿੰਕ ਬਣਾਓ"
 }

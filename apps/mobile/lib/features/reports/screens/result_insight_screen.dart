@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/api_client.dart';
 import '../../../shared/ai_disclaimer_note.dart';
 import '../../../shared/language_selector.dart';
@@ -66,6 +67,11 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
     });
   }
 
+  ButtonStyle _compactActionStyle() => OutlinedButton.styleFrom(
+    minimumSize: const Size(0, 48),
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+  );
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -79,104 +85,118 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
       RangePosition.above => context.l10n.aboveLabRange,
       RangePosition.unknown => context.l10n.cannotCompare,
     };
+    final value = Wrap(
+      crossAxisAlignment: WrapCrossAlignment.end,
+      spacing: 8,
+      runSpacing: 2,
+      children: [
+        Text(
+          result.value,
+          key: const Key('result-insight-value'),
+          style: theme.textTheme.displaySmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: palette.foreground,
+            fontSize: 34,
+          ),
+        ),
+        if (result.unit?.trim().isNotEmpty == true)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              result.unit!,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          ),
+      ],
+    );
+    final rangeStatus = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+      decoration: BoxDecoration(
+        color: palette.background,
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(palette.icon, size: 19, color: palette.foreground),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              status,
+              key: const Key('result-insight-range-status'),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: palette.foreground,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.understandResult)),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           children: [
             Container(
               key: const Key('result-insight-hero'),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: colors.surface,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: colors.outlineVariant),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.science_outlined,
-                        size: 17,
-                        color: colors.primary,
-                      ),
-                      const SizedBox(width: 7),
-                      Text(
-                        context.l10n.yourResult,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: colors.primary,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    context.l10n.yourResult,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colors.primary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 6),
                   Text(
                     result.parameterName,
-                    style: theme.textTheme.headlineSmall?.copyWith(
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: colors.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.end,
-                    spacing: 8,
-                    runSpacing: 2,
-                    children: [
-                      Text(
-                        result.value,
-                        key: const Key('result-insight-value'),
-                        style: theme.textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: palette.foreground,
-                          fontSize: 36,
-                        ),
-                      ),
-                      if (result.unit?.trim().isNotEmpty == true)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text(
-                            result.unit!,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: colors.onSurfaceVariant,
+                  const SizedBox(height: 8),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth < 280) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            value,
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: rangeStatus,
                             ),
-                          ),
-                        ),
-                    ],
+                          ],
+                        );
+                      }
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(child: value),
+                          const SizedBox(width: 10),
+                          Expanded(child: rangeStatus),
+                        ],
+                      );
+                    },
                   ),
-                  const SizedBox(height: 18),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: palette.background,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(palette.icon, size: 19, color: palette.foreground),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            status,
-                            key: const Key('result-insight-range-status'),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: palette.foreground,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
                   if (position == RangePosition.unknown) ...[
                     Text(
                       unavailableRangeReason(result),
@@ -185,7 +205,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                         color: colors.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                   ],
                   if (position != RangePosition.unknown &&
                       preferredPrintedRange(result.referenceRange ?? '') !=
@@ -196,7 +216,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                         color: colors.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                   ],
                   if (result.sourceSnapshot?['rangeSource'] ==
                       'ai_suggestion') ...[
@@ -207,10 +227,9 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                         color: colors.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                   ],
                   Divider(color: colors.outlineVariant),
-                  const SizedBox(height: 4),
                   _ResultFact(
                     label: context.l10n.labReferenceRange,
                     value: result.referenceRange?.trim().isNotEmpty == true
@@ -218,7 +237,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                         : context.l10n.resultUnavailable,
                   ),
                   if (result.sampleDate?.trim().isNotEmpty == true) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     _ResultFact(
                       label: context.l10n.sampleDate,
                       value: AppDateFormat.fromRawWithRelative(
@@ -229,15 +248,16 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Wrap(
               key: const Key('result-insight-actions'),
               spacing: 8,
-              runSpacing: 8,
+              runSpacing: 2,
               children: [
                 OutlinedButton.icon(
                   key: const Key('result-insight-trend'),
                   onPressed: widget.onViewTrend,
+                  style: _compactActionStyle(),
                   icon: const Icon(Icons.show_chart_outlined),
                   label: Text(context.l10n.resultHistory),
                 ),
@@ -245,6 +265,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                   OutlinedButton.icon(
                     key: const Key('result-insight-original'),
                     onPressed: widget.onViewOriginal,
+                    style: _compactActionStyle(),
                     icon: const Icon(Icons.description_outlined),
                     label: Text(context.l10n.originalReport),
                   ),
@@ -252,12 +273,16 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                   TextButton.icon(
                     key: const Key('result-insight-review'),
                     onPressed: widget.onReviewResult,
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(0, 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
                     icon: const Icon(Icons.edit_outlined),
                     label: Text(context.l10n.reviewValue),
                   ),
               ],
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 16),
             Text(
               context.l10n.understandYourResult,
               style: theme.textTheme.titleLarge,
@@ -462,6 +487,14 @@ class _InsightSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final readingStyle = TextStyle(
+      inherit: false,
+      fontSize: 16,
+      fontFamilyFallback: AppTheme.scriptFonts,
+      textBaseline: TextBaseline.alphabetic,
+      height: 1.5,
+      color: theme.colorScheme.onSurface,
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Card(
@@ -489,10 +522,7 @@ class _InsightSection extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              DefaultTextStyle(
-                style: theme.textTheme.bodyMedium!.copyWith(height: 1.5),
-                child: child,
-              ),
+              DefaultTextStyle(style: readingStyle, child: child),
             ],
           ),
         ),
@@ -511,21 +541,28 @@ class _ResultFact extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: colors.onSurfaceVariant,
+        Expanded(
+          flex: 3,
+          child: Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
           ),
         ),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: colors.onSurface,
-            fontWeight: FontWeight.w700,
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 4,
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colors.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],

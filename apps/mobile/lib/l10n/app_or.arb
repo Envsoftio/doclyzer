@@ -1,5 +1,34 @@
 {
   "@@locale": "or",
+  "trendLatestResult": "ସଦ୍ୟତମ ଫଳାଫଳ",
+  "trendPreviousResult": "ପୂର୍ବ ଫଳାଫଳ",
+  "trendSourceUnit": "ଏହି ସୀମାର ମୂଳ ଏକକ",
+  "trendNoSavedResults": "ଏହି ପରୀକ୍ଷା ପାଇଁ ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ସଞ୍ଚିତ ଫଳାଫଳ ନାହିଁ।",
+  "trendNoPlottableResults": "ନମୁନା ସଂଗ୍ରହ ତାରିଖ ଥିବା ସଠିକ୍ ସଂଖ୍ୟାତ୍ମକ ଫଳାଫଳ ଚାର୍ଟରେ ଦେଖାଇ ହେଉନାହିଁ।",
+  "trendOneResultHelp": "ଗୋଟିଏ ଫଳାଫଳ ସଞ୍ଚିତ ଅଛି। ପରିବର୍ତ୍ତନ ଦେଖିବାକୁ ଆଉ ଗୋଟିଏ ରିପୋର୍ଟ ଯୋଡ଼ନ୍ତୁ।",
+  "trendMultipleResultsHelp": "ତାରିଖଗୁଡ଼ିକ ବିତିଥିବା ସମୟ ଅନୁସାରେ ଦେଖାଯାଇଛି। ମୂଲ୍ୟ ପାଇଁ ବିନ୍ଦୁରେ ଟ୍ୟାପ୍ କରନ୍ତୁ।",
+  "trendUnplottedNote": "ନମୁନା ସଂଗ୍ରହ ତାରିଖ କିମ୍ବା ସଠିକ୍ ସଂଖ୍ୟାତ୍ମକ ମୂଲ୍ୟ ନଥିବାରୁ {count}ଟି ଫଳାଫଳ ଚାର୍ଟରେ ଦେଖାଯାଇନାହିଁ।",
+  "@trendUnplottedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendChartLabel": "{count}ଟି ଫଳାଫଳ ସହ {testName} ପରିବର୍ତ୍ତନ ଚାର୍ଟ",
+  "@trendChartLabel": {
+    "placeholders": {
+      "testName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendDateReview": "ନମୁନା ସଂଗ୍ରହ ତାରିଖ ପୂର୍ବ ସୂଚନା ନିଷ୍କାସନରୁ ଆସିଛି। ମୂଳ ରିପୋର୍ଟରେ ଯାଞ୍ଚ କରନ୍ତୁ।",
+  "trendNotPlotted": "ଚାର୍ଟରେ ଦେଖାଯାଇନାହିଁ",
+  "trendExactNumberUnavailable": "ଫଳାଫଳଟି ସଠିକ୍ ସଂଖ୍ୟା ନୁହେଁ",
   "preferredLanguage": "ପସନ୍ଦର ଭାଷା",
   "descriptionLanguage": "ବିବରଣୀର ଭାଷା",
   "languageHelp": "ଆପ୍‌ର ଲେବେଲ୍ ଓ ରିପୋର୍ଟର ବ୍ୟାଖ୍ୟା ପାଇଁ ବ୍ୟବହୃତ ହୁଏ। ଆପଣ ଯେକୌଣସି ସମୟରେ ବ୍ୟାଖ୍ୟାର ଭାଷା ବଦଳାଇପାରିବେ।",
@@ -358,5 +387,15 @@
   "reportDateOldest": "ରିପୋର୍ଟ ତାରିଖ · ପୁରୁଣା ପ୍ରଥମେ",
   "uploadDateNewest": "ଅପଲୋଡ୍ ତାରିଖ · ନୂଆ ପ୍ରଥମେ",
   "uploadDateOldest": "ଅପଲୋଡ୍ ତାରିଖ · ପୁରୁଣା ପ୍ରଥମେ",
-  "switchAction": "ବଦଳାନ୍ତୁ"
+  "switchAction": "ବଦଳାନ୍ତୁ",
+  "collectionDate": "ନମୁନା ସଂଗ୍ରହ ତାରିଖ",
+  "copy": "କପି କରନ୍ତୁ",
+  "history": "ଇତିହାସ",
+  "loadingReport": "ରିପୋର୍ଟ ଲୋଡ୍ ହେଉଛି…",
+  "restore": "ପୁନରୁଦ୍ଧାର କରନ୍ତୁ",
+  "revoke": "ରଦ୍ଦ କରନ୍ତୁ",
+  "testName": "ପରୀକ୍ଷାର ନାମ",
+  "viewReport": "ରିପୋର୍ଟ ଦେଖନ୍ତୁ",
+  "closeAccount": "ଆକାଉଣ୍ଟ ବନ୍ଦ କରନ୍ତୁ",
+  "createShareLink": "ସେୟାର୍ ଲିଙ୍କ୍ ତିଆରି କରନ୍ତୁ"
 }

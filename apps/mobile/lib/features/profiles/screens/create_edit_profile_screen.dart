@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
 
@@ -241,7 +242,7 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Name', style: theme.textTheme.labelLarge),
+                Text(context.l10n.name, style: theme.textTheme.labelLarge),
                 const SizedBox(height: 8),
                 TextField(
                   key: const Key('profile-name-field'),

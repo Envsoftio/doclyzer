@@ -1,5 +1,34 @@
 {
   "@@locale": "ml",
+  "trendLatestResult": "ഏറ്റവും പുതിയ ഫലം",
+  "trendPreviousResult": "മുമ്പത്തെ ഫലം",
+  "trendSourceUnit": "ഈ പരിധിയുടെ യഥാർത്ഥ യൂണിറ്റ്",
+  "trendNoSavedResults": "ഈ പരിശോധനയ്ക്ക് ഇതുവരെ സൂക്ഷിച്ച ഫലങ്ങളില്ല.",
+  "trendNoPlottableResults": "സാമ്പിൾ എടുത്ത തീയതിയുള്ള കൃത്യമായ സംഖ്യാ ഫലങ്ങൾ ചാർട്ടിൽ കാണിക്കാനാകില്ല.",
+  "trendOneResultHelp": "ഒരു ഫലം സൂക്ഷിച്ചിട്ടുണ്ട്. മാറ്റം കാണാൻ മറ്റൊരു റിപ്പോർട്ട് ചേർക്കുക.",
+  "trendMultipleResultsHelp": "തീയതികൾ കടന്നുപോയ സമയമനുസരിച്ചാണ് കാണിക്കുന്നത്. മൂല്യം കാണാൻ ഒരു പോയിന്റിൽ തട്ടുക.",
+  "trendUnplottedNote": "സാമ്പിൾ എടുത്ത തീയതിയോ കൃത്യമായ സംഖ്യാ മൂല്യമോ ഇല്ലാത്തതിനാൽ {count} ഫലങ്ങൾ ചാർട്ടിൽ കാണിച്ചിട്ടില്ല.",
+  "@trendUnplottedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendChartLabel": "{count} ഫലങ്ങളുള്ള {testName} മാറ്റങ്ങളുടെ ചാർട്ട്",
+  "@trendChartLabel": {
+    "placeholders": {
+      "testName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendDateReview": "സാമ്പിൾ എടുത്ത തീയതി മുമ്പത്തെ വിവരശേഖരണത്തിൽ നിന്നുള്ളതാണ്. യഥാർത്ഥ റിപ്പോർട്ടിൽ പരിശോധിക്കുക.",
+  "trendNotPlotted": "ചാർട്ടിൽ കാണിച്ചിട്ടില്ല",
+  "trendExactNumberUnavailable": "ഫലം കൃത്യമായ സംഖ്യയല്ല",
   "preferredLanguage": "മുൻഗണനാ ഭാഷ",
   "descriptionLanguage": "വിശദീകരണത്തിന്റെ ഭാഷ",
   "languageHelp": "ആപ്പിലെ ലേബലുകൾക്കും റിപ്പോർട്ട് വിശദീകരണങ്ങൾക്കും ഉപയോഗിക്കുന്നു. വിശദീകരണത്തിന്റെ ഭാഷ എപ്പോൾ വേണമെങ്കിലും മാറ്റാം.",
@@ -358,5 +387,15 @@
   "reportDateOldest": "റിപ്പോർട്ട് തീയതി · പഴയത് ആദ്യം",
   "uploadDateNewest": "അപ്‌ലോഡ് തീയതി · പുതിയത് ആദ്യം",
   "uploadDateOldest": "അപ്‌ലോഡ് തീയതി · പഴയത് ആദ്യം",
-  "switchAction": "മാറുക"
+  "switchAction": "മാറുക",
+  "collectionDate": "സാമ്പിൾ ശേഖരിച്ച തീയതി",
+  "copy": "പകർത്തുക",
+  "history": "ചരിത്രം",
+  "loadingReport": "റിപ്പോർട്ട് ലോഡ് ചെയ്യുന്നു…",
+  "restore": "പുനഃസ്ഥാപിക്കുക",
+  "revoke": "അസാധുവാക്കുക",
+  "testName": "പരിശോധനയുടെ പേര്",
+  "viewReport": "റിപ്പോർട്ട് കാണുക",
+  "closeAccount": "അക്കൗണ്ട് അടയ്ക്കുക",
+  "createShareLink": "പങ്കിടാനുള്ള ലിങ്ക് സൃഷ്ടിക്കുക"
 }

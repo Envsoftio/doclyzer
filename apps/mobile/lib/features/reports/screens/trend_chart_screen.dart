@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
+import '../../../l10n/l10n.dart';
 
 import '../reports_repository.dart';
 
@@ -35,7 +36,6 @@ class TrendChartScreen extends StatefulWidget {
 class _TrendChartScreenState extends State<TrendChartScreen> {
   _TrendState _state = _TrendState.loading;
   TrendParameter? _parameter;
-  String? _errorMessage;
 
   @override
   void initState() {
@@ -46,7 +46,6 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
   Future<void> _loadTrend() async {
     setState(() {
       _state = _TrendState.loading;
-      _errorMessage = null;
     });
     try {
       final result = await widget.reportsRepository.getLabTrends(
@@ -73,11 +72,10 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
           _state = _TrendState.loaded;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() {
           _state = _TrendState.error;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
         });
       }
     }
@@ -95,7 +93,7 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
           onPressed: widget.onBack,
         ),
       ),
-      body: Padding(padding: const EdgeInsets.all(16), child: _buildBody()),
+      body: SafeArea(child: _buildBody()),
     );
   }
 
@@ -114,12 +112,15 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              _errorMessage ?? 'Something went wrong',
-              style: TextStyle(color: Colors.red.shade700),
+              context.l10n.genericError,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            FilledButton(onPressed: _loadTrend, child: const Text('Retry')),
+            FilledButton(
+              onPressed: _loadTrend,
+              child: Text(context.l10n.tryAgain),
+            ),
           ],
         ),
       );
@@ -133,12 +134,12 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Semantics(
-              label: 'No trend data available',
+              label: context.l10n.trendNoSavedResults,
               child: const Icon(Icons.show_chart, size: 48, color: Colors.grey),
             ),
             const SizedBox(height: 16),
             Text(
-              'No saved results are available for this test yet.',
+              context.l10n.trendNoSavedResults,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -154,12 +155,11 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
           ..sort((a, b) => a.date.compareTo(b.date));
     if (points.isEmpty) {
       return SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'No exact numeric results with a collection date can be plotted.',
-            ),
+            Text(context.l10n.trendNoPlottableResults),
             const SizedBox(height: 16),
             _buildHistory(param, points),
           ],
@@ -185,7 +185,7 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
     final scale = _ChartScale.fromPoints(points);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -193,16 +193,18 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
             key: const Key('trend-latest-summary'),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: colors.primaryContainer,
-              borderRadius: BorderRadius.circular(22),
+              color: colors.surface,
+              border: Border.all(color: colors.outlineVariant),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Latest result',
+                  context.l10n.trendLatestResult,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    color: colors.onPrimaryContainer,
+                    color: colors.primary,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -210,31 +212,33 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
                   '${_formatNumber(latest.value)}${unit == null ? '' : ' $unit'}',
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: colors.onPrimaryContainer,
+                    color: colors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  AppDateFormat.dateWithRelative(latest.date, hasTime: false),
+                  AppDateFormat.date(latest.date),
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colors.onPrimaryContainer,
+                    color: colors.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Lab reference range: ${latest.referenceRange ?? 'Unknown'}',
+                  '${context.l10n.labReferenceRange}: ${latest.referenceRange ?? context.l10n.resultUnavailable}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: colors.onPrimaryContainer,
+                    color: colors.onSurfaceVariant,
                   ),
                 ),
                 if (latest.originalUnit != null && latest.originalUnit != unit)
-                  Text('Source unit for this range: ${latest.originalUnit}'),
+                  Text(
+                    '${context.l10n.trendSourceUnit}: ${latest.originalUnit}',
+                  ),
                 if (points.length > 1) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Previous: ${_formatNumber(points[points.length - 2].value)}${unit == null ? '' : ' $unit'}',
+                    '${context.l10n.trendPreviousResult}: ${_formatNumber(points[points.length - 2].value)}${unit == null ? '' : ' $unit'}',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: colors.onPrimaryContainer,
+                      color: colors.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -242,12 +246,12 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          Text('Result history', style: theme.textTheme.titleLarge),
+          Text(context.l10n.resultHistory, style: theme.textTheme.titleLarge),
           const SizedBox(height: 4),
           Text(
             points.length == 1
-                ? 'One saved result. Add another report to see a trend.'
-                : '${points.length} saved results · Dates are spaced by elapsed time. Tap a point for its value.',
+                ? context.l10n.trendOneResultHelp
+                : context.l10n.trendMultipleResultsHelp,
             style: theme.textTheme.bodySmall?.copyWith(
               color: colors.onSurfaceVariant,
             ),
@@ -255,7 +259,7 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
           if (param.unplottedCount > 0) ...[
             const SizedBox(height: 8),
             Text(
-              '${param.unplottedCount} result${param.unplottedCount == 1 ? '' : 's'} not plotted because the collection date or exact numeric value is unavailable.',
+              context.l10n.trendUnplottedNote(param.unplottedCount),
               key: const Key('trend-unplotted-note'),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colors.onSurfaceVariant,
@@ -268,7 +272,8 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
               padding: const EdgeInsets.fromLTRB(8, 18, 8, 8),
               decoration: BoxDecoration(
                 color: colors.surface,
-                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: colors.outlineVariant),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -287,8 +292,10 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
                             width: chartWidth,
                             height: 260,
                             child: Semantics(
-                              label:
-                                  '${widget.parameterName} trend chart with ${points.length} results',
+                              label: context.l10n.trendChartLabel(
+                                widget.parameterName,
+                                points.length,
+                              ),
                               child: LineChart(
                                 LineChartData(
                                   minX: firstDay - span * 0.025,
@@ -392,7 +399,7 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
                                             final point =
                                                 points[spot.spotIndex];
                                             return LineTooltipItem(
-                                              '${AppDateFormat.date(point.date)}\n${_formatNumber(point.value)}${unit == null ? '' : ' $unit'}\nLab range: ${point.referenceRange ?? 'Unknown'}',
+                                              '${AppDateFormat.date(point.date)}\n${_formatNumber(point.value)}${unit == null ? '' : ' $unit'}\n${context.l10n.labReferenceRange}: ${point.referenceRange ?? context.l10n.resultUnavailable}',
                                               const TextStyle(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.w600,
@@ -477,53 +484,69 @@ class _TrendChartScreenState extends State<TrendChartScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'All saved results',
-          style: Theme.of(context).textTheme.titleMedium,
+          context.l10n.resultHistory,
+          style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 8),
         for (var index = 0; index < observations.length; index++)
-          Card(
-            key: Key('trend-observation-$index'),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${observations[index].originalValue}${observations[index].originalUnit == null ? unit : ' ${observations[index].originalUnit}'}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  Text(
-                    observations[index].date == null
-                        ? 'Collection date unknown'
-                        : 'Collected ${AppDateFormat.date(observations[index].date!)}',
-                  ),
-                  Text(
-                    'Lab reference range: ${observations[index].referenceRange ?? 'Unknown'}',
-                  ),
-                  if (observations[index].date != null &&
-                      observations[index].dateProvenance == 'legacy_extracted')
-                    const Text(
-                      'Collection date from earlier extraction; review in source report',
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Card(
+              key: Key('trend-observation-$index'),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${observations[index].originalValue}${observations[index].originalUnit == null ? unit : ' ${observations[index].originalUnit}'}',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  if (observations[index].notPlottedReason != null)
-                    Text(switch (observations[index].notPlottedReason) {
-                      'collection_date_unknown' =>
-                        'Not plotted: collection date unknown',
-                      'non_numeric_value' =>
-                        'Not plotted: result is not an exact number',
-                      _ =>
-                        'Not plotted: collection date unknown and result is not an exact number',
-                    }),
-                  if (widget.onOpenReport != null &&
-                      observations[index].reportId.isNotEmpty)
-                    TextButton(
-                      key: Key('trend-source-report-$index'),
-                      onPressed: () =>
-                          widget.onOpenReport!(observations[index].reportId),
-                      child: const Text('Open source report'),
+                    const SizedBox(height: 4),
+                    Text(
+                      observations[index].date == null
+                          ? context.l10n.unknownCollectionDate
+                          : context.l10n.collectedOn(
+                              AppDateFormat.date(observations[index].date!),
+                            ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                ],
+                    const SizedBox(height: 10),
+                    Text(
+                      '${context.l10n.labReferenceRange}: ${observations[index].referenceRange ?? context.l10n.resultUnavailable}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    if (observations[index].date != null &&
+                        observations[index].dateProvenance ==
+                            'legacy_extracted')
+                      Text(context.l10n.trendDateReview),
+                    if (observations[index].notPlottedReason != null)
+                      Text(
+                        '${context.l10n.trendNotPlotted}: ${switch (observations[index].notPlottedReason) {
+                          'collection_date_unknown' => context.l10n.unknownCollectionDate,
+                          'non_numeric_value' => context.l10n.trendExactNumberUnavailable,
+                          _ => '${context.l10n.unknownCollectionDate}; ${context.l10n.trendExactNumberUnavailable}',
+                        }}',
+                      ),
+                    if (widget.onOpenReport != null &&
+                        observations[index].reportId.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: TextButton.icon(
+                          key: Key('trend-source-report-$index'),
+                          onPressed: () => widget.onOpenReport!(
+                            observations[index].reportId,
+                          ),
+                          icon: const Icon(Icons.description_outlined),
+                          label: Text(context.l10n.originalReport),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),

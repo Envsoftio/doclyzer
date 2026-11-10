@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -631,13 +632,13 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
             const SizedBox(height: 16),
             FilledButton.tonal(
               onPressed: _loadPacks,
-              child: const Text('Retry'),
+              child: Text(context.l10n.retry),
             ),
             if (_supportContext != null) ...[
               const SizedBox(height: 8),
               TextButton(
                 onPressed: _openSupportSheet,
-                child: const Text('Need help?'),
+                child: Text(context.l10n.needHelp),
               ),
             ],
           ],

@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
 
@@ -89,7 +90,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
@@ -130,7 +131,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
@@ -178,7 +179,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recycle bin'),
+        title: Text(context.l10n.recycleBin),
         actions: [
           if (_reports.isNotEmpty)
             IconButton(
@@ -218,7 +219,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            FilledButton(onPressed: _load, child: const Text('Retry')),
+            FilledButton(onPressed: _load, child: Text(context.l10n.retry)),
           ],
         ),
       );
@@ -295,7 +296,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                           OutlinedButton.icon(
                             onPressed: _busy ? null : () => _restore(report),
                             icon: const Icon(Icons.restore),
-                            label: const Text('Restore'),
+                            label: Text(context.l10n.restore),
                           ),
                           TextButton.icon(
                             onPressed: _busy

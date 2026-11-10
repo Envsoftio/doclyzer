@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -62,18 +63,20 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
     _loadClosure();
     if (widget.profilesRepository != null && widget.reportsRepository != null) {
       _profilesFuture = widget.profilesRepository!.getProfiles();
-      _profilesFuture!.then((profiles) {
-        if (!mounted) return;
-        for (final profile in profiles) {
-          if (profile.isActive) {
-            setState(() {
-              _selectedProfileId = profile.id;
-              _recordCounts = _loadRecordCounts();
-            });
-            break;
-          }
-        }
-      }).catchError((Object _) {});
+      _profilesFuture!
+          .then((profiles) {
+            if (!mounted) return;
+            for (final profile in profiles) {
+              if (profile.isActive) {
+                setState(() {
+                  _selectedProfileId = profile.id;
+                  _recordCounts = _loadRecordCounts();
+                });
+                break;
+              }
+            }
+          })
+          .catchError((Object _) {});
       _recordCounts = _loadRecordCounts();
     }
   }
@@ -300,7 +303,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           key: const Key('closure-dialog'),
-          title: const Text('Close Account'),
+          title: Text(context.l10n.closeAccount),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -312,9 +315,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
               TextField(
                 obscureText: true,
                 onChanged: (value) => setDialogState(() => password = value),
-                decoration: const InputDecoration(
-                  labelText: 'Current password',
-                ),
+                decoration: InputDecoration(labelText: 'Current password'),
               ),
             ],
           ),
@@ -322,7 +323,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
             TextButton(
               key: const Key('closure-cancel'),
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancel),
             ),
             FilledButton(
               key: const Key('closure-confirm'),
@@ -346,7 +347,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
   Widget _buildExportScreen(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Export your data')),
+      appBar: AppBar(title: Text(context.l10n.exportData)),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(24, 12, 24, 20),
         child: Column(
@@ -671,7 +672,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Account & Data'),
+        title: Text(context.l10n.accountData),
         leading: _closureRequest?.status == 'pending'
             ? null
             : BackButton(
@@ -705,8 +706,8 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                     style: const TextStyle(color: Colors.red),
                   ),
               ] else ...[
-                const Text(
-                  'Export My Data',
+                Text(
+                  context.l10n.exportData,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
@@ -725,7 +726,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                             height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Export My Data'),
+                        : Text(context.l10n.exportData),
                   )
                 else ...[
                   Text(
@@ -744,7 +745,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Check Status'),
+                          : Text(context.l10n.checkStatus),
                     ),
                   ],
                   if (exportRequest.status == 'completed' &&
@@ -781,8 +782,8 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                 const SizedBox(height: 32),
                 const Divider(),
                 const SizedBox(height: 16),
-                const Text(
-                  'Close Account',
+                Text(
+                  context.l10n.closeAccount,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),

@@ -1,5 +1,34 @@
 {
   "@@locale": "hi",
+  "trendLatestResult": "नवीनतम परिणाम",
+  "trendPreviousResult": "पिछला परिणाम",
+  "trendSourceUnit": "इस सीमा की मूल इकाई",
+  "trendNoSavedResults": "इस जाँच के लिए अभी कोई सहेजा गया परिणाम नहीं है।",
+  "trendNoPlottableResults": "संग्रह की तारीख वाला कोई सटीक संख्यात्मक परिणाम ग्राफ़ में नहीं दिखाया जा सकता।",
+  "trendOneResultHelp": "एक परिणाम सहेजा गया है। बदलाव देखने के लिए एक और रिपोर्ट जोड़ें।",
+  "trendMultipleResultsHelp": "तारीखें बीते समय के अनुसार दिखाई गई हैं। मान देखने के लिए बिंदु पर टैप करें।",
+  "trendUnplottedNote": "संग्रह की तारीख या सटीक संख्यात्मक मान न होने के कारण {count} परिणाम ग्राफ़ में नहीं दिखाए जा सके।",
+  "@trendUnplottedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendChartLabel": "{testName} का ग्राफ़, {count} परिणामों के साथ",
+  "@trendChartLabel": {
+    "placeholders": {
+      "testName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendDateReview": "संग्रह की तारीख पहले किए गए निष्कर्षण से है। मूल रिपोर्ट में जाँचें।",
+  "trendNotPlotted": "ग्राफ़ में नहीं दिखाया गया",
+  "trendExactNumberUnavailable": "परिणाम सटीक संख्या नहीं है",
   "preferredLanguage": "पसंदीदा भाषा",
   "descriptionLanguage": "विवरण की भाषा",
   "languageHelp": "ऐप के शब्द और रिपोर्ट के विवरण इस भाषा में दिखेंगे। आप किसी भी विवरण की भाषा कभी भी बदल सकते हैं।",
@@ -358,5 +387,15 @@
         "type": "int"
       }
     }
-  }
+  },
+  "collectionDate": "नमूना लेने की तारीख",
+  "copy": "कॉपी करें",
+  "history": "पिछले परिणाम",
+  "loadingReport": "रिपोर्ट लोड हो रही है…",
+  "restore": "वापस लाएँ",
+  "revoke": "लिंक बंद करें",
+  "testName": "जाँच का नाम",
+  "viewReport": "रिपोर्ट देखें",
+  "closeAccount": "खाता बंद करें",
+  "createShareLink": "शेयर लिंक बनाएँ"
 }

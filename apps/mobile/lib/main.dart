@@ -1358,7 +1358,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: _retrySession,
-                      child: const Text('Try again'),
+                      child: Text(context.l10n.tryAgain),
                     ),
                     TextButton(
                       onPressed: _logout,

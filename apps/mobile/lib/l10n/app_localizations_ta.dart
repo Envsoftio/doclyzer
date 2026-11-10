@@ -9,6 +9,51 @@ class AppLocalizationsTa extends AppLocalizations {
   AppLocalizationsTa([String locale = 'ta']) : super(locale);
 
   @override
+  String get trendLatestResult => 'சமீபத்திய முடிவு';
+
+  @override
+  String get trendPreviousResult => 'முந்தைய முடிவு';
+
+  @override
+  String get trendSourceUnit => 'இந்த வரம்பின் அசல் அலகு';
+
+  @override
+  String get trendNoSavedResults =>
+      'இந்தப் பரிசோதனைக்குச் சேமிக்கப்பட்ட முடிவுகள் இன்னும் இல்லை.';
+
+  @override
+  String get trendNoPlottableResults =>
+      'மாதிரி எடுத்த தேதியுடன் துல்லியமான எண் முடிவுகளை வரைபடத்தில் காட்ட முடியாது.';
+
+  @override
+  String get trendOneResultHelp =>
+      'ஒரு முடிவு சேமிக்கப்பட்டுள்ளது. மாற்றத்தைக் காண மற்றொரு அறிக்கையைச் சேர்க்கவும்.';
+
+  @override
+  String get trendMultipleResultsHelp =>
+      'தேதிகள் கடந்த கால அளவுக்கேற்ப காட்டப்படுகின்றன. மதிப்பைக் காண புள்ளியைத் தட்டவும்.';
+
+  @override
+  String trendUnplottedNote(int count) {
+    return 'மாதிரி எடுத்த தேதி அல்லது துல்லியமான எண் மதிப்பு இல்லாததால் $count முடிவுகளை வரைபடத்தில் காட்ட முடியவில்லை.';
+  }
+
+  @override
+  String trendChartLabel(String testName, int count) {
+    return '$count முடிவுகளுடன் $testName மாற்ற வரைபடம்';
+  }
+
+  @override
+  String get trendDateReview =>
+      'மாதிரி எடுத்த தேதி முந்தைய தரவு பிரித்தெடுப்பிலிருந்து வந்தது. அசல் அறிக்கையில் சரிபார்க்கவும்.';
+
+  @override
+  String get trendNotPlotted => 'வரைபடத்தில் காட்டப்படவில்லை';
+
+  @override
+  String get trendExactNumberUnavailable => 'முடிவு துல்லியமான எண் அல்ல';
+
+  @override
   String get preferredLanguage => 'விருப்ப மொழி';
 
   @override
@@ -1064,4 +1109,34 @@ class AppLocalizationsTa extends AppLocalizations {
 
   @override
   String get switchAction => 'மாற்றவும்';
+
+  @override
+  String get collectionDate => 'மாதிரி சேகரித்த தேதி';
+
+  @override
+  String get copy => 'நகலெடுக்கவும்';
+
+  @override
+  String get history => 'வரலாறு';
+
+  @override
+  String get loadingReport => 'அறிக்கை ஏற்றப்படுகிறது…';
+
+  @override
+  String get restore => 'மீட்டெடுக்கவும்';
+
+  @override
+  String get revoke => 'ரத்துசெய்யவும்';
+
+  @override
+  String get testName => 'பரிசோதனைப் பெயர்';
+
+  @override
+  String get viewReport => 'அறிக்கையைப் பார்க்கவும்';
+
+  @override
+  String get closeAccount => 'கணக்கை மூடவும்';
+
+  @override
+  String get createShareLink => 'பகிர்வு இணைப்பை உருவாக்கவும்';
 }

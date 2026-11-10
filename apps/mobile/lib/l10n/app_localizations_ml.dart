@@ -9,6 +9,51 @@ class AppLocalizationsMl extends AppLocalizations {
   AppLocalizationsMl([String locale = 'ml']) : super(locale);
 
   @override
+  String get trendLatestResult => 'ഏറ്റവും പുതിയ ഫലം';
+
+  @override
+  String get trendPreviousResult => 'മുമ്പത്തെ ഫലം';
+
+  @override
+  String get trendSourceUnit => 'ഈ പരിധിയുടെ യഥാർത്ഥ യൂണിറ്റ്';
+
+  @override
+  String get trendNoSavedResults =>
+      'ഈ പരിശോധനയ്ക്ക് ഇതുവരെ സൂക്ഷിച്ച ഫലങ്ങളില്ല.';
+
+  @override
+  String get trendNoPlottableResults =>
+      'സാമ്പിൾ എടുത്ത തീയതിയുള്ള കൃത്യമായ സംഖ്യാ ഫലങ്ങൾ ചാർട്ടിൽ കാണിക്കാനാകില്ല.';
+
+  @override
+  String get trendOneResultHelp =>
+      'ഒരു ഫലം സൂക്ഷിച്ചിട്ടുണ്ട്. മാറ്റം കാണാൻ മറ്റൊരു റിപ്പോർട്ട് ചേർക്കുക.';
+
+  @override
+  String get trendMultipleResultsHelp =>
+      'തീയതികൾ കടന്നുപോയ സമയമനുസരിച്ചാണ് കാണിക്കുന്നത്. മൂല്യം കാണാൻ ഒരു പോയിന്റിൽ തട്ടുക.';
+
+  @override
+  String trendUnplottedNote(int count) {
+    return 'സാമ്പിൾ എടുത്ത തീയതിയോ കൃത്യമായ സംഖ്യാ മൂല്യമോ ഇല്ലാത്തതിനാൽ $count ഫലങ്ങൾ ചാർട്ടിൽ കാണിച്ചിട്ടില്ല.';
+  }
+
+  @override
+  String trendChartLabel(String testName, int count) {
+    return '$count ഫലങ്ങളുള്ള $testName മാറ്റങ്ങളുടെ ചാർട്ട്';
+  }
+
+  @override
+  String get trendDateReview =>
+      'സാമ്പിൾ എടുത്ത തീയതി മുമ്പത്തെ വിവരശേഖരണത്തിൽ നിന്നുള്ളതാണ്. യഥാർത്ഥ റിപ്പോർട്ടിൽ പരിശോധിക്കുക.';
+
+  @override
+  String get trendNotPlotted => 'ചാർട്ടിൽ കാണിച്ചിട്ടില്ല';
+
+  @override
+  String get trendExactNumberUnavailable => 'ഫലം കൃത്യമായ സംഖ്യയല്ല';
+
+  @override
   String get preferredLanguage => 'മുൻഗണനാ ഭാഷ';
 
   @override
@@ -1068,4 +1113,34 @@ class AppLocalizationsMl extends AppLocalizations {
 
   @override
   String get switchAction => 'മാറുക';
+
+  @override
+  String get collectionDate => 'സാമ്പിൾ ശേഖരിച്ച തീയതി';
+
+  @override
+  String get copy => 'പകർത്തുക';
+
+  @override
+  String get history => 'ചരിത്രം';
+
+  @override
+  String get loadingReport => 'റിപ്പോർട്ട് ലോഡ് ചെയ്യുന്നു…';
+
+  @override
+  String get restore => 'പുനഃസ്ഥാപിക്കുക';
+
+  @override
+  String get revoke => 'അസാധുവാക്കുക';
+
+  @override
+  String get testName => 'പരിശോധനയുടെ പേര്';
+
+  @override
+  String get viewReport => 'റിപ്പോർട്ട് കാണുക';
+
+  @override
+  String get closeAccount => 'അക്കൗണ്ട് അടയ്ക്കുക';
+
+  @override
+  String get createShareLink => 'പങ്കിടാനുള്ള ലിങ്ക് സൃഷ്ടിക്കുക';
 }

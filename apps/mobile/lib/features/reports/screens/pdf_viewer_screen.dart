@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -121,14 +122,14 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(
-        key: Key('pdf-viewer-loading'),
+      return Center(
+        key: const Key('pdf-viewer-loading'),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Loading report…'),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(context.l10n.loadingReport),
           ],
         ),
       );
@@ -153,7 +154,10 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
-              FilledButton(onPressed: widget.onBack, child: const Text('Back')),
+              FilledButton(
+                onPressed: widget.onBack,
+                child: Text(context.l10n.back),
+              ),
             ],
           ),
         ),

@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
@@ -89,8 +90,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
 
     setState(() => _subscribingPlanId = plan.id);
     try {
-      final result =
-          await widget.billingRepository.createSubscription(plan.id);
+      final result = await widget.billingRepository.createSubscription(plan.id);
 
       _razorpay.open({
         'key': result.razorpayKeyId,
@@ -190,8 +190,8 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? _buildError(theme)
-                : _buildPlanList(theme),
+            ? _buildError(theme)
+            : _buildPlanList(theme),
       ),
     );
   }
@@ -211,13 +211,13 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
             const SizedBox(height: 16),
             FilledButton.tonal(
               onPressed: _loadPlans,
-              child: const Text('Retry'),
+              child: Text(context.l10n.retry),
             ),
             if (_supportContext != null) ...[
               const SizedBox(height: 8),
               TextButton(
                 onPressed: _openSupportSheet,
-                child: const Text('Need help?'),
+                child: Text(context.l10n.needHelp),
               ),
             ],
           ],
@@ -240,13 +240,12 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
   Widget _buildPlanList(ThemeData theme) {
     final plans = _plans ?? [];
     if (plans.isEmpty) {
-      return const Center(
-        child: Text('No plans available at this time.'),
-      );
+      return const Center(child: Text('No plans available at this time.'));
     }
 
     final incident = widget.incidentStatus;
-    final showIncidentBanner = incident != null &&
+    final showIncidentBanner =
+        incident != null &&
         incident.isActive &&
         incident.affectsSurface('mobile_app');
 
@@ -288,10 +287,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
             ),
             if (_promoError != null) ...[
               const SizedBox(height: 6),
-              Text(
-                _promoError!,
-                style: const TextStyle(color: Colors.red),
-              ),
+              Text(_promoError!, style: const TextStyle(color: Colors.red)),
             ],
             const SizedBox(height: 12),
             SizedBox(
@@ -311,10 +307,12 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
     final isSubscribing = _subscribingPlanId == plan.id;
     final isDisabled = _subscribingPlanId != null || plan.isCurrentPlan;
 
-    final monthlyInr =
-        plan.priceInfo != null ? plan.priceInfo!['monthlyInr'] : null;
-    final monthlyUsd =
-        plan.priceInfo != null ? plan.priceInfo!['monthlyUsd'] : null;
+    final monthlyInr = plan.priceInfo != null
+        ? plan.priceInfo!['monthlyInr']
+        : null;
+    final monthlyUsd = plan.priceInfo != null
+        ? plan.priceInfo!['monthlyUsd']
+        : null;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -335,8 +333,10 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                 ),
                 if (plan.isCurrentPlan)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.primaryContainer,
                       borderRadius: BorderRadius.circular(16),
@@ -362,14 +362,30 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
               ),
             ],
             const SizedBox(height: 12),
-            _buildFeatureRow(theme, Icons.person_outline, 'Profiles',
-                '${plan.limits.maxProfiles}'),
-            _buildFeatureRow(theme, Icons.description_outlined, 'Reports',
-                '${plan.limits.maxReports}'),
-            _buildFeatureRow(theme, Icons.link, 'Share links',
-                '${plan.limits.maxShareLinks}'),
-            _buildFeatureRow(theme, Icons.smart_toy_outlined, 'AI Chat',
-                plan.limits.aiChatEnabled ? 'Enabled' : 'Not available'),
+            _buildFeatureRow(
+              theme,
+              Icons.person_outline,
+              'Profiles',
+              '${plan.limits.maxProfiles}',
+            ),
+            _buildFeatureRow(
+              theme,
+              Icons.description_outlined,
+              'Reports',
+              '${plan.limits.maxReports}',
+            ),
+            _buildFeatureRow(
+              theme,
+              Icons.link,
+              'Share links',
+              '${plan.limits.maxShareLinks}',
+            ),
+            _buildFeatureRow(
+              theme,
+              Icons.smart_toy_outlined,
+              'AI Chat',
+              plan.limits.aiChatEnabled ? 'Enabled' : 'Not available',
+            ),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -405,9 +421,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
         children: [
           Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(width: 10),
-          Expanded(
-            child: Text(label, style: theme.textTheme.bodyMedium),
-          ),
+          Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
           Text(
             value,
             style: theme.textTheme.bodyMedium?.copyWith(

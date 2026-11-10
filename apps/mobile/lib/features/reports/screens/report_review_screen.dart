@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../reports_repository.dart';
@@ -105,20 +106,22 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       }
                     },
                     icon: const Icon(Icons.image_outlined),
-                    label: const Text('View original report'),
+                    label: Text(context.l10n.viewOriginalReport),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     key: const Key('review-test-name'),
                     initialValue: name,
                     onChanged: (text) => updateDialog(() => name = text),
-                    decoration: const InputDecoration(labelText: 'Test name'),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.testName,
+                    ),
                   ),
                   TextFormField(
                     key: const Key('review-result-value'),
                     initialValue: value,
                     onChanged: (text) => updateDialog(() => value = text),
-                    decoration: const InputDecoration(labelText: 'Result'),
+                    decoration: InputDecoration(labelText: 'Result'),
                   ),
                   TextFormField(
                     key: const Key('review-unit'),
@@ -165,7 +168,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
               onPressed: saving
                   ? null
                   : () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.cancel),
             ),
             FilledButton(
               key: const Key('review-save-result'),
@@ -239,7 +242,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
   Widget build(BuildContext context) {
     final review = _review;
     return Scaffold(
-      appBar: AppBar(title: const Text('Review detected results')),
+      appBar: AppBar(title: Text(context.l10n.reviewResults)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -248,7 +251,10 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(_error!),
-                  TextButton(onPressed: _load, child: const Text('Try again')),
+                  TextButton(
+                    onPressed: _load,
+                    child: Text(context.l10n.tryAgain),
+                  ),
                 ],
               ),
             )

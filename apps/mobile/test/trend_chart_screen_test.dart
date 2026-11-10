@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/features/reports/reports_repository.dart';
 import 'package:mobile/features/reports/screens/trend_chart_screen.dart';
+import 'package:mobile/l10n/app_localizations.dart';
 
 class _TrendReports extends Fake implements ReportsRepository {
   _TrendReports(this.points);
@@ -77,7 +79,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Collection date unknown'), findsOneWidget);
+    expect(find.text('Unknown collection date'), findsOneWidget);
     expect(find.text('<5 g/dL'), findsOneWidget);
     expect(find.byType(LineChart), findsNothing);
   });
@@ -113,7 +115,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.text('Collection date unknown', skipOffstage: false),
+        find.text('Unknown collection date', skipOffstage: false),
         findsOneWidget,
       );
       expect(
@@ -121,7 +123,10 @@ void main() {
         findsWidgets,
       );
       expect(
-        find.text('Lab reference range: Unknown', skipOffstage: false),
+        find.text(
+          'Lab reference range: Not available in this result',
+          skipOffstage: false,
+        ),
         findsOneWidget,
       );
       await tester.ensureVisible(
@@ -234,6 +239,35 @@ void main() {
     );
     expect(find.text('10 g/dL'), findsWidgets);
     expect(find.byKey(const Key('trend-chart-content')), findsNothing);
+  });
+
+  testWidgets('Hindi history uses localized labels and the app card style', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        locale: const Locale('hi'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: TrendChartScreen(
+          reportsRepository: _TrendReports([
+            TrendDataPoint(date: DateTime(2026, 1, 1), value: 10),
+            TrendDataPoint(date: DateTime(2026, 2, 1), value: 12),
+          ]),
+          profileId: 'profile',
+          parameterName: 'Hb',
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('नवीनतम परिणाम'), findsOneWidget);
+    expect(find.textContaining('पिछला परिणाम:'), findsOneWidget);
+    expect(find.text('पिछले परिणाम'), findsWidgets);
+    expect(find.textContaining('Lab reference range'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 }
 

@@ -1,5 +1,34 @@
 {
   "@@locale": "kn",
+  "trendLatestResult": "ಇತ್ತೀಚಿನ ಫಲಿತಾಂಶ",
+  "trendPreviousResult": "ಹಿಂದಿನ ಫಲಿತಾಂಶ",
+  "trendSourceUnit": "ಈ ವ್ಯಾಪ್ತಿಯ ಮೂಲ ಘಟಕ",
+  "trendNoSavedResults": "ಈ ಪರೀಕ್ಷೆಗೆ ಇನ್ನೂ ಉಳಿಸಿದ ಫಲಿತಾಂಶಗಳಿಲ್ಲ.",
+  "trendNoPlottableResults": "ಸಂಗ್ರಹ ದಿನಾಂಕವಿರುವ ನಿಖರ ಸಂಖ್ಯಾತ್ಮಕ ಫಲಿತಾಂಶಗಳನ್ನು ಚಾರ್ಟ್‌ನಲ್ಲಿ ತೋರಿಸಲಾಗುವುದಿಲ್ಲ.",
+  "trendOneResultHelp": "ಒಂದು ಫಲಿತಾಂಶ ಉಳಿಸಲಾಗಿದೆ. ಪ್ರವೃತ್ತಿಯನ್ನು ನೋಡಲು ಇನ್ನೊಂದು ವರದಿಯನ್ನು ಸೇರಿಸಿ.",
+  "trendMultipleResultsHelp": "ದಿನಾಂಕಗಳನ್ನು ಕಳೆದ ಸಮಯಕ್ಕೆ ಅನುಗುಣವಾಗಿ ತೋರಿಸಲಾಗಿದೆ. ಮೌಲ್ಯವನ್ನು ನೋಡಲು ಬಿಂದುವನ್ನು ತಟ್ಟಿ.",
+  "trendUnplottedNote": "ಸಂಗ್ರಹ ದಿನಾಂಕ ಅಥವಾ ನಿಖರ ಸಂಖ್ಯಾತ್ಮಕ ಮೌಲ್ಯ ಲಭ್ಯವಿಲ್ಲದ ಕಾರಣ {count} ಫಲಿತಾಂಶಗಳನ್ನು ಚಾರ್ಟ್‌ನಲ್ಲಿ ತೋರಿಸಲಾಗಿಲ್ಲ.",
+  "@trendUnplottedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendChartLabel": "{count} ಫಲಿತಾಂಶಗಳೊಂದಿಗೆ {testName} ಪ್ರವೃತ್ತಿ ಚಾರ್ಟ್",
+  "@trendChartLabel": {
+    "placeholders": {
+      "testName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendDateReview": "ಸಂಗ್ರಹ ದಿನಾಂಕ ಹಿಂದಿನ ಹೊರತೆಗೆದ ಮಾಹಿತಿಯಿಂದ ಬಂದಿದೆ. ಮೂಲ ವರದಿಯಲ್ಲಿ ಪರಿಶೀಲಿಸಿ.",
+  "trendNotPlotted": "ಚಾರ್ಟ್‌ನಲ್ಲಿ ತೋರಿಸಲಾಗಿಲ್ಲ",
+  "trendExactNumberUnavailable": "ಫಲಿತಾಂಶವು ನಿಖರ ಸಂಖ್ಯೆಯಲ್ಲ",
   "preferredLanguage": "ಆದ್ಯತೆಯ ಭಾಷೆ",
   "descriptionLanguage": "ವಿವರಣೆಯ ಭಾಷೆ",
   "languageHelp": "ಆ್ಯಪ್‌ನ ಪಠ್ಯಗಳು ಮತ್ತು ವರದಿಯ ವಿವರಣೆಗಳಿಗೆ ಬಳಸಲಾಗುತ್ತದೆ. ವಿವರಣೆಯ ಭಾಷೆಯನ್ನು ನೀವು ಯಾವಾಗ ಬೇಕಾದರೂ ಬದಲಾಯಿಸಬಹುದು.",
@@ -358,5 +387,15 @@
   "reportDateOldest": "ವರದಿ ದಿನಾಂಕ · ಹಳೆಯದು ಮೊದಲು",
   "uploadDateNewest": "ಅಪ್‌ಲೋಡ್ ದಿನಾಂಕ · ಹೊಸದು ಮೊದಲು",
   "uploadDateOldest": "ಅಪ್‌ಲೋಡ್ ದಿನಾಂಕ · ಹಳೆಯದು ಮೊದಲು",
-  "switchAction": "ಬದಲಾಯಿಸಿ"
+  "switchAction": "ಬದಲಾಯಿಸಿ",
+  "collectionDate": "ಮಾದರಿ ಸಂಗ್ರಹಿಸಿದ ದಿನಾಂಕ",
+  "copy": "ನಕಲಿಸಿ",
+  "history": "ಇತಿಹಾಸ",
+  "loadingReport": "ವರದಿ ಲೋಡ್ ಆಗುತ್ತಿದೆ…",
+  "restore": "ಮರುಸ್ಥಾಪಿಸಿ",
+  "revoke": "ಹಿಂಪಡೆಯಿರಿ",
+  "testName": "ಪರೀಕ್ಷೆಯ ಹೆಸರು",
+  "viewReport": "ವರದಿ ನೋಡಿ",
+  "closeAccount": "ಖಾತೆ ಮುಚ್ಚಿ",
+  "createShareLink": "ಹಂಚಿಕೊಳ್ಳುವ ಲಿಂಕ್ ರಚಿಸಿ"
 }

@@ -9,6 +9,51 @@ class AppLocalizationsOr extends AppLocalizations {
   AppLocalizationsOr([String locale = 'or']) : super(locale);
 
   @override
+  String get trendLatestResult => 'ସଦ୍ୟତମ ଫଳାଫଳ';
+
+  @override
+  String get trendPreviousResult => 'ପୂର୍ବ ଫଳାଫଳ';
+
+  @override
+  String get trendSourceUnit => 'ଏହି ସୀମାର ମୂଳ ଏକକ';
+
+  @override
+  String get trendNoSavedResults =>
+      'ଏହି ପରୀକ୍ଷା ପାଇଁ ଏପର୍ଯ୍ୟନ୍ତ କୌଣସି ସଞ୍ଚିତ ଫଳାଫଳ ନାହିଁ।';
+
+  @override
+  String get trendNoPlottableResults =>
+      'ନମୁନା ସଂଗ୍ରହ ତାରିଖ ଥିବା ସଠିକ୍ ସଂଖ୍ୟାତ୍ମକ ଫଳାଫଳ ଚାର୍ଟରେ ଦେଖାଇ ହେଉନାହିଁ।';
+
+  @override
+  String get trendOneResultHelp =>
+      'ଗୋଟିଏ ଫଳାଫଳ ସଞ୍ଚିତ ଅଛି। ପରିବର୍ତ୍ତନ ଦେଖିବାକୁ ଆଉ ଗୋଟିଏ ରିପୋର୍ଟ ଯୋଡ଼ନ୍ତୁ।';
+
+  @override
+  String get trendMultipleResultsHelp =>
+      'ତାରିଖଗୁଡ଼ିକ ବିତିଥିବା ସମୟ ଅନୁସାରେ ଦେଖାଯାଇଛି। ମୂଲ୍ୟ ପାଇଁ ବିନ୍ଦୁରେ ଟ୍ୟାପ୍ କରନ୍ତୁ।';
+
+  @override
+  String trendUnplottedNote(int count) {
+    return 'ନମୁନା ସଂଗ୍ରହ ତାରିଖ କିମ୍ବା ସଠିକ୍ ସଂଖ୍ୟାତ୍ମକ ମୂଲ୍ୟ ନଥିବାରୁ $countଟି ଫଳାଫଳ ଚାର୍ଟରେ ଦେଖାଯାଇନାହିଁ।';
+  }
+
+  @override
+  String trendChartLabel(String testName, int count) {
+    return '$countଟି ଫଳାଫଳ ସହ $testName ପରିବର୍ତ୍ତନ ଚାର୍ଟ';
+  }
+
+  @override
+  String get trendDateReview =>
+      'ନମୁନା ସଂଗ୍ରହ ତାରିଖ ପୂର୍ବ ସୂଚନା ନିଷ୍କାସନରୁ ଆସିଛି। ମୂଳ ରିପୋର୍ଟରେ ଯାଞ୍ଚ କରନ୍ତୁ।';
+
+  @override
+  String get trendNotPlotted => 'ଚାର୍ଟରେ ଦେଖାଯାଇନାହିଁ';
+
+  @override
+  String get trendExactNumberUnavailable => 'ଫଳାଫଳଟି ସଠିକ୍ ସଂଖ୍ୟା ନୁହେଁ';
+
+  @override
   String get preferredLanguage => 'ପସନ୍ଦର ଭାଷା';
 
   @override
@@ -1055,4 +1100,34 @@ class AppLocalizationsOr extends AppLocalizations {
 
   @override
   String get switchAction => 'ବଦଳାନ୍ତୁ';
+
+  @override
+  String get collectionDate => 'ନମୁନା ସଂଗ୍ରହ ତାରିଖ';
+
+  @override
+  String get copy => 'କପି କରନ୍ତୁ';
+
+  @override
+  String get history => 'ଇତିହାସ';
+
+  @override
+  String get loadingReport => 'ରିପୋର୍ଟ ଲୋଡ୍ ହେଉଛି…';
+
+  @override
+  String get restore => 'ପୁନରୁଦ୍ଧାର କରନ୍ତୁ';
+
+  @override
+  String get revoke => 'ରଦ୍ଦ କରନ୍ତୁ';
+
+  @override
+  String get testName => 'ପରୀକ୍ଷାର ନାମ';
+
+  @override
+  String get viewReport => 'ରିପୋର୍ଟ ଦେଖନ୍ତୁ';
+
+  @override
+  String get closeAccount => 'ଆକାଉଣ୍ଟ ବନ୍ଦ କରନ୍ତୁ';
+
+  @override
+  String get createShareLink => 'ସେୟାର୍ ଲିଙ୍କ୍ ତିଆରି କରନ୍ତୁ';
 }

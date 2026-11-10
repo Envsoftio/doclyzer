@@ -116,6 +116,78 @@ abstract class AppLocalizations {
     Locale('te'),
   ];
 
+  /// No description provided for @trendLatestResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest result'**
+  String get trendLatestResult;
+
+  /// No description provided for @trendPreviousResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous result'**
+  String get trendPreviousResult;
+
+  /// No description provided for @trendSourceUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Source unit for this range'**
+  String get trendSourceUnit;
+
+  /// No description provided for @trendNoSavedResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved results are available for this test yet.'**
+  String get trendNoSavedResults;
+
+  /// No description provided for @trendNoPlottableResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No exact numeric results with a collection date can be plotted.'**
+  String get trendNoPlottableResults;
+
+  /// No description provided for @trendOneResultHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'One saved result. Add another report to see a trend.'**
+  String get trendOneResultHelp;
+
+  /// No description provided for @trendMultipleResultsHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates are spaced by elapsed time. Tap a point for its value.'**
+  String get trendMultipleResultsHelp;
+
+  /// No description provided for @trendUnplottedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} results could not be plotted because the collection date or exact numeric value is unavailable.'**
+  String trendUnplottedNote(int count);
+
+  /// No description provided for @trendChartLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{testName} trend chart with {count} results'**
+  String trendChartLabel(String testName, int count);
+
+  /// No description provided for @trendDateReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection date from an earlier extraction. Check the source report.'**
+  String get trendDateReview;
+
+  /// No description provided for @trendNotPlotted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not plotted'**
+  String get trendNotPlotted;
+
+  /// No description provided for @trendExactNumberUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Result is not an exact number'**
+  String get trendExactNumberUnavailable;
+
   /// No description provided for @preferredLanguage.
   ///
   /// In en, this message translates to:
@@ -2041,6 +2113,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Switch'**
   String get switchAction;
+
+  /// No description provided for @collectionDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection date'**
+  String get collectionDate;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
+
+  /// No description provided for @history.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get history;
+
+  /// No description provided for @loadingReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading report…'**
+  String get loadingReport;
+
+  /// No description provided for @restore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restore;
+
+  /// No description provided for @revoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get revoke;
+
+  /// No description provided for @testName.
+  ///
+  /// In en, this message translates to:
+  /// **'Test name'**
+  String get testName;
+
+  /// No description provided for @viewReport.
+  ///
+  /// In en, this message translates to:
+  /// **'View report'**
+  String get viewReport;
+
+  /// No description provided for @closeAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Close account'**
+  String get closeAccount;
+
+  /// No description provided for @createShareLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Create link'**
+  String get createShareLink;
 }
 
 class _AppLocalizationsDelegate

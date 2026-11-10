@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
 
@@ -106,7 +107,7 @@ class _ProcessingHistoryScreenState extends State<ProcessingHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Attempt History')),
+      appBar: AppBar(title: Text(context.l10n.attemptHistory)),
       body: Padding(padding: const EdgeInsets.all(16), child: _buildBody()),
     );
   }
@@ -130,7 +131,10 @@ class _ProcessingHistoryScreenState extends State<ProcessingHistoryScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            FilledButton(onPressed: _loadAttempts, child: const Text('Retry')),
+            FilledButton(
+              onPressed: _loadAttempts,
+              child: Text(context.l10n.retry),
+            ),
           ],
         ),
       );

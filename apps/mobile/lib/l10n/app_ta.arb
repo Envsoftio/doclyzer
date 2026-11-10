@@ -1,5 +1,34 @@
 {
   "@@locale": "ta",
+  "trendLatestResult": "சமீபத்திய முடிவு",
+  "trendPreviousResult": "முந்தைய முடிவு",
+  "trendSourceUnit": "இந்த வரம்பின் அசல் அலகு",
+  "trendNoSavedResults": "இந்தப் பரிசோதனைக்குச் சேமிக்கப்பட்ட முடிவுகள் இன்னும் இல்லை.",
+  "trendNoPlottableResults": "மாதிரி எடுத்த தேதியுடன் துல்லியமான எண் முடிவுகளை வரைபடத்தில் காட்ட முடியாது.",
+  "trendOneResultHelp": "ஒரு முடிவு சேமிக்கப்பட்டுள்ளது. மாற்றத்தைக் காண மற்றொரு அறிக்கையைச் சேர்க்கவும்.",
+  "trendMultipleResultsHelp": "தேதிகள் கடந்த கால அளவுக்கேற்ப காட்டப்படுகின்றன. மதிப்பைக் காண புள்ளியைத் தட்டவும்.",
+  "trendUnplottedNote": "மாதிரி எடுத்த தேதி அல்லது துல்லியமான எண் மதிப்பு இல்லாததால் {count} முடிவுகளை வரைபடத்தில் காட்ட முடியவில்லை.",
+  "@trendUnplottedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendChartLabel": "{count} முடிவுகளுடன் {testName} மாற்ற வரைபடம்",
+  "@trendChartLabel": {
+    "placeholders": {
+      "testName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendDateReview": "மாதிரி எடுத்த தேதி முந்தைய தரவு பிரித்தெடுப்பிலிருந்து வந்தது. அசல் அறிக்கையில் சரிபார்க்கவும்.",
+  "trendNotPlotted": "வரைபடத்தில் காட்டப்படவில்லை",
+  "trendExactNumberUnavailable": "முடிவு துல்லியமான எண் அல்ல",
   "preferredLanguage": "விருப்ப மொழி",
   "descriptionLanguage": "விளக்க மொழி",
   "languageHelp": "செயலியின் இடைமுகச் சொற்களுக்கும் அறிக்கை விளக்கங்களுக்கும் பயன்படுத்தப்படும். விளக்கத்தின் மொழியை எப்போது வேண்டுமானாலும் மாற்றலாம்.",
@@ -358,5 +387,15 @@
   "reportDateOldest": "அறிக்கைத் தேதி · பழையவை முதலில்",
   "uploadDateNewest": "பதிவேற்றிய தேதி · புதியவை முதலில்",
   "uploadDateOldest": "பதிவேற்றிய தேதி · பழையவை முதலில்",
-  "switchAction": "மாற்றவும்"
+  "switchAction": "மாற்றவும்",
+  "collectionDate": "மாதிரி சேகரித்த தேதி",
+  "copy": "நகலெடுக்கவும்",
+  "history": "வரலாறு",
+  "loadingReport": "அறிக்கை ஏற்றப்படுகிறது…",
+  "restore": "மீட்டெடுக்கவும்",
+  "revoke": "ரத்துசெய்யவும்",
+  "testName": "பரிசோதனைப் பெயர்",
+  "viewReport": "அறிக்கையைப் பார்க்கவும்",
+  "closeAccount": "கணக்கை மூடவும்",
+  "createShareLink": "பகிர்வு இணைப்பை உருவாக்கவும்"
 }

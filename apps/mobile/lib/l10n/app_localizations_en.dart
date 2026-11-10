@@ -9,6 +9,51 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get trendLatestResult => 'Latest result';
+
+  @override
+  String get trendPreviousResult => 'Previous result';
+
+  @override
+  String get trendSourceUnit => 'Source unit for this range';
+
+  @override
+  String get trendNoSavedResults =>
+      'No saved results are available for this test yet.';
+
+  @override
+  String get trendNoPlottableResults =>
+      'No exact numeric results with a collection date can be plotted.';
+
+  @override
+  String get trendOneResultHelp =>
+      'One saved result. Add another report to see a trend.';
+
+  @override
+  String get trendMultipleResultsHelp =>
+      'Dates are spaced by elapsed time. Tap a point for its value.';
+
+  @override
+  String trendUnplottedNote(int count) {
+    return '$count results could not be plotted because the collection date or exact numeric value is unavailable.';
+  }
+
+  @override
+  String trendChartLabel(String testName, int count) {
+    return '$testName trend chart with $count results';
+  }
+
+  @override
+  String get trendDateReview =>
+      'Collection date from an earlier extraction. Check the source report.';
+
+  @override
+  String get trendNotPlotted => 'Not plotted';
+
+  @override
+  String get trendExactNumberUnavailable => 'Result is not an exact number';
+
+  @override
   String get preferredLanguage => 'Preferred language';
 
   @override
@@ -1046,4 +1091,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get switchAction => 'Switch';
+
+  @override
+  String get collectionDate => 'Collection date';
+
+  @override
+  String get copy => 'Copy';
+
+  @override
+  String get history => 'History';
+
+  @override
+  String get loadingReport => 'Loading report…';
+
+  @override
+  String get restore => 'Restore';
+
+  @override
+  String get revoke => 'Revoke';
+
+  @override
+  String get testName => 'Test name';
+
+  @override
+  String get viewReport => 'View report';
+
+  @override
+  String get closeAccount => 'Close account';
+
+  @override
+  String get createShareLink => 'Create link';
 }

@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../auth_repository.dart';
@@ -60,7 +61,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(onPressed: widget.onGoToLogin),
-        title: const Text('Forgot Password'),
+        title: Text(context.l10n.forgotPassword),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -76,7 +77,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               key: const Key('forgot-password-email'),
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Email'),
+              decoration: InputDecoration(labelText: context.l10n.email),
             ),
             if (_error != null)
               Padding(

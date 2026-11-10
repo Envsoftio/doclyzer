@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
 import '../sharing_repository.dart';
@@ -83,7 +84,7 @@ class _ShareAccessHistoryScreenState extends State<ShareAccessHistoryScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  TextButton(onPressed: _load, child: const Text('Retry')),
+                  TextButton(onPressed: _load, child: Text(context.l10n.retry)),
                 ],
               )
             : _events.isEmpty

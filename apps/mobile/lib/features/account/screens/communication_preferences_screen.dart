@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -281,7 +282,7 @@ class _CommunicationPreferencesScreenState
         .toList();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(context.l10n.notifications),
         leading: BackButton(onPressed: widget.onBack),
       ),
       bottomNavigationBar: SafeArea(
@@ -303,7 +304,7 @@ class _CommunicationPreferencesScreenState
             ),
             TextButton(
               onPressed: _openDeviceSettings,
-              child: const Text('Open device settings'),
+              child: Text(context.l10n.openSettings),
             ),
           ],
         ),
@@ -319,10 +320,10 @@ class _CommunicationPreferencesScreenState
                     color: theme.colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const ListTile(
+                  child: ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.info_outline),
-                    title: Text('Notification preferences'),
+                    leading: const Icon(Icons.info_outline),
+                    title: Text(context.l10n.notificationPreferences),
                     subtitle: Text(
                       'Device permissions can be changed in Settings.',
                     ),
@@ -462,7 +463,7 @@ class _CommunicationPreferencesScreenState
                         supportContext: _supportContext!,
                         errorMessage: _supportErrorMessage,
                       ),
-                      child: const Text('Need help?'),
+                      child: Text(context.l10n.needHelp),
                     ),
                 ],
               ],

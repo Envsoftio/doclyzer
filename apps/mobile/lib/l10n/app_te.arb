@@ -1,5 +1,34 @@
 {
   "@@locale": "te",
+  "trendLatestResult": "తాజా ఫలితం",
+  "trendPreviousResult": "మునుపటి ఫలితం",
+  "trendSourceUnit": "ఈ పరిధి యొక్క అసలు యూనిట్",
+  "trendNoSavedResults": "ఈ పరీక్షకు ఇంకా సేవ్ చేసిన ఫలితాలు లేవు.",
+  "trendNoPlottableResults": "సేకరణ తేదీ ఉన్న ఖచ్చితమైన సంఖ్యా ఫలితాలను చార్ట్‌లో చూపలేము.",
+  "trendOneResultHelp": "ఒక ఫలితం సేవ్ చేయబడింది. మార్పును చూడటానికి మరొక నివేదికను జోడించండి.",
+  "trendMultipleResultsHelp": "తేదీలు గడిచిన సమయానికి అనుగుణంగా చూపబడ్డాయి. విలువ కోసం బిందువును నొక్కండి.",
+  "trendUnplottedNote": "సేకరణ తేదీ లేదా ఖచ్చితమైన సంఖ్యా విలువ లేకపోవడంతో {count} ఫలితాలను చార్ట్‌లో చూపలేదు.",
+  "@trendUnplottedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendChartLabel": "{count} ఫలితాలతో {testName} మార్పుల చార్ట్",
+  "@trendChartLabel": {
+    "placeholders": {
+      "testName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendDateReview": "సేకరణ తేదీ మునుపటి వెలికితీత నుంచి వచ్చింది. అసలు నివేదికలో తనిఖీ చేయండి.",
+  "trendNotPlotted": "చార్ట్‌లో చూపలేదు",
+  "trendExactNumberUnavailable": "ఫలితం ఖచ్చితమైన సంఖ్య కాదు",
   "preferredLanguage": "ప్రాధాన్య భాష",
   "descriptionLanguage": "వివరణ భాష",
   "languageHelp": "యాప్‌లోని పేర్లు, సూచనలు, నివేదిక వివరణల కోసం ఉపయోగించే భాష. వివరణ భాషను మీరు ఎప్పుడైనా మార్చవచ్చు.",
@@ -358,5 +387,15 @@
   "reportDateOldest": "నివేదిక తేదీ · పాతవి ముందు",
   "uploadDateNewest": "అప్‌లోడ్ తేదీ · కొత్తవి ముందు",
   "uploadDateOldest": "అప్‌లోడ్ తేదీ · పాతవి ముందు",
-  "switchAction": "మార్చండి"
+  "switchAction": "మార్చండి",
+  "collectionDate": "సేకరణ తేదీ",
+  "copy": "కాపీ చేయండి",
+  "history": "చరిత్ర",
+  "loadingReport": "నివేదికను లోడ్ చేస్తున్నాము…",
+  "restore": "పునరుద్ధరించండి",
+  "revoke": "రద్దు చేయండి",
+  "testName": "పరీక్ష పేరు",
+  "viewReport": "నివేదికను చూడండి",
+  "closeAccount": "ఖాతాను మూసివేయండి",
+  "createShareLink": "పంచుకోవడానికి లింక్‌ను సృష్టించండి"
 }

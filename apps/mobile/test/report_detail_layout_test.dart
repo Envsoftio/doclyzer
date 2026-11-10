@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/features/profiles/profiles_repository.dart';
 import 'package:mobile/features/reports/reports_repository.dart';
 import 'package:mobile/features/reports/screens/report_detail_screen.dart';
+import 'package:mobile/l10n/app_localizations.dart';
 
 class _Reports extends Fake implements ReportsRepository {
   _Reports({
@@ -20,6 +22,10 @@ class _Reports extends Fake implements ReportsRepository {
   final String? summaryStatus;
   final int failedSummaryRequests;
   final bool extraResult;
+
+  @override
+  Future<String> getLocalizedSummary(String reportId, String locale) async =>
+      'सारांश\nइस रिपोर्ट में ग्लूकोज़ का परिणाम है।\n\nचर्चा करने योग्य परिणाम\nइसकी जाँच करें।';
   int summaryRequests = 0;
   bool? lastSummaryRefresh;
   int deletes = 0;
@@ -258,6 +264,42 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('report-detail-lab-values')), findsOneWidget);
     expect(find.text('Overview'), findsNothing);
+  });
+
+  testWidgets('translated summary headings remain distinct from body text', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        locale: const Locale('hi'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: ReportDetailScreen(
+          reportsRepository: _Reports(summary: 'Overview\nGlucose is present.'),
+          profilesRepository: _Profiles(),
+          reportId: 'report',
+          profileId: 'profile',
+          onBack: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('सारांश').first);
+    await tester.pumpAndSettle();
+
+    final heading = tester.widget<Text>(find.text('चर्चा करने योग्य परिणाम'));
+    final body = tester.widget<SelectableText>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is SelectableText && widget.data == 'इसकी जाँच करें।',
+      ),
+    );
+    expect(heading.style?.fontWeight, FontWeight.w800);
+    expect(
+      heading.style?.fontSize,
+      greaterThanOrEqualTo(body.style!.fontSize!),
+    );
   });
 
   testWidgets('summary tab fits narrow screens with larger text', (

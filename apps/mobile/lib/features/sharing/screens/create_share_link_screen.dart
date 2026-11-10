@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
@@ -385,7 +386,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () => Navigator.pop(sheetContext, true),
-                child: const Text('Create link'),
+                child: Text(context.l10n.createShareLink),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(sheetContext, false),
@@ -428,12 +429,12 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             key: const Key('revoke-confirm-button'),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Revoke'),
+            child: Text(context.l10n.revoke),
           ),
         ],
       ),
@@ -679,7 +680,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                           trailing: TextButton(
                             key: Key('revoke-existing-link-${link.id}'),
                             onPressed: () => _revokeLink(link.id),
-                            child: const Text('Revoke'),
+                            child: Text(context.l10n.revoke),
                           ),
                         ),
                         if (link.requiresAccessCode)
@@ -698,7 +699,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                                   Icons.history_outlined,
                                   size: 18,
                                 ),
-                                label: const Text('History'),
+                                label: Text(context.l10n.history),
                                 onPressed: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -722,7 +723,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                               TextButton.icon(
                                 key: Key('copy-existing-link-${link.id}'),
                                 icon: const Icon(Icons.copy_outlined, size: 18),
-                                label: const Text('Copy'),
+                                label: Text(context.l10n.copy),
                                 onPressed: () => _copyLink(link.shareUrl),
                               ),
                             ],
@@ -778,7 +779,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                       child: Column(
                         children: [
                           RadioListTile<bool>(
-                            title: const Text('All reports'),
+                            title: Text(context.l10n.allReports),
                             subtitle: const Text(
                               'Include current and future reports for this profile.',
                             ),
@@ -823,7 +824,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                           Text(_reportsError!),
                           TextButton(
                             onPressed: _loadReports,
-                            child: const Text('Try again'),
+                            child: Text(context.l10n.tryAgain),
                           ),
                         ],
                       )
@@ -877,7 +878,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                             Text(_valuesError!),
                             TextButton(
                               onPressed: _loadSelectableValues,
-                              child: const Text('Try again'),
+                              child: Text(context.l10n.tryAgain),
                             ),
                           ],
                         )
@@ -1000,7 +1001,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                           errorMessage: _supportErrorMessage,
                         );
                       },
-                      child: const Text('Need help?'),
+                      child: Text(context.l10n.needHelp),
                     ),
                   ],
                 ],

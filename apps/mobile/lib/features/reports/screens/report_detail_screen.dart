@@ -1327,12 +1327,6 @@ class _ReportSummaryBody extends StatelessWidget {
       height: 1.5,
       color: colors.onSurface,
     );
-    const headings = {
-      'Overview',
-      'Results to discuss',
-      'Other results',
-      'What to ask your clinician',
-    };
     final sections = summary.trim().split(RegExp(r'\n\s*\n'));
     return Column(
       key: const Key('report-detail-summary-body'),
@@ -1340,10 +1334,15 @@ class _ReportSummaryBody extends StatelessWidget {
       children: [
         for (final section in sections) ...[
           if (section != sections.first) const SizedBox(height: 16),
-          if (headings.contains(section.split('\n').first)) ...[
+          if (section.contains('\n') &&
+              section.split('\n').first.trim().isNotEmpty) ...[
             Text(
-              section.split('\n').first,
-              style: Theme.of(context).textTheme.titleMedium,
+              section.split('\n').first.trim(),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: colors.onSurface,
+                height: 1.35,
+              ),
             ),
             const SizedBox(height: 6),
             SelectableText(

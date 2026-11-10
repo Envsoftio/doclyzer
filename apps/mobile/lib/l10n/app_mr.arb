@@ -1,5 +1,34 @@
 {
   "@@locale": "mr",
+  "trendLatestResult": "नवीनतम निकाल",
+  "trendPreviousResult": "मागील निकाल",
+  "trendSourceUnit": "या मर्यादेचे मूळ एकक",
+  "trendNoSavedResults": "या चाचणीसाठी अद्याप कोणताही जतन केलेला निकाल नाही.",
+  "trendNoPlottableResults": "नमुना घेतल्याची तारीख असलेले अचूक संख्यात्मक निकाल आलेखात दाखवता येत नाहीत.",
+  "trendOneResultHelp": "एक निकाल जतन केला आहे. बदल पाहण्यासाठी आणखी एक अहवाल जोडा.",
+  "trendMultipleResultsHelp": "तारखा गेलेल्या वेळेनुसार दाखवल्या आहेत. मूल्य पाहण्यासाठी बिंदूवर टॅप करा.",
+  "trendUnplottedNote": "नमुना घेतल्याची तारीख किंवा अचूक संख्यात्मक मूल्य नसल्यामुळे {count} निकाल आलेखात दाखवलेले नाहीत.",
+  "@trendUnplottedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendChartLabel": "{count} निकालांसह {testName} बदलांचा आलेख",
+  "@trendChartLabel": {
+    "placeholders": {
+      "testName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendDateReview": "नमुना घेतल्याची तारीख आधी काढलेल्या माहितीतून आली आहे. मूळ अहवालात तपासा.",
+  "trendNotPlotted": "आलेखात दाखवलेले नाही",
+  "trendExactNumberUnavailable": "निकाल अचूक संख्या नाही",
   "preferredLanguage": "पसंतीची भाषा",
   "descriptionLanguage": "वर्णनाची भाषा",
   "languageHelp": "ॲपमधील मजकूर आणि अहवालांचे स्पष्टीकरण यांसाठी वापरली जाते. तुम्ही स्पष्टीकरणाची भाषा कधीही बदलू शकता.",
@@ -358,5 +387,15 @@
   "reportDateOldest": "अहवालाची तारीख · जुने आधी",
   "uploadDateNewest": "अपलोडची तारीख · नवीन आधी",
   "uploadDateOldest": "अपलोडची तारीख · जुने आधी",
-  "switchAction": "बदला"
+  "switchAction": "बदला",
+  "collectionDate": "नमुना संकलनाची तारीख",
+  "copy": "कॉपी करा",
+  "history": "इतिहास",
+  "loadingReport": "अहवाल लोड होत आहे…",
+  "restore": "पुनर्संचयित करा",
+  "revoke": "रद्द करा",
+  "testName": "चाचणीचे नाव",
+  "viewReport": "अहवाल पाहा",
+  "closeAccount": "खाते बंद करा",
+  "createShareLink": "शेअर करण्यासाठी लिंक तयार करा"
 }

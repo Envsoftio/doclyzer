@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../features/reports/reports_repository.dart';
 import '../../shared/app_date_format.dart';
@@ -213,7 +214,7 @@ class DesignReportCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    'View report',
+                    context.l10n.viewReport,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w700,

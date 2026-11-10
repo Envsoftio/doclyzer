@@ -9,6 +9,51 @@ class AppLocalizationsHi extends AppLocalizations {
   AppLocalizationsHi([String locale = 'hi']) : super(locale);
 
   @override
+  String get trendLatestResult => 'नवीनतम परिणाम';
+
+  @override
+  String get trendPreviousResult => 'पिछला परिणाम';
+
+  @override
+  String get trendSourceUnit => 'इस सीमा की मूल इकाई';
+
+  @override
+  String get trendNoSavedResults =>
+      'इस जाँच के लिए अभी कोई सहेजा गया परिणाम नहीं है।';
+
+  @override
+  String get trendNoPlottableResults =>
+      'संग्रह की तारीख वाला कोई सटीक संख्यात्मक परिणाम ग्राफ़ में नहीं दिखाया जा सकता।';
+
+  @override
+  String get trendOneResultHelp =>
+      'एक परिणाम सहेजा गया है। बदलाव देखने के लिए एक और रिपोर्ट जोड़ें।';
+
+  @override
+  String get trendMultipleResultsHelp =>
+      'तारीखें बीते समय के अनुसार दिखाई गई हैं। मान देखने के लिए बिंदु पर टैप करें।';
+
+  @override
+  String trendUnplottedNote(int count) {
+    return 'संग्रह की तारीख या सटीक संख्यात्मक मान न होने के कारण $count परिणाम ग्राफ़ में नहीं दिखाए जा सके।';
+  }
+
+  @override
+  String trendChartLabel(String testName, int count) {
+    return '$testName का ग्राफ़, $count परिणामों के साथ';
+  }
+
+  @override
+  String get trendDateReview =>
+      'संग्रह की तारीख पहले किए गए निष्कर्षण से है। मूल रिपोर्ट में जाँचें।';
+
+  @override
+  String get trendNotPlotted => 'ग्राफ़ में नहीं दिखाया गया';
+
+  @override
+  String get trendExactNumberUnavailable => 'परिणाम सटीक संख्या नहीं है';
+
+  @override
   String get preferredLanguage => 'पसंदीदा भाषा';
 
   @override
@@ -1045,4 +1090,34 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get switchAction => 'बदलें';
+
+  @override
+  String get collectionDate => 'नमूना लेने की तारीख';
+
+  @override
+  String get copy => 'कॉपी करें';
+
+  @override
+  String get history => 'पिछले परिणाम';
+
+  @override
+  String get loadingReport => 'रिपोर्ट लोड हो रही है…';
+
+  @override
+  String get restore => 'वापस लाएँ';
+
+  @override
+  String get revoke => 'लिंक बंद करें';
+
+  @override
+  String get testName => 'जाँच का नाम';
+
+  @override
+  String get viewReport => 'रिपोर्ट देखें';
+
+  @override
+  String get closeAccount => 'खाता बंद करें';
+
+  @override
+  String get createShareLink => 'शेयर लिंक बनाएँ';
 }

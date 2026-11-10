@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -56,7 +57,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Privacy & security')),
+    appBar: AppBar(title: Text(context.l10n.privacySecurity)),
     bottomNavigationBar: SafeArea(
       minimum: const EdgeInsets.fromLTRB(24, 6, 24, 18),
       child: TextButton(
@@ -78,7 +79,11 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.verified_user_outlined, color: Colors.white, size: 30),
+                  Icon(
+                    Icons.verified_user_outlined,
+                    color: Colors.white,
+                    size: 30,
+                  ),
                   SizedBox(width: 16),
                   Text(
                     'Your records.\nYour choice to share.',
@@ -107,9 +112,14 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
         ),
         ListTile(
           contentPadding: EdgeInsets.zero,
-          title: Text('App lock', style: Theme.of(context).textTheme.titleSmall),
-          subtitle: Text('Use your device’s biometric or passcode lock.',
-              style: Theme.of(context).textTheme.bodySmall),
+          title: Text(
+            'App lock',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          subtitle: Text(
+            'Use your device’s biometric or passcode lock.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
           trailing: Switch.adaptive(
             key: const Key('app-lock-switch'),
             value: _appLockEnabled,
@@ -198,7 +208,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
         )
         .toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('Help & support')),
+      appBar: AppBar(title: Text(context.l10n.helpSupport)),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(24, 12, 24, 20),
         child: Column(
@@ -305,7 +315,7 @@ class AboutDoclyzerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('About Doclyzer')),
+    appBar: AppBar(title: Text(context.l10n.aboutDoclyzer)),
     body: ListView(
       padding: const EdgeInsets.all(24),
       children: [

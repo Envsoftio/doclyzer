@@ -1,5 +1,34 @@
 {
   "@@locale": "bn",
+  "trendLatestResult": "সর্বশেষ ফলাফল",
+  "trendPreviousResult": "আগের ফলাফল",
+  "trendSourceUnit": "এই সীমার মূল একক",
+  "trendNoSavedResults": "এই পরীক্ষার জন্য এখনও কোনো সংরক্ষিত ফলাফল নেই।",
+  "trendNoPlottableResults": "নমুনা সংগ্রহের তারিখসহ নির্ভুল সংখ্যাগত ফলাফল চার্টে দেখানো যাচ্ছে না।",
+  "trendOneResultHelp": "একটি ফলাফল সংরক্ষিত আছে। পরিবর্তন দেখতে আরেকটি রিপোর্ট যোগ করুন।",
+  "trendMultipleResultsHelp": "তারিখগুলি অতিবাহিত সময় অনুযায়ী দেখানো হয়েছে। মান দেখতে বিন্দুতে ট্যাপ করুন।",
+  "trendUnplottedNote": "নমুনা সংগ্রহের তারিখ বা নির্ভুল সংখ্যাগত মান না থাকায় {count}টি ফলাফল চার্টে দেখানো যায়নি।",
+  "@trendUnplottedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendChartLabel": "{count}টি ফলাফলসহ {testName}-এর পরিবর্তনের চার্ট",
+  "@trendChartLabel": {
+    "placeholders": {
+      "testName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendDateReview": "নমুনা সংগ্রহের তারিখ আগের তথ্য নিষ্কাশন থেকে এসেছে। মূল রিপোর্টে যাচাই করুন।",
+  "trendNotPlotted": "চার্টে দেখানো হয়নি",
+  "trendExactNumberUnavailable": "ফলাফলটি নির্ভুল সংখ্যা নয়",
   "preferredLanguage": "পছন্দের ভাষা",
   "descriptionLanguage": "বিবরণের ভাষা",
   "languageHelp": "অ্যাপের লেবেল ও রিপোর্টের ব্যাখ্যার জন্য ব্যবহৃত হয়। আপনি যেকোনো সময় ব্যাখ্যার ভাষা বদলাতে পারেন।",
@@ -358,5 +387,15 @@
   "reportDateOldest": "রিপোর্টের তারিখ · পুরোনো আগে",
   "uploadDateNewest": "আপলোডের তারিখ · নতুন আগে",
   "uploadDateOldest": "আপলোডের তারিখ · পুরোনো আগে",
-  "switchAction": "বদলান"
+  "switchAction": "বদলান",
+  "collectionDate": "নমুনা সংগ্রহের তারিখ",
+  "copy": "কপি করুন",
+  "history": "ইতিহাস",
+  "loadingReport": "রিপোর্ট লোড হচ্ছে…",
+  "restore": "ফিরিয়ে আনুন",
+  "revoke": "বাতিল করুন",
+  "testName": "পরীক্ষার নাম",
+  "viewReport": "রিপোর্ট দেখুন",
+  "closeAccount": "অ্যাকাউন্ট বন্ধ করুন",
+  "createShareLink": "শেয়ার করার লিঙ্ক তৈরি করুন"
 }

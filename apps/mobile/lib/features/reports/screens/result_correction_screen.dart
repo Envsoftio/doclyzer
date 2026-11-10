@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/api_client.dart';
@@ -123,7 +124,7 @@ class _ResultCorrectionScreenState extends State<ResultCorrectionScreen> {
               key: const Key('correction-view-original'),
               onPressed: widget.onViewOriginal,
               icon: const Icon(Icons.picture_as_pdf_outlined),
-              label: const Text('View original report'),
+              label: Text(context.l10n.viewOriginalReport),
             ),
             if (source != null) ...[
               const SizedBox(height: 12),
@@ -154,13 +155,13 @@ class _ResultCorrectionScreenState extends State<ResultCorrectionScreen> {
               key: const Key('correction-name'),
               controller: _name,
               maxLength: 256,
-              decoration: const InputDecoration(labelText: 'Test name'),
+              decoration: InputDecoration(labelText: context.l10n.testName),
             ),
             TextField(
               key: const Key('correction-value'),
               controller: _value,
               maxLength: 512,
-              decoration: const InputDecoration(labelText: 'Result as printed'),
+              decoration: InputDecoration(labelText: 'Result as printed'),
             ),
             TextField(
               key: const Key('correction-unit'),
@@ -172,8 +173,8 @@ class _ResultCorrectionScreenState extends State<ResultCorrectionScreen> {
               key: const Key('correction-date'),
               controller: _date,
               maxLength: 10,
-              decoration: const InputDecoration(
-                labelText: 'Collection date',
+              decoration: InputDecoration(
+                labelText: context.l10n.collectionDate,
                 hintText: 'YYYY-MM-DD',
               ),
             ),

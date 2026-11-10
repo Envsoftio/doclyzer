@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/app_date_format.dart';
@@ -62,7 +63,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
           TextButton(
             key: const Key('session-revoke-cancel'),
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             key: const Key('session-revoke-confirm'),
@@ -70,7 +71,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
             style: TextButton.styleFrom(
               foregroundColor: theme.colorScheme.error,
             ),
-            child: const Text('Revoke'),
+            child: Text(context.l10n.revoke),
           ),
         ],
       ),
@@ -95,7 +96,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Active Sessions'),
+        title: Text(context.l10n.activeSessions),
         leading: BackButton(onPressed: widget.onBack),
       ),
       body: Padding(

@@ -9,6 +9,50 @@ class AppLocalizationsKn extends AppLocalizations {
   AppLocalizationsKn([String locale = 'kn']) : super(locale);
 
   @override
+  String get trendLatestResult => 'ಇತ್ತೀಚಿನ ಫಲಿತಾಂಶ';
+
+  @override
+  String get trendPreviousResult => 'ಹಿಂದಿನ ಫಲಿತಾಂಶ';
+
+  @override
+  String get trendSourceUnit => 'ಈ ವ್ಯಾಪ್ತಿಯ ಮೂಲ ಘಟಕ';
+
+  @override
+  String get trendNoSavedResults => 'ಈ ಪರೀಕ್ಷೆಗೆ ಇನ್ನೂ ಉಳಿಸಿದ ಫಲಿತಾಂಶಗಳಿಲ್ಲ.';
+
+  @override
+  String get trendNoPlottableResults =>
+      'ಸಂಗ್ರಹ ದಿನಾಂಕವಿರುವ ನಿಖರ ಸಂಖ್ಯಾತ್ಮಕ ಫಲಿತಾಂಶಗಳನ್ನು ಚಾರ್ಟ್‌ನಲ್ಲಿ ತೋರಿಸಲಾಗುವುದಿಲ್ಲ.';
+
+  @override
+  String get trendOneResultHelp =>
+      'ಒಂದು ಫಲಿತಾಂಶ ಉಳಿಸಲಾಗಿದೆ. ಪ್ರವೃತ್ತಿಯನ್ನು ನೋಡಲು ಇನ್ನೊಂದು ವರದಿಯನ್ನು ಸೇರಿಸಿ.';
+
+  @override
+  String get trendMultipleResultsHelp =>
+      'ದಿನಾಂಕಗಳನ್ನು ಕಳೆದ ಸಮಯಕ್ಕೆ ಅನುಗುಣವಾಗಿ ತೋರಿಸಲಾಗಿದೆ. ಮೌಲ್ಯವನ್ನು ನೋಡಲು ಬಿಂದುವನ್ನು ತಟ್ಟಿ.';
+
+  @override
+  String trendUnplottedNote(int count) {
+    return 'ಸಂಗ್ರಹ ದಿನಾಂಕ ಅಥವಾ ನಿಖರ ಸಂಖ್ಯಾತ್ಮಕ ಮೌಲ್ಯ ಲಭ್ಯವಿಲ್ಲದ ಕಾರಣ $count ಫಲಿತಾಂಶಗಳನ್ನು ಚಾರ್ಟ್‌ನಲ್ಲಿ ತೋರಿಸಲಾಗಿಲ್ಲ.';
+  }
+
+  @override
+  String trendChartLabel(String testName, int count) {
+    return '$count ಫಲಿತಾಂಶಗಳೊಂದಿಗೆ $testName ಪ್ರವೃತ್ತಿ ಚಾರ್ಟ್';
+  }
+
+  @override
+  String get trendDateReview =>
+      'ಸಂಗ್ರಹ ದಿನಾಂಕ ಹಿಂದಿನ ಹೊರತೆಗೆದ ಮಾಹಿತಿಯಿಂದ ಬಂದಿದೆ. ಮೂಲ ವರದಿಯಲ್ಲಿ ಪರಿಶೀಲಿಸಿ.';
+
+  @override
+  String get trendNotPlotted => 'ಚಾರ್ಟ್‌ನಲ್ಲಿ ತೋರಿಸಲಾಗಿಲ್ಲ';
+
+  @override
+  String get trendExactNumberUnavailable => 'ಫಲಿತಾಂಶವು ನಿಖರ ಸಂಖ್ಯೆಯಲ್ಲ';
+
+  @override
   String get preferredLanguage => 'ಆದ್ಯತೆಯ ಭಾಷೆ';
 
   @override
@@ -1058,4 +1102,34 @@ class AppLocalizationsKn extends AppLocalizations {
 
   @override
   String get switchAction => 'ಬದಲಾಯಿಸಿ';
+
+  @override
+  String get collectionDate => 'ಮಾದರಿ ಸಂಗ್ರಹಿಸಿದ ದಿನಾಂಕ';
+
+  @override
+  String get copy => 'ನಕಲಿಸಿ';
+
+  @override
+  String get history => 'ಇತಿಹಾಸ';
+
+  @override
+  String get loadingReport => 'ವರದಿ ಲೋಡ್ ಆಗುತ್ತಿದೆ…';
+
+  @override
+  String get restore => 'ಮರುಸ್ಥಾಪಿಸಿ';
+
+  @override
+  String get revoke => 'ಹಿಂಪಡೆಯಿರಿ';
+
+  @override
+  String get testName => 'ಪರೀಕ್ಷೆಯ ಹೆಸರು';
+
+  @override
+  String get viewReport => 'ವರದಿ ನೋಡಿ';
+
+  @override
+  String get closeAccount => 'ಖಾತೆ ಮುಚ್ಚಿ';
+
+  @override
+  String get createShareLink => 'ಹಂಚಿಕೊಳ್ಳುವ ಲಿಂಕ್ ರಚಿಸಿ';
 }

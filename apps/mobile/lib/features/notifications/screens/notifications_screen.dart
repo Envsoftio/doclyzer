@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/design_components.dart';
@@ -88,7 +89,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Done'),
+                child: Text(context.l10n.done),
               ),
             ],
           ),
@@ -107,12 +108,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         .toList();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(context.l10n.notifications),
         leading: BackButton(onPressed: widget.onBack),
         actions: [
           IconButton(
             icon: const Icon(Icons.tune),
-            tooltip: 'Notification preferences',
+            tooltip: context.l10n.notificationPreferences,
             onPressed: widget.onManagePreferences,
           ),
         ],

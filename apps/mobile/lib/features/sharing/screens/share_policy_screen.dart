@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../sharing_repository.dart';
 
@@ -97,7 +98,7 @@ class _SharePolicyScreenState extends State<SharePolicyScreen> {
             style: const TextStyle(color: Colors.red),
           ),
           const SizedBox(height: 8),
-          TextButton(onPressed: _load, child: const Text('Retry')),
+          TextButton(onPressed: _load, child: Text(context.l10n.retry)),
         ],
       );
     }

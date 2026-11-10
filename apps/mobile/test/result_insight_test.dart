@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/api_client.dart';
 import 'package:mobile/core/theme/app_theme.dart';
@@ -6,6 +7,7 @@ import 'package:mobile/features/reports/reports_repository.dart';
 import 'package:mobile/features/reports/result_palette.dart';
 import 'package:mobile/features/reports/result_range.dart';
 import 'package:mobile/features/reports/screens/result_insight_screen.dart';
+import 'package:mobile/l10n/app_localizations.dart';
 import 'package:mobile/shared/app_date_format.dart';
 
 void main() {
@@ -48,6 +50,39 @@ void main() {
     final lighter = palette.foreground.computeLuminance() + 0.05;
     final darker = palette.background.computeLuminance() + 0.05;
     expect(lighter / darker, greaterThanOrEqualTo(4.5));
+  });
+
+  testWidgets('individual explanation uses the summary reading size', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: ResultInsightScreen(
+          result: hemoglobin,
+          loadInsight: () async => insight,
+          onViewTrend: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final paragraph = tester.widget<Text>(
+      find.text('Below the printed lab range.'),
+    );
+    final style = tester
+        .widget<DefaultTextStyle>(
+          find
+              .ancestor(
+                of: find.text('Below the printed lab range.'),
+                matching: find.byType(DefaultTextStyle),
+              )
+              .first,
+        )
+        .style;
+    expect(paragraph.style, isNull);
+    expect(style.fontSize, 16);
+    expect(style.height, 1.5);
   });
 
   test('plain values use only the printed range', () {
@@ -337,6 +372,61 @@ void main() {
       await tester.pumpAndSettle();
     }
     expect((trendOpens, originalOpens, reviewOpens), (1, 1, 1));
+  });
+
+  testWidgets('Hindi result uses a compact card and side-by-side actions', (
+    tester,
+  ) async {
+    await (FontLoader(
+      'Noto Sans Devanagari',
+    )..addFont(rootBundle.load('assets/fonts/NotoSansDevanagari.ttf'))).load();
+    await (FontLoader(
+      'Plus Jakarta Sans',
+    )..addFont(rootBundle.load('assets/fonts/PlusJakartaSans.ttf'))).load();
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        locale: const Locale('hi'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: ResultInsightScreen(
+          result: const ExtractedLabValue(
+            parameterName: 'Haemoglobin',
+            value: '12.4',
+            unit: 'g/dL',
+            referenceRange: '12–15',
+          ),
+          loadInsight: () async => insight,
+          onViewTrend: () {},
+          onViewOriginal: () {},
+          onReviewResult: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSize(find.byKey(const Key('result-insight-hero'))).height,
+      lessThan(240),
+    );
+    expect(
+      tester.getTopLeft(find.byKey(const Key('result-insight-trend'))).dy,
+      tester.getTopLeft(find.byKey(const Key('result-insight-original'))).dy,
+    );
+    expect(tester.takeException(), isNull);
+
+    tester.view.physicalSize = const Size(320, 700);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('result-insight-range-status')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('failed generation offers retry', (tester) async {

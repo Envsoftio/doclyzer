@@ -1,5 +1,34 @@
 {
   "@@locale": "gu",
+  "trendLatestResult": "નવીનતમ પરિણામ",
+  "trendPreviousResult": "પાછલું પરિણામ",
+  "trendSourceUnit": "આ મર્યાદાનું મૂળ એકમ",
+  "trendNoSavedResults": "આ તપાસ માટે હજી કોઈ સાચવેલું પરિણામ નથી.",
+  "trendNoPlottableResults": "નમૂનાની તારીખ સાથેનું ચોક્કસ આંકડાકીય પરિણામ ચાર્ટમાં બતાવી શકાતું નથી.",
+  "trendOneResultHelp": "એક પરિણામ સાચવેલું છે. ફેરફાર જોવા બીજો રિપોર્ટ ઉમેરો.",
+  "trendMultipleResultsHelp": "તારીખો વીતેલા સમય પ્રમાણે બતાવવામાં આવી છે. મૂલ્ય જોવા બિંદુ પર ટૅપ કરો.",
+  "trendUnplottedNote": "નમૂનાની તારીખ અથવા ચોક્કસ આંકડાકીય મૂલ્ય ન હોવાથી {count} પરિણામો ચાર્ટમાં બતાવાયા નથી.",
+  "@trendUnplottedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendChartLabel": "{count} પરિણામો સાથે {testName}ના ફેરફારનો ચાર્ટ",
+  "@trendChartLabel": {
+    "placeholders": {
+      "testName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendDateReview": "નમૂનાની તારીખ અગાઉ કાઢેલી માહિતીમાંથી છે. મૂળ રિપોર્ટમાં તપાસો.",
+  "trendNotPlotted": "ચાર્ટમાં બતાવાયું નથી",
+  "trendExactNumberUnavailable": "પરિણામ ચોક્કસ સંખ્યા નથી",
   "preferredLanguage": "પસંદગીની ભાષા",
   "descriptionLanguage": "વર્ણનની ભાષા",
   "languageHelp": "ઍપનાં લેબલ અને રિપોર્ટની સમજૂતી માટે વપરાય છે. તમે સમજૂતીની ભાષા કોઈપણ સમયે બદલી શકો છો.",
@@ -358,5 +387,15 @@
   "reportDateOldest": "રિપોર્ટની તારીખ · સૌથી જૂના પહેલાં",
   "uploadDateNewest": "અપલોડની તારીખ · સૌથી નવા પહેલાં",
   "uploadDateOldest": "અપલોડની તારીખ · સૌથી જૂના પહેલાં",
-  "switchAction": "બદલો"
+  "switchAction": "બદલો",
+  "collectionDate": "નમૂનો લીધાની તારીખ",
+  "copy": "કૉપિ કરો",
+  "history": "ઇતિહાસ",
+  "loadingReport": "રિપોર્ટ લોડ થઈ રહ્યો છે…",
+  "restore": "પુનઃસ્થાપિત કરો",
+  "revoke": "લિંક રદ કરો",
+  "testName": "તપાસનું નામ",
+  "viewReport": "રિપોર્ટ જુઓ",
+  "closeAccount": "ખાતું બંધ કરો",
+  "createShareLink": "શેર કરવા માટે લિંક બનાવો"
 }

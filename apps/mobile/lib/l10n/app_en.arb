@@ -1,5 +1,34 @@
 {
   "@@locale": "en",
+  "trendLatestResult": "Latest result",
+  "trendPreviousResult": "Previous result",
+  "trendSourceUnit": "Source unit for this range",
+  "trendNoSavedResults": "No saved results are available for this test yet.",
+  "trendNoPlottableResults": "No exact numeric results with a collection date can be plotted.",
+  "trendOneResultHelp": "One saved result. Add another report to see a trend.",
+  "trendMultipleResultsHelp": "Dates are spaced by elapsed time. Tap a point for its value.",
+  "trendUnplottedNote": "{count} results could not be plotted because the collection date or exact numeric value is unavailable.",
+  "@trendUnplottedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendChartLabel": "{testName} trend chart with {count} results",
+  "@trendChartLabel": {
+    "placeholders": {
+      "testName": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trendDateReview": "Collection date from an earlier extraction. Check the source report.",
+  "trendNotPlotted": "Not plotted",
+  "trendExactNumberUnavailable": "Result is not an exact number",
   "preferredLanguage": "Preferred language",
   "descriptionLanguage": "Description language",
   "languageHelp": "Used for app labels and report explanations. You can switch the language of an explanation at any time.",
@@ -358,5 +387,15 @@
   "reportDateOldest": "Report date · oldest",
   "uploadDateNewest": "Upload date · newest",
   "uploadDateOldest": "Upload date · oldest",
-  "switchAction": "Switch"
+  "switchAction": "Switch",
+  "collectionDate": "Collection date",
+  "copy": "Copy",
+  "history": "History",
+  "loadingReport": "Loading report…",
+  "restore": "Restore",
+  "revoke": "Revoke",
+  "testName": "Test name",
+  "viewReport": "View report",
+  "closeAccount": "Close account",
+  "createShareLink": "Create link"
 }

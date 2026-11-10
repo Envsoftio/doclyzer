@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -242,8 +243,9 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
         const SizedBox(height: 24),
         DropdownButtonFormField<String>(
           key: const Key('compare-earlier'),
+          isExpanded: true,
           initialValue: _earlierId,
-          decoration: const InputDecoration(labelText: 'Earlier report'),
+          decoration: InputDecoration(labelText: 'Earlier report'),
           items: [
             for (final report in reports)
               DropdownMenuItem(
@@ -259,6 +261,7 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           key: const Key('compare-later'),
+          isExpanded: true,
           initialValue: _laterId,
           decoration: const InputDecoration(labelText: 'Later report'),
           items: [
@@ -309,7 +312,7 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
                   !_selectedOrderValid
               ? null
               : () => setState(() => _showResults = true),
-          child: const Text('Compare reports'),
+          child: Text(context.l10n.compareReports),
         ),
       ],
     ),
