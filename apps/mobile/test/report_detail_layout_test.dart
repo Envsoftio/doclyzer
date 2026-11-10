@@ -11,6 +11,7 @@ class _Reports extends Fake implements ReportsRepository {
     this.summary,
     this.summaryStatus,
     this.failedSummaryRequests = 0,
+    this.extraResult = false,
   });
 
   final String? collectionDate;
@@ -18,6 +19,7 @@ class _Reports extends Fake implements ReportsRepository {
   final String? summary;
   final String? summaryStatus;
   final int failedSummaryRequests;
+  final bool extraResult;
   int summaryRequests = 0;
   bool? lastSummaryRefresh;
   int deletes = 0;
@@ -57,6 +59,7 @@ class _Reports extends Fake implements ReportsRepository {
     String reportId,
     ExtractedLabValue result, {
     String locale = 'en',
+    InsightRequestCancellation? cancellation,
   }) async => const ResultInsight(
     testExplanation: 'A measured lab value.',
     resultExplanation: 'Compare with the listed lab range.',
@@ -99,14 +102,21 @@ class _Reports extends Fake implements ReportsRepository {
         ),
       ],
     ),
-    extractedLabValues: const [
-      ExtractedLabValue(
+    extractedLabValues: [
+      const ExtractedLabValue(
         parameterName: 'Very long laboratory parameter name',
         value: '123456789012345678901234567890',
         unit: 'milligrams per deciliter',
         sampleDate: '2026-10-17T12:34:56+05:30',
         referenceRange: '123456789012345678901234567890',
       ),
+      if (extraResult)
+        const ExtractedLabValue(
+          parameterName: 'Haemoglobin',
+          value: '12.4',
+          unit: 'g/dL',
+          referenceRange: '12-15',
+        ),
     ],
   );
 }
@@ -281,6 +291,13 @@ void main() {
     await tester.tap(find.text('Summary'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('report-detail-summary')), findsOneWidget);
+    final body = find.byKey(const Key('report-detail-summary-body'));
+    expect(tester.getTopLeft(body).dx, 16);
+    final paragraph = tester.widget<SelectableText>(
+      find.descendant(of: body, matching: find.byType(SelectableText)).first,
+    );
+    expect(paragraph.style?.fontSize, 16);
+    expect(paragraph.style?.inherit, isFalse);
     expect(tester.takeException(), isNull);
   });
 
@@ -512,5 +529,56 @@ void main() {
         },
       );
     }
+  }
+
+  for (final (width, textScale, twoColumns) in [
+    (320.0, 1.0, false),
+    (375.0, 1.0, true),
+    (430.0, 1.0, true),
+    (430.0, 2.0, false),
+  ]) {
+    testWidgets(
+      'result cards use the available width at $width and ${textScale}x',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 700);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MediaQuery(
+              data: MediaQueryData(
+                size: Size(width, 700),
+                textScaler: TextScaler.linear(textScale),
+              ),
+              child: ReportDetailScreen(
+                reportsRepository: _Reports(extraResult: true),
+                profilesRepository: _Profiles(),
+                reportId: 'report',
+                profileId: 'profile',
+                onBack: () {},
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final first = tester.getRect(
+          find.byKey(const Key('lab-row-Very long laboratory parameter name')),
+        );
+        final second = tester.getRect(
+          find.byKey(const Key('lab-row-Haemoglobin')),
+        );
+        if (twoColumns) {
+          expect(second.top, first.top);
+          expect(second.left, greaterThan(first.right));
+        } else {
+          expect(second.left, first.left);
+          expect(second.top, greaterThan(first.bottom));
+        }
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 }

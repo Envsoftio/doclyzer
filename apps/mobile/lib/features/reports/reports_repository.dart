@@ -1,3 +1,5 @@
+import 'dart:async';
+
 /// Result of uploading a report.
 class UploadedReport {
   const UploadedReport({
@@ -325,6 +327,30 @@ class ReportReview {
   final bool partial;
 }
 
+/// Stops follow-up polling when the result screen is no longer visible.
+/// An already accepted server generation is allowed to finish and be cached.
+class InsightRequestCancellation {
+  final Completer<void> _cancelled = Completer<void>();
+
+  bool get isCancelled => _cancelled.isCompleted;
+  Future<void> get whenCancelled => _cancelled.future;
+
+  void cancel() {
+    if (!_cancelled.isCompleted) _cancelled.complete();
+  }
+
+  Future<void> waitForRetry(Duration delay) {
+    if (isCancelled) return Future<void>.value();
+    final ready = Completer<void>();
+    final timer = Timer(delay, ready.complete);
+    whenCancelled.then((_) {
+      timer.cancel();
+      if (!ready.isCompleted) ready.complete();
+    });
+    return ready.future;
+  }
+}
+
 abstract class ReportsRepository {
   /// Upload a report file. Returns metadata including reportId and status.
   /// When [forceUploadAnyway] is true, bypasses duplicate check (use after user chooses "Upload anyway").
@@ -365,6 +391,7 @@ abstract class ReportsRepository {
     String reportId,
     ExtractedLabValue result, {
     String locale = 'en',
+    InsightRequestCancellation? cancellation,
   });
 
   /// Retry parsing for a report that failed. Returns updated report.

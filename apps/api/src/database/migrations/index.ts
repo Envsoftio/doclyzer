@@ -1,3 +1,4 @@
+import { CreateReportResultInsightClaims1730819800000 } from './1730819800000-CreateReportResultInsightClaims';
 import { AddPunjabiLanguage1730819700000 } from './1730819700000-AddPunjabiLanguage';
 import { ExtendIndianLanguages1730819600000 } from './1730819600000-ExtendIndianLanguages';
 import { AddPreferredLanguageAndNarrativeTranslations1730819500000 } from './1730819500000-AddPreferredLanguageAndNarrativeTranslations';
@@ -73,6 +74,7 @@ export const migrations = [
   AddPreferredLanguageAndNarrativeTranslations1730819500000,
   ExtendIndianLanguages1730819600000,
   AddPunjabiLanguage1730819700000,
+  CreateReportResultInsightClaims1730819800000,
   CompletePushNotifications1730819400000,
   InitialSchema1730812800000,
   AddDisplayName1730812900000,

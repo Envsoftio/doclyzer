@@ -22,8 +22,24 @@ async function main() {
     },
   });
   const rows = new Map<string, ReportResultInsightEntity>();
+  const claims = new Map<string, string>();
   const cacheRepo = {
-    manager: { query: async () => [{ name: 'Hb' }] },
+    manager: {
+      query: async (sql: string, params: Array<string | number> = []) => {
+        if (sql.includes('lab_test_aliases')) return [{ name: 'Hb' }];
+        const key = `${params[0]}:${params[1]}`;
+        if (sql.includes('INSERT INTO report_result_insight_claims')) {
+          if (claims.has(key)) return [];
+          claims.set(key, String(params[2]));
+          return [{ claim_id: params[2] }];
+        }
+        if (sql.includes('DELETE FROM report_result_insight_claims')) {
+          if (claims.get(key) === params[2]) claims.delete(key);
+          return [];
+        }
+        throw new Error(`Unexpected query: ${sql}`);
+      },
+    },
     findOneBy: async ({
       reportId,
       cacheKey,
@@ -346,6 +362,38 @@ async function main() {
     );
     assert.equal(rows.size, 3, 'a changed value needs its own cache entry');
 
+    let releaseGeneration!: () => void;
+    const generationHeld = new Promise<void>((resolve) => {
+      releaseGeneration = resolve;
+    });
+    let generationStarted!: () => void;
+    const started = new Promise<void>((resolve) => {
+      generationStarted = resolve;
+    });
+    const callsBeforeParallel = fetchCount;
+    global.fetch = async () => {
+      fetchCount += 1;
+      generationStarted();
+      await generationHeld;
+      return new Response(JSON.stringify({ output_text: JSON.stringify(insight) }));
+    };
+    const parallelResult = { ...result, value: '11.5' };
+    const firstGeneration = service.explain('report-1', parallelResult);
+    await started;
+    try {
+      await assert.rejects(
+        () => restartedService.explain('report-1', parallelResult),
+        (error: { response?: { code?: string } }) =>
+          error.response?.code === 'RESULT_INSIGHT_PENDING',
+      );
+      assert.equal(fetchCount, callsBeforeParallel + 1);
+    } finally {
+      releaseGeneration();
+    }
+    await firstGeneration;
+    await restartedService.explain('report-1', parallelResult);
+    assert.equal(fetchCount, callsBeforeParallel + 1, 'another process reuses the saved explanation');
+
     const newerModelService = new ReportResultInsightService(
       new ConfigService({
         reports: {
@@ -368,7 +416,7 @@ async function main() {
     await newerModelService.explain('report-1', result);
     assert.equal(
       fetchCount,
-      4,
+      5,
       'a model change must regenerate the explanation',
     );
 
@@ -376,7 +424,7 @@ async function main() {
     await assert.rejects(() =>
       service.explain('report-1', { ...result, value: '12' }),
     );
-    assert.equal(rows.size, 4, 'failed explanations must not be cached');
+    assert.equal(rows.size, 5, 'failed explanations must not be cached');
 
     let usageWrites = 0;
     const failingUsageRepo = {
@@ -425,7 +473,12 @@ async function main() {
 
     const unreviewedRepo = {
       ...cacheRepo,
-      manager: { query: async () => [] },
+      manager: {
+        query: async (sql: string, params: Array<string | number> = []) =>
+          sql.includes('lab_test_aliases')
+            ? []
+            : cacheRepo.manager.query(sql, params),
+      },
     } as unknown as Repository<ReportResultInsightEntity>;
     const unreviewed = new ReportResultInsightService(
       config,
@@ -545,6 +598,7 @@ async function main() {
     );
     assert.equal(usageRows.at(-1)?.estimatedCostUsd, '0.00104000');
     assert.equal(usageRows.at(-1)?.cacheHit, false);
+    assert.equal(claims.size, 0, 'finished and failed generations release their claims');
   } finally {
     global.fetch = originalFetch;
   }

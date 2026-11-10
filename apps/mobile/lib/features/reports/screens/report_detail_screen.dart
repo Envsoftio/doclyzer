@@ -1,4 +1,5 @@
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'dart:async';
 
 import '../report_processing_store.dart';
@@ -224,6 +225,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
   }
 
   void _openResult(ExtractedLabValue result) {
+    final cancellation = InsightRequestCancellation();
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (ctx) => ResultInsightScreen(
@@ -231,9 +233,16 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
           loadInsight: () => widget.reportsRepository.getResultInsight(
             widget.reportId,
             result,
+            cancellation: cancellation,
           ),
-          loadLocalizedInsight: (locale) => widget.reportsRepository
-              .getResultInsight(widget.reportId, result, locale: locale),
+          loadLocalizedInsight: (locale) =>
+              widget.reportsRepository.getResultInsight(
+                widget.reportId,
+                result,
+                locale: locale,
+                cancellation: cancellation,
+              ),
+          cancellation: cancellation,
           onViewTrend: () => _openTrendChart(result.parameterName, result.unit),
           onViewOriginal: _openPdf,
           onReviewResult: result.id == null
@@ -691,97 +700,88 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
     );
   }
 
-  Widget _buildSummaryCard(Report report) {
+  Widget _buildSummarySection(Report report) {
     final summary = report.summary?.trim();
     final hasSummary = summary != null && summary.isNotEmpty;
     final isWaiting = _summaryRequesting || report.summaryStatus == 'pending';
-    return Card(
+    return Column(
       key: const Key('report-detail-summary'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.auto_awesome_outlined,
-                  size: 22,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    context.l10n.reportSummary,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
+            Icon(
+              Icons.auto_awesome_outlined,
+              size: 22,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(height: 12),
-            if (hasSummary) ...[
-              LocalizedDescription(
-                english: summary,
-                load: (locale) => widget.reportsRepository.getLocalizedSummary(
-                  widget.reportId,
-                  locale,
-                ),
-                builder: (text) => _ReportSummaryBody(summary: text),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                context.l10n.reportSummary,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
-              const SizedBox(height: 12),
-              const AiDisclaimerNote(
-                key: Key('report-detail-summary-disclaimer'),
-              ),
-              const SizedBox(height: 8),
-              TextButton.icon(
-                key: const Key('report-detail-summary-refresh'),
-                onPressed: isWaiting
-                    ? null
-                    : () => _requestSummary(refresh: true),
-                icon: const Icon(Icons.refresh),
-                label: Text(context.l10n.updateSummary),
-              ),
-              if (_summaryRequesting) const LinearProgressIndicator(),
-              if (_summaryError != null) Text(_summaryError!),
-            ] else if (isWaiting) ...[
-              const LinearProgressIndicator(
-                key: Key('report-detail-summary-progress'),
-              ),
-              const SizedBox(height: 12),
-              Text(context.l10n.summaryLoading),
-              if (!_summaryRequesting) ...[
-                const SizedBox(height: 8),
-                TextButton.icon(
-                  onPressed: _loadReport,
-                  icon: const Icon(Icons.refresh),
-                  label: Text(context.l10n.checkSummary),
-                ),
-              ],
-            ] else ...[
-              Text(
-                _summaryError ??
-                    (report.summaryStatus == 'failed'
-                        ? context.l10n.summaryFailed
-                        : context.l10n.summaryPlaceholder),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                key: const Key('report-detail-summary-retry'),
-                onPressed: _requestSummary,
-                icon: const Icon(Icons.refresh),
-                label: Text(
-                  report.summaryStatus == 'failed' || _summaryError != null
-                      ? context.l10n.retrySummary
-                      : context.l10n.generateSummary,
-                ),
-              ),
-            ],
+            ),
           ],
         ),
-      ),
+        const SizedBox(height: 12),
+        if (hasSummary) ...[
+          LocalizedDescription(
+            english: summary,
+            load: (locale) => widget.reportsRepository.getLocalizedSummary(
+              widget.reportId,
+              locale,
+            ),
+            builder: (text) => _ReportSummaryBody(summary: text),
+          ),
+          const SizedBox(height: 12),
+          const AiDisclaimerNote(key: Key('report-detail-summary-disclaimer')),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            key: const Key('report-detail-summary-refresh'),
+            onPressed: isWaiting ? null : () => _requestSummary(refresh: true),
+            icon: const Icon(Icons.refresh),
+            label: Text(context.l10n.updateSummary),
+          ),
+          if (_summaryRequesting) const LinearProgressIndicator(),
+          if (_summaryError != null) Text(_summaryError!),
+        ] else if (isWaiting) ...[
+          const LinearProgressIndicator(
+            key: Key('report-detail-summary-progress'),
+          ),
+          const SizedBox(height: 12),
+          Text(context.l10n.summaryLoading),
+          if (!_summaryRequesting) ...[
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: _loadReport,
+              icon: const Icon(Icons.refresh),
+              label: Text(context.l10n.checkSummary),
+            ),
+          ],
+        ] else ...[
+          Text(
+            _summaryError ??
+                (report.summaryStatus == 'failed'
+                    ? context.l10n.summaryFailed
+                    : context.l10n.summaryPlaceholder),
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            key: const Key('report-detail-summary-retry'),
+            onPressed: _requestSummary,
+            icon: const Icon(Icons.refresh),
+            label: Text(
+              report.summaryStatus == 'failed' || _summaryError != null
+                  ? context.l10n.retrySummary
+                  : context.l10n.generateSummary,
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -1030,7 +1030,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
             ),
             const SizedBox(height: 14),
             if (_selectedReportTab == 1) ...[
-              _buildSummaryCard(report),
+              _buildSummarySection(report),
               const SizedBox(height: 12),
             ],
           ],
@@ -1105,12 +1105,30 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
               ),
             ),
             const SizedBox(height: 12),
-            Column(
+            LayoutBuilder(
               key: const Key('report-detail-lab-values'),
-              children: [
-                for (final result in results)
-                  _ResultCard(result: result, onTap: () => _openResult(result)),
-              ],
+              builder: (context, constraints) {
+                final twoColumns =
+                    constraints.maxWidth >= 320 &&
+                    MediaQuery.textScalerOf(context).scale(16) <= 20;
+                final cardWidth = twoColumns
+                    ? (constraints.maxWidth - 8) / 2
+                    : constraints.maxWidth;
+                return Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final result in results)
+                      SizedBox(
+                        width: cardWidth,
+                        child: _ResultCard(
+                          result: result,
+                          compact: twoColumns,
+                          onTap: () => _openResult(result),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ],
           if (results.isEmpty &&
@@ -1300,6 +1318,15 @@ class _ReportSummaryBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final readingStyle = TextStyle(
+      inherit: false,
+      fontSize: 16,
+      fontFamilyFallback: AppTheme.scriptFonts,
+      textBaseline: TextBaseline.alphabetic,
+      height: 1.5,
+      color: colors.onSurface,
+    );
     const headings = {
       'Overview',
       'Results to discuss',
@@ -1308,6 +1335,7 @@ class _ReportSummaryBody extends StatelessWidget {
     };
     final sections = summary.trim().split(RegExp(r'\n\s*\n'));
     return Column(
+      key: const Key('report-detail-summary-body'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final section in sections) ...[
@@ -1315,22 +1343,15 @@ class _ReportSummaryBody extends StatelessWidget {
           if (headings.contains(section.split('\n').first)) ...[
             Text(
               section.split('\n').first,
-              style: Theme.of(context).textTheme.titleSmall,
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 6),
             SelectableText(
               section.substring(section.indexOf('\n') + 1).trim(),
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(height: 1.5),
+              style: readingStyle,
             ),
           ] else
-            SelectableText(
-              section,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(height: 1.5),
-            ),
+            SelectableText(section, style: readingStyle),
         ],
       ],
     );
@@ -1358,10 +1379,15 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _ResultCard extends StatelessWidget {
-  const _ResultCard({required this.result, required this.onTap});
+  const _ResultCard({
+    required this.result,
+    required this.onTap,
+    this.compact = false,
+  });
 
   final ExtractedLabValue result;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -1375,8 +1401,16 @@ class _ResultCard extends StatelessWidget {
       RangePosition.within => context.l10n.withinRange,
       RangePosition.unknown => context.l10n.rangeUnclear,
     };
+    final reviewNotice = result.reviewState != 'needs_review'
+        ? null
+        : result.reviewVersion == 0 &&
+              result.sourceSnapshot?['valueSource'] == 'ai_suggestion'
+        ? 'Value checked by AI during processing. Original OCR: ${result.sourceSnapshot?['originalValue']}. Confirm it against the report.'
+        : result.sourceSnapshot?['rangeSource'] == 'ai_suggestion'
+        ? context.l10n.aiRangeHelp
+        : null;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Card(
         elevation: 0,
         color: palette.background,
@@ -1386,7 +1420,7 @@ class _ResultCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(compact ? 12 : 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1396,9 +1430,11 @@ class _ResultCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         result.parameterName,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style:
+                            (compact
+                                    ? theme.textTheme.titleSmall
+                                    : theme.textTheme.titleMedium)
+                                ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1409,31 +1445,22 @@ class _ResultCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 4),
                 Text(
                   result.unit?.trim().isNotEmpty == true
                       ? '${result.value} ${result.unit}'
                       : result.value,
                   key: Key('lab-value-${result.parameterName}'),
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: palette.foreground,
-                  ),
+                  style:
+                      (compact
+                              ? theme.textTheme.headlineSmall
+                              : theme.textTheme.headlineMedium)
+                          ?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: palette.foreground,
+                          ),
                 ),
                 const SizedBox(height: 8),
-                if (result.reviewState == 'needs_review') ...[
-                  Text(
-                    result.reviewVersion == 0 &&
-                            result.sourceSnapshot?['valueSource'] ==
-                                'ai_suggestion'
-                        ? 'Value checked by AI during processing. Original OCR: ${result.sourceSnapshot?['originalValue']}. Confirm it against the report.'
-                        : result.sourceSnapshot?['rangeSource'] ==
-                              'ai_suggestion'
-                        ? context.l10n.aiRangeHelp
-                        : context.l10n.checkResultHelp,
-                  ),
-                  const SizedBox(height: 8),
-                ],
                 Wrap(
                   spacing: 8,
                   runSpacing: 6,
@@ -1470,13 +1497,17 @@ class _ResultCard extends StatelessWidget {
                     ),
                     if (result.referenceRange?.trim().isNotEmpty == true)
                       Text(
-                        'Lab range ${result.referenceRange}',
+                        context.l10n.labRangeValue(result.referenceRange!),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
                       ),
                   ],
                 ),
+                if (reviewNotice != null) ...[
+                  const SizedBox(height: 8),
+                  Text(reviewNotice, style: theme.textTheme.bodySmall),
+                ],
                 if (position == RangePosition.unknown) ...[
                   const SizedBox(height: 8),
                   Text(
@@ -1497,14 +1528,6 @@ class _ResultCard extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 10),
-                Text(
-                  context.l10n.understandResultAction,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colors.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
               ],
             ),
           ),

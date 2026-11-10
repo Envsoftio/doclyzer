@@ -14,14 +14,26 @@ class ApiReportsRepository implements ReportsRepository {
 
   Future<Map<String, dynamic>> _narrativeRequest(
     String path,
-    Map<String, dynamic> body,
-  ) async {
+    Map<String, dynamic> body, {
+    InsightRequestCancellation? cancellation,
+  }) async {
     for (var attempt = 0; ; attempt++) {
+      if (cancellation?.isCancelled == true) {
+        throw ApiException('REQUEST_CANCELLED', 'Result screen closed.');
+      }
       try {
         return await _client.post(path, body: body);
       } on ApiException catch (error) {
-        if (error.code != 'NARRATIVE_PENDING' || attempt >= 10) rethrow;
-        await Future<void>.delayed(const Duration(seconds: 12));
+        if ((error.code != 'NARRATIVE_PENDING' &&
+                error.code != 'RESULT_INSIGHT_PENDING') ||
+            attempt >= 10) {
+          rethrow;
+        }
+        if (cancellation == null) {
+          await Future<void>.delayed(const Duration(seconds: 12));
+        } else {
+          await cancellation.waitForRetry(const Duration(seconds: 12));
+        }
       }
     }
   }
@@ -514,6 +526,7 @@ class ApiReportsRepository implements ReportsRepository {
     String reportId,
     ExtractedLabValue result, {
     String locale = 'en',
+    InsightRequestCancellation? cancellation,
   }) async {
     final response = await _narrativeRequest(
       'v1/reports/${Uri.encodeComponent(reportId)}/results/insight',
@@ -523,6 +536,7 @@ class ApiReportsRepository implements ReportsRepository {
         'value': result.value,
         'unit': result.unit ?? '',
       },
+      cancellation: cancellation,
     );
     final data = response['data'] as Map<String, dynamic>;
     return ResultInsight(

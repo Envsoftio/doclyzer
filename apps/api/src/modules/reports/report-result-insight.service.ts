@@ -1,11 +1,12 @@
 import {
+  ConflictException,
   Injectable,
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { ReportResultInsightEntity } from '../../database/entities/report-result-insight.entity';
 import { ReportResultInsightUsageEntity } from '../../database/entities/report-result-insight-usage.entity';
@@ -224,38 +225,66 @@ export class ReportResultInsightService {
     const pending = this.inFlight.get(flightKey);
     if (pending) return pending;
 
-    try {
-      const cached = await this.insightRepo.findOneBy({ reportId, cacheKey });
-      if (cached) {
+    const readCached = async (): Promise<ReportResultInsight | null> => {
+      try {
+        const cached = await this.insightRepo.findOneBy({ reportId, cacheKey });
+        if (!cached) return null;
         const saved = this.validate(cached.insight);
         if (userId)
           await this.recordUsageSafely(
-            userId,
-            reportId,
-            cacheKey,
-            model,
-            null,
-            true,
+            userId, reportId, cacheKey, model, null, true,
           );
         return saved;
+      } catch {
+        this.logger.warn('Result insight cache read failed');
+        return null;
       }
-    } catch {
-      // A cache failure should not prevent a fresh explanation.
-      this.logger.warn('Result insight cache read failed');
-    }
+    };
+    const cached = await readCached();
+    if (cached) return cached;
 
     const secondPending = this.inFlight.get(flightKey);
     if (secondPending) return secondPending;
-    const task = this.generate(model, baseUrl, input)
-      .then(async (insight) => {
+    const task = (async () => {
+      // A database lease shares one generation across API processes. If the
+      // caller leaves, the owner still finishes and saves the result.
+      const claimId = randomUUID();
+      const timeoutMs =
+        this.configService.get<number>('reports.resultInsightTimeoutMs') ||
+        60_000;
+      const leaseMs = Math.max(90_000, timeoutMs + 30_000);
+      const claimed = await this.insightRepo.manager.query(
+        `INSERT INTO report_result_insight_claims
+          (report_id, cache_key, claim_id, lease_expires_at)
+         VALUES ($1, $2, $3, now() + ($4::int * interval '1 millisecond'))
+         ON CONFLICT (report_id, cache_key) DO UPDATE
+           SET claim_id=$3, lease_expires_at=now() + ($4::int * interval '1 millisecond')
+         WHERE report_result_insight_claims.lease_expires_at < now()
+         RETURNING claim_id`,
+        [reportId, cacheKey, claimId, leaseMs],
+      );
+      if (!claimed.length) {
+        const cachedAfterClaim = await readCached();
+        if (cachedAfterClaim) return cachedAfterClaim;
+        throw new ConflictException({
+          code: 'RESULT_INSIGHT_PENDING',
+          message: 'This explanation is being prepared. Please try again shortly.',
+        });
+      }
+      try {
+        // Another process may have saved the explanation between our first
+        // cache read and this claim.
+        const cachedAfterClaim = await readCached();
+        if (cachedAfterClaim) return cachedAfterClaim;
+        const insight = await this.generate(model, baseUrl, input);
         const { usage, ...data } = insight;
-        let saved = false;
+        let persisted = false;
         try {
           await this.insightRepo.upsert({ reportId, cacheKey, insight: data }, [
             'reportId',
             'cacheKey',
           ]);
-          saved = true;
+          persisted = true;
         } catch {
           this.logger.warn('Result insight cache write failed');
         }
@@ -268,13 +297,23 @@ export class ReportResultInsightService {
             usage ?? null,
             false,
           );
-        if (!saved)
+        if (!persisted)
           throw new ServiceUnavailableException({
             code: 'RESULT_INSIGHT_SAVE_UNAVAILABLE',
             message: 'Explanation could not be saved. Please try again.',
           });
         return data;
-      })
+      } finally {
+        try {
+          await this.insightRepo.manager.query(
+            'DELETE FROM report_result_insight_claims WHERE report_id=$1 AND cache_key=$2 AND claim_id=$3',
+            [reportId, cacheKey, claimId],
+          );
+        } catch {
+          this.logger.warn('Result insight claim release failed');
+        }
+      }
+    })()
       .finally(() => this.inFlight.delete(flightKey));
     this.inFlight.set(flightKey, task);
     return task;

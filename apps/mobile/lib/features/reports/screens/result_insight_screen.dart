@@ -15,6 +15,7 @@ class ResultInsightScreen extends StatefulWidget {
     required this.result,
     required this.loadInsight,
     this.loadLocalizedInsight,
+    this.cancellation,
     required this.onViewTrend,
     this.onViewOriginal,
     this.onReviewResult,
@@ -23,6 +24,7 @@ class ResultInsightScreen extends StatefulWidget {
   final ExtractedLabValue result;
   final Future<ResultInsight> Function() loadInsight;
   final Future<ResultInsight> Function(String locale)? loadLocalizedInsight;
+  final InsightRequestCancellation? cancellation;
   final VoidCallback onViewTrend;
   final VoidCallback? onViewOriginal;
   final VoidCallback? onReviewResult;
@@ -35,6 +37,12 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
   late Future<ResultInsight> _insight;
   String _language = 'en';
   String? _preferred;
+
+  @override
+  void dispose() {
+    widget.cancellation?.cancel();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {

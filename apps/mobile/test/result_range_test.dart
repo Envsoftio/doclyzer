@@ -365,6 +365,16 @@ void main() {
       expect(find.text('4.06 g/dL'), findsOneWidget);
       expect(find.text('Lab range 3.50-5.20'), findsOneWidget);
       expect(find.text('In listed range'), findsOneWidget);
+      expect(
+        find.text(
+          'Check this result against the original report before relying on it.',
+        ),
+        findsNothing,
+      );
+      expect(
+        tester.getSize(find.byKey(const Key('lab-row-Albumin'))).height,
+        lessThan(160),
+      );
       expect(find.text('Range unclear'), findsNothing);
       expect(tester.takeException(), isNull);
     },

@@ -48,6 +48,7 @@ class _ReportWithCorrection extends _Corrections {
     String reportId,
     ExtractedLabValue result, {
     String locale = 'en',
+    InsightRequestCancellation? cancellation,
   }) async => const ResultInsight(
     testExplanation: '',
     resultExplanation: '',
