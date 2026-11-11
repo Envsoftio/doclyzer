@@ -74,7 +74,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Failed to load plans. Please try again.';
+          _error = context.l10n.uiFailedToLoadPlansPleaseTryAgain;
           _loading = false;
           _supportContext = buildSupportRequestContext(
             actionType: SupportActionType.billingEntitlement,
@@ -88,6 +88,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
   Future<void> _subscribe(Plan plan) async {
     if (_subscribingPlanId != null) return;
 
+    final description = context.l10n.uiMonthlyPlanDescription(plan.name);
     setState(() => _subscribingPlanId = plan.id);
     try {
       final result = await widget.billingRepository.createSubscription(plan.id);
@@ -96,7 +97,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
         'key': result.razorpayKeyId,
         'subscription_id': result.razorpaySubscriptionId,
         'name': 'Doclyzer',
-        'description': 'Monthly Plan - ${plan.name}',
+        'description': description,
       });
     } catch (e) {
       if (mounted) {
@@ -105,11 +106,11 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
           actionType: SupportActionType.billingCheckout,
         );
         _supportErrorMessage =
-            'Failed to create subscription. Please try again.';
+            context.l10n.uiFailedToCreateSubscriptionPleaseTryAgain;
         StatusMessenger.showError(
           context,
-          'Failed to create subscription. Please try again.',
-          actionLabel: 'Need help?',
+          context.l10n.uiFailedToCreateSubscriptionPleaseTryAgain,
+          actionLabel: context.l10n.uiNeedHelp,
           onAction: _openSupportSheet,
         );
       }
@@ -124,14 +125,14 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
         response.signature ?? '',
       );
       if (mounted) {
-        StatusMessenger.showSuccess(context, 'Plan upgraded!');
+        StatusMessenger.showSuccess(context, context.l10n.uiPlanUpgraded);
         widget.onSubscribeComplete();
       }
     } catch (e) {
       if (mounted) {
         StatusMessenger.showWarning(
           context,
-          'Payment received but verification failed. Plan will be upgraded shortly.',
+          context.l10n.uiPaymentReceivedButVerificationFailedPlanWill,
           duration: const Duration(seconds: 5),
         );
         widget.onSubscribeComplete();
@@ -147,11 +148,11 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
       _supportContext = buildSupportRequestContext(
         actionType: SupportActionType.billingCheckout,
       );
-      _supportErrorMessage = 'Subscription failed. Try again.';
+      _supportErrorMessage = context.l10n.uiSubscriptionFailedTryAgain;
       StatusMessenger.showError(
         context,
-        'Subscription failed. Try again.',
-        actionLabel: 'Need help?',
+        context.l10n.uiSubscriptionFailedTryAgain,
+        actionLabel: context.l10n.uiNeedHelp,
         onAction: _openSupportSheet,
       );
     }
@@ -165,12 +166,12 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
     final code = _promoController.text.trim();
     if (code.isEmpty) {
       setState(() {
-        _promoError = 'Enter a promo code to apply.';
+        _promoError = context.l10n.uiEnterAPromoCodeToApply;
       });
       return;
     }
     setState(() {
-      _promoError = 'Promo codes not supported for subscriptions yet.';
+      _promoError = context.l10n.uiPromoCodesNotSupportedForSubscriptionsYet;
     });
   }
 
@@ -180,7 +181,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Choose a Plan'),
+        title: Text(context.l10n.uiChooseAPlan),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: widget.onBack,
@@ -240,7 +241,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
   Widget _buildPlanList(ThemeData theme) {
     final plans = _plans ?? [];
     if (plans.isEmpty) {
-      return const Center(child: Text('No plans available at this time.'));
+      return Center(child: Text(context.l10n.uiNoPlansAvailableAtThisTime));
     }
 
     final incident = widget.incidentStatus;
@@ -271,7 +272,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Have a promo code?',
+              context.l10n.uiHaveAPromoCode,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -280,9 +281,9 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
             TextField(
               controller: _promoController,
               textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                labelText: 'Promo code',
-                hintText: 'Enter promo code',
+              decoration: InputDecoration(
+                labelText: context.l10n.uiPromoCode,
+                hintText: context.l10n.uiEnterPromoCode,
               ),
             ),
             if (_promoError != null) ...[
@@ -294,7 +295,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
               width: double.infinity,
               child: FilledButton.tonal(
                 onPressed: _applySubscriptionPromo,
-                child: const Text('Apply'),
+                child: Text(context.l10n.uiApply),
               ),
             ),
           ],
@@ -342,7 +343,7 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
-                      'CURRENT PLAN',
+                      context.l10n.uiCURRENTPLAN,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.onPrimaryContainer,
                         fontWeight: FontWeight.w600,
@@ -365,26 +366,28 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
             _buildFeatureRow(
               theme,
               Icons.person_outline,
-              'Profiles',
+              context.l10n.uiProfiles,
               '${plan.limits.maxProfiles}',
             ),
             _buildFeatureRow(
               theme,
               Icons.description_outlined,
-              'Reports',
+              context.l10n.reports,
               '${plan.limits.maxReports}',
             ),
             _buildFeatureRow(
               theme,
               Icons.link,
-              'Share links',
+              context.l10n.uiShareLinks,
               '${plan.limits.maxShareLinks}',
             ),
             _buildFeatureRow(
               theme,
               Icons.smart_toy_outlined,
-              'AI Chat',
-              plan.limits.aiChatEnabled ? 'Enabled' : 'Not available',
+              context.l10n.uiAIChat,
+              plan.limits.aiChatEnabled
+                  ? context.l10n.uiEnabled
+                  : context.l10n.uiNotAvailable,
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -400,7 +403,11 @@ class _PlanSelectionScreenState extends State<PlanSelectionScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : Text(plan.isCurrentPlan ? 'Current Plan' : 'Subscribe'),
+                    : Text(
+                        plan.isCurrentPlan
+                            ? context.l10n.uiCurrentPlan
+                            : context.l10n.uiSubscribe,
+                      ),
               ),
             ),
           ],

@@ -18,6 +18,7 @@ import 'core/theme/design_components.dart';
 import 'core/navigation/mobile_navigation_shell.dart';
 import 'core/navigation/app_notification_frame.dart';
 import 'core/token_storage.dart';
+import 'shared/app_date_format.dart';
 import 'features/incidents/api_incident_repository.dart';
 import 'features/incidents/incident_repository.dart';
 import 'features/account/api_account_repository.dart';
@@ -209,7 +210,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           .timeout(const Duration(seconds: 15));
       if (!mounted || version != _languageVersion) return;
       if (profile.preferredLanguage != language) {
-        throw const AccountException('Language preference was not saved.');
+        throw AccountException(context.l10n.uiLanguagePreferenceNotSaved);
       }
       await _setLocalLanguage(language);
     } catch (_) {
@@ -256,16 +257,17 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   }
 
   Future<bool> _setAppLockEnabled(bool enabled) async {
+    final localized = context.l10n;
     try {
       if (enabled) {
         if (!await _localAuthentication.isDeviceSupported()) {
-          throw StateError('Set a device passcode before turning on App lock.');
+          throw StateError(localized.uiSetDevicePasscodeForAppLock);
         }
       }
       final confirmed = await _localAuthentication.authenticate(
         localizedReason: enabled
-            ? 'Confirm App lock for Doclyzer'
-            : 'Confirm before turning off App lock',
+            ? localized.uiConfirmAppLockForDoclyzer
+            : localized.uiConfirmBeforeTurningOffAppLock,
         options: const AuthenticationOptions(stickyAuth: true),
       );
       if (!confirmed) return _appLockEnabled;
@@ -285,7 +287,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
           content: Text(
             error is StateError
                 ? error.message
-                : 'Could not change App lock. Try again.',
+                : localized.uiCouldNotChangeAppLockTryAgain,
           ),
         ),
       );
@@ -298,7 +300,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     setState(() => _unlocking = true);
     try {
       final unlocked = await _localAuthentication.authenticate(
-        localizedReason: 'Unlock Doclyzer to view your health records',
+        localizedReason: context.l10n.uiUnlockDoclyzerToViewYourHealthRecords,
         options: const AuthenticationOptions(stickyAuth: true),
       );
       if (mounted && unlocked) setState(() => _appLocked = false);
@@ -325,6 +327,8 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   }
 
   Future<void> _changeAppearance(ThemeMode mode) async {
+    final saveFailedMessage =
+        context.l10n.uiAppearanceChangedButCouldNotBeSaved;
     if (_savingAppearance) return;
     setState(() {
       _themeMode = mode;
@@ -337,11 +341,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       );
     } catch (_) {
       _scaffoldMessengerKey.currentState?.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Appearance changed, but could not be saved for next time.',
-          ),
-        ),
+        SnackBar(content: Text(saveFailedMessage)),
       );
     } finally {
       if (mounted) setState(() => _savingAppearance = false);
@@ -690,7 +690,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         return await opened.future;
       } catch (_) {
         _scaffoldMessengerKey.currentState?.showSnackBar(
-          const SnackBar(content: Text('This report is no longer available.')),
+          SnackBar(content: Text(context.l10n.uiThisReportIsNoLongerAvailable)),
         );
         return false;
       }
@@ -769,8 +769,8 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
 
   void _showMissingProfileSnackBar({required bool forUpload}) {
     final message = forUpload
-        ? 'Create a default profile before uploading a report.'
-        : 'Create a default profile before viewing your timeline.';
+        ? context.l10n.uiCreateADefaultProfileBeforeUploadingA
+        : context.l10n.uiCreateADefaultProfileBeforeViewingYour;
     final messenger = _scaffoldMessengerKey.currentState;
     if (messenger == null) return;
     StatusMessenger.showInfoOnMessenger(messenger, message);
@@ -781,19 +781,21 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     if (messenger == null) return;
     StatusMessenger.showErrorOnMessenger(
       messenger,
-      message.isNotEmpty ? message : 'Unable to load profiles right now.',
+      message.isNotEmpty
+          ? message
+          : context.l10n.uiUnableToLoadProfilesRightNow,
     );
   }
 
   String _friendlyProfileLoadError(ApiException e, {required bool forUpload}) {
     if (e.code == 'NETWORK_ERROR') {
       return forUpload
-          ? 'Cannot upload right now because profile data could not be loaded. Please ensure API server is running and try again.'
-          : 'Cannot open timeline right now because profile data could not be loaded. Please ensure API server is running and try again.';
+          ? context.l10n.uiCannotUploadRightNowBecauseProfileData
+          : context.l10n.uiCannotOpenTimelineRightNowBecauseProfile;
     }
     return e.message.isNotEmpty
         ? e.message
-        : 'Unable to load profiles right now. Please try again.';
+        : context.l10n.uiUnableToLoadProfilesRightNowPlease;
   }
 
   Future<Profile?> _getActiveProfileOrNotify({required bool forUpload}) async {
@@ -818,7 +820,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     } catch (_) {
       if (mounted) {
         _showProfileLoadError(
-          'Unable to load profiles right now. Please try again.',
+          context.l10n.uiUnableToLoadProfilesRightNowPlease,
         );
       }
       return null;
@@ -832,6 +834,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   }
 
   Future<void> _openSharedLinks({String? profileId, String? reportId}) async {
+    final loadFailedMessage = context.l10n.uiUnableToLoadSharingLinksPleaseTry;
     Profile? profile;
     if (profileId == null) {
       profile = await _getActiveProfileOrNotify(forUpload: false);
@@ -842,9 +845,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
             .where((candidate) => candidate.id == profileId)
             .firstOrNull;
       } catch (_) {
-        _showProfileLoadError(
-          'Unable to load sharing links. Please try again.',
-        );
+        _showProfileLoadError(loadFailedMessage);
       }
     }
     if (!mounted || profile == null) return;
@@ -900,6 +901,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
     final navigator = _navigatorKey.currentState;
     final context = _navigatorKey.currentContext;
     if (navigator == null || context == null) return;
+    final successMessage = context.l10n.uiPasswordChanged;
     final changed = await navigator.push<bool>(
       designPageRoute<bool>(
         ChangePasswordScreen(authRepository: _auth),
@@ -907,18 +909,16 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       ),
     );
     if (changed == true && navigator.mounted) {
-      StatusMessenger.showSuccess(navigator.context, 'Password changed');
+      StatusMessenger.showSuccess(navigator.context, successMessage);
     }
   }
 
   Future<void> _openNotificationPreviewSettings() async {
+    final settingsFailedMessage =
+        context.l10n.uiOpenDeviceSettingsToManageNotificationPreviews;
     if (!await openDeviceNotificationSettings()) {
       _scaffoldMessengerKey.currentState?.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Open device Settings to manage notification previews.',
-          ),
-        ),
+        SnackBar(content: Text(settingsFailedMessage)),
       );
     }
   }
@@ -999,9 +999,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         );
       } catch (_) {
         if (mounted) {
-          _showProfileLoadError(
-            'Unable to open that report. Try the report library.',
-          );
+          _showProfileLoadError(context.l10n.uiUnableToOpenThatReportTryThe);
         }
       }
     } else if (path == '/reports') {
@@ -1024,6 +1022,10 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   int _tabRequestSerial = 0;
 
   Future<void> _selectTab(int index) async {
+    final restrictedMessage =
+        context.l10n.uiThisActionIsTemporarilyUnavailableWhileYour;
+    final sectionFailedMessage =
+        context.l10n.uiUnableToOpenThisSectionPleaseTry;
     final destination = _tabViews[index];
     if (destination == _authView && _pendingTabIndex == null) return;
     final requestId = ++_tabRequestSerial;
@@ -1045,16 +1047,12 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       const action = 'view_timeline';
       if (restriction.isRestricted &&
           (restriction.restrictedActions?.isEmpty ?? true)) {
-        _showProfileLoadError(
-          'This action is temporarily unavailable while your account is under review.',
-        );
+        _showProfileLoadError(restrictedMessage);
         return;
       }
       if (restriction.isRestricted &&
           (restriction.restrictedActions?.contains(action) ?? false)) {
-        _showProfileLoadError(
-          'This action is temporarily unavailable while your account is under review.',
-        );
+        _showProfileLoadError(restrictedMessage);
         return;
       }
       final active = await _getActiveProfileOrNotify(forUpload: false);
@@ -1067,7 +1065,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       });
     } catch (_) {
       if (isCurrent()) {
-        _showProfileLoadError('Unable to open this section. Please try again.');
+        _showProfileLoadError(sectionFailedMessage);
       }
     } finally {
       if (mounted &&
@@ -1123,8 +1121,8 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
   void _backFromSecondary() {
     if (_authView == _AuthView.uploadReport && _uploadInFlight) {
       _scaffoldMessengerKey.currentState?.showSnackBar(
-        const SnackBar(
-          content: Text('Keep this screen open until the upload is accepted.'),
+        SnackBar(
+          content: Text(context.l10n.uiKeepThisScreenOpenUntilTheUpload),
         ),
       );
       return;
@@ -1164,10 +1162,13 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: _themeMode,
-        builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-          value: AppTheme.systemBars(Theme.of(context).brightness),
-          child: child ?? const SizedBox.shrink(),
-        ),
+        builder: (context, child) {
+          AppDateFormat.configure(context.l10n);
+          return AnnotatedRegion<SystemUiOverlayStyle>(
+            value: AppTheme.systemBars(Theme.of(context).brightness),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
         home: const StartupLoadingScreen(),
       );
     }
@@ -1183,165 +1184,181 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
       themeMode: _themeMode,
       scaffoldMessengerKey: _scaffoldMessengerKey,
       navigatorKey: _navigatorKey,
-      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-        value: AppTheme.systemBars(Theme.of(context).brightness),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            AppNotificationFrame(
-              uploadNotice: _hasInterruptedUpload && _authView == _AuthView.home
-                  ? Material(
-                      color: Theme.of(context).colorScheme.tertiaryContainer,
-                      child: SafeArea(
-                        bottom: false,
-                        child: ListTile(
-                          title: const Text(
-                            'An upload may have been interrupted',
-                          ),
-                          subtitle: const Text(
-                            'Check Reports. If it is missing, add the same file again.',
-                          ),
-                          onTap: () => unawaited(_selectTab(1)),
-                          trailing: IconButton(
-                            tooltip: 'Dismiss upload notice',
-                            icon: const Icon(Icons.close),
-                            onPressed: () async {
-                              await _tokenStorage
-                                  .clearInterruptedReportUpload();
-                              if (mounted) {
-                                setState(() => _hasInterruptedUpload = false);
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    )
-                  : null,
-              readyNotice: AnimatedBuilder(
-                animation: ReportProcessingStore.instance,
-                builder: (context, _) {
-                  final store = ReportProcessingStore.instance;
-                  return store.readyCount > 0
-                      ? Material(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.secondaryContainer,
-                          child: SafeArea(
-                            bottom: false,
-                            child: ListTile(
-                              title: Text(
-                                '${store.readyCount} report(s) ready',
-                              ),
-                              trailing: IconButton(
-                                tooltip: 'Dismiss ready notifications',
-                                icon: const Icon(Icons.close),
-                                onPressed: () async {
-                                  final ids = store.reports.entries
-                                      .where(
-                                        (e) =>
-                                            e.value['status'] == 'ready' &&
-                                            e.value['acknowledgedAt'] == null,
-                                      )
-                                      .map((e) => e.key)
-                                      .toList();
-                                  try {
-                                    for (final id in ids) {
-                                      await store.acknowledge(id);
-                                    }
-                                  } catch (_) {
-                                    _scaffoldMessengerKey.currentState
-                                        ?.showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Could not dismiss notifications. Try again.',
-                                            ),
-                                          ),
-                                        );
-                                  }
-                                },
-                              ),
-                              onTap: () {
-                                final ready = store.reports.values.firstWhere(
-                                  (r) =>
-                                      r['status'] == 'ready' &&
-                                      r['acknowledgedAt'] == null,
-                                );
-                                _pushNotificationService.onReportOpen?.call(
-                                  ready['reportId'] as String,
-                                );
+      builder: (context, child) {
+        AppDateFormat.configure(context.l10n);
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: AppTheme.systemBars(Theme.of(context).brightness),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              AppNotificationFrame(
+                uploadNotice:
+                    _hasInterruptedUpload && _authView == _AuthView.home
+                    ? Material(
+                        color: Theme.of(context).colorScheme.tertiaryContainer,
+                        child: SafeArea(
+                          bottom: false,
+                          child: ListTile(
+                            title: Text(
+                              context.l10n.uiAnUploadMayHaveBeenInterrupted,
+                            ),
+                            subtitle: Text(
+                              context.l10n.uiCheckReportsIfItIsMissingAdd,
+                            ),
+                            onTap: () => unawaited(_selectTab(1)),
+                            trailing: IconButton(
+                              tooltip: context.l10n.uiDismissUploadNotice,
+                              icon: const Icon(Icons.close),
+                              onPressed: () async {
+                                await _tokenStorage
+                                    .clearInterruptedReportUpload();
+                                if (mounted) {
+                                  setState(() => _hasInterruptedUpload = false);
+                                }
                               },
                             ),
                           ),
-                        )
-                      : const SizedBox.shrink();
-                },
-              ),
-              child: child ?? const SizedBox.shrink(),
-            ),
-            if ((_appLocked || _appLockLoadError) &&
-                _authView != _AuthView.login &&
-                _authView != _AuthView.onboarding &&
-                _authView != _AuthView.signup)
-              Positioned.fill(
-                child: Material(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  child: SafeArea(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const DoclyzerMark(size: 72),
-                            const SizedBox(height: 24),
-                            Text(
-                              _appLockLoadError
-                                  ? 'App lock is unavailable'
-                                  : 'Doclyzer is locked',
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              _appLockLoadError
-                                  ? 'Could not read the saved App lock setting. Retry to continue.'
-                                  : 'Use your device passcode or biometrics to continue.',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            const SizedBox(height: 28),
-                            FilledButton(
-                              key: Key(
-                                _appLockLoadError
-                                    ? 'retry-app-lock'
-                                    : 'unlock-app',
+                        ),
+                      )
+                    : null,
+                readyNotice: AnimatedBuilder(
+                  animation: ReportProcessingStore.instance,
+                  builder: (context, _) {
+                    final store = ReportProcessingStore.instance;
+                    return store.readyCount > 0
+                        ? Material(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.secondaryContainer,
+                            child: SafeArea(
+                              bottom: false,
+                              child: ListTile(
+                                title: Text(
+                                  context.l10n.uiReportsReady(
+                                    context.l10n.reportCount(store.readyCount),
+                                  ),
+                                ),
+                                trailing: IconButton(
+                                  tooltip:
+                                      context.l10n.uiDismissReadyNotifications,
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () async {
+                                    final ids = store.reports.entries
+                                        .where(
+                                          (e) =>
+                                              e.value['status'] == 'ready' &&
+                                              e.value['acknowledgedAt'] == null,
+                                        )
+                                        .map((e) => e.key)
+                                        .toList();
+                                    final dismissFailedMessage = context
+                                        .l10n
+                                        .uiCouldNotDismissNotificationsTryAgain;
+                                    try {
+                                      for (final id in ids) {
+                                        await store.acknowledge(id);
+                                      }
+                                    } catch (_) {
+                                      _scaffoldMessengerKey.currentState
+                                          ?.showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                dismissFailedMessage,
+                                              ),
+                                            ),
+                                          );
+                                    }
+                                  },
+                                ),
+                                onTap: () {
+                                  final ready = store.reports.values.firstWhere(
+                                    (r) =>
+                                        r['status'] == 'ready' &&
+                                        r['acknowledgedAt'] == null,
+                                  );
+                                  _pushNotificationService.onReportOpen?.call(
+                                    ready['reportId'] as String,
+                                  );
+                                },
                               ),
-                              onPressed: _unlocking
-                                  ? null
-                                  : _appLockLoadError
-                                  ? _restoreAppLock
-                                  : _unlockApp,
-                              child: _unlocking
-                                  ? const CircularProgressIndicator()
-                                  : Text(
-                                      _appLockLoadError ? 'Retry' : 'Unlock',
-                                    ),
                             ),
-                          ],
+                          )
+                        : const SizedBox.shrink();
+                  },
+                ),
+                child: child ?? const SizedBox.shrink(),
+              ),
+              if ((_appLocked || _appLockLoadError) &&
+                  _authView != _AuthView.login &&
+                  _authView != _AuthView.onboarding &&
+                  _authView != _AuthView.signup)
+                Positioned.fill(
+                  child: Material(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    child: SafeArea(
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const DoclyzerMark(size: 72),
+                              const SizedBox(height: 24),
+                              Text(
+                                _appLockLoadError
+                                    ? context.l10n.uiAppLockIsUnavailable
+                                    : context.l10n.uiDoclyzerIsLocked,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineSmall,
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                _appLockLoadError
+                                    ? context.l10n.uiCouldNotReadTheSavedAppLock
+                                    : context
+                                          .l10n
+                                          .uiUseYourDevicePasscodeOrBiometricsTo,
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: 28),
+                              FilledButton(
+                                key: Key(
+                                  _appLockLoadError
+                                      ? 'retry-app-lock'
+                                      : 'unlock-app',
+                                ),
+                                onPressed: _unlocking
+                                    ? null
+                                    : _appLockLoadError
+                                    ? _restoreAppLock
+                                    : _unlockApp,
+                                child: _unlocking
+                                    ? const CircularProgressIndicator()
+                                    : Text(
+                                        _appLockLoadError
+                                            ? context.l10n.retry
+                                            : context.l10n.uiUnlock,
+                                      ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
       home: _buildNavigationShell(switch (_authView) {
         _AuthView.onboarding => OnboardingScreen(
           onComplete: () => unawaited(_finishOnboarding()),
         ),
         _AuthView.sessionUnavailable => Scaffold(
-          appBar: AppBar(title: const Text('Connection unavailable')),
+          appBar: AppBar(title: Text(context.l10n.uiConnectionUnavailable)),
           body: SafeArea(
             child: Center(
               child: Padding(
@@ -1351,8 +1368,8 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                   children: [
                     const Icon(Icons.wifi_off_outlined, size: 48),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Your session could not be checked. Connect to the internet and try again.',
+                    Text(
+                      context.l10n.uiYourSessionCouldNotBeCheckedConnect,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
@@ -1362,7 +1379,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                     ),
                     TextButton(
                       onPressed: _logout,
-                      child: const Text('Sign in with another account'),
+                      child: Text(context.l10n.uiSignInWithAnotherAccount),
                     ),
                   ],
                 ),
@@ -1674,6 +1691,11 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                     setState(() => _authView = _AuthView.home);
                   },
                   onUploadReport: () async {
+                    final uploadRestrictedMessage = context
+                        .l10n
+                        .uiUploadsAreTemporarilyUnavailableWhileYourAccount;
+                    final uploadStartFailedMessage =
+                        context.l10n.uiUnableToStartAnUploadPleaseTry;
                     try {
                       final restriction = await _restrictionRepository
                           .getStatus();
@@ -1687,7 +1709,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                         _showProfileLoadError(
                           restriction.nextSteps?.trim().isNotEmpty == true
                               ? restriction.nextSteps!
-                              : 'Uploads are temporarily unavailable while your account is under review.',
+                              : uploadRestrictedMessage,
                         );
                         return;
                       }
@@ -1701,9 +1723,7 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                       });
                     } catch (_) {
                       if (mounted) {
-                        _showProfileLoadError(
-                          'Unable to start an upload. Please try again.',
-                        );
+                        _showProfileLoadError(uploadStartFailedMessage);
                       }
                     }
                   },
@@ -1712,7 +1732,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                   },
                   supportRepository: _supportRepository,
                 )
-              : const Scaffold(body: Center(child: Text('No active profile'))),
+              : Scaffold(
+                  body: Center(child: Text(context.l10n.uiNoActiveProfile)),
+                ),
         _AuthView.trends =>
           _timelineProfileId != null
               ? HealthHistoryScreen(
@@ -1723,7 +1745,9 @@ class _DoclyzerAppState extends State<DoclyzerApp> with WidgetsBindingObserver {
                   profilesRepository: _profilesRepository,
                   onBack: () => setState(() => _authView = _AuthView.home),
                 )
-              : const Scaffold(body: Center(child: Text('No active profile'))),
+              : Scaffold(
+                  body: Center(child: Text(context.l10n.uiNoActiveProfile)),
+                ),
         _AuthView.billing => EntitlementSummaryScreen(
           billingRepository: _billingRepository,
           incidentStatus: _incidentStatus,

@@ -47,8 +47,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     } catch (_) {
       if (mounted) {
         setState(
-          () => _error =
-              'Unable to load notifications. Try again when connected.',
+          () => _error = context.l10n.uiUnableToLoadNotificationsTryAgainWhen,
         );
       }
     }
@@ -123,7 +122,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               minimum: const EdgeInsets.fromLTRB(24, 8, 24, 12),
               child: FilledButton(
                 onPressed: widget.onManagePreferences,
-                child: const Text('Manage notifications'),
+                child: Text(context.l10n.uiManageNotifications),
               ),
             )
           : null,
@@ -135,9 +134,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ? DesignEmptyState(
                 key: const Key('notifications-error'),
                 icon: Icons.cloud_off_outlined,
-                title: 'Notifications unavailable',
+                title: context.l10n.uiNotificationsUnavailable,
                 message: _error!,
-                action: 'Try again',
+                action: context.l10n.uiTryAgain042c86,
                 onAction: _load,
               )
             : items == null
@@ -146,12 +145,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 child: CircularProgressIndicator(),
               )
             : items.isEmpty
-            ? const DesignEmptyState(
+            ? DesignEmptyState(
                 key: Key('notifications-empty'),
                 icon: Icons.notifications_none_outlined,
-                title: 'All quiet for now.',
+                title: context.l10n.uiAllQuietForNow,
                 message:
-                    'Report updates and sharing reminders will appear here when there’s something new.',
+                    context.l10n.uiReportUpdatesAndSharingRemindersWillAppear,
               )
             : Column(
                 key: const Key('notifications-list'),
@@ -159,9 +158,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 8, 24, 18),
                     child: SegmentedButton<bool>(
-                      segments: const [
-                        ButtonSegment(value: false, label: Text('All')),
-                        ButtonSegment(value: true, label: Text('Unread')),
+                      segments: [
+                        ButtonSegment(
+                          value: false,
+                          label: Text(context.l10n.uiAll),
+                        ),
+                        ButtonSegment(
+                          value: true,
+                          label: Text(context.l10n.uiUnread),
+                        ),
                       ],
                       selected: {_unreadOnly},
                       onSelectionChanged: (value) =>
@@ -173,8 +178,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     child: visible!.isEmpty
                         ? DesignEmptyState(
                             icon: Icons.notifications_none_outlined,
-                            title: 'No unread updates',
-                            message: 'You’re all caught up.',
+                            title: context.l10n.uiNoUnreadUpdates,
+                            message: context.l10n.uiYouReAllCaughtUp,
                           )
                         : ListView.separated(
                             padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),

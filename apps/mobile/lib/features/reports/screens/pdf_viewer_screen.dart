@@ -1,3 +1,4 @@
+import 'package:mobile/core/localized_error.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'dart:typed_data';
 
@@ -78,7 +79,11 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = localizedError(
+            context,
+            e,
+            fallback: context.l10n.sourceReportFailed,
+          );
         });
       }
     }
@@ -111,7 +116,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 child: FilledButton(
                   key: const Key('original-inspected'),
                   onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('I inspected the original'),
+                  child: Text(context.l10n.uiIInspectedTheOriginal),
                 ),
               ),
             ),
@@ -149,7 +154,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                _errorMessage ?? 'This report\'s file is no longer available.',
+                _errorMessage ?? context.l10n.uiThisReportSFileIsNoLonger,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),

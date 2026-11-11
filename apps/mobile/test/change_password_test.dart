@@ -140,7 +140,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('change-password-submit')));
     await tester.pumpAndSettle();
-    expect(find.text('Current password is incorrect'), findsOneWidget);
+    expect(find.text('Current password is incorrect.'), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const Key('change-password-current')),

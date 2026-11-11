@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/l10n/l10n.dart';
 import '../../shared/app_date_format.dart';
 
 import '../theme/app_theme.dart';
@@ -85,12 +86,12 @@ class IncidentBanner extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'What\'s affected: ${activeIncident.whatsAffected}',
+            context.l10n.uiWhatsAffected(activeIncident.whatsAffected),
             style: theme.textTheme.bodySmall?.copyWith(color: bodyColor),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Last updated: $dateLabel at $timeLabel',
+            context.l10n.uiLastUpdatedAt(dateLabel, timeLabel),
             style: theme.textTheme.labelSmall?.copyWith(color: bodyColor),
           ),
         ],

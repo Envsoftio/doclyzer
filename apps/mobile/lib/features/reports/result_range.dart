@@ -1,3 +1,5 @@
+import 'package:mobile/l10n/app_localizations.dart';
+
 import 'reports_repository.dart';
 
 enum RangePosition { below, within, above, unknown }
@@ -143,15 +145,21 @@ bool _overlaps(
   return contains(a) && contains(b);
 }
 
-String unavailableRangeReason(ExtractedLabValue result) {
+String unavailableRangeReason(
+  ExtractedLabValue result, {
+  AppLocalizations? l10n,
+}) {
   if (result.parameterName.trim().isEmpty) {
-    return 'The test name is missing from the extracted result.';
+    return l10n?.uiMissingExtractedTestName ??
+        'The test name is missing from the extracted result.';
   }
   if (result.referenceRange?.trim().isNotEmpty != true) {
-    return 'No lab reference range was captured for this test.';
+    return l10n?.uiMissingCapturedLabRange ??
+        'No lab reference range was captured for this test.';
   }
   if (double.tryParse(_normalizePrintedText(result.value)) == null) {
-    return 'The extracted value is not a plain number. Check it in the original report.';
+    return l10n?.uiNonNumericExtractedValue ??
+        'The extracted value is not a plain number. Check it in the original report.';
   }
   if (result.isAbnormal != null) {
     final withoutFlag = ExtractedLabValue(
@@ -163,10 +171,12 @@ String unavailableRangeReason(ExtractedLabValue result) {
     final position = compareWithPrintedRange(withoutFlag);
     if (position != RangePosition.unknown &&
         result.isAbnormal != (position != RangePosition.within)) {
-      return 'The lab flag conflicts with the printed range. Check the original report.';
+      return l10n?.uiLabFlagRangeConflict ??
+          'The lab flag conflicts with the printed range. Check the original report.';
     }
   }
-  return 'The extracted value, printed range, or lab flag needs checking in the original report.';
+  return l10n?.uiResultNeedsOriginalCheck ??
+      'The extracted value, printed range, or lab flag needs checking in the original report.';
 }
 
 /// Compare the result with its captured printed range. A separate unit field

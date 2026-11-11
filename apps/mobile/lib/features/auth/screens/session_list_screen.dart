@@ -45,7 +45,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       });
     } catch (e) {
       setState(() {
-        _error = 'Failed to load sessions.';
+        _error = context.l10n.uiFailedToLoadSessions;
         _loading = false;
       });
     }
@@ -57,7 +57,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         key: const Key('session-revoke-dialog'),
-        title: const Text('Revoke session?'),
+        title: Text(context.l10n.uiRevokeSession),
         content: Text('${session.ip}\n${session.userAgent}'),
         actions: [
           TextButton(
@@ -86,7 +86,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
         await _loadSessions();
       } catch (e) {
         setState(() {
-          _error = 'Failed to revoke session.';
+          _error = context.l10n.uiFailedToRevokeSession;
         });
       }
     }
@@ -169,14 +169,14 @@ class _SessionListScreenState extends State<SessionListScreen> {
                                         children: [
                                           Text(
                                             session.isCurrent
-                                                ? 'This device'
-                                                : 'Signed-in device',
+                                                ? context.l10n.uiThisDevice
+                                                : context.l10n.uiSignedInDevice,
                                             style: textTheme.titleMedium,
                                           ),
                                           if (session.isCurrent) ...[
                                             const SizedBox(height: 4),
                                             Text(
-                                              'Current session',
+                                              context.l10n.uiCurrentSession,
                                               key: Key(
                                                 'session-current-${session.sessionId}',
                                               ),
@@ -195,18 +195,26 @@ class _SessionListScreenState extends State<SessionListScreen> {
                                 const SizedBox(height: AppSpacing.md),
                                 Text(
                                   session.userAgent.isEmpty
-                                      ? 'Unknown device'
+                                      ? context.l10n.uiUnknownDevice
                                       : session.userAgent,
                                   style: textTheme.bodyMedium,
                                 ),
                                 const SizedBox(height: AppSpacing.sm),
                                 Text(
-                                  'IP address: ${session.ip.isEmpty ? 'Unknown' : session.ip}',
+                                  context.l10n.uiIpAddress(
+                                    session.ip.isEmpty
+                                        ? context.l10n.uiUnknown
+                                        : session.ip,
+                                  ),
                                   style: textTheme.bodySmall,
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Signed in: ${AppDateFormat.dateTimeFromRawWithRelative(session.createdAt)}',
+                                  context.l10n.uiSignedInAt(
+                                    AppDateFormat.dateTimeFromRawWithRelative(
+                                      session.createdAt,
+                                    ),
+                                  ),
                                   style: textTheme.bodySmall,
                                 ),
                                 const Divider(height: AppSpacing.lg),
@@ -224,8 +232,8 @@ class _SessionListScreenState extends State<SessionListScreen> {
                                     icon: const Icon(Icons.logout, size: 18),
                                     label: Text(
                                       session.isCurrent
-                                          ? 'Revoke and log out'
-                                          : 'Revoke session',
+                                          ? context.l10n.uiRevokeAndLogOut
+                                          : context.l10n.uiRevokeSessionca8440,
                                     ),
                                   ),
                                 ),

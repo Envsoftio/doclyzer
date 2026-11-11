@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../shared/language_selector.dart';
 import '../../../l10n/l10n.dart';
+import '../../../core/localized_error.dart';
 
 import '../../../core/api_client.dart';
 import '../../../core/api_config.dart';
@@ -85,15 +86,10 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
 
   String _friendlyErrorMessage(Object error) {
     if (error is ApiException) {
-      if (error.code == 'NETWORK_ERROR') {
-        return 'Cannot connect to server. Please check your internet or API server.';
-      }
-      return error.message.isNotEmpty
-          ? error.message
-          : context.l10n.genericError;
+      return localizedError(context, error);
     }
     if (error is AccountException) {
-      return error.message;
+      return context.l10n.genericError;
     }
     return context.l10n.genericError;
   }
@@ -117,7 +113,9 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
         ? nextSteps
         : ((rationale != null && rationale.isNotEmpty)
               ? rationale
-              : 'Profile updates are temporarily unavailable while your account is under review.');
+              : context
+                    .l10n
+                    .uiProfileUpdatesAreTemporarilyUnavailableWhileYour);
     StatusMessenger.showWarning(context, message);
   }
 
@@ -150,7 +148,7 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
     } on AccountException catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.message;
+          _error = _friendlyErrorMessage(e);
           _loading = false;
         });
       }
@@ -213,14 +211,14 @@ class _AccountProfileScreenState extends State<AccountProfileScreen> {
     } on AccountException catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.message;
+          _error = _friendlyErrorMessage(e);
           _saving = false;
         });
       }
     } on ApiException catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.message;
+          _error = _friendlyErrorMessage(e);
           _saving = false;
         });
       }

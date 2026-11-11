@@ -1,3 +1,5 @@
+import '../auth_error_localization.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../auth_repository.dart';
@@ -38,14 +40,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     if (token.isEmpty) {
       setState(() {
-        _error = 'Enter the reset token from your email link';
+        _error = context.l10n.uiEnterTheResetTokenFromYourEmail;
       });
       return;
     }
 
     if (password.isEmpty) {
       setState(() {
-        _error = 'Enter your new password';
+        _error = context.l10n.uiEnterYourNewPassword;
       });
       return;
     }
@@ -53,12 +55,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     try {
       await widget.onReset(token, password);
     } on AuthException catch (error) {
+      if (!mounted) return;
       setState(() {
-        _error = error.message;
+        _error = localizedAuthError(context, error);
       });
     } catch (_) {
       setState(() {
-        _error = 'Unable to reset password. Please request a new link.';
+        _error = context.l10n.uiUnableToResetPasswordPleaseRequestA;
       });
     }
   }
@@ -68,28 +71,30 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(onPressed: widget.onGoToLogin),
-        title: const Text('Set New Password'),
+        title: Text(context.l10n.uiSetNewPassword),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Enter the reset token from the link in your email and your new password.',
+            Text(
+              context.l10n.uiEnterTheResetTokenFromTheLink,
               style: TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 16),
             TextField(
               key: const Key('reset-password-token'),
               controller: _tokenController,
-              decoration: const InputDecoration(labelText: 'Reset Token'),
+              decoration: InputDecoration(labelText: context.l10n.uiResetToken),
             ),
             TextField(
               key: const Key('reset-password-new-password'),
               controller: _passwordController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'New Password'),
+              decoration: InputDecoration(
+                labelText: context.l10n.uiNewPassword,
+              ),
             ),
             if (_error != null)
               Padding(
@@ -104,12 +109,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             FilledButton(
               key: const Key('reset-password-submit'),
               onPressed: _submit,
-              child: const Text('Reset Password'),
+              child: Text(context.l10n.uiResetPassword),
             ),
             TextButton(
               key: const Key('reset-password-back-to-login'),
               onPressed: widget.onGoToLogin,
-              child: const Text('Back to login'),
+              child: Text(context.l10n.uiBackToLogin),
             ),
           ],
         ),

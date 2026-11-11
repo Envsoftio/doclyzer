@@ -61,7 +61,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _error = 'Failed to load referrals. Please try again.';
+          _error = context.l10n.uiFailedToLoadReferralsPleaseTryAgain;
           _loading = false;
         });
       }
@@ -72,7 +72,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
     final code = _applyController.text.trim();
     if (code.isEmpty) {
       setState(() {
-        _applyError = 'Enter a referral code.';
+        _applyError = context.l10n.uiEnterAReferralCode;
       });
       return;
     }
@@ -90,8 +90,8 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
       StatusMessenger.showSuccess(
         context,
         result.emailVerificationRequired
-            ? 'Referral applied. Bonus unlocks after email verification.'
-            : 'Referral applied. Bonus credits are ready.',
+            ? context.l10n.uiReferralAppliedBonusUnlocksAfterEmailVerification
+            : context.l10n.uiReferralAppliedBonusCreditsAreReady,
       );
       await _loadDashboard();
     } catch (error) {
@@ -113,7 +113,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
     if (dashboard == null) return;
     await Clipboard.setData(ClipboardData(text: dashboard.referralCode));
     if (mounted) {
-      StatusMessenger.showSuccess(context, 'Referral code copied.');
+      StatusMessenger.showSuccess(context, context.l10n.uiReferralCodeCopied);
     }
   }
 
@@ -124,7 +124,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
         dashboard.referralLink ??
         'https://doclyzer.com/register?ref=${dashboard.referralCode}';
     await Share.share(
-      'Use my Doclyzer referral code ${dashboard.referralCode}: $link',
+      context.l10n.uiReferralShareMessage(dashboard.referralCode, link),
     );
   }
 
@@ -152,9 +152,9 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
   Widget _buildError() {
     return DesignEmptyState(
       icon: Icons.cloud_off_outlined,
-      title: 'Referrals unavailable',
+      title: context.l10n.uiReferralsUnavailable,
       message: _error!,
-      action: 'Try again',
+      action: context.l10n.uiTryAgain042c86,
       onAction: _loadDashboard,
     );
   }
@@ -168,7 +168,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
         children: [
           _buildCodeCard(theme, dashboard),
           const SizedBox(height: AppSpacing.lg),
-          const DesignSectionHeading(title: 'Your rewards'),
+          DesignSectionHeading(title: context.l10n.uiYourRewards),
           const SizedBox(height: 12),
           _buildStatsGrid(dashboard),
           const SizedBox(height: 12),
@@ -176,7 +176,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
           const SizedBox(height: AppSpacing.lg),
           _buildApplyCard(theme),
           const SizedBox(height: AppSpacing.lg),
-          const DesignSectionHeading(title: 'Referral progress'),
+          DesignSectionHeading(title: context.l10n.uiReferralProgress),
           const SizedBox(height: 12),
           _buildFriendsCard(theme, dashboard),
         ],
@@ -212,7 +212,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  'Invite friends, earn credits',
+                  context.l10n.uiInviteFriendsEarnCredits,
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: colors.onPrimaryContainer,
                   ),
@@ -222,7 +222,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Share your code and follow each invite as rewards unlock.',
+            context.l10n.uiShareYourCodeAndFollowEachInvite,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colors.onPrimaryContainer,
             ),
@@ -239,7 +239,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'YOUR REFERRAL CODE',
+                  context.l10n.uiYOURREFERRALCODE,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: colors.onSurfaceVariant,
                     letterSpacing: 1.2,
@@ -271,13 +271,13 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
           FilledButton.icon(
             onPressed: _shareReferralLink,
             icon: const Icon(Icons.ios_share_rounded),
-            label: const Text('Share invite'),
+            label: Text(context.l10n.uiShareInvite),
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: _copyReferralCode,
             icon: const Icon(Icons.copy_rounded),
-            label: const Text('Copy code'),
+            label: Text(context.l10n.uiCopyCode),
           ),
         ],
       ),
@@ -297,7 +297,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Have a code?',
+                    context.l10n.uiHaveACode,
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
@@ -305,7 +305,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Enter a code shared with you to claim your invite reward.',
+              context.l10n.uiEnterACodeSharedWithYouTo,
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 16),
@@ -314,8 +314,8 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
               controller: _applyController,
               textCapitalization: TextCapitalization.characters,
               textInputAction: TextInputAction.done,
-              decoration: const InputDecoration(
-                labelText: 'Referral code',
+              decoration: InputDecoration(
+                labelText: context.l10n.uiReferralCode,
                 prefixIcon: Icon(Icons.card_giftcard_rounded),
               ),
               onSubmitted: (_) => _applyReferralCode(),
@@ -342,7 +342,11 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.check_rounded),
-                label: Text(_applying ? 'Applying' : 'Apply code'),
+                label: Text(
+                  _applying
+                      ? context.l10n.uiApplying
+                      : context.l10n.uiApplyCode,
+                ),
               ),
             ),
           ],
@@ -360,7 +364,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
             children: [
               Expanded(
                 child: _StatTile(
-                  label: 'Friends referred',
+                  label: context.l10n.uiFriendsReferred,
                   value: dashboard.totalReferredCount.toString(),
                   icon: Icons.group_outlined,
                 ),
@@ -368,7 +372,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _StatTile(
-                  label: 'Credits earned',
+                  label: context.l10n.uiCreditsEarned,
                   value: dashboard.creditsEarned.toStringAsFixed(2),
                   icon: Icons.stars_outlined,
                 ),
@@ -383,7 +387,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
             children: [
               Expanded(
                 child: _StatTile(
-                  label: 'Pending rewards',
+                  label: context.l10n.uiPendingRewards,
                   value: dashboard.pendingRewards.toString(),
                   icon: Icons.hourglass_top_outlined,
                 ),
@@ -391,7 +395,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: _StatTile(
-                  label: 'Blocked rewards',
+                  label: context.l10n.uiBlockedRewards,
                   value: dashboard.blockedRewards.toString(),
                   icon: Icons.block_outlined,
                 ),
@@ -419,7 +423,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'How rewards work',
+                    context.l10n.uiHowRewardsWork,
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
@@ -427,20 +431,20 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
             ),
             const SizedBox(height: 12),
             _PolicyRow(
-              label: 'Invitee bonus',
+              label: context.l10n.uiInviteeBonus,
               value:
                   '+${policy.inviteeBonusCredits.toStringAsFixed(0)} credits',
             ),
             _PolicyRow(
-              label: 'First analysis',
+              label: context.l10n.uiFirstAnalysis,
               value: '+${policy.milestoneACredits.toStringAsFixed(0)} credits',
             ),
             _PolicyRow(
-              label: 'First purchase',
+              label: context.l10n.uiFirstPurchase,
               value: milestoneB.isEmpty ? '—' : '$milestoneB credits',
             ),
             _PolicyRow(
-              label: 'Monthly cap',
+              label: context.l10n.uiMonthlyCap,
               value: '${policy.monthlyRewardCap.toStringAsFixed(0)} credits',
             ),
           ],
@@ -476,14 +480,14 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'No friends referred yet',
+                      context.l10n.uiNoFriendsReferredYet,
                       style: theme.textTheme.titleSmall?.copyWith(
                         color: theme.colorScheme.onPrimaryContainer,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Share your invite to see their progress here.',
+                      context.l10n.uiShareYourInviteToSeeTheirProgress,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onPrimaryContainer,
@@ -511,17 +515,15 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
     if (error is ApiException) {
       switch (error.code) {
         case 'REFERRAL_ALREADY_APPLIED':
-          return 'A referral code has already been applied to this account.';
+          return context.l10n.uiReferralCodeAlreadyApplied;
         case 'REFERRAL_SELF_REFERRAL':
-          return 'You cannot apply your own referral code.';
+          return context.l10n.uiYouCannotApplyYourOwnReferralCode;
         case 'REFERRAL_CODE_INVALID':
-          return 'Referral code is invalid.';
+          return context.l10n.uiReferralCodeIsInvalid;
       }
-      return error.message.isNotEmpty
-          ? error.message
-          : 'Failed to apply referral code.';
+      return context.l10n.uiFailedToApplyReferralCode;
     }
-    return 'Failed to apply referral code. Please try again.';
+    return context.l10n.uiFailedToApplyReferralCodePleaseTry;
   }
 }
 
@@ -672,7 +674,7 @@ class _FriendProgressTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    _labelStatus(item.status),
+                    _labelStatus(context, item.status),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: colors.$2,
                       fontWeight: FontWeight.w700,
@@ -700,16 +702,16 @@ class _FriendProgressTile extends StatelessWidget {
     }
   }
 
-  String _labelStatus(String status) {
+  String _labelStatus(BuildContext context, String status) {
     switch (status) {
       case 'completed':
-        return 'Done';
+        return context.l10n.done;
       case 'blocked':
-        return 'Blocked';
+        return context.l10n.uiBlocked;
       case 'capped':
-        return 'Capped';
+        return context.l10n.uiCapped;
       default:
-        return 'Pending';
+        return context.l10n.uiPending;
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:mobile/core/localized_error.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -115,7 +116,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
       if (mounted) {
         setState(() {
           _loadingReports = false;
-          _reportsError = 'Reports could not be loaded. Try again.';
+          _reportsError = context.l10n.uiReportsCouldNotBeLoadedTryAgain;
         });
       }
     }
@@ -149,7 +150,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
       if (mounted && request == _valuesRequest) {
         setState(() {
           _loadingSelectableValues = false;
-          _valuesError = 'Test results could not be loaded. Try again.';
+          _valuesError = context.l10n.uiTestResultsCouldNotBeLoadedTry;
         });
       }
     }
@@ -217,7 +218,11 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
       if (mounted) {
         setState(() {
           _loadingExistingLinks = false;
-          _listError = e.toString().replaceFirst('Exception: ', '');
+          _listError = localizedError(
+            context,
+            e,
+            fallback: context.l10n.genericError,
+          );
         });
       }
     }
@@ -227,14 +232,14 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
     if (_selectReports && _selectedReportIds.isEmpty) {
       setState(() {
         _createState = _CreateState.error;
-        _createError = 'Select at least one report to share.';
+        _createError = context.l10n.uiSelectAtLeastOneReportToShare;
       });
       return;
     }
     if (_shareSelectedResults && _selectedLabValueIds.isEmpty) {
       setState(() {
         _createState = _CreateState.error;
-        _createError = 'Select at least one test result to share.';
+        _createError = context.l10n.uiSelectAtLeastOneTestResultTo;
       });
       return;
     }
@@ -277,8 +282,8 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
         setState(() {
           _createState = _CreateState.error;
           _createError = null;
-          _limitMessage = e.message;
-          _limitUpgradeHint = data?['upgradeHint'] as String?;
+          _limitMessage = context.l10n.uiShareLinkLimitHelp;
+          _limitUpgradeHint = context.l10n.uiSeePlanCreditsOptions;
           final current = data?['current'];
           final max = data?['limit'];
           _limitCurrent = current is num ? current.toInt() : null;
@@ -295,7 +300,11 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
       if (mounted) {
         setState(() {
           _createState = _CreateState.error;
-          _createError = e.toString().replaceFirst('Exception: ', '');
+          _createError = localizedError(
+            context,
+            e,
+            fallback: context.l10n.genericError,
+          );
           _supportContext = buildSupportRequestContext(
             actionType: SupportActionType.shareLinkCreate,
             apiException: e,
@@ -308,7 +317,11 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
       if (mounted) {
         setState(() {
           _createState = _CreateState.error;
-          _createError = e.toString().replaceFirst('Exception: ', '');
+          _createError = localizedError(
+            context,
+            e,
+            fallback: context.l10n.genericError,
+          );
           _supportContext = buildSupportRequestContext(
             actionType: SupportActionType.shareLinkCreate,
             entityIds: {'profileId': widget.profileId},
@@ -323,14 +336,14 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
     if (_selectReports && _selectedReportIds.isEmpty) {
       setState(() {
         _createState = _CreateState.error;
-        _createError = 'Select at least one report to share.';
+        _createError = context.l10n.uiSelectAtLeastOneReportToShare;
       });
       return;
     }
     if (_shareSelectedResults && _selectedLabValueIds.isEmpty) {
       setState(() {
         _createState = _CreateState.error;
-        _createError = 'Select at least one test result to share.';
+        _createError = context.l10n.uiSelectAtLeastOneTestResultTo;
       });
       return;
     }
@@ -346,11 +359,11 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Review sharing',
+                context.l10n.uiReviewSharing,
                 style: Theme.of(sheetContext).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
-              const Text('Check the person, reports and access.'),
+              Text(context.l10n.uiCheckThePersonReportsAndAccess),
               const SizedBox(height: 20),
               Text(
                 widget.profileName,
@@ -359,11 +372,17 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
               const SizedBox(height: 8),
               Text(
                 _selectReports
-                    ? '${_selectedReportIds.length} selected reports'
-                    : 'All current and future reports',
+                    ? context.l10n.uiSelectedReportsCount(
+                        _selectedReportIds.length.toString(),
+                      )
+                    : context.l10n.uiAllCurrentFutureReports,
               ),
               if (_shareSelectedResults)
-                Text('${_selectedLabValueIds.length} selected test results'),
+                Text(
+                  context.l10n.uiSelectedTestResultsCount(
+                    _selectedLabValueIds.length.toString(),
+                  ),
+                ),
               if (_selectReports)
                 for (final report in _availableReports.where(
                   (item) => _selectedReportIds.contains(item.id),
@@ -375,13 +394,13 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
               const SizedBox(height: 12),
               Text(
                 _selectedExpiry == null
-                    ? 'No expiry'
-                    : 'Expires ${_formatDate(_selectedExpiry!)}',
+                    ? context.l10n.uiNoExpiry
+                    : context.l10n.uiExpiresDate(_formatDate(_selectedExpiry!)),
               ),
               Text(
                 _requireAccessCode
-                    ? 'Access code required. Share it separately from the link.'
-                    : 'No access code required.',
+                    ? context.l10n.uiAccessCodeRequiredSeparate
+                    : context.l10n.uiNoAccessCodeRequired,
               ),
               const SizedBox(height: 20),
               FilledButton(
@@ -390,7 +409,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(sheetContext, false),
-                child: const Text('Edit selection or access settings'),
+                child: Text(context.l10n.uiEditSelectionOrAccessSettings),
               ),
             ],
           ),
@@ -403,14 +422,20 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
   Future<void> _copyLink(String url) async {
     await Clipboard.setData(ClipboardData(text: url));
     if (mounted) {
-      StatusMessenger.showSuccess(context, 'Link copied to clipboard');
+      StatusMessenger.showSuccess(
+        context,
+        context.l10n.uiLinkCopiedToClipboard,
+      );
     }
   }
 
   Future<void> _copyAccessCode(String code) async {
     await Clipboard.setData(ClipboardData(text: code));
     if (mounted) {
-      StatusMessenger.showSuccess(context, 'Access code copied to clipboard');
+      StatusMessenger.showSuccess(
+        context,
+        context.l10n.uiAccessCodeCopiedToClipboard,
+      );
     }
   }
 
@@ -422,10 +447,8 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Revoke share link?'),
-        content: const Text(
-          'This link will stop working. You can create a new one.',
-        ),
+        title: Text(context.l10n.uiRevokeShareLink),
+        content: Text(context.l10n.uiThisLinkWillStopWorkingYouCan),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -465,8 +488,8 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
         _supportErrorMessage = e.toString().replaceFirst('Exception: ', '');
         StatusMessenger.showError(
           context,
-          'Failed to revoke: ${e.toString().replaceFirst('Exception: ', '')}',
-          actionLabel: 'Need help?',
+          context.l10n.uiFailedToRevoke(localizedError(context, e)),
+          actionLabel: context.l10n.uiNeedHelp,
           onAction: _openSupportSheet,
         );
       }
@@ -509,17 +532,22 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Share link ready', style: theme.textTheme.titleMedium),
+            Text(
+              context.l10n.uiShareLinkReady,
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             SelectableText(link.shareUrl, key: const Key('share-url-text')),
             if (link.expiresAt != null) ...[
               const SizedBox(height: 4),
-              Text('Expires: ${_formatDate(link.expiresAt!)}'),
+              Text(
+                context.l10n.uiExpiresColonDate(_formatDate(link.expiresAt!)),
+              ),
             ],
             if (link.accessCode != null) ...[
               const SizedBox(height: 16),
               Text(
-                'Access code — share separately',
+                context.l10n.uiAccessCodeShareSeparately,
                 style: theme.textTheme.labelMedium,
               ),
               const SizedBox(height: 4),
@@ -531,11 +559,11 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
               TextButton.icon(
                 onPressed: () => _copyAccessCode(link.accessCode!),
                 icon: const Icon(Icons.copy_outlined, size: 18),
-                label: const Text('Copy access code'),
+                label: Text(context.l10n.uiCopyAccessCode),
               ),
               if (_codeSaveFailed)
                 Text(
-                  'This code could not be saved on this device. Copy it now for later use.',
+                  context.l10n.uiThisCodeCouldNotBeSavedOn,
                   style: TextStyle(color: theme.colorScheme.error),
                 ),
             ],
@@ -548,18 +576,18 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                   key: const Key('share-link-button'),
                   onPressed: () => _shareLink(link.shareUrl),
                   icon: const Icon(Icons.share_outlined),
-                  label: const Text('Share link'),
+                  label: Text(context.l10n.uiShareLink),
                 ),
                 OutlinedButton.icon(
                   key: const Key('copy-link-button'),
                   onPressed: () => _copyLink(link.shareUrl),
                   icon: const Icon(Icons.copy_outlined),
-                  label: const Text('Copy link'),
+                  label: Text(context.l10n.uiCopyLink),
                 ),
                 TextButton(
                   key: const Key('new-link-revoke-button'),
                   onPressed: () => _revokeLink(link.id, isNewLink: true),
-                  child: const Text('Revoke link'),
+                  child: Text(context.l10n.uiRevokeLink),
                 ),
               ],
             ),
@@ -572,15 +600,13 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
   Widget _buildExistingAccessCode(BuildContext context, ShareLink link) {
     final code = _savedAccessCodes[link.id];
     if (code == null) {
-      return const Text(
-        'Code unavailable on this device. Use the saved code or create a new link.',
-      );
+      return Text(context.l10n.uiCodeUnavailableOnThisDeviceUseThe);
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Access code — share separately',
+          context.l10n.uiAccessCodeShareSeparately,
           style: Theme.of(context).textTheme.labelMedium,
         ),
         SelectableText(
@@ -590,7 +616,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
         ),
         TextButton(
           onPressed: () => _copyAccessCode(code),
-          child: const Text('Copy access code'),
+          child: Text(context.l10n.uiCopyAccessCode),
         ),
       ],
     );
@@ -622,7 +648,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Share ${widget.profileName}\'s Reports'),
+        title: Text(context.l10n.uiShareProfileReports(widget.profileName)),
         actions: [
           IconButton(
             key: const Key('share-policy-settings-button'),
@@ -653,29 +679,36 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                   ),
                 )
               else if (activeLinks.isNotEmpty) ...[
-                const Text(
-                  'Active shared links',
+                Text(
+                  context.l10n.uiActiveSharedLinks,
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 ...List.generate(activeLinks.length, (i) {
                   final link = activeLinks[i];
                   final expiry = link.expiresAt != null
-                      ? 'Expires ${_formatDate(link.expiresAt!)}'
-                      : 'No expiry';
+                      ? context.l10n.uiExpiresDate(_formatDate(link.expiresAt!))
+                      : context.l10n.uiNoExpiry;
+                  final scope = link.scope == 'selected_results'
+                      ? context.l10n.uiSelectedResultsCount(
+                          (link.labValueIds?.length ?? 0).toString(),
+                        )
+                      : link.scope == 'selected_reports'
+                      ? context.l10n.uiSelectedReportsCount(
+                          (link.reportIds?.length ?? 0).toString(),
+                        )
+                      : context.l10n.allReports;
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ListTile(
-                          title: Text('${widget.profileName}’s reports'),
+                          title: Text(
+                            context.l10n.uiProfileReports(widget.profileName),
+                          ),
                           subtitle: Text(
-                            '${link.scope == 'selected_results'
-                                ? '${link.labValueIds?.length ?? 0} selected results'
-                                : link.scope == 'selected_reports'
-                                ? '${link.reportIds?.length ?? 0} selected reports'
-                                : 'All reports'} · $expiry${link.requiresAccessCode ? ' · Access code required' : ''}',
+                            '$scope · $expiry${link.requiresAccessCode ? ' · ${context.l10n.uiAccessCodeRequiredShort}' : ''}',
                           ),
                           trailing: TextButton(
                             key: Key('revoke-existing-link-${link.id}'),
@@ -717,7 +750,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                                   Icons.share_outlined,
                                   size: 18,
                                 ),
-                                label: const Text('Share'),
+                                label: Text(context.l10n.uiShare),
                                 onPressed: () => _shareLink(link.shareUrl),
                               ),
                               TextButton.icon(
@@ -737,7 +770,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
               ],
               if (pastLinks.isNotEmpty) ...[
                 Text(
-                  'Past links · ${pastLinks.length}',
+                  context.l10n.uiPastLinksCount(pastLinks.length.toString()),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
@@ -745,11 +778,17 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                   Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
-                      title: Text('${widget.profileName}’s reports'),
+                      title: Text(
+                        context.l10n.uiProfileReports(widget.profileName),
+                      ),
                       subtitle: Text(
                         link.isActive
-                            ? 'Expired ${_formatDate(link.expiresAt!)}'
-                            : 'Revoked · Created ${_formatDate(link.createdAt)}',
+                            ? context.l10n.uiExpiredDate(
+                                _formatDate(link.expiresAt!),
+                              )
+                            : context.l10n.uiRevokedCreatedDate(
+                                _formatDate(link.createdAt),
+                              ),
                       ),
                     ),
                   ),
@@ -766,7 +805,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
               // --- Create new link section ---
               if (_createState == _CreateState.idle ||
                   _createState == _CreateState.error) ...[
-                const Text('Create a new share link'),
+                Text(context.l10n.uiCreateANewShareLink),
                 const SizedBox(height: 12),
                 if (widget.reportsRepository != null) ...[
                   Card(
@@ -780,15 +819,17 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                         children: [
                           RadioListTile<bool>(
                             title: Text(context.l10n.allReports),
-                            subtitle: const Text(
-                              'Include current and future reports for this profile.',
+                            subtitle: Text(
+                              context
+                                  .l10n
+                                  .uiIncludeCurrentAndFutureReportsForThis,
                             ),
                             value: false,
                           ),
                           RadioListTile<bool>(
-                            title: const Text('Choose reports'),
-                            subtitle: const Text(
-                              'Share only the reports selected below.',
+                            title: Text(context.l10n.uiChooseReports),
+                            subtitle: Text(
+                              context.l10n.uiShareOnlyTheReportsSelectedBelow,
                             ),
                             value: true,
                           ),
@@ -813,7 +854,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                               unawaited(_loadSelectableValues());
                             }
                           },
-                          child: const Text('Select all'),
+                          child: Text(context.l10n.uiSelectAll),
                         ),
                       ),
                     if (_loadingReports)
@@ -829,10 +870,10 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                         ],
                       )
                     else if (_availableReports.isEmpty)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.all(16),
                         child: Text(
-                          'No reviewed reports are available to share.',
+                          context.l10n.uiNoReviewedReportsAreAvailableToShare,
                         ),
                       )
                     else
@@ -858,9 +899,9 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                     const SizedBox(height: 12),
                     SwitchListTile(
                       value: _shareSelectedResults,
-                      title: const Text('Selected test results'),
-                      subtitle: const Text(
-                        'Include only the results you choose from these reports.',
+                      title: Text(context.l10n.uiSelectedTestResults),
+                      subtitle: Text(
+                        context.l10n.uiIncludeOnlyTheResultsYouChooseFrom,
                       ),
                       onChanged: _selectedReportIds.isEmpty
                           ? null
@@ -883,10 +924,10 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                           ],
                         )
                       else if (_selectableValues.isEmpty)
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.all(16),
                           child: Text(
-                            'No saved test results are available in these reports.',
+                            context.l10n.uiNoSavedTestResultsAreAvailableIn,
                           ),
                         )
                       else
@@ -919,7 +960,12 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                   ),
                   if (_limitCurrent != null && _limitMax != null) ...[
                     const SizedBox(height: 4),
-                    Text('Using $_limitCurrent of $_limitMax active links.'),
+                    Text(
+                      context.l10n.uiUsingActiveLinks(
+                        _limitCurrent.toString(),
+                        _limitMax.toString(),
+                      ),
+                    ),
                   ],
                   if (_limitUpgradeHint != null) ...[
                     const SizedBox(height: 4),
@@ -929,14 +975,14 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                   OutlinedButton(
                     key: const Key('share-limit-upgrade'),
                     onPressed: widget.onUpgrade,
-                    child: const Text('Upgrade or Manage'),
+                    child: Text(context.l10n.uiUpgradeOrManage),
                   ),
                   const SizedBox(height: 12),
                 ],
                 // Expiry picker row
                 Row(
                   children: [
-                    const Text('Expiry:'),
+                    Text(context.l10n.uiExpiry),
                     const SizedBox(width: 8),
                     TextButton(
                       key: const Key('share-link-expiry-picker'),
@@ -944,7 +990,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                       child: Text(
                         _selectedExpiry != null
                             ? _formatDate(_selectedExpiry!)
-                            : 'No expiry',
+                            : context.l10n.uiNoExpiry,
                       ),
                     ),
                     if (_selectedExpiry != null)
@@ -954,15 +1000,15 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                           _expiryTouched = true;
                           _selectedExpiry = null;
                         }),
-                        tooltip: 'Clear expiry',
+                        tooltip: context.l10n.uiClearExpiry,
                       ),
                   ],
                 ),
                 SwitchListTile(
                   value: _requireAccessCode,
-                  title: const Text('Require an access code'),
-                  subtitle: const Text(
-                    'Share the code separately from the link.',
+                  title: Text(context.l10n.uiRequireAnAccessCode),
+                  subtitle: Text(
+                    context.l10n.uiShareTheCodeSeparatelyFromTheLink,
                   ),
                   onChanged: (value) =>
                       setState(() => _requireAccessCode = value),
@@ -973,12 +1019,12 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                   onPressed: _createState == _CreateState.loading
                       ? null
                       : _reviewAndCreate,
-                  child: const Text('Review sharing'),
+                  child: Text(context.l10n.uiReviewSharing),
                 ),
                 if (_createState == _CreateState.error) ...[
                   const SizedBox(height: 8),
                   Text(
-                    _createError ?? 'Something went wrong',
+                    _createError ?? context.l10n.somethingWrong,
                     key: const Key('share-link-error'),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
@@ -986,7 +1032,7 @@ class _CreateShareLinkScreenState extends State<CreateShareLinkScreen> {
                   ),
                   TextButton(
                     onPressed: _reviewAndCreate,
-                    child: const Text('Try Again'),
+                    child: Text(context.l10n.uiTryAgain),
                   ),
                   if (_supportContext != null) ...[
                     const SizedBox(height: 4),

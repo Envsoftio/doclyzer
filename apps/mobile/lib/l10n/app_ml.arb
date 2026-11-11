@@ -397,5 +397,3164 @@
   "testName": "പരിശോധനയുടെ പേര്",
   "viewReport": "റിപ്പോർട്ട് കാണുക",
   "closeAccount": "അക്കൗണ്ട് അടയ്ക്കുക",
-  "createShareLink": "പങ്കിടാനുള്ള ലിങ്ക് സൃഷ്ടിക്കുക"
+  "createShareLink": "പങ്കിടാനുള്ള ലിങ്ക് സൃഷ്ടിക്കുക",
+  "uiAppearanceChangedButCouldNotBeSaved": "രൂപഭാവം മാറി, പക്ഷേ അടുത്ത തവണ സംരക്ഷിക്കാനായില്ല.",
+  "@uiAppearanceChangedButCouldNotBeSaved": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisReportIsNoLongerAvailable": "ഈ റിപ്പോർട്ട് ഇനി ലഭ്യമല്ല.",
+  "@uiThisReportIsNoLongerAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenDeviceSettingsToManageNotificationPreviews": "അറിയിപ്പ് പ്രിവ്യൂകൾ നിയന്ത്രിക്കാൻ ഉപകരണ ക്രമീകരണങ്ങൾ തുറക്കുക.",
+  "@uiOpenDeviceSettingsToManageNotificationPreviews": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepThisScreenOpenUntilTheUpload": "അപ്‌ലോഡ് സ്വീകരിക്കുന്നത് വരെ ഈ സ്‌ക്രീൻ തുറന്നിടുക.",
+  "@uiKeepThisScreenOpenUntilTheUpload": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAnUploadMayHaveBeenInterrupted": "ഒരു അപ്‌ലോഡ് തടസ്സപ്പെട്ടിരിക്കാം",
+  "@uiAnUploadMayHaveBeenInterrupted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckReportsIfItIsMissingAdd": "റിപ്പോർട്ടുകൾ പരിശോധിക്കുക. അത് നഷ്ടപ്പെട്ടാൽ, അതേ ഫയൽ വീണ്ടും ചേർക്കുക.",
+  "@uiCheckReportsIfItIsMissingAdd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotDismissNotificationsTryAgain": "അറിയിപ്പുകൾ നിരസിക്കാൻ കഴിഞ്ഞില്ല. വീണ്ടും ശ്രമിക്കുക.",
+  "@uiCouldNotDismissNotificationsTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiConnectionUnavailable": "കണക്ഷൻ ലഭ്യമല്ല",
+  "@uiConnectionUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourSessionCouldNotBeCheckedConnect": "നിങ്ങളുടെ സെഷൻ പരിശോധിക്കാനായില്ല. ഇൻ്റർനെറ്റിലേക്ക് കണക്‌റ്റ് ചെയ്‌ത് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiYourSessionCouldNotBeCheckedConnect": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSignInWithAnotherAccount": "മറ്റൊരു അക്കൗണ്ട് ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യുക",
+  "@uiSignInWithAnotherAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoActiveProfile": "സജീവ പ്രൊഫൈലൊന്നുമില്ല",
+  "@uiNoActiveProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDismissUploadNotice": "അപ്‌ലോഡ് അറിയിപ്പ് നിരസിക്കുക",
+  "@uiDismissUploadNotice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDismissReadyNotifications": "തയ്യാറായ അറിയിപ്പുകൾ നിരസിക്കുക",
+  "@uiDismissReadyNotifications": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRequestSupport": "പിന്തുണ അഭ്യർത്ഥിക്കുക",
+  "@uiRequestSupport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWeWillIncludeDiagnosticIDsSoThe": "ഞങ്ങൾ ഡയഗ്നോസ്റ്റിക് ഐഡികൾ ഉൾപ്പെടുത്തും, അതിനാൽ ടീമിന് അന്വേഷിക്കാനാകും.",
+  "@uiWeWillIncludeDiagnosticIDsSoThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSendRequest": "അഭ്യർത്ഥന അയയ്ക്കുക",
+  "@uiSendRequest": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhatHappenedOptional": "എന്ത് സംഭവിച്ചു? (ഓപ്ഷണൽ)",
+  "@uiWhatHappenedOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewResult": "ഫലം അവലോകനം ചെയ്യുക",
+  "@uiReviewResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCompareTheseFieldsWithTheOriginalReport": "സംരക്ഷിക്കുന്നതിന് മുമ്പ് ഈ ഫീൽഡുകൾ യഥാർത്ഥ റിപ്പോർട്ടുമായി താരതമ്യം ചെയ്യുക.",
+  "@uiCompareTheseFieldsWithTheOriginalReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOriginallyExtracted": "യഥാർത്ഥത്തിൽ വേർതിരിച്ചെടുത്തത്",
+  "@uiOriginallyExtracted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReloadReport": "റിപ്പോർട്ട് റീലോഡ് ചെയ്യുക",
+  "@uiReloadReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResultAsPrinted": "ഫലം അച്ചടിച്ചതുപോലെ",
+  "@uiResultAsPrinted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnitIfShown": "യൂണിറ്റ് (കാണിച്ചാൽ)",
+  "@uiUnitIfShown": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLabReferenceRangeIfShown": "ലാബ് റഫറൻസ് ശ്രേണി (കാണിച്ചാൽ)",
+  "@uiLabReferenceRangeIfShown": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckYourReport": "നിങ്ങളുടെ റിപ്പോർട്ട് പരിശോധിക്കുക",
+  "@uiCheckYourReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoAttemptHistoryAvailable": "ശ്രമ ചരിത്രമൊന്നും ലഭ്യമല്ല.",
+  "@uiNoAttemptHistoryAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiIInspectedTheOriginal": "ഞാൻ ഒറിജിനൽ പരിശോധിച്ചു",
+  "@uiIInspectedTheOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseTwoReports": "രണ്ട് റിപ്പോർട്ടുകൾ തിരഞ്ഞെടുക്കുക",
+  "@uiChooseTwoReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseRecordsForTheSamePersonMatching": "ഒരേ വ്യക്തിക്കായി റെക്കോർഡുകൾ ഉപയോഗിക്കുക. മാച്ചിംഗ് ടെസ്റ്റുകൾ വശങ്ങളിലായി ദൃശ്യമാകും.",
+  "@uiUseRecordsForTheSamePersonMatching": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseTheOlderReportFirstAndThe": "ആദ്യം പഴയ റിപ്പോർട്ടും രണ്ടാമത്തേത് പുതിയതും തിരഞ്ഞെടുക്കുക.",
+  "@uiChooseTheOlderReportFirstAndThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiComparedOnlyWhenCompatibleDifferentUnitsOr": "പൊരുത്തപ്പെടുമ്പോൾ മാത്രം താരതമ്യം ചെയ്യുക. അനുയോജ്യത സ്ഥിരീകരിക്കുന്നത് വരെ വ്യത്യസ്ത യൂണിറ്റുകൾ അല്ലെങ്കിൽ രീതികൾ പ്രത്യേകം കാണിക്കുന്നു.",
+  "@uiComparedOnlyWhenCompatibleDifferentUnitsOr": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAChangeIsNotADiagnosisCompare": "മാറ്റം ഒരു രോഗനിർണയമല്ല. ഓരോ ഫലവും അതിൻ്റേതായ റിപ്പോർട്ട് ഇടവേളയുമായി താരതമ്യം ചെയ്ത് നിങ്ങളുടെ ക്ലിനിക്കുമായി സന്ദർഭം ചർച്ച ചെയ്യുക.",
+  "@uiAChangeIsNotADiagnosisCompare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseDifferentReports": "വ്യത്യസ്ത റിപ്പോർട്ടുകൾ തിരഞ്ഞെടുക്കുക",
+  "@uiChooseDifferentReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEarlierReport": "നേരത്തെ റിപ്പോർട്ട്",
+  "@uiEarlierReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLaterReport": "പിന്നീട് റിപ്പോർട്ട്",
+  "@uiLaterReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourReportPages": "നിങ്ങളുടെ റിപ്പോർട്ട് പേജുകൾ",
+  "@uiYourReportPages": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepPagesInTheSameOrderAs": "റിപ്പോർട്ടിൻ്റെ അതേ ക്രമത്തിൽ പേജുകൾ സൂക്ഷിക്കുക.",
+  "@uiKeepPagesInTheSameOrderAs": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAddAnotherPage": "മറ്റൊരു പേജ് ചേർക്കുക",
+  "@uiAddAnotherPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChoosePagesFromGallery": "ഗാലറിയിൽ നിന്ന് പേജുകൾ തിരഞ്ഞെടുക്കുക",
+  "@uiChoosePagesFromGallery": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAdjustPage": "പേജ് ക്രമീകരിക്കുക",
+  "@uiAdjustPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRetake": "വീണ്ടും എടുക്കുക",
+  "@uiRetake": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseAdjustedPage": "ക്രമീകരിച്ച പേജ് ഉപയോഗിക്കുക",
+  "@uiUseAdjustedPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResetChanges": "മാറ്റങ്ങൾ പുനഃസജ്ജമാക്കുക",
+  "@uiResetChanges": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepEveryResultInsideTheCorners": "എല്ലാ ഫലങ്ങളും കോണുകൾക്കുള്ളിൽ സൂക്ഷിക്കുക.",
+  "@uiKeepEveryResultInsideTheCorners": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRotate": "തിരിക്കുക",
+  "@uiRotate": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportRestored": "റിപ്പോർട്ട് പുനഃസ്ഥാപിച്ചു",
+  "@uiReportRestored": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeleteReportPermanently": "റിപ്പോർട്ട് ശാശ്വതമായി ഇല്ലാതാക്കണോ?",
+  "@uiDeleteReportPermanently": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeletePermanently": "ശാശ്വതമായി ഇല്ലാതാക്കുക",
+  "@uiDeletePermanently": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportPermanentlyDeleted": "റിപ്പോർട്ട് ശാശ്വതമായി ഇല്ലാതാക്കി",
+  "@uiReportPermanentlyDeleted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEmptyRecycleBin": "ശൂന്യമായ റീസൈക്കിൾ ബിൻ?",
+  "@uiEmptyRecycleBin": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeleteAll": "എല്ലാം ഇല്ലാതാക്കുക",
+  "@uiDeleteAll": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRecycleBinIsEmpty": "റീസൈക്കിൾ ബിൻ ശൂന്യമാണ്.",
+  "@uiRecycleBinIsEmpty": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeletedReportsWillAppearHereBeforeRemoval": "നീക്കം ചെയ്യുന്നതിനുമുമ്പ് ഇല്ലാതാക്കിയ റിപ്പോർട്ടുകൾ ഇവിടെ ദൃശ്യമാകും.",
+  "@uiDeletedReportsWillAppearHereBeforeRemoval": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEmptyRecycleBind657e2": "ശൂന്യമായ റീസൈക്കിൾ ബിൻ",
+  "@uiEmptyRecycleBind657e2": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckDetectedResult": "കണ്ടെത്തിയ ഫലം പരിശോധിക്കുക",
+  "@uiCheckDetectedResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCompareThisRowWithTheOriginalReport": "ഈ വരി യഥാർത്ഥ റിപ്പോർട്ടുമായി താരതമ്യം ചെയ്യുക. സംരക്ഷിക്കുന്നതിന് മുമ്പ് ഏതെങ്കിലും OCR തെറ്റുകൾ തിരുത്തുക.",
+  "@uiCompareThisRowWithTheOriginalReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiICheckedThisResultAgainstTheOriginal": "യഥാർത്ഥ റിപ്പോർട്ടിന് വിരുദ്ധമായി ഞാൻ ഈ ഫലം പരിശോധിച്ചു",
+  "@uiICheckedThisResultAgainstTheOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaving": "സംരക്ഷിക്കുന്നു...",
+  "@uiSaving": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaveVerifiedResult": "പരിശോധിച്ച ഫലം സംരക്ഷിക്കുക",
+  "@uiSaveVerifiedResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoResultsWereDetectedViewTheOriginal": "ഫലങ്ങളൊന്നും കണ്ടെത്തിയില്ല. യഥാർത്ഥ റിപ്പോർട്ട് കാണുക അല്ലെങ്കിൽ പ്രോസസ്സിംഗ് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiNoResultsWereDetectedViewTheOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDetectedValuesNeedToBeCheckedAgainst": "കണ്ടെത്തിയ മൂല്യങ്ങൾ സംരക്ഷിച്ച ഫലങ്ങളാകുന്നതിന് മുമ്പ് യഥാർത്ഥ റിപ്പോർട്ടിനെതിരെ പരിശോധിക്കേണ്ടതുണ്ട്.",
+  "@uiDetectedValuesNeedToBeCheckedAgainst": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSomeRowsMayBeMissingInspectThe": "ചില വരികൾ നഷ്ടമായേക്കാം. മുഴുവൻ യഥാർത്ഥ റിപ്പോർട്ടും പരിശോധിക്കുക.",
+  "@uiSomeRowsMayBeMissingInspectThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResult": "ഫലം",
+  "@uiResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnitOptional": "യൂണിറ്റ് (ഓപ്ഷണൽ)",
+  "@uiUnitOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferenceRangeOptional": "റഫറൻസ് ശ്രേണി (ഓപ്ഷണൽ)",
+  "@uiReferenceRangeOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiVerified": "പരിശോധിച്ചുറപ്പിച്ചു",
+  "@uiVerified": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucher": "സമ്മാന വൗച്ചർ",
+  "@uiGiftVoucher": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRedeemAGiftVoucherAndAddCredits": "ഒരു സമ്മാന വൗച്ചർ റിഡീം ചെയ്‌ത് നിങ്ങളുടെ ബാലൻസിലേക്ക് നേരിട്ട് ക്രെഡിറ്റുകൾ ചേർക്കുക.",
+  "@uiRedeemAGiftVoucherAndAddCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCurrentPlan": "നിലവിലെ പ്ലാൻ",
+  "@uiCurrentPlan": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditBalance": "ക്രെഡിറ്റ് ബാലൻസ്",
+  "@uiCreditBalance": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPlanLimits": "പ്ലാൻ പരിധികൾ",
+  "@uiPlanLimits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBuyCredits": "ക്രെഡിറ്റുകൾ വാങ്ങുക",
+  "@uiBuyCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRecentBillingActivity": "സമീപകാല ബില്ലിംഗ് പ്രവർത്തനം",
+  "@uiRecentBillingActivity": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRefreshStatus": "സ്റ്റാറ്റസ് പുതുക്കുക",
+  "@uiRefreshStatus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoRecentOrdersYet": "ഇതുവരെ സമീപകാല ഓർഡറുകൾ ഒന്നുമില്ല.",
+  "@uiNoRecentOrdersYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiVoucherCode": "വൗച്ചർ കോഡ്",
+  "@uiVoucherCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckout": "ചെക്ക്ഔട്ട്",
+  "@uiCheckout": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiApply": "അപേക്ഷിക്കുക",
+  "@uiApply": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiClear": "ക്ലിയർ",
+  "@uiClear": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPay": "പണം നൽകുക",
+  "@uiPay": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoCreditPacksAvailableAtThisTime": "ഈ സമയത്ത് ക്രെഡിറ്റ് പാക്കുകളൊന്നും ലഭ്യമല്ല.",
+  "@uiNoCreditPacksAvailableAtThisTime": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBuy": "വാങ്ങുക",
+  "@uiBuy": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRetryPayment": "പണമടയ്ക്കാൻ വീണ്ടും ശ്രമിക്കുക",
+  "@uiRetryPayment": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCode": "പ്രൊമോ കോഡ്",
+  "@uiPromoCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterPromoCode": "പ്രൊമോ കോഡ് നൽകുക",
+  "@uiEnterPromoCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseAPlan": "ഒരു പ്ലാൻ തിരഞ്ഞെടുക്കുക",
+  "@uiChooseAPlan": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoPlansAvailableAtThisTime": "ഇപ്പോൾ പ്ലാനുകളൊന്നും ലഭ്യമല്ല.",
+  "@uiNoPlansAvailableAtThisTime": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHaveAPromoCode": "ഒരു പ്രൊമോ കോഡ് ഉണ്ടോ?",
+  "@uiHaveAPromoCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCURRENTPLAN": "നിലവിലെ പ്ലാൻ",
+  "@uiCURRENTPLAN": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiManageNotifications": "അറിയിപ്പുകൾ നിയന്ത്രിക്കുക",
+  "@uiManageNotifications": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAll": "എല്ലാം",
+  "@uiAll": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnread": "വായിക്കാത്തത്",
+  "@uiUnread": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessStopsImmediatelyYouCanSignIn": "പ്രവേശനം ഉടനടി നിർത്തുന്നു. നിങ്ങൾക്ക് 30 ദിവസത്തിനുള്ളിൽ സൈൻ ഇൻ ചെയ്യാനും പുനഃസ്ഥാപിക്കാനും കഴിയും. അതിനുശേഷം, നിങ്ങളുടെ അക്കൗണ്ടും സംഭരിച്ച ഫയലുകളും സജീവ സ്റ്റോറേജിൽ നിന്ന് ഇല്ലാതാക്കപ്പെടും.",
+  "@uiAccessStopsImmediatelyYouCanSignIn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCloseMyAccount": "എൻ്റെ അക്കൗണ്ട് ക്ലോസ് ചെയ്യുക",
+  "@uiCloseMyAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourRecordsStayInDoclyzer": "നിങ്ങളുടെ രേഖകൾ ഡോക്ലൈസറിൽ നിലനിൽക്കും.",
+  "@uiYourRecordsStayInDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTakeACopyOfYourRecords": "നിങ്ങളുടെ രേഖകളുടെ ഒരു പകർപ്പ് എടുക്കുക.",
+  "@uiTakeACopyOfYourRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhoseRecords": "ആരുടെ രേഖകൾ?",
+  "@uiWhoseRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotLoadProfiles": "പ്രൊഫൈലുകൾ ലോഡ് ചെയ്യാനായില്ല",
+  "@uiCouldNotLoadProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLoadingProfiles": "പ്രൊഫൈലുകൾ ലോഡ് ചെയ്യുന്നു...",
+  "@uiLoadingProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAllProfiles": "എല്ലാ പ്രൊഫൈലുകളും",
+  "@uiAllProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDateRange": "തീയതി ശ്രേണി",
+  "@uiDateRange": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseAllDates": "എല്ലാ തീയതികളും ഉപയോഗിക്കുക",
+  "@uiUseAllDates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiINCLUDEINTHISEXPORT": "ഈ കയറ്റുമതിയിൽ ഉൾപ്പെടുത്തുക",
+  "@uiINCLUDEINTHISEXPORT": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOriginalReports": "യഥാർത്ഥ റിപ്പോർട്ടുകൾ",
+  "@uiOriginalReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPDFsAndImagesYouUploaded": "നിങ്ങൾ അപ്‌ലോഡ് ചെയ്ത PDF-കളും ചിത്രങ്ങളും",
+  "@uiPDFsAndImagesYouUploaded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTestResults": "പരിശോധനാ ഫലങ്ങൾ",
+  "@uiTestResults": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResultsAsCSVWithTheirReviewState": "CSV ആയി ഫലങ്ങൾ, അവയുടെ അവലോകന നില",
+  "@uiResultsAsCSVWithTheirReviewState": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportsContainPersonalInformationStoreThemSomewhere": "കയറ്റുമതിയിൽ വ്യക്തിഗത വിവരങ്ങൾ അടങ്ങിയിരിക്കുന്നു. നിങ്ങൾ വിശ്വസിക്കുന്ന എവിടെയെങ്കിലും അവ സൂക്ഷിക്കുക.",
+  "@uiExportsContainPersonalInformationStoreThemSomewhere": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeleteAccount": "അക്കൗണ്ട് ഇല്ലാതാക്കുക",
+  "@uiDeleteAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiContinueToDeletion": "ഇല്ലാതാക്കുന്നത് തുടരുക",
+  "@uiContinueToDeletion": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepMyAccount": "എൻ്റെ അക്കൗണ്ട് സൂക്ഷിക്കുക",
+  "@uiKeepMyAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBeforeYouLeave": "നിങ്ങൾ പോകുന്നതിനുമുമ്പ്",
+  "@uiBeforeYouLeave": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPleaseReadWhatThisWillRemove": "ഇത് എന്ത് നീക്കംചെയ്യുമെന്ന് ദയവായി വായിക്കുക.",
+  "@uiPleaseReadWhatThisWillRemove": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeletingYourAccountAffectsAllProfilesYou": "നിങ്ങളുടെ അക്കൗണ്ട് ഇല്ലാതാക്കുന്നത് നിങ്ങൾ നിയന്ത്രിക്കുന്ന എല്ലാ പ്രൊഫൈലുകളെയും ബാധിക്കും.",
+  "@uiDeletingYourAccountAffectsAllProfilesYou": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountAndPersonalProfile": "നിങ്ങളുടെ അക്കൗണ്ടും വ്യക്തിഗത പ്രൊഫൈലും",
+  "@uiYourAccountAndPersonalProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessThroughYourSharedLinks": "നിങ്ങളുടെ പങ്കിട്ട ലിങ്കുകളിലൂടെ ആക്സസ് ചെയ്യുക",
+  "@uiAccessThroughYourSharedLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepACopyFirst": "ആദ്യം ഒരു കോപ്പി സൂക്ഷിക്കുക",
+  "@uiKeepACopyFirst": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportTheInformationYouWantToRetain": "നിങ്ങൾ നിലനിർത്താൻ ആഗ്രഹിക്കുന്ന വിവരങ്ങൾ കയറ്റുമതി ചെയ്യുക.",
+  "@uiExportTheInformationYouWantToRetain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportData": "ഡാറ്റ കയറ്റുമതി ചെയ്യുക",
+  "@uiExportData": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessStopsImmediatelyYouCanRestoreWithin": "പ്രവേശനം ഉടനടി നിർത്തുന്നു. നിങ്ങൾക്ക് 30 ദിവസത്തിനുള്ളിൽ പുനഃസ്ഥാപിക്കാം. അതിനുശേഷം, നിങ്ങളുടെ ഡാറ്റ സജീവ സംഭരണത്തിൽ നിന്ന് നീക്കം ചെയ്യപ്പെടും.",
+  "@uiAccessStopsImmediatelyYouCanRestoreWithin": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccountPendingDeletion": "അക്കൗണ്ട് ഇല്ലാതാക്കാൻ ശേഷിക്കുന്നു",
+  "@uiAccountPendingDeletion": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRestoreMyAccount": "എൻ്റെ അക്കൗണ്ട് പുനഃസ്ഥാപിക്കുക",
+  "@uiRestoreMyAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDownloadACopyOfYourAccountData": "നിങ്ങളുടെ പ്രൊഫൈൽ, പ്രൊഫൈലുകൾ, സമ്മത രേഖകൾ എന്നിവയുൾപ്പെടെ നിങ്ങളുടെ അക്കൗണ്ട് ഡാറ്റയുടെ ഒരു പകർപ്പ് ഡൗൺലോഡ് ചെയ്യുക.",
+  "@uiDownloadACopyOfYourAccountData": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountIsDisabledImmediatelyYouCan": "നിങ്ങളുടെ അക്കൗണ്ട് ഉടൻ പ്രവർത്തനരഹിതമാക്കി. 30 ദിവസത്തിനുള്ളിൽ നിങ്ങൾക്ക് ഇത് പുനഃസ്ഥാപിക്കാം. അതിനുശേഷം, നിങ്ങളുടെ ഡാറ്റ ശാശ്വതമായി ഇല്ലാതാക്കപ്പെടും.",
+  "@uiYourAccountIsDisabledImmediatelyYouCan": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCurrentPassword": "നിലവിലെ പാസ്‌വേഡ്",
+  "@uiCurrentPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotChangeAppLockTryAgain": "ആപ്പ് ലോക്ക് മാറ്റാൻ കഴിഞ്ഞില്ല. വീണ്ടും ശ്രമിക്കുക.",
+  "@uiCouldNotChangeAppLockTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourRecordsYourChoiceToShare": "നിങ്ങളുടെ രേഖകൾ.\nപങ്കിടാനുള്ള നിങ്ങളുടെ ഇഷ്ടം.",
+  "@uiYourRecordsYourChoiceToShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewAccessWheneverYouNeed": "നിങ്ങൾക്ക് ആവശ്യമുള്ളപ്പോഴെല്ലാം ആക്സസ് അവലോകനം ചെയ്യുക.",
+  "@uiReviewAccessWheneverYouNeed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAppLock": "ആപ്പ് ലോക്ക്",
+  "@uiAppLock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseYourDeviceSBiometricOrPasscode": "നിങ്ങളുടെ ഉപകരണത്തിൻ്റെ ബയോമെട്രിക് അല്ലെങ്കിൽ പാസ്‌കോഡ് ലോക്ക് ഉപയോഗിക്കുക.",
+  "@uiUseYourDeviceSBiometricOrPasscode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationPreviews": "അറിയിപ്പ് പ്രിവ്യൂകൾ",
+  "@uiNotificationPreviews": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiControlLockScreenPreviewsInYourDevice": "നിങ്ങളുടെ ഉപകരണ ക്രമീകരണങ്ങളിൽ ലോക്ക് സ്‌ക്രീൻ പ്രിവ്യൂകൾ നിയന്ത്രിക്കുക.",
+  "@uiControlLockScreenPreviewsInYourDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiContactSupport": "പിന്തുണയുമായി ബന്ധപ്പെടുക",
+  "@uiContactSupport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAttachReportsOnlyIfYouChooseTo": "നിങ്ങൾ തിരഞ്ഞെടുക്കുകയാണെങ്കിൽ മാത്രം റിപ്പോർട്ടുകൾ അറ്റാച്ചുചെയ്യുക.",
+  "@uiAttachReportsOnlyIfYouChooseTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhatCanWeHelpYouWith": "ഞങ്ങൾക്ക് നിങ്ങളെ എന്ത് സഹായിക്കാനാകും?",
+  "@uiWhatCanWeHelpYouWith": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPOPULARQUESTIONS": "ജനപ്രിയ ചോദ്യങ്ങൾ",
+  "@uiPOPULARQUESTIONS": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoHelpArticlesMatchYourSearch": "നിങ്ങളുടെ തിരയലുമായി പൊരുത്തപ്പെടുന്ന സഹായ ലേഖനങ്ങളൊന്നുമില്ല.",
+  "@uiNoHelpArticlesMatchYourSearch": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiForQuestionsAboutYourHealthOrTest": "നിങ്ങളുടെ ആരോഗ്യത്തെക്കുറിച്ചോ പരിശോധനാ ഫലങ്ങളെക്കുറിച്ചോ ഉള്ള ചോദ്യങ്ങൾക്ക്, യോഗ്യതയുള്ള ഒരു ഹെൽത്ത് കെയർ പ്രൊഫഷണലുമായി സംസാരിക്കുക.",
+  "@uiForQuestionsAboutYourHealthOrTest": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourReportsAClearerPicture": "നിങ്ങളുടെ റിപ്പോർട്ടുകൾ. കൂടുതൽ വ്യക്തമായ ചിത്രം.",
+  "@uiYourReportsAClearerPicture": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepYourHealthHistoryTogether": "നിങ്ങളുടെ ആരോഗ്യ ചരിത്രം ഒരുമിച്ച് സൂക്ഷിക്കുക.",
+  "@uiKeepYourHealthHistoryTogether": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiStoreReportsReviewResultsFollowChangesAnd": "റിപ്പോർട്ടുകൾ സംഭരിക്കുക, ഫലങ്ങൾ അവലോകനം ചെയ്യുക, മാറ്റങ്ങൾ പിന്തുടരുക, നിങ്ങളുടെ ഡോക്ടറുമായി പങ്കിടുക.",
+  "@uiStoreReportsReviewResultsFollowChangesAnd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEducationalInformationOnly": "വിദ്യാഭ്യാസ വിവരങ്ങൾ മാത്രം",
+  "@uiEducationalInformationOnly": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSearchHelpArticles": "സഹായ ലേഖനങ്ങൾ തിരയുക",
+  "@uiSearchHelpArticles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenTheDeviceSettingsAppToChange": "അറിയിപ്പ് ആക്‌സസ് മാറ്റാൻ ഉപകരണ ക്രമീകരണ ആപ്പ് തുറക്കുക.",
+  "@uiOpenTheDeviceSettingsAppToChange": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSavePreferences": "മുൻഗണനകൾ സംരക്ഷിക്കുക",
+  "@uiSavePreferences": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDevicePermissionsCanBeChangedInSettings": "ക്രമീകരണങ്ങളിൽ ഉപകരണ അനുമതികൾ മാറ്റാവുന്നതാണ്.",
+  "@uiDevicePermissionsCanBeChangedInSettings": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGetReportUpdatesOnThisDevice": "ഈ ഉപകരണത്തിൽ റിപ്പോർട്ട് അപ്ഡേറ്റുകൾ നേടുക",
+  "@uiGetReportUpdatesOnThisDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAllowNotificationsToKnowWhenAReport": "ഒരു റിപ്പോർട്ട് തയ്യാറാകുമ്പോൾ അറിയാൻ അറിയിപ്പുകളെ അനുവദിക്കുക. മാർക്കറ്റിംഗ് താഴെ ഒരു പ്രത്യേക ചോയ്സ് ആണ്.",
+  "@uiAllowNotificationsToKnowWhenAReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiREPORTACTIVITY": "റിപ്പോർട്ട് പ്രവർത്തനം",
+  "@uiREPORTACTIVITY": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportActivitySettingsRequireTheLatestServer": "റിപ്പോർട്ട് പ്രവർത്തന ക്രമീകരണങ്ങൾക്ക് ഏറ്റവും പുതിയ സെർവർ പതിപ്പ് ആവശ്യമാണ്.",
+  "@uiReportActivitySettingsRequireTheLatestServer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSensitiveLockScreenPreviews": "സെൻസിറ്റീവ് ലോക്ക് സ്‌ക്രീൻ പ്രിവ്യൂകൾ",
+  "@uiSensitiveLockScreenPreviews": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportNamesAndPersonalDetailsAreAlways": "റിപ്പോർട്ടിൻ്റെ പേരുകളും വ്യക്തിഗത വിശദാംശങ്ങളും എല്ലായ്പ്പോഴും മറച്ചിരിക്കുന്നു.",
+  "@uiReportNamesAndPersonalDetailsAreAlways": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOTHERMESSAGES": "മറ്റ് സന്ദേശങ്ങൾ",
+  "@uiOTHERMESSAGES": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepEachPersonSReportsAndTrends": "ഓരോ വ്യക്തിയുടെയും റിപ്പോർട്ടുകളും ട്രെൻഡുകളും ഒരുമിച്ച് സൂക്ഷിക്കുക.",
+  "@uiKeepEachPersonSReportsAndTrends": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPersonDetails": "വ്യക്തിയുടെ വിശദാംശങ്ങൾ",
+  "@uiPersonDetails": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDateOfBirth": "ജനനത്തീയതി",
+  "@uiDateOfBirth": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRelationship": "ബന്ധം",
+  "@uiRelationship": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterAName": "ഒരു പേര് നൽകുക",
+  "@uiEnterAName": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiClearDateOfBirth": "വ്യക്തമായ ജനനത്തീയതി",
+  "@uiClearDateOfBirth": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOptionalEGParentOrChild": "ഓപ്ഷണൽ, ഉദാ. മാതാപിതാക്കൾ അല്ലെങ്കിൽ കുട്ടി",
+  "@uiOptionalEGParentOrChild": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInviteFriendsEarnCredits": "സുഹൃത്തുക്കളെ ക്ഷണിക്കുക, ക്രെഡിറ്റുകൾ നേടുക",
+  "@uiInviteFriendsEarnCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareYourCodeAndFollowEachInvite": "റിവാർഡ് അൺലോക്ക് ആയി നിങ്ങളുടെ കോഡ് പങ്കിടുകയും ഓരോ ക്ഷണവും പിന്തുടരുകയും ചെയ്യുക.",
+  "@uiShareYourCodeAndFollowEachInvite": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYOURREFERRALCODE": "നിങ്ങളുടെ റഫറൽ കോഡ്",
+  "@uiYOURREFERRALCODE": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareInvite": "ക്ഷണം പങ്കിടുക",
+  "@uiShareInvite": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCopyCode": "കോഡ് പകർത്തുക",
+  "@uiCopyCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHaveACode": "ഒരു കോഡ് ഉണ്ടോ?",
+  "@uiHaveACode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterACodeSharedWithYouTo": "നിങ്ങളുടെ ക്ഷണ റിവാർഡ് ക്ലെയിം ചെയ്യാൻ നിങ്ങളുമായി പങ്കിട്ട ഒരു കോഡ് നൽകുക.",
+  "@uiEnterACodeSharedWithYouTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHowRewardsWork": "റിവാർഡുകൾ എങ്ങനെ പ്രവർത്തിക്കുന്നു",
+  "@uiHowRewardsWork": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoFriendsReferredYet": "ഇതുവരെ സുഹൃത്തുക്കളൊന്നും റഫർ ചെയ്തിട്ടില്ല",
+  "@uiNoFriendsReferredYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareYourInviteToSeeTheirProgress": "അവരുടെ പുരോഗതി കാണുന്നതിന് നിങ്ങളുടെ ക്ഷണം ഇവിടെ പങ്കിടുക.",
+  "@uiShareYourInviteToSeeTheirProgress": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralCode": "റഫറൽ കോഡ്",
+  "@uiReferralCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSetNewPassword": "പുതിയ പാസ്‌വേഡ് സജ്ജമാക്കുക",
+  "@uiSetNewPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterTheResetTokenFromTheLink": "നിങ്ങളുടെ ഇമെയിലിലെ ലിങ്കിൽ നിന്നും പുതിയ പാസ്‌വേഡിൽ നിന്നും റീസെറ്റ് ടോക്കൺ നൽകുക.",
+  "@uiEnterTheResetTokenFromTheLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResetPassword": "പാസ്‌വേഡ് പുനഃസജ്ജമാക്കുക",
+  "@uiResetPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBackToLogin": "ലോഗിൻ എന്നതിലേക്ക് മടങ്ങുക",
+  "@uiBackToLogin": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResetToken": "ടോക്കൺ റീസെറ്റ് ചെയ്യുക",
+  "@uiResetToken": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNewPassword": "പുതിയ പാസ്‌വേഡ്",
+  "@uiNewPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterTheEmailAddressAssociatedWithYour": "നിങ്ങളുടെ അക്കൗണ്ടുമായി ബന്ധപ്പെട്ട ഇമെയിൽ വിലാസം നൽകുക, നിങ്ങളുടെ പാസ്‌വേഡ് പുനഃസജ്ജമാക്കാൻ ഞങ്ങൾ ഒരു ലിങ്ക് അയയ്ക്കും.",
+  "@uiEnterTheEmailAddressAssociatedWithYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSendResetLink": "റീസെറ്റ് ലിങ്ക് അയയ്ക്കുക",
+  "@uiSendResetLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeSession": "സെഷൻ പിൻവലിക്കണോ?",
+  "@uiRevokeSession": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCurrentSession": "നിലവിലെ സെഷൻ",
+  "@uiCurrentSession": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSkip": "ഒഴിവാക്കുക",
+  "@uiSkip": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChangePassword": "പാസ്‌വേഡ് മാറ്റുക",
+  "@uiChangePassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterYourCurrentPasswordAndChooseA": "നിങ്ങളുടെ നിലവിലെ പാസ്‌വേഡ് നൽകി പുതിയൊരെണ്ണം തിരഞ്ഞെടുക്കുക.",
+  "@uiEnterYourCurrentPasswordAndChooseA": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNewPasswordd850ee": "പുതിയ പാസ്‌വേഡ്",
+  "@uiNewPasswordd850ee": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiConfirmNewPassword": "പുതിയ പാസ്‌വേഡ് സ്ഥിരീകരിക്കുക",
+  "@uiConfirmNewPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGettingThingsReady": "കാര്യങ്ങൾ തയ്യാറാക്കുന്നു...",
+  "@uiGettingThingsReady": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLinkAccessHistory": "ലിങ്ക് ആക്സസ് ചരിത്രം",
+  "@uiLinkAccessHistory": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoAccessEventsYet": "ഇതുവരെ ആക്സസ് ഇവൻ്റുകളൊന്നുമില്ല.",
+  "@uiNoAccessEventsYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDefaultShareLinkExpiry": "ഡിഫോൾട്ട് ഷെയർ ലിങ്ക് കാലഹരണപ്പെടുന്നു",
+  "@uiDefaultShareLinkExpiry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSave": "സംരക്ഷിക്കുക",
+  "@uiSave": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewSharing": "അവലോകനം പങ്കിടൽ",
+  "@uiReviewSharing": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckThePersonReportsAndAccess": "വ്യക്തി, റിപ്പോർട്ടുകൾ, ആക്സസ് എന്നിവ പരിശോധിക്കുക.",
+  "@uiCheckThePersonReportsAndAccess": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEditSelectionOrAccessSettings": "തിരഞ്ഞെടുക്കൽ എഡിറ്റ് ചെയ്യുക അല്ലെങ്കിൽ ക്രമീകരണങ്ങൾ ആക്സസ് ചെയ്യുക",
+  "@uiEditSelectionOrAccessSettings": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeShareLink": "പങ്കിടൽ ലിങ്ക് പിൻവലിക്കണോ?",
+  "@uiRevokeShareLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisLinkWillStopWorkingYouCan": "ഈ ലിങ്ക് പ്രവർത്തിക്കുന്നത് നിർത്തും. നിങ്ങൾക്ക് പുതിയൊരെണ്ണം സൃഷ്ടിക്കാൻ കഴിയും.",
+  "@uiThisLinkWillStopWorkingYouCan": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareLinkReady": "പങ്കിടൽ ലിങ്ക് തയ്യാറാണ്",
+  "@uiShareLinkReady": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessCodeShareSeparately": "ആക്സസ് കോഡ് - പ്രത്യേകം പങ്കിടുക",
+  "@uiAccessCodeShareSeparately": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCopyAccessCode": "ആക്സസ് കോഡ് പകർത്തുക",
+  "@uiCopyAccessCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisCodeCouldNotBeSavedOn": "ഈ കോഡ് ഈ ഉപകരണത്തിൽ സംരക്ഷിക്കാനായില്ല. പിന്നീടുള്ള ഉപയോഗത്തിനായി ഇപ്പോൾ പകർത്തുക.",
+  "@uiThisCodeCouldNotBeSavedOn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareLink": "ലിങ്ക് പങ്കിടുക",
+  "@uiShareLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCopyLink": "ലിങ്ക് പകർത്തുക",
+  "@uiCopyLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeLink": "ലിങ്ക് പിൻവലിക്കുക",
+  "@uiRevokeLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCodeUnavailableOnThisDeviceUseThe": "ഈ ഉപകരണത്തിൽ കോഡ് ലഭ്യമല്ല. സംരക്ഷിച്ച കോഡ് ഉപയോഗിക്കുക അല്ലെങ്കിൽ ഒരു പുതിയ ലിങ്ക് സൃഷ്ടിക്കുക.",
+  "@uiCodeUnavailableOnThisDeviceUseThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiActiveSharedLinks": "സജീവമായ പങ്കിട്ട ലിങ്കുകൾ",
+  "@uiActiveSharedLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShare": "പങ്കിടുക",
+  "@uiShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreateANewShareLink": "ഒരു പുതിയ പങ്കിടൽ ലിങ്ക് സൃഷ്‌ടിക്കുക",
+  "@uiCreateANewShareLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiIncludeCurrentAndFutureReportsForThis": "ഈ പ്രൊഫൈലിനായി നിലവിലുള്ളതും ഭാവിയിലുള്ളതുമായ റിപ്പോർട്ടുകൾ ഉൾപ്പെടുത്തുക.",
+  "@uiIncludeCurrentAndFutureReportsForThis": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseReports": "റിപ്പോർട്ടുകൾ തിരഞ്ഞെടുക്കുക",
+  "@uiChooseReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareOnlyTheReportsSelectedBelow": "ചുവടെ തിരഞ്ഞെടുത്ത റിപ്പോർട്ടുകൾ മാത്രം പങ്കിടുക.",
+  "@uiShareOnlyTheReportsSelectedBelow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectAll": "എല്ലാം തിരഞ്ഞെടുക്കുക",
+  "@uiSelectAll": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoReviewedReportsAreAvailableToShare": "അവലോകനം ചെയ്ത റിപ്പോർട്ടുകളൊന്നും പങ്കിടാൻ ലഭ്യമല്ല.",
+  "@uiNoReviewedReportsAreAvailableToShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectedTestResults": "തിരഞ്ഞെടുത്ത പരിശോധനാ ഫലങ്ങൾ",
+  "@uiSelectedTestResults": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiIncludeOnlyTheResultsYouChooseFrom": "ഈ റിപ്പോർട്ടുകളിൽ നിന്ന് നിങ്ങൾ തിരഞ്ഞെടുക്കുന്ന ഫലങ്ങൾ മാത്രം ഉൾപ്പെടുത്തുക.",
+  "@uiIncludeOnlyTheResultsYouChooseFrom": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoSavedTestResultsAreAvailableIn": "ഈ റിപ്പോർട്ടുകളിൽ സംരക്ഷിച്ച പരിശോധനാ ഫലങ്ങളൊന്നും ലഭ്യമല്ല.",
+  "@uiNoSavedTestResultsAreAvailableIn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUpgradeOrManage": "നവീകരിക്കുക അല്ലെങ്കിൽ നിയന്ത്രിക്കുക",
+  "@uiUpgradeOrManage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExpiry": "കാലഹരണപ്പെടൽ:",
+  "@uiExpiry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRequireAnAccessCode": "ഒരു ആക്സസ് കോഡ് ആവശ്യമാണ്",
+  "@uiRequireAnAccessCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareTheCodeSeparatelyFromTheLink": "ലിങ്കിൽ നിന്ന് പ്രത്യേകമായി കോഡ് പങ്കിടുക.",
+  "@uiShareTheCodeSeparatelyFromTheLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTryAgain": "വീണ്ടും ശ്രമിക്കുക",
+  "@uiTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiClearExpiry": "കാലഹരണപ്പെടൽ മായ്‌ക്കുക",
+  "@uiClearExpiry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingStoreEyebrow": "01 / സൂക്ഷിക്കുക",
+  "@onboardingStoreEyebrow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingStoreTitle": "എല്ലാ റിപ്പോർട്ടുകളും,\nപരിചിതമായ ഒരു സ്ഥലം.",
+  "@onboardingStoreTitle": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingStoreBody": "നിങ്ങൾക്കും നിങ്ങൾ ശ്രദ്ധിക്കുന്ന ആളുകൾക്കുമായി PDF-കളും ഫോട്ടോകളും ഒരുമിച്ച് സൂക്ഷിക്കുക.",
+  "@onboardingStoreBody": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingUnderstandEyebrow": "02 / മനസ്സിലാക്കുക",
+  "@onboardingUnderstandEyebrow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingUnderstandTitle": "അക്കങ്ങൾ,\nവായിക്കുന്നത് എളുപ്പമാക്കി.",
+  "@onboardingUnderstandTitle": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingUnderstandBody": "നിങ്ങളുടെ റിപ്പോർട്ടിൽ നിന്ന് ഓരോ ടെസ്റ്റും അതിൻ്റെ യൂണിറ്റും ഇടവേളയും കാണുക. എപ്പോൾ വേണമെങ്കിലും ഒറിജിനൽ പരിശോധിക്കുക.",
+  "@onboardingUnderstandBody": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingTrackEyebrow": "03 / ട്രാക്ക് & ഷെയർ ചെയ്യുക",
+  "@onboardingTrackEyebrow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingTrackTitle": "മാറ്റങ്ങൾ കാണുക.\nസന്ദർഭം പങ്കിടുക.",
+  "@onboardingTrackTitle": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingTrackBody": "കാലക്രമേണ ഫലങ്ങൾ പിന്തുടരുക, നിങ്ങളുടെ ഡോക്ടർക്ക് കാണാൻ കഴിയുന്നത് കൃത്യമായി തിരഞ്ഞെടുക്കുക.",
+  "@onboardingTrackBody": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingNext": "അടുത്തത്",
+  "@onboardingNext": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingGetStarted": "ആരംഭിക്കുക",
+  "@onboardingGetStarted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSupportRequestSent": "പിന്തുണ അഭ്യർത്ഥന അയച്ചു.",
+  "@uiSupportRequestSent": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTestNameAndResultAreRequired": "ടെസ്റ്റിൻ്റെ പേരും ഫലവും ആവശ്യമാണ്.",
+  "@uiTestNameAndResultAreRequired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseAValidCollectionDateInYYYY": "YYYY-MM-DD ഫോർമാറ്റിൽ സാധുവായ ഒരു ശേഖരണ തീയതി ഉപയോഗിക്കുക.",
+  "@uiUseAValidCollectionDateInYYYY": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotSaveThisCorrectionTryAgain": "ഈ തിരുത്തൽ സംരക്ഷിക്കാൻ കഴിഞ്ഞില്ല. വീണ്ടും ശ്രമിക്കുക.",
+  "@uiCouldNotSaveThisCorrectionTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportsUnavailable": "റിപ്പോർട്ടുകൾ ലഭ്യമല്ല",
+  "@uiReportsUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTryAgain042c86": "വീണ്ടും ശ്രമിക്കുക",
+  "@uiTryAgain042c86": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTwoReportsAreNeeded": "രണ്ട് റിപ്പോർട്ടുകൾ ആവശ്യമാണ്",
+  "@uiTwoReportsAreNeeded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAddAnOlderReportForThisProfile": "ഫലങ്ങൾ താരതമ്യം ചെയ്യാൻ ഈ പ്രൊഫൈലിനായി ഒരു പഴയ റിപ്പോർട്ട് ചേർക്കുക.",
+  "@uiAddAnOlderReportForThisProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotCompareYet": "ഇതുവരെ താരതമ്യം ചെയ്യാൻ കഴിയില്ല",
+  "@uiCannotCompareYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTheseReportsHaveNoMatchingResultsAvailable": "ഈ റിപ്പോർട്ടുകൾക്ക് താരതമ്യത്തിനായി പൊരുത്തപ്പെടുന്ന ഫലങ്ങളൊന്നും ലഭ്യമല്ല.",
+  "@uiTheseReportsHaveNoMatchingResultsAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadReportsTryAgain": "റിപ്പോർട്ടുകൾ ലോഡ് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.",
+  "@uiUnableToLoadReportsTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenPhotosOrCamera": "ഫോട്ടോകളോ ക്യാമറയോ തുറക്കാനായില്ല.",
+  "@uiCouldNotOpenPhotosOrCamera": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenCamera": "ക്യാമറ തുറക്കാനായില്ല.",
+  "@uiCouldNotOpenCamera": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotPrepareThesePagesRetakeAn": "ഈ പേജുകൾ തയ്യാറാക്കാൻ കഴിഞ്ഞില്ല. വായിക്കാൻ കഴിയാത്ത പേജ് വീണ്ടും എടുത്ത് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiCouldNotPrepareThesePagesRetakeAn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotAdjustThisPage": "ഈ പേജ് ക്രമീകരിക്കാൻ കഴിഞ്ഞില്ല.",
+  "@uiCouldNotAdjustThisPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoChartableResultYet": "ഇതുവരെ ചാർട്ടബിൾ ഫലങ്ങളൊന്നുമില്ല",
+  "@uiNoChartableResultYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProfiles": "പ്രൊഫൈലുകൾ",
+  "@uiProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReports": "റിപ്പോർട്ടുകൾ",
+  "@uiReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareLinks": "ലിങ്കുകൾ പങ്കിടുക",
+  "@uiShareLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAIChat": "AI ചാറ്റ്",
+  "@uiAIChat": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadEntitlementSummaryPleaseTry": "അവകാശ സംഗ്രഹം ലോഡ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToLoadEntitlementSummaryPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToRefreshBillingStatusPleaseTry": "ബില്ലിംഗ് നില പുതുക്കുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToRefreshBillingStatusPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReceiptDownloadWillBeAvailableSoon": "രസീത് ഡൗൺലോഡ് ഉടൻ ലഭ്യമാകും.",
+  "@uiReceiptDownloadWillBeAvailableSoon": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSubtotal": "ഉപമൊത്തം",
+  "@uiSubtotal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDiscount": "കിഴിവ്",
+  "@uiDiscount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTotal": "ആകെ",
+  "@uiTotal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadCreditPacksPleaseTry": "ക്രെഡിറ്റ് പായ്ക്കുകൾ ലോഡുചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToLoadCreditPacksPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAPaymentIsPendingCaptureRefreshStatus": "ഒരു പേയ്‌മെൻ്റ് ക്യാപ്‌ചർ തീർപ്പാക്കിയിട്ടില്ല. മറ്റൊരു ചെക്ക്ഔട്ട് ആരംഭിക്കുന്നതിന് മുമ്പ് സ്റ്റാറ്റസ് പുതുക്കുക.",
+  "@uiAPaymentIsPendingCaptureRefreshStatus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditsWereAppliedSuccessfully": "ക്രെഡിറ്റുകൾ വിജയകരമായി പ്രയോഗിച്ചു.",
+  "@uiCreditsWereAppliedSuccessfully": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToCreateOrderPleaseTryAgain": "ഓർഡർ സൃഷ്ടിക്കുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToCreateOrderPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentReceivedAwaitingServerReconciliationBeforeCredits": "പേയ്മെൻ്റ് ലഭിച്ചു. ക്രെഡിറ്റുകൾ ചേർക്കുന്നതിന് മുമ്പ് സെർവർ അനുരഞ്ജനത്തിനായി കാത്തിരിക്കുന്നു.",
+  "@uiPaymentReceivedAwaitingServerReconciliationBeforeCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentFailedYouCanRetryCheckoutWhen": "പേയ്‌മെൻ്റ് പരാജയപ്പെട്ടു. തയ്യാറാകുമ്പോൾ നിങ്ങൾക്ക് ചെക്ക്ഔട്ട് വീണ്ടും ശ്രമിക്കാവുന്നതാണ്.",
+  "@uiPaymentFailedYouCanRetryCheckoutWhen": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentFailedTryAgain": "പേയ്‌മെൻ്റ് പരാജയപ്പെട്ടു. വീണ്ടും ശ്രമിക്കുക.",
+  "@uiPaymentFailedTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditsAdded": "ക്രെഡിറ്റുകൾ ചേർത്തു!",
+  "@uiCreditsAdded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeApplied": "പ്രമോ കോഡ് പ്രയോഗിച്ചു.",
+  "@uiPromoCodeApplied": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentReceivedButThisOrderIsPending": "പേയ്‌മെൻ്റ് ലഭിച്ചു, എന്നാൽ ഈ ഓർഡർ അവലോകനം തീർച്ചപ്പെടുത്തിയിട്ടില്ല.",
+  "@uiPaymentReceivedButThisOrderIsPending": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentFailedDuringReconciliation": "അനുരഞ്ജന സമയത്ത് പേയ്‌മെൻ്റ് പരാജയപ്പെട്ടു.",
+  "@uiPaymentFailedDuringReconciliation": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentConfirmedServerReconciliationIsStillPending": "പേയ്‌മെൻ്റ് സ്ഥിരീകരിച്ചു. സെർവർ അനുരഞ്ജനം ഇപ്പോഴും തീർച്ചപ്പെടുത്തിയിട്ടില്ല.",
+  "@uiPaymentConfirmedServerReconciliationIsStillPending": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentVerifiedReconciliationIsPendingPleaseRefresh": "പേയ്‌മെൻ്റ് പരിശോധിച്ചു. അനുരഞ്ജനം തീർച്ചപ്പെടുത്തിയിട്ടില്ല, ദയവായി ഉടൻ പുതുക്കുക.",
+  "@uiPaymentVerifiedReconciliationIsPendingPleaseRefresh": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentReceivedButVerificationIsStillPending": "പേയ്‌മെൻ്റ് ലഭിച്ചു, പക്ഷേ സ്ഥിരീകരണം ഇപ്പോഴും തീർച്ചപ്പെടുത്തിയിട്ടില്ല. സ്റ്റാറ്റസ് പുതുക്കുക.",
+  "@uiPaymentReceivedButVerificationIsStillPending": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadPlansPleaseTryAgain": "പ്ലാനുകൾ ലോഡുചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToLoadPlansPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToCreateSubscriptionPleaseTryAgain": "സബ്‌സ്‌ക്രിപ്‌ഷൻ സൃഷ്‌ടിക്കുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToCreateSubscriptionPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSubscriptionFailedTryAgain": "സബ്സ്ക്രിപ്ഷൻ പരാജയപ്പെട്ടു. വീണ്ടും ശ്രമിക്കുക.",
+  "@uiSubscriptionFailedTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPlanUpgraded": "പ്ലാൻ നവീകരിച്ചു!",
+  "@uiPlanUpgraded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentReceivedButVerificationFailedPlanWill": "പേയ്‌മെൻ്റ് ലഭിച്ചു, പക്ഷേ പരിശോധന പരാജയപ്പെട്ടു. പ്ലാൻ ഉടൻ നവീകരിക്കും.",
+  "@uiPaymentReceivedButVerificationFailedPlanWill": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationsUnavailable": "അറിയിപ്പുകൾ ലഭ്യമല്ല",
+  "@uiNotificationsUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAllQuietForNow": "തൽക്കാലം എല്ലാം നിശബ്ദം.",
+  "@uiAllQuietForNow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportUpdatesAndSharingRemindersWillAppear": "പുതിയതായി എന്തെങ്കിലും ഉണ്ടാകുമ്പോൾ റിപ്പോർട്ട് അപ്‌ഡേറ്റുകളും ഓർമ്മപ്പെടുത്തലുകളും ഇവിടെ ദൃശ്യമാകും.",
+  "@uiReportUpdatesAndSharingRemindersWillAppear": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoUnreadUpdates": "വായിക്കാത്ത അപ്‌ഡേറ്റുകളൊന്നുമില്ല",
+  "@uiNoUnreadUpdates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouReAllCaughtUp": "നിങ്ങൾ എല്ലാവരും പിടിക്കപ്പെട്ടു.",
+  "@uiYouReAllCaughtUp": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadNotificationsTryAgainWhen": "അറിയിപ്പുകൾ ലോഡ് ചെയ്യാനായില്ല. കണക്റ്റ് ചെയ്യുമ്പോൾ വീണ്ടും ശ്രമിക്കുക.",
+  "@uiUnableToLoadNotificationsTryAgainWhen": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiManageSharedLinks": "പങ്കിട്ട ലിങ്കുകൾ നിയന്ത്രിക്കുക",
+  "@uiManageSharedLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportYourData": "നിങ്ങളുടെ ഡാറ്റ എക്സ്പോർട്ട് ചെയ്യുക",
+  "@uiExportYourData": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReadThePrivacyPolicy": "സ്വകാര്യതാ നയം വായിക്കുക",
+  "@uiReadThePrivacyPolicy": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTermsOfUse": "ഉപയോഗ നിബന്ധനകൾ",
+  "@uiTermsOfUse": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPrivacyPolicy": "സ്വകാര്യതാ നയം",
+  "@uiPrivacyPolicy": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDateOfBirthOptional": "ജനനത്തീയതി, ഓപ്ഷണൽ",
+  "@uiDateOfBirthOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRelationshipMustBe50CharactersOrFewer": "ബന്ധം 50 പ്രതീകങ്ങളോ അതിൽ കുറവോ ആയിരിക്കണം.",
+  "@uiRelationshipMustBe50CharactersOrFewer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToSaveProfilePleaseTryAgain": "പ്രൊഫൈൽ സംരക്ഷിക്കുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToSaveProfilePleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralsUnavailable": "റഫറലുകൾ ലഭ്യമല്ല",
+  "@uiReferralsUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourRewards": "നിങ്ങളുടെ പ്രതിഫലം",
+  "@uiYourRewards": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralProgress": "റഫറൽ പുരോഗതി",
+  "@uiReferralProgress": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFriendsReferred": "സുഹൃത്തുക്കൾ പരാമർശിച്ചു",
+  "@uiFriendsReferred": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditsEarned": "ക്രെഡിറ്റുകൾ നേടി",
+  "@uiCreditsEarned": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPendingRewards": "ശേഷിക്കുന്ന റിവാർഡുകൾ",
+  "@uiPendingRewards": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBlockedRewards": "റിവാർഡുകൾ തടഞ്ഞു",
+  "@uiBlockedRewards": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInviteeBonus": "ക്ഷണിതാവിൻ്റെ ബോണസ്",
+  "@uiInviteeBonus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFirstAnalysis": "ആദ്യ വിശകലനം",
+  "@uiFirstAnalysis": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFirstPurchase": "ആദ്യ വാങ്ങൽ",
+  "@uiFirstPurchase": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMonthlyCap": "പ്രതിമാസ തൊപ്പി",
+  "@uiMonthlyCap": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadReferralsPleaseTryAgain": "റഫറലുകൾ ലോഡ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToLoadReferralsPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralCodeCopied": "റഫറൽ കോഡ് പകർത്തി.",
+  "@uiReferralCodeCopied": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterTheResetTokenFromYourEmail": "നിങ്ങളുടെ ഇമെയിൽ ലിങ്കിൽ നിന്ന് റീസെറ്റ് ടോക്കൺ നൽകുക",
+  "@uiEnterTheResetTokenFromYourEmail": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterYourNewPassword": "നിങ്ങളുടെ പുതിയ പാസ്‌വേഡ് നൽകുക",
+  "@uiEnterYourNewPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToResetPasswordPleaseRequestA": "പാസ്‌വേഡ് പുനഃസജ്ജമാക്കാനായില്ല. ദയവായി ഒരു പുതിയ ലിങ്ക് അഭ്യർത്ഥിക്കുക.",
+  "@uiUnableToResetPasswordPleaseRequestA": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterYourEmailAddress": "നിങ്ങളുടെ ഇമെയിൽ വിലാസം നൽകുക",
+  "@uiEnterYourEmailAddress": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToSendResetLinkPleaseTry": "റീസെറ്റ് ലിങ്ക് അയയ്‌ക്കാനായില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiUnableToSendResetLinkPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadSessions": "സെഷനുകൾ ലോഡുചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു.",
+  "@uiFailedToLoadSessions": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToRevokeSession": "സെഷൻ പിൻവലിക്കുന്നതിൽ പരാജയപ്പെട്ടു.",
+  "@uiFailedToRevokeSession": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToChangePasswordPleaseTryAgain": "പാസ്‌വേഡ് മാറ്റാനായില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiUnableToChangePasswordPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenDeviceSettingsAndAllowNotificationsFor": "ഉപകരണ ക്രമീകരണങ്ങൾ തുറന്ന് ഡോക്ലൈസറിനായി അറിയിപ്പുകൾ അനുവദിക്കുക.",
+  "@uiOpenDeviceSettingsAndAllowNotificationsFor": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportsCouldNotBeLoadedTryAgain": "റിപ്പോർട്ടുകൾ ലോഡ് ചെയ്യാൻ കഴിഞ്ഞില്ല. വീണ്ടും ശ്രമിക്കുക.",
+  "@uiReportsCouldNotBeLoadedTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTestResultsCouldNotBeLoadedTry": "പരിശോധനാ ഫലങ്ങൾ ലോഡ് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.",
+  "@uiTestResultsCouldNotBeLoadedTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectAtLeastOneReportToShare": "പങ്കിടാൻ ഒരു റിപ്പോർട്ടെങ്കിലും തിരഞ്ഞെടുക്കുക.",
+  "@uiSelectAtLeastOneReportToShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectAtLeastOneTestResultTo": "പങ്കിടാൻ കുറഞ്ഞത് ഒരു ടെസ്റ്റ് ഫലമെങ്കിലും തിരഞ്ഞെടുക്കുക.",
+  "@uiSelectAtLeastOneTestResultTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLinkCopiedToClipboard": "ലിങ്ക് ക്ലിപ്പ്ബോർഡിലേക്ക് പകർത്തി",
+  "@uiLinkCopiedToClipboard": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessCodeCopiedToClipboard": "ആക്സസ് കോഡ് ക്ലിപ്പ്ബോർഡിലേക്ക് പകർത്തി",
+  "@uiAccessCodeCopiedToClipboard": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOnePerson": "1 വ്യക്തി",
+  "@uiOnePerson": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPeopleCount": "{count} ആളുകൾ",
+  "@uiPeopleCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiActionsFor": "{name}-നുള്ള പ്രവർത്തനങ്ങൾ",
+  "@uiActionsFor": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnableToSwitchProfilesDetail": "പ്രൊഫൈലുകൾ മാറാൻ കഴിയുന്നില്ല. {message}",
+  "@uiUnableToSwitchProfilesDetail": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSwitchedTo": "{name}-ലേക്ക് മാറി",
+  "@uiSwitchedTo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAnalyzeOnePage": "1 പേജ് വിശകലനം ചെയ്യുക",
+  "@uiAnalyzeOnePage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAnalyzePages": "{count} പേജുകൾ വിശകലനം ചെയ്യുക",
+  "@uiAnalyzePages": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDragPagesIntoOrder": "നിങ്ങളുടെ റിപ്പോർട്ടിൽ കാണിച്ചിരിക്കുന്ന ക്രമത്തിലേക്ക് പേജുകൾ വലിച്ചിടുക",
+  "@uiDragPagesIntoOrder": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckEveryPage": "വിശകലനം ചെയ്യുന്നതിന് മുമ്പ് ഓരോ പേജും പരിശോധിക്കുക",
+  "@uiCheckEveryPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOnePageAdded": "1 പേജ് ചേർത്തു",
+  "@uiOnePageAdded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPagesAdded": "{count} പേജുകൾ ചേർത്തു",
+  "@uiPagesAdded": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReorder": "പുനഃക്രമീകരിക്കുക",
+  "@uiReorder": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPageNumber": "പേജ് {number}",
+  "@uiPageNumber": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "uiRemovePage": "{number} പേജ് നീക്കം ചെയ്യുക",
+  "@uiRemovePage": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "uiProfilePage": "{name} · പേജ് {number}",
+  "@uiProfilePage": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCropEdges": "അരികുകൾ മുറിക്കുക: {percent}%",
+  "@uiCropEdges": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSelectedReportsCount": "{count} തിരഞ്ഞെടുത്ത റിപ്പോർട്ടുകൾ",
+  "@uiSelectedReportsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSelectedTestResultsCount": "{count} തിരഞ്ഞെടുത്ത ടെസ്റ്റ് ഫലങ്ങൾ",
+  "@uiSelectedTestResultsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAllCurrentFutureReports": "നിലവിലുള്ളതും ഭാവിയിലുള്ളതുമായ എല്ലാ റിപ്പോർട്ടുകളും",
+  "@uiAllCurrentFutureReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoExpiry": "കാലഹരണപ്പെടില്ല",
+  "@uiNoExpiry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExpiresDate": "{date} കാലഹരണപ്പെടുന്നു",
+  "@uiExpiresDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAccessCodeRequiredSeparate": "ആക്സസ് കോഡ് ആവശ്യമാണ്. ലിങ്കിൽ നിന്ന് ഇത് പ്രത്യേകം പങ്കിടുക.",
+  "@uiAccessCodeRequiredSeparate": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoAccessCodeRequired": "ആക്സസ് കോഡ് ആവശ്യമില്ല.",
+  "@uiNoAccessCodeRequired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExpiresColonDate": "കാലഹരണപ്പെടുന്നത്: {date}",
+  "@uiExpiresColonDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiShareProfileReports": "{name}-ൻ്റെ റിപ്പോർട്ടുകൾ പങ്കിടുക",
+  "@uiShareProfileReports": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiProfileReports": "{name} ൻ്റെ റിപ്പോർട്ടുകൾ",
+  "@uiProfileReports": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSelectedResultsCount": "{count} തിരഞ്ഞെടുത്ത ഫലങ്ങൾ",
+  "@uiSelectedResultsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAccessCodeRequiredShort": "ആക്സസ് കോഡ് ആവശ്യമാണ്",
+  "@uiAccessCodeRequiredShort": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPastLinksCount": "കഴിഞ്ഞ ലിങ്കുകൾ · {count}",
+  "@uiPastLinksCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiExpiredDate": "{date} കാലഹരണപ്പെട്ടു",
+  "@uiExpiredDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiRevokedCreatedDate": "അസാധുവാക്കി · {date} സൃഷ്ടിച്ചു",
+  "@uiRevokedCreatedDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUsingActiveLinks": "{maximum} സജീവ ലിങ്കുകളുടെ {current} ഉപയോഗിക്കുന്നു.",
+  "@uiUsingActiveLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "maximum": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDeleteReportAndStoredFile": "{filename} ഉം അതിൻ്റെ സംഭരിച്ച ഫയലും ഇല്ലാതാക്കണോ? ഇത് പഴയപടിയാക്കാനാകില്ല.",
+  "@uiDeleteReportAndStoredFile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnableDeleteReportDetail": "റിപ്പോർട്ട് ഇല്ലാതാക്കാൻ കഴിയുന്നില്ല: {error}",
+  "@uiUnableDeleteReportDetail": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDeleteAllReportsAndFiles": "എല്ലാ {count} റിപ്പോർട്ടുകളും അവയുടെ സംഭരിച്ച ഫയലുകളും ശാശ്വതമായി ഇല്ലാതാക്കണോ? ഇത് പഴയപടിയാക്കാനാകില്ല.",
+  "@uiDeleteAllReportsAndFiles": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiRecycleBinEmptied": "റീസൈക്കിൾ ബിൻ കാലിയാക്കി",
+  "@uiRecycleBinEmptied": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSomeReportsDeleteFailed": "{deleted} റിപ്പോർട്ടുകൾ ഇല്ലാതാക്കി. {failed} ഇല്ലാതാക്കാൻ കഴിഞ്ഞില്ല; വീണ്ടും ശ്രമിക്കുക.",
+  "@uiSomeReportsDeleteFailed": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "deleted": {
+        "type": "String"
+      },
+      "failed": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnableEmptyRecycleBinDetail": "റീസൈക്കിൾ ബിൻ ശൂന്യമാക്കാൻ കഴിയുന്നില്ല: {error}",
+  "@uiUnableEmptyRecycleBinDetail": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "uiProfileName": "പ്രൊഫൈൽ: {name}",
+  "@uiProfileName": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCollectedDate": "ശേഖരിച്ചത്: {date}",
+  "@uiCollectedDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUploadedDate": "അപ്‌ലോഡ് ചെയ്‌തത്: {date}",
+  "@uiUploadedDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDeletedOn": "ഇല്ലാതാക്കിയത്: {date}",
+  "@uiDeletedOn": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiPermanentDeleteOn": "ശാശ്വതമായ ഇല്ലാതാക്കൽ: {date}",
+  "@uiPermanentDeleteOn": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDaysLeft": "ശേഷിക്കുന്ന ദിവസങ്ങൾ: {count}",
+  "@uiDaysLeft": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiConfirmAppLockForDoclyzer": "ഡോക്ലൈസറിനായുള്ള ആപ്പ് ലോക്ക് സ്ഥിരീകരിക്കുക",
+  "@uiConfirmAppLockForDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiConfirmBeforeTurningOffAppLock": "ആപ്പ് ലോക്ക് ഓഫാക്കുന്നതിന് മുമ്പ് സ്ഥിരീകരിക്കുക",
+  "@uiConfirmBeforeTurningOffAppLock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnlockDoclyzerToViewYourHealthRecords": "നിങ്ങളുടെ ആരോഗ്യ രേഖകൾ കാണുന്നതിന് ഡോക്ലൈസർ അൺലോക്ക് ചെയ്യുക",
+  "@uiUnlockDoclyzerToViewYourHealthRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreateADefaultProfileBeforeUploadingA": "ഒരു റിപ്പോർട്ട് അപ്‌ലോഡ് ചെയ്യുന്നതിന് മുമ്പ് ഒരു ഡിഫോൾട്ട് പ്രൊഫൈൽ സൃഷ്‌ടിക്കുക.",
+  "@uiCreateADefaultProfileBeforeUploadingA": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreateADefaultProfileBeforeViewingYour": "നിങ്ങളുടെ ടൈംലൈൻ കാണുന്നതിന് മുമ്പ് ഒരു ഡിഫോൾട്ട് പ്രൊഫൈൽ സൃഷ്ടിക്കുക.",
+  "@uiCreateADefaultProfileBeforeViewingYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadProfilesRightNow": "ഇപ്പോൾ പ്രൊഫൈലുകൾ ലോഡ് ചെയ്യാനാവുന്നില്ല.",
+  "@uiUnableToLoadProfilesRightNow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotUploadRightNowBecauseProfileData": "പ്രൊഫൈൽ ഡാറ്റ ലോഡുചെയ്യാൻ കഴിയാത്തതിനാൽ ഇപ്പോൾ അപ്‌ലോഡ് ചെയ്യാൻ കഴിയില്ല. API സെർവർ പ്രവർത്തിക്കുന്നുണ്ടെന്ന് ഉറപ്പാക്കി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiCannotUploadRightNowBecauseProfileData": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotOpenTimelineRightNowBecauseProfile": "പ്രൊഫൈൽ ഡാറ്റ ലോഡുചെയ്യാൻ കഴിയാത്തതിനാൽ ഇപ്പോൾ ടൈംലൈൻ തുറക്കാൻ കഴിയില്ല. API സെർവർ പ്രവർത്തിക്കുന്നുണ്ടെന്ന് ഉറപ്പാക്കി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiCannotOpenTimelineRightNowBecauseProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadProfilesRightNowPlease": "ഇപ്പോൾ പ്രൊഫൈലുകൾ ലോഡ് ചെയ്യാനാവുന്നില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiUnableToLoadProfilesRightNowPlease": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadSharingLinksPleaseTry": "പങ്കിടൽ ലിങ്കുകൾ ലോഡ് ചെയ്യാനായില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiUnableToLoadSharingLinksPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPasswordChanged": "പാസ്‌വേഡ് മാറ്റി",
+  "@uiPasswordChanged": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToOpenThatReportTryThe": "ആ റിപ്പോർട്ട് തുറക്കാനായില്ല. റിപ്പോർട്ട് ലൈബ്രറി പരീക്ഷിക്കുക.",
+  "@uiUnableToOpenThatReportTryThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisActionIsTemporarilyUnavailableWhileYour": "നിങ്ങളുടെ അക്കൗണ്ട് അവലോകനത്തിലായിരിക്കുമ്പോൾ ഈ പ്രവർത്തനം താൽക്കാലികമായി ലഭ്യമല്ല.",
+  "@uiThisActionIsTemporarilyUnavailableWhileYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToOpenThisSectionPleaseTry": "ഈ വിഭാഗം തുറക്കാനായില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiUnableToOpenThisSectionPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAppLockIsUnavailable": "ആപ്പ് ലോക്ക് ലഭ്യമല്ല",
+  "@uiAppLockIsUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDoclyzerIsLocked": "ഡോക്ലൈസർ ലോക്ക് ചെയ്തിരിക്കുന്നു",
+  "@uiDoclyzerIsLocked": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotReadTheSavedAppLock": "സംരക്ഷിച്ച ആപ്പ് ലോക്ക് ക്രമീകരണം വായിക്കാൻ കഴിഞ്ഞില്ല. തുടരാൻ വീണ്ടും ശ്രമിക്കുക.",
+  "@uiCouldNotReadTheSavedAppLock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseYourDevicePasscodeOrBiometricsTo": "തുടരാൻ നിങ്ങളുടെ ഉപകരണത്തിൻ്റെ പാസ്‌കോഡോ ബയോമെട്രിക്‌സോ ഉപയോഗിക്കുക.",
+  "@uiUseYourDevicePasscodeOrBiometricsTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadsAreTemporarilyUnavailableWhileYourAccount": "നിങ്ങളുടെ അക്കൗണ്ട് അവലോകനത്തിലായിരിക്കുമ്പോൾ അപ്‌ലോഡുകൾ താൽക്കാലികമായി ലഭ്യമല്ല.",
+  "@uiUploadsAreTemporarilyUnavailableWhileYourAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToStartAnUploadPleaseTry": "ഒരു അപ്‌ലോഡ് ആരംഭിക്കാനായില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiUnableToStartAnUploadPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiJustNow": "ഇപ്പോൾ തന്നെ",
+  "@uiJustNow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAdditionalDetails": "കൂടുതൽ വിശദാംശങ്ങൾ:",
+  "@uiAdditionalDetails": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaveCorrection": "തിരുത്തൽ സംരക്ഷിക്കുക",
+  "@uiSaveCorrection": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenFilesCheckAccessAnd": "ഫയലുകൾ തുറക്കാനായില്ല. ആക്സസ് പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiCouldNotOpenFilesCheckAccessAnd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenCameraCheckPermissionAnd": "ക്യാമറ തുറക്കാനായില്ല. അനുമതി പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiCouldNotOpenCameraCheckPermissionAnd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenPhotosCheckPermissionAnd": "ഫോട്ടോകൾ തുറക്കാൻ കഴിഞ്ഞില്ല. അനുമതി പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiCouldNotOpenPhotosCheckPermissionAnd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotAccessSelectedFile": "തിരഞ്ഞെടുത്ത ഫയൽ ആക്സസ് ചെയ്യാനായില്ല.",
+  "@uiCouldNotAccessSelectedFile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotAccessSelectedFile45effa": "തിരഞ്ഞെടുത്ത ഫയൽ ആക്സസ് ചെയ്യാനായില്ല",
+  "@uiCouldNotAccessSelectedFile45effa": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiConnectionLostTheUploadMayHaveReached": "കണക്ഷൻ നഷ്ടപ്പെട്ടു. അപ്‌ലോഡ് സെർവറിൽ എത്തിയിരിക്കാം. അതേ ഫയൽ സുരക്ഷിതമായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiConnectionLostTheUploadMayHaveReached": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotLoadExistingReport": "നിലവിലുള്ള റിപ്പോർട്ട് ലോഡ് ചെയ്യാനായില്ല",
+  "@uiCouldNotLoadExistingReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAddingTo": "ഇതിലേക്ക് ചേർക്കുന്നു",
+  "@uiAddingTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSomeResultsNeedReviewYourOriginalReport": "ചില ഫലങ്ങൾ അവലോകനം ചെയ്യേണ്ടതുണ്ട്. നിങ്ങളുടെ യഥാർത്ഥ റിപ്പോർട്ട് സംരക്ഷിച്ചു.",
+  "@uiSomeResultsNeedReviewYourOriginalReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWeCouldnTReadThisFormatYour": "ഞങ്ങൾക്ക് ഈ ഫോർമാറ്റ് വായിക്കാൻ കഴിഞ്ഞില്ല. നിങ്ങളുടെ ഫയൽ സംരക്ഷിച്ചു.",
+  "@uiWeCouldnTReadThisFormatYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportParsedSuccessfullyResultsAndTrendsAre": "റിപ്പോർട്ട് പാഴ്‌സ് ചെയ്‌തു. ഫലങ്ങളും ട്രെൻഡുകളും ലഭ്യമാണ്.",
+  "@uiReportParsedSuccessfullyResultsAndTrendsAre": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourReportIsStillBeingAnalyzedOpen": "നിങ്ങളുടെ റിപ്പോർട്ട് ഇപ്പോഴും വിശകലനം ചെയ്യുന്നു. അതിൻ്റെ സ്റ്റാറ്റസ് പരിശോധിക്കാൻ അത് തുറക്കുക.",
+  "@uiYourReportIsStillBeingAnalyzedOpen": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProcessingStoppedYourFileIsSavedYou": "പ്രോസസ്സിംഗ് നിർത്തി. നിങ്ങളുടെ ഫയൽ സംരക്ഷിച്ചു. നിങ്ങൾക്ക് വീണ്ടും ശ്രമിക്കാം.",
+  "@uiProcessingStoppedYourFileIsSavedYou": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoExtractedTestValuesWereAddedYou": "എക്‌സ്‌ട്രാക്‌റ്റ് ചെയ്‌ത ടെസ്റ്റ് മൂല്യങ്ങളൊന്നും ചേർത്തിട്ടില്ല. നിങ്ങൾക്ക് തുടർന്നും ഡോക്യുമെൻ്റ് തുറക്കാനും പങ്കിടാനും കഴിയും. നിങ്ങളുടെ ട്രെൻഡുകൾക്ക് മാറ്റമില്ല.",
+  "@uiNoExtractedTestValuesWereAddedYou": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourOriginalIsSaved": "നിങ്ങളുടെ ഒറിജിനൽ സംരക്ഷിച്ചു.",
+  "@uiYourOriginalIsSaved": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInitialUpload": "പ്രാരംഭ അപ്‌ലോഡ്",
+  "@uiInitialUpload": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiParsedSuccessfully": "പാഴ്‌സ് ചെയ്‌തു",
+  "@uiParsedSuccessfully": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiParsingFailed": "പാഴ്‌സിംഗ് പരാജയപ്പെട്ടു",
+  "@uiParsingFailed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExtractionIncomplete": "വേർതിരിച്ചെടുക്കൽ അപൂർണ്ണമാണ്",
+  "@uiExtractionIncomplete": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTransientFailure": "താൽക്കാലിക പരാജയം",
+  "@uiTransientFailure": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTerminalFailure": "ടെർമിനൽ പരാജയം",
+  "@uiTerminalFailure": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadAttemptHistory": "ശ്രമ ചരിത്രം ലോഡ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു",
+  "@uiFailedToLoadAttemptHistory": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisReportSFileIsNoLonger": "ഈ റിപ്പോർട്ടിൻ്റെ ഫയൽ ഇനി ലഭ്യമല്ല.",
+  "@uiThisReportSFileIsNoLonger": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCompareResults": "ഫലങ്ങൾ താരതമ്യം ചെയ്യുക",
+  "@uiCompareResults": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoDifferenceCalculatedCompatibilityNeedsConfirmation": "വ്യത്യാസമൊന്നും കണക്കാക്കിയിട്ടില്ല. അനുയോജ്യതയ്ക്ക് സ്ഥിരീകരണം ആവശ്യമാണ്.",
+  "@uiNoDifferenceCalculatedCompatibilityNeedsConfirmation": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnitNotRecorded": "യൂണിറ്റ് രേഖപ്പെടുത്തിയിട്ടില്ല",
+  "@uiUnitNotRecorded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoNumericChangeBetweenTheseReports": "ഈ റിപ്പോർട്ടുകൾക്കിടയിൽ സംഖ്യാപരമായ മാറ്റമില്ല.",
+  "@uiNoNumericChangeBetweenTheseReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToRestore": "പുനഃസ്ഥാപിക്കാനായില്ല:",
+  "@uiUnableToRestore": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterAGiftVoucherCode": "ഒരു സമ്മാന വൗച്ചർ കോഡ് നൽകുക.",
+  "@uiEnterAGiftVoucherCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiApplyVoucher": "വൗച്ചർ പ്രയോഗിക്കുക",
+  "@uiApplyVoucher": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotAvailable": "ലഭ്യമല്ല",
+  "@uiNotAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiViewReceipt": "രസീത് കാണുക",
+  "@uiViewReceipt": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherIsInvalidOrAlreadyRedeemed": "സമ്മാന വൗച്ചർ അസാധുവാണ് അല്ലെങ്കിൽ ഇതിനകം റിഡീം ചെയ്‌തതാണ്.",
+  "@uiGiftVoucherIsInvalidOrAlreadyRedeemed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherHasAlreadyBeenRedeemed": "സമ്മാന വൗച്ചർ ഇതിനകം റിഡീം ചെയ്തിട്ടുണ്ട്.",
+  "@uiGiftVoucherHasAlreadyBeenRedeemed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherHasBeenVoided": "സമ്മാന വൗച്ചർ അസാധുവാക്കി.",
+  "@uiGiftVoucherHasBeenVoided": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherHasExpired": "സമ്മാന വൗച്ചർ കാലഹരണപ്പെട്ടു.",
+  "@uiGiftVoucherHasExpired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToRedeemThisGiftVoucher": "ഈ സമ്മാന വൗച്ചർ റിഡീം ചെയ്യാനായില്ല.",
+  "@uiUnableToRedeemThisGiftVoucher": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToRedeemThisGiftVoucherPlease": "ഈ സമ്മാന വൗച്ചർ റിഡീം ചെയ്യാനായില്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiUnableToRedeemThisGiftVoucherPlease": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterAPromoCodeToApply": "അപേക്ഷിക്കാൻ ഒരു പ്രൊമോ കോഡ് നൽകുക.",
+  "@uiEnterAPromoCodeToApply": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeNotFound": "പ്രൊമോ കോഡ് കണ്ടെത്തിയില്ല.",
+  "@uiPromoCodeNotFound": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeIsInactive": "പ്രമോ കോഡ് നിഷ്‌ക്രിയമാണ്.",
+  "@uiPromoCodeIsInactive": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeHasExpired": "പ്രമോ കോഡ് കാലഹരണപ്പെട്ടു.",
+  "@uiPromoCodeHasExpired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeIsNotApplicableToThis": "ഈ പാക്കിന് പ്രൊമോ കോഡ് ബാധകമല്ല.",
+  "@uiPromoCodeIsNotApplicableToThis": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeUsageLimitReached": "പ്രമോ കോഡ് ഉപയോഗ പരിധി എത്തി.",
+  "@uiPromoCodeUsageLimitReached": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouHaveAlreadyUsedThisPromoCode": "നിങ്ങൾ ഇതിനകം ഈ പ്രൊമോ കോഡ് ഉപയോഗിച്ചു.",
+  "@uiYouHaveAlreadyUsedThisPromoCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToApplyPromoCodePleaseTry": "പ്രൊമോ കോഡ് പ്രയോഗിക്കുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToApplyPromoCodePleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisOrderWasFlaggedForReviewBefore": "ക്രെഡിറ്റുകൾ ചേർക്കുന്നതിന് മുമ്പ് ഈ ഓർഡർ അവലോകനത്തിനായി ഫ്ലാഗ് ചെയ്തു.",
+  "@uiThisOrderWasFlaggedForReviewBefore": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentFailedDuringReconciliationYouCanRetry": "അനുരഞ്ജന സമയത്ത് പേയ്‌മെൻ്റ് പരാജയപ്പെട്ടു. നിങ്ങൾക്ക് സുരക്ഷിതമായി വീണ്ടും ശ്രമിക്കാം.",
+  "@uiPaymentFailedDuringReconciliationYouCanRetry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAwaitingCapture": "പിടിച്ചെടുക്കലിനായി കാത്തിരിക്കുന്നു",
+  "@uiAwaitingCapture": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLastPaymentFailed": "അവസാന പേയ്മെൻ്റ് പരാജയപ്പെട്ടു",
+  "@uiLastPaymentFailed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouCanRetryCheckoutSafely": "നിങ്ങൾക്ക് സുരക്ഷിതമായി ചെക്ക്ഔട്ട് ചെയ്യാൻ വീണ്ടും ശ്രമിക്കാം.",
+  "@uiYouCanRetryCheckoutSafely": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodesNotSupportedForSubscriptionsYet": "സബ്‌സ്‌ക്രിപ്‌ഷനുകൾക്കായി പ്രൊമോ കോഡുകൾ ഇതുവരെ പിന്തുണയ്‌ക്കുന്നില്ല.",
+  "@uiPromoCodesNotSupportedForSubscriptionsYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotDownloadTheExportTryAgain": "കയറ്റുമതി ഡൗൺലോഡ് ചെയ്യാനായില്ല. വീണ്ടും ശ്രമിക്കുക.",
+  "@uiCouldNotDownloadTheExportTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectOriginalReportsOrTestResults": "യഥാർത്ഥ റിപ്പോർട്ടുകളോ പരിശോധനാ ഫലങ്ങളോ തിരഞ്ഞെടുക്കുക.",
+  "@uiSelectOriginalReportsOrTestResults": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportRequestedTapCheckStatusToRefresh": "കയറ്റുമതി അഭ്യർത്ഥിച്ചു. പുതുക്കാൻ \"സ്റ്റാറ്റസ് പരിശോധിക്കുക\" ടാപ്പ് ചെയ്യുക.",
+  "@uiExportRequestedTapCheckStatusToRefresh": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToRequestExportPleaseTryAgain": "കയറ്റുമതി അഭ്യർത്ഥിക്കുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToRequestExportPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportReadyDownloadURLAvailable": "കയറ്റുമതി തയ്യാറാണ്. ഡൗൺലോഡ് URL ലഭ്യമാണ്.",
+  "@uiExportReadyDownloadURLAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToCheckExportStatusPleaseTry": "കയറ്റുമതി നില പരിശോധിക്കുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToCheckExportStatusPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToCloseAccountPleaseTryAgain": "അക്കൗണ്ട് ക്ലോസ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToCloseAccountPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPrepareExport": "കയറ്റുമതി തയ്യാറാക്കുക",
+  "@uiPrepareExport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaveExport": "കയറ്റുമതി സംരക്ഷിക്കുക",
+  "@uiSaveExport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPrepareExportAgain": "വീണ്ടും കയറ്റുമതി തയ്യാറാക്കുക",
+  "@uiPrepareExportAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAllDates": "എല്ലാ തീയതികളും",
+  "@uiAllDates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPreparingAccountDetails": "അക്കൗണ്ട് വിശദാംശങ്ങൾ തയ്യാറാക്കുന്നു",
+  "@uiPreparingAccountDetails": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFamilyMemberProfiles": "കുടുംബാംഗങ്ങളുടെ പ്രൊഫൈലുകൾ",
+  "@uiFamilyMemberProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadedReports": "അപ്‌ലോഡ് ചെയ്ത റിപ്പോർട്ടുകൾ",
+  "@uiUploadedReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDownloadReady": "ഡൗൺലോഡ് തയ്യാറാണ്",
+  "@uiDownloadReady": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportNotificationsEnabledOnThisDevice": "ഈ ഉപകരണത്തിൽ അറിയിപ്പുകൾ റിപ്പോർട്ടുചെയ്യുക",
+  "@uiReportNotificationsEnabledOnThisDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeviceSettingsOpenedAllowNotificationsForDoclyzer": "ഉപകരണ ക്രമീകരണങ്ങൾ തുറന്നു. ഡോക്ലൈസറിനായി അറിയിപ്പുകൾ അനുവദിക്കുക, തുടർന്ന് ഇങ്ങോട്ട് മടങ്ങുക.",
+  "@uiDeviceSettingsOpenedAllowNotificationsForDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationsAreStillOffAllowThemIn": "അറിയിപ്പുകൾ ഇപ്പോഴും ഓഫാണ്. റിപ്പോർട്ട് അപ്‌ഡേറ്റുകൾ സ്വീകരിക്കാൻ ഉപകരണ ക്രമീകരണത്തിൽ അവരെ അനുവദിക്കുക.",
+  "@uiNotificationsAreStillOffAllowThemIn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPreferencesSaved": "മുൻഗണനകൾ സംരക്ഷിച്ചു",
+  "@uiPreferencesSaved": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountChoiceWasSavedButThis": "നിങ്ങളുടെ അക്കൗണ്ട് ചോയ്സ് സംരക്ഷിച്ചു, എന്നാൽ ഈ ഉപകരണം മാർക്കറ്റിംഗ് പുഷിനായി രജിസ്റ്റർ ചെയ്യുന്നത് പൂർത്തിയാക്കിയില്ല. ഈ ഉപകരണത്തിൽ മാർക്കറ്റിംഗ് തടഞ്ഞിരിക്കുന്നു; അറിയിപ്പ് അനുമതി പരിശോധിച്ച് വീണ്ടും സംരക്ഷിക്കാൻ ശ്രമിക്കുക.",
+  "@uiYourAccountChoiceWasSavedButThis": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountChoiceWasSavedThisDevice": "നിങ്ങളുടെ അക്കൗണ്ട് ചോയ്സ് സംരക്ഷിച്ചു. ഈ ഉപകരണത്തിന് ഇതുവരെ അതിൻ്റെ പ്രാദേശിക മുൻഗണന സ്ഥിരീകരിക്കാൻ കഴിഞ്ഞില്ല, എന്നാൽ അക്കൗണ്ട് തലത്തിൽ മാർക്കറ്റിംഗ് തടഞ്ഞു.",
+  "@uiYourAccountChoiceWasSavedThisDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountChoiceWasSavedButThisaf7de6": "നിങ്ങളുടെ അക്കൗണ്ട് ചോയ്സ് സംരക്ഷിച്ചു, എന്നാൽ ഈ ഉപകരണത്തിന് മാർക്കറ്റിംഗ് പുഷ് പ്രവർത്തനക്ഷമമാക്കാൻ കഴിഞ്ഞില്ല. അറിയിപ്പ് അനുമതി പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiYourAccountChoiceWasSavedButThisaf7de6": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSavingTookTooLongCheckYourConnection": "സംരക്ഷിക്കുന്നതിന് വളരെയധികം സമയമെടുത്തു. നിങ്ങളുടെ കണക്ഷൻ പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiSavingTookTooLongCheckYourConnection": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportReadyForReview": "റിപ്പോർട്ട് അവലോകനത്തിന് തയ്യാറാണ്",
+  "@uiReportReadyForReview": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKnowWhenYourResultsAreReadyTo": "നിങ്ങളുടെ ഫലങ്ങൾ പരിശോധിക്കാൻ തയ്യാറാകുമ്പോൾ അറിയുക.",
+  "@uiKnowWhenYourResultsAreReadyTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadUpdates": "അപ്‌ഡേറ്റുകൾ അപ്‌ലോഡ് ചെയ്യുക",
+  "@uiUploadUpdates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGetAMessageIfAnUploadNeeds": "ഒരു അപ്‌ലോഡിന് ശ്രദ്ധ ആവശ്യമുണ്ടെങ്കിൽ ഒരു സന്ദേശം നേടുക.",
+  "@uiGetAMessageIfAnUploadNeeds": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSharedLinkReminders": "പങ്കിട്ട ലിങ്ക് റിമൈൻഡറുകൾ",
+  "@uiSharedLinkReminders": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHearWhenALinkIsAboutTo": "ഒരു ലിങ്ക് കാലഹരണപ്പെടാൻ പോകുമ്പോൾ കേൾക്കുക.",
+  "@uiHearWhenALinkIsAboutTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSecurityAlerts": "സുരക്ഷാ അലേർട്ടുകൾ",
+  "@uiSecurityAlerts": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRequiredForAccountSafety": "അക്കൗണ്ട് സുരക്ഷയ്ക്ക് ആവശ്യമാണ്.",
+  "@uiRequiredForAccountSafety": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiComplianceNotices": "പാലിക്കൽ അറിയിപ്പുകൾ",
+  "@uiComplianceNotices": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRequiredAccountInformation": "ആവശ്യമായ അക്കൗണ്ട് വിവരങ്ങൾ.",
+  "@uiRequiredAccountInformation": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMarketingPushNotifications": "മാർക്കറ്റിംഗ് പുഷ് അറിയിപ്പുകൾ",
+  "@uiMarketingPushNotifications": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOffersAndAnnouncementsSavingThisChoiceAlso": "ഓഫറുകളും പ്രഖ്യാപനങ്ങളും. ഈ ചോയ്സ് സംരക്ഷിക്കുന്നത് ഈ ഉപകരണത്തിനും ബാധകമാണ്.",
+  "@uiOffersAndAnnouncementsSavingThisChoiceAlso": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProductUpdates": "ഉൽപ്പന്ന അപ്ഡേറ്റുകൾ",
+  "@uiProductUpdates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOptionalNewsAboutDoclyzer": "ഡോക്ലൈസറിനെക്കുറിച്ചുള്ള ഓപ്ഷണൽ വാർത്തകൾ.",
+  "@uiOptionalNewsAboutDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotConnectToServerPleaseCheckYour": "സെർവറിലേക്ക് കണക്റ്റുചെയ്യാൻ കഴിയില്ല. നിങ്ങളുടെ ഇൻ്റർനെറ്റ് അല്ലെങ്കിൽ API സെർവർ പരിശോധിക്കുക.",
+  "@uiCannotConnectToServerPleaseCheckYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProfileUpdatesAreTemporarilyUnavailableWhileYour": "നിങ്ങളുടെ അക്കൗണ്ട് അവലോകനത്തിലായിരിക്കുമ്പോൾ പ്രൊഫൈൽ അപ്‌ഡേറ്റുകൾ താൽക്കാലികമായി ലഭ്യമല്ല.",
+  "@uiProfileUpdatesAreTemporarilyUnavailableWhileYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUse100CharactersOrFewer": "100 പ്രതീകങ്ങളോ അതിൽ കുറവോ ഉപയോഗിക്കുക",
+  "@uiUse100CharactersOrFewer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAddProfile": "പ്രൊഫൈൽ ചേർക്കുക",
+  "@uiAddProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreateProfile": "പ്രൊഫൈൽ സൃഷ്ടിക്കുക",
+  "@uiCreateProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUpdateTheirDetails": "അവരുടെ വിശദാംശങ്ങൾ അപ്ഡേറ്റ് ചെയ്യുക",
+  "@uiUpdateTheirDetails": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhoIsThisProfileFor": "ഈ പ്രൊഫൈൽ ആർക്കുവേണ്ടിയാണ്?",
+  "@uiWhoIsThisProfileFor": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotSelected": "തിരഞ്ഞെടുത്തിട്ടില്ല",
+  "@uiNotSelected": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterAReferralCode": "ഒരു റഫറൽ കോഡ് നൽകുക.",
+  "@uiEnterAReferralCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralAppliedBonusUnlocksAfterEmailVerification": "റഫറൽ പ്രയോഗിച്ചു. ഇമെയിൽ പരിശോധനയ്ക്ക് ശേഷം ബോണസ് അൺലോക്ക് ചെയ്യുന്നു.",
+  "@uiReferralAppliedBonusUnlocksAfterEmailVerification": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralAppliedBonusCreditsAreReady": "റഫറൽ പ്രയോഗിച്ചു. ബോണസ് ക്രെഡിറ്റുകൾ തയ്യാറാണ്.",
+  "@uiReferralAppliedBonusCreditsAreReady": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiApplyCode": "കോഡ് പ്രയോഗിക്കുക",
+  "@uiApplyCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouCannotApplyYourOwnReferralCode": "നിങ്ങൾക്ക് നിങ്ങളുടെ സ്വന്തം റഫറൽ കോഡ് പ്രയോഗിക്കാൻ കഴിയില്ല.",
+  "@uiYouCannotApplyYourOwnReferralCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralCodeIsInvalid": "റഫറൽ കോഡ് അസാധുവാണ്.",
+  "@uiReferralCodeIsInvalid": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToApplyReferralCode": "റഫറൽ കോഡ് പ്രയോഗിക്കുന്നതിൽ പരാജയപ്പെട്ടു.",
+  "@uiFailedToApplyReferralCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToApplyReferralCodePleaseTry": "റഫറൽ കോഡ് പ്രയോഗിക്കുന്നതിൽ പരാജയപ്പെട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.",
+  "@uiFailedToApplyReferralCodePleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisDevice": "ഈ ഉപകരണം",
+  "@uiThisDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSignedInDevice": "സൈൻ ഇൻ ചെയ്‌ത ഉപകരണം",
+  "@uiSignedInDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnknownDevice": "അജ്ഞാത ഉപകരണം",
+  "@uiUnknownDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeAndLogOut": "അസാധുവാക്കി ലോഗ് ഔട്ട് ചെയ്യുക",
+  "@uiRevokeAndLogOut": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeSessionca8440": "സെഷൻ പിൻവലിക്കുക",
+  "@uiRevokeSessionca8440": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterYourCurrentPassword": "നിങ്ങളുടെ നിലവിലെ പാസ്‌വേഡ് നൽകുക",
+  "@uiEnterYourCurrentPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseAtLeast8CharactersWithUppercase": "വലിയക്ഷരം, ചെറിയക്ഷരം, ഒരു സംഖ്യ, ഒരു പ്രത്യേക പ്രതീകം എന്നിവ ഉപയോഗിച്ച് കുറഞ്ഞത് 8 പ്രതീകങ്ങൾ ഉപയോഗിക്കുക",
+  "@uiUseAtLeast8CharactersWithUppercase": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseADifferentPassword": "മറ്റൊരു പാസ്‌വേഡ് തിരഞ്ഞെടുക്കുക",
+  "@uiChooseADifferentPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNewPasswordsDoNotMatch": "പുതിയ പാസ്‌വേഡുകൾ പൊരുത്തപ്പെടുന്നില്ല",
+  "@uiNewPasswordsDoNotMatch": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouHaveUsedAllAvailableUploadCredits": "ലഭ്യമായ എല്ലാ അപ്‌ലോഡ് ക്രെഡിറ്റുകളും നിങ്ങൾ ഉപയോഗിച്ചു. കൂടുതൽ ചേർക്കാൻ പ്ലാനും ക്രെഡിറ്റും സന്ദർശിക്കുക.",
+  "@uiYouHaveUsedAllAvailableUploadCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationsAreDisabledForDoclyzerOpenDevice": "ഡോക്ലൈസറിനായി അറിയിപ്പുകൾ പ്രവർത്തനരഹിതമാക്കി. റിപ്പോർട്ട്-റെഡി, അക്കൗണ്ട് അപ്‌ഡേറ്റുകൾ അനുവദിക്കുന്നതിന് ഉപകരണ ക്രമീകരണങ്ങൾ തുറക്കുക. നിങ്ങൾ അത് തിരഞ്ഞെടുക്കുന്നില്ലെങ്കിൽ മാർക്കറ്റിംഗ് ഓഫായിരിക്കും.",
+  "@uiNotificationsAreDisabledForDoclyzerOpenDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGetReportReadyAndAccountUpdatesOn": "ഈ ഉപകരണത്തിൽ റിപ്പോർട്ട്-റെഡിയും അക്കൗണ്ട് അപ്‌ഡേറ്റുകളും നേടുക. നിങ്ങൾ അത് തിരഞ്ഞെടുക്കുന്നില്ലെങ്കിൽ മാർക്കറ്റിംഗ് ഓഫായിരിക്കും.",
+  "@uiGetReportReadyAndAccountUpdatesOn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationsAreOffForThisDeviceOpen": "ഈ ഉപകരണത്തിനായുള്ള അറിയിപ്പുകൾ ഓഫാണ്. റിപ്പോർട്ട്-റെഡി, അക്കൗണ്ട് അപ്‌ഡേറ്റുകൾ ലഭിക്കുന്നതിന് ക്രമീകരണം തുറക്കുക.",
+  "@uiNotificationsAreOffForThisDeviceOpen": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBlockedExpiredRevoked": "തടഞ്ഞു (കാലഹരണപ്പെട്ടു/അസാധുവാക്കിയത്)",
+  "@uiBlockedExpiredRevoked": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadPolicy": "നയം ലോഡ് ചെയ്യുന്നതിൽ പരാജയപ്പെട്ടു",
+  "@uiFailedToLoadPolicy": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadPaused": "അപ്‌ലോഡ് താൽക്കാലികമായി നിർത്തി",
+  "@uiUploadPaused": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSevenDays": "7 ദിവസം",
+  "@uiSevenDays": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThirtyDays": "30 ദിവസം",
+  "@uiThirtyDays": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNinetyDays": "90 ദിവസം",
+  "@uiNinetyDays": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadingAClearReport": "വ്യക്തമായ റിപ്പോർട്ട് അപ്‌ലോഡ് ചെയ്യുന്നു",
+  "@uiUploadingAClearReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPDFsPhotosAndMultiplePages": "PDF-കളും ഫോട്ടോകളും ഒന്നിലധികം പേജുകളും",
+  "@uiPDFsPhotosAndMultiplePages": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseAPDFOrTakeClearPhotos": "ഒരു PDF തിരഞ്ഞെടുക്കുക അല്ലെങ്കിൽ എല്ലാ പേജിൻ്റെയും വ്യക്തമായ ഫോട്ടോകൾ എടുക്കുക. മുഴുവൻ പേജും ഫ്രെയിമിൽ സൂക്ഷിക്കുക, തിളക്കം ഒഴിവാക്കുക, വിശകലനം ചെയ്യുന്നതിന് മുമ്പ് പേജ് ക്രമം പരിശോധിക്കുക. എക്‌സ്‌ട്രാക്‌റ്റുചെയ്‌ത മൂല്യങ്ങൾ ഒറിജിനലിനെതിരെ നിങ്ങൾക്ക് ശരിയാക്കാം.",
+  "@uiChooseAPDFOrTakeClearPhotos": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCorrectingAResult": "ഒരു ഫലം ശരിയാക്കുന്നു",
+  "@uiCorrectingAResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewValuesAgainstTheOriginal": "യഥാർത്ഥ മൂല്യത്തിനെതിരായ മൂല്യങ്ങൾ അവലോകനം ചെയ്യുക",
+  "@uiReviewValuesAgainstTheOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenAReportReviewEachExtractedTest": "ഒരു റിപ്പോർട്ട് തുറക്കുക, എക്‌സ്‌ട്രാക്‌റ്റുചെയ്‌ത ഓരോ ടെസ്റ്റും ഒറിജിനലിനെതിരെ അവലോകനം ചെയ്യുക, കൂടാതെ തെറ്റായി വായിച്ച ഏതെങ്കിലും മൂല്യം, യൂണിറ്റ് അല്ലെങ്കിൽ തീയതി എന്നിവ ശരിയാക്കുക. നിങ്ങൾ ട്രെൻഡുകളെ ആശ്രയിക്കുന്നതിന് മുമ്പ് സ്ഥിരീകരിക്കാത്ത ഫലങ്ങൾ പരിശോധിക്കേണ്ടതാണ്.",
+  "@uiOpenAReportReviewEachExtractedTest": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiManagingFamilyRecords": "കുടുംബ രേഖകൾ കൈകാര്യം ചെയ്യുന്നു",
+  "@uiManagingFamilyRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProfilesAccessAndPermissions": "പ്രൊഫൈലുകൾ, ആക്സസ്, അനുമതികൾ",
+  "@uiProfilesAccessAndPermissions": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseFamilyToCreateAndSwitchProfiles": "പ്രൊഫൈലുകൾ സൃഷ്‌ടിക്കാനും മാറാനും കുടുംബം ഉപയോഗിക്കുക. ഒരു റിപ്പോർട്ട് അപ്‌ലോഡ് ചെയ്യുന്നതിനോ പങ്കിടുന്നതിനോ മുമ്പ് തിരഞ്ഞെടുത്ത വ്യക്തിയെ പരിശോധിക്കുക. നിങ്ങൾക്ക് ആക്‌സസ് ചെയ്യാൻ അധികാരമുള്ള രേഖകൾ മാത്രം കൈകാര്യം ചെയ്യുക.",
+  "@uiUseFamilyToCreateAndSwitchProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSharingAndRevokingLinks": "ലിങ്കുകൾ പങ്കിടലും അസാധുവാക്കലും",
+  "@uiSharingAndRevokingLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiControlTheRecordsYouShare": "നിങ്ങൾ പങ്കിടുന്ന റെക്കോർഡുകൾ നിയന്ത്രിക്കുക",
+  "@uiControlTheRecordsYouShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectTheReportsOrResultsYouWant": "നിങ്ങൾ പങ്കിടാൻ ആഗ്രഹിക്കുന്ന റിപ്പോർട്ടുകളോ ഫലങ്ങളോ തിരഞ്ഞെടുക്കുക, കാലഹരണപ്പെട്ടതും ആക്‌സസ് കോഡും അവലോകനം ചെയ്യുക, തുടർന്ന് ലിങ്കും കോഡും വെവ്വേറെ അയയ്ക്കുക. ആക്‌സസ് ആവശ്യമില്ലാത്തപ്പോൾ പങ്കിട്ട ലിങ്കുകളിൽ നിന്ന് ഒരു സജീവ ലിങ്ക് അസാധുവാക്കുക.",
+  "@uiSelectTheReportsOrResultsYouWant": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInformationYouProvide": "നിങ്ങൾ നൽകുന്ന വിവരങ്ങൾ",
+  "@uiInformationYouProvide": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccountDetailsAndFamilyProfilesIdentifyWhose": "അക്കൗണ്ട് വിശദാംശങ്ങളും കുടുംബ പ്രൊഫൈലുകളും നിങ്ങൾ ആരുടെ രേഖകൾ കൈകാര്യം ചെയ്യുന്നു എന്ന് തിരിച്ചറിയുന്നു. അപ്‌ലോഡ് ചെയ്‌ത ഡോക്യുമെൻ്റുകളിൽ തന്ത്രപ്രധാനമായ ആരോഗ്യ വിവരങ്ങൾ അടങ്ങിയിരിക്കാം.",
+  "@uiAccountDetailsAndFamilyProfilesIdentifyWhose": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSharingControls": "പങ്കിടൽ നിയന്ത്രണങ്ങൾ",
+  "@uiSharingControls": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewTheContentsExpiryAndAccessSettings": "ഓരോ ലിങ്കിൻ്റെയും ഉള്ളടക്കങ്ങൾ, കാലഹരണപ്പെടൽ, ആക്സസ് ക്രമീകരണങ്ങൾ എന്നിവ അവലോകനം ചെയ്യുക. നിങ്ങളുടെ അക്കൗണ്ട് ക്രമീകരണങ്ങളിൽ നിന്ന് സജീവമായ ലിങ്കുകൾ നിയന്ത്രിക്കുക.",
+  "@uiReviewTheContentsExpiryAndAccessSettings": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportAndAccountChoices": "എക്‌സ്‌പോർട്ട്, അക്കൗണ്ട് ചോയ്‌സുകൾ",
+  "@uiExportAndAccountChoices": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseSettingsToExportRecordsOrStart": "റെക്കോർഡുകൾ എക്‌സ്‌പോർട്ട് ചെയ്യാനോ അക്കൗണ്ട് ഇല്ലാതാക്കൽ അഭ്യർത്ഥന ആരംഭിക്കാനോ ക്രമീകരണങ്ങൾ ഉപയോഗിക്കുക. നിലനിർത്തൽ വിശദാംശങ്ങൾ സമ്പൂർണ്ണ നയത്തിൽ ഉൾപ്പെടുന്നു.",
+  "@uiUseSettingsToExportRecordsOrStart": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEducationalScope": "വിദ്യാഭ്യാസ വ്യാപ്തി",
+  "@uiEducationalScope": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDoclyzerOrganizesReportsAndShowsResultsOver": "ഡോക്ലൈസർ റിപ്പോർട്ടുകൾ സംഘടിപ്പിക്കുകയും കാലക്രമേണ ഫലങ്ങൾ കാണിക്കുകയും ചെയ്യുന്നു. വിദ്യാഭ്യാസപരമായ വിശദീകരണങ്ങൾ വൈദ്യോപദേശമോ രോഗനിർണയമോ അല്ല.",
+  "@uiDoclyzerOrganizesReportsAndShowsResultsOver": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewYourRecords": "നിങ്ങളുടെ രേഖകൾ അവലോകനം ചെയ്യുക",
+  "@uiReviewYourRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckExtractedValuesUnitsAndDatesAgainst": "യഥാർത്ഥ റിപ്പോർട്ടിൽ നിന്ന് വേർതിരിച്ചെടുത്ത മൂല്യങ്ങളും യൂണിറ്റുകളും തീയതികളും പരിശോധിക്കുക. നിങ്ങളുടെ ഫലങ്ങളെക്കുറിച്ച് ഒരു ഹെൽത്ത് കെയർ പ്രൊഫഷണലിനോട് ചോദിക്കുക.",
+  "@uiCheckExtractedValuesUnitsAndDatesAgainst": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiManageAndShareResponsibly": "ഉത്തരവാദിത്തത്തോടെ കൈകാര്യം ചെയ്യുകയും പങ്കിടുകയും ചെയ്യുക",
+  "@uiManageAndShareResponsibly": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOnlyManageRecordsYouAreAuthorizedTo": "നിങ്ങൾക്ക് ആക്‌സസ് ചെയ്യാൻ അധികാരമുള്ള റെക്കോർഡുകൾ മാത്രം മാനേജ് ചെയ്യുക. പങ്കിടുന്നതിന് മുമ്പ് തിരഞ്ഞെടുത്ത വിവരങ്ങളും സ്വീകർത്താവും പരിശോധിക്കുക.",
+  "@uiOnlyManageRecordsYouAreAuthorizedTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPrivacyPolicy7ceacd": "സ്വകാര്യതാ നയം",
+  "@uiPrivacyPolicy7ceacd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTermsOfUse8a069e": "ഉപയോഗ നിബന്ധനകൾ",
+  "@uiTermsOfUse8a069e": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenPrivacyControls": "സ്വകാര്യതാ നിയന്ത്രണങ്ങൾ തുറക്കുക",
+  "@uiOpenPrivacyControls": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGetHelpWithTheApp": "ആപ്പ് ഉപയോഗിച്ച് സഹായം നേടുക",
+  "@uiGetHelpWithTheApp": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportYourDataInAccountSettings": "അക്കൗണ്ട് ക്രമീകരണങ്ങളിൽ നിങ്ങളുടെ ഡാറ്റ കയറ്റുമതി ചെയ്യുക",
+  "@uiExportYourDataInAccountSettings": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYOURDATACHOICES": "നിങ്ങളുടെ ഡാറ്റയും തിരഞ്ഞെടുപ്പുകളും",
+  "@uiYOURDATACHOICES": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUSINGDOCLYZER": "ഡോക്ലൈസർ ഉപയോഗിക്കുന്നു",
+  "@uiUSINGDOCLYZER": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnderstandTheInformationYouKeepInDoclyzer": "ഡോക്ലൈസറിൽ നിങ്ങൾ സൂക്ഷിക്കുന്ന\nവിവരങ്ങൾ മനസ്സിലാക്കുക.",
+  "@uiUnderstandTheInformationYouKeepInDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAClearUnderstandingOfTheAppsRole": "ആപ്പിൻ്റെ റോളിനെക്കുറിച്ചുള്ള വ്യക്തമായ ധാരണ\n.",
+  "@uiAClearUnderstandingOfTheAppsRole": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportsFromLab": "{name}-ൽ നിന്ന് {reportCount}",
+  "@uiReportsFromLab": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reportCount": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportsLatestDate": "{reportCount} · ഏറ്റവും പുതിയ {date}",
+  "@uiReportsLatestDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reportCount": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUploadReportForProfile": "ഈ ലൈബ്രറി ആരംഭിക്കാൻ {name} എന്നതിനായി ഒരു റിപ്പോർട്ട് അപ്‌ലോഡ് ചെയ്യുക.",
+  "@uiUploadReportForProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiIpAddress": "IP വിലാസം: {address}",
+  "@uiIpAddress": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSignedInAt": "സൈൻ ഇൻ ചെയ്‌തു: {date}",
+  "@uiSignedInAt": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnknown": "അജ്ഞാതം",
+  "@uiUnknown": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResultsFor": "{name}-നുള്ള ഫലങ്ങൾ",
+  "@uiResultsFor": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiLabParametersTracked": "{count} ലാബ് പാരാമീറ്ററുകൾ ട്രാക്ക് ചെയ്തു",
+  "@uiLabParametersTracked": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSampledDate": "സാമ്പിൾ {date}",
+  "@uiSampledDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCollectionDateValue": "ശേഖരണ തീയതി: {date}",
+  "@uiCollectionDateValue": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiLabRangeValue": "ലാബ് ശ്രേണി: {range}",
+  "@uiLabRangeValue": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAiSuggestedRange": "AI ഈ ശ്രേണി {range} ആയി വായിക്കുന്നു. അച്ചടിച്ച വാചകം: {printed}. ഈ താരതമ്യത്തെ ആശ്രയിക്കുന്നതിന് മുമ്പ് യഥാർത്ഥ റിപ്പോർട്ട് പരിശോധിക്കുക.",
+  "@uiAiSuggestedRange": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "range": {
+        "type": "String"
+      },
+      "printed": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportsReady": "{reportCount} തയ്യാറാണ്",
+  "@uiReportsReady": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reportCount": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCreditsCount": "{count} ക്രെഡിറ്റുകൾ",
+  "@uiCreditsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReferralCodeAlreadyApplied": "ഈ അക്കൗണ്ടിലേക്ക് ഒരു റഫറൽ കോഡ് ഇതിനകം പ്രയോഗിച്ചു.",
+  "@uiReferralCodeAlreadyApplied": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSetDevicePasscodeForAppLock": "ആപ്പ് ലോക്ക് ഓണാക്കുന്നതിന് മുമ്പ് ഉപകരണ പാസ്‌കോഡ് സജ്ജീകരിക്കുക.",
+  "@uiSetDevicePasscodeForAppLock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLanguagePreferenceNotSaved": "ഭാഷാ മുൻഗണന സംരക്ഷിച്ചില്ല.",
+  "@uiLanguagePreferenceNotSaved": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportUnavailable": "കയറ്റുമതി ലഭ്യമല്ല",
+  "@uiExportUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnreadableImage": "വായിക്കാൻ പറ്റാത്ത ചിത്രം",
+  "@uiUnreadableImage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiStatusWithValue": "നില: {status}",
+  "@uiStatusWithValue": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "uiPending": "തീർപ്പാക്കാത്തത്",
+  "@uiPending": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCompleted": "പൂർത്തിയാക്കി",
+  "@uiCompleted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailed": "പരാജയപ്പെട്ടു",
+  "@uiFailed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInactive": "നിഷ്ക്രിയം",
+  "@uiInactive": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRestoreBeforeDate": "നിങ്ങളുടെ റിപ്പോർട്ടുകളും പ്രൊഫൈലുകളും സൂക്ഷിക്കാൻ {date}-ന് മുമ്പ് പുനഃസ്ഥാപിക്കുക.",
+  "@uiRestoreBeforeDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiThirtyDayDeadline": "30 ദിവസത്തെ സമയപരിധി",
+  "@uiThirtyDayDeadline": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhatsAffected": "എന്താണ് ബാധിച്ചത്: {details}",
+  "@uiWhatsAffected": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "uiLastUpdatedAt": "അവസാനം അപ്ഡേറ്റ് ചെയ്തത്: {time}-ൽ {date}",
+  "@uiLastUpdatedAt": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "uiMoveReportToProfile": "{filename} നിലവിലെ പ്രൊഫൈലിന് പകരം {name} എന്നതിന് കീഴിൽ ദൃശ്യമാകും.",
+  "@uiMoveReportToProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneVerifiedResult": "1 പരിശോധിച്ച ഫലം സംരക്ഷിച്ചു.",
+  "@uiOneVerifiedResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiVerifiedResultsCount": "{count} പരിശോധിച്ചുറപ്പിച്ച ഫലങ്ങൾ സംരക്ഷിച്ചു.",
+  "@uiVerifiedResultsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnableToSwitchProfilesWithReason": "പ്രൊഫൈലുകൾ മാറാൻ കഴിയുന്നില്ല. {reason}",
+  "@uiUnableToSwitchProfilesWithReason": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCollectedOn": "ശേഖരിച്ചത്: {date}",
+  "@uiCollectedOn": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUploadedPrefix": "അപ്‌ലോഡ് ചെയ്തത് {date}",
+  "@uiUploadedPrefix": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportComparisonLabel": "{filename} · {date}",
+  "@uiReportComparisonLabel": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiIncreasedBy": "{amount} വർദ്ധിപ്പിച്ചു",
+  "@uiIncreasedBy": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDecreasedBy": "{amount} കുറഞ്ഞു",
+  "@uiDecreasedBy": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "uiPercentagePoints": "ശതമാനം പോയിൻ്റുകൾ",
+  "@uiPercentagePoints": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTestValuesCount": "ടെസ്റ്റ് മൂല്യങ്ങൾ ({count})",
+  "@uiTestValuesCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAiValueReviewNotice": "പ്രോസസ്സിംഗ് സമയത്ത് AI പരിശോധിച്ച മൂല്യം. യഥാർത്ഥ OCR: {value}. റിപ്പോർട്ടിന് എതിരായി അത് സ്ഥിരീകരിക്കുക.",
+  "@uiAiValueReviewNotice": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportAlreadyInProfile": "{name}-ൽ ഇതിനകം റിപ്പോർട്ട് ചെയ്യുക",
+  "@uiReportAlreadyInProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportAddedToProfile": "{name}-ലേക്ക് റിപ്പോർട്ട് ചേർത്തു",
+  "@uiReportAddedToProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAddedOn": "{date} ചേർത്തു",
+  "@uiAddedOn": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUsingReportsLimit": "{max} റിപ്പോർട്ടുകളുടെ {current} ഉപയോഗിക്കുന്നു.",
+  "@uiUsingReportsLimit": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "uiNeedHelp": "സഹായം വേണോ?",
+  "@uiNeedHelp": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnabled": "പ്രവർത്തനക്ഷമമാക്കി",
+  "@uiEnabled": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnable": "പ്രവർത്തനക്ഷമമാക്കുക",
+  "@uiEnable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSubscribe": "സബ്സ്ക്രൈബ് ചെയ്യുക",
+  "@uiSubscribe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiApplying": "അപേക്ഷിക്കുന്നു",
+  "@uiApplying": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckStatus": "നില പരിശോധിക്കുക",
+  "@uiCheckStatus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEditProfile": "പ്രൊഫൈൽ തിരുത്തുക",
+  "@uiEditProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaveChanges": "മാറ്റങ്ങൾ സംരക്ഷിക്കുക",
+  "@uiSaveChanges": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOptional": "ഓപ്ഷണൽ",
+  "@uiOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPendingOrderReconciliation": "ഓർഡർ {orderId} അനുരഞ്ജനത്തിനായി കാത്തിരിക്കുന്നു. സ്റ്റാറ്റസ് വ്യക്തമാകുന്നത് വരെ വാങ്ങൽ താൽക്കാലികമായി നിർത്തി.",
+  "@uiPendingOrderReconciliation": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "orderId": {
+        "type": "String"
+      }
+    }
+  },
+  "uiMonthlyPlanDescription": "പ്രതിമാസ പദ്ധതി - {name}",
+  "@uiMonthlyPlanDescription": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCreditPackDescription": "ക്രെഡിറ്റ് പായ്ക്ക് - {name}",
+  "@uiCreditPackDescription": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnreadable": "വായിക്കാൻ പറ്റാത്തത്",
+  "@uiUnreadable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLatestValue": "ഏറ്റവും പുതിയത്: {value}",
+  "@uiLatestValue": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "uiEarlier": "നേരത്തെ",
+  "@uiEarlier": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLater": "പിന്നീട്",
+  "@uiLater": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiViewed": "കണ്ടു",
+  "@uiViewed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBlocked": "തടഞ്ഞു",
+  "@uiBlocked": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCapped": "തൊപ്പി",
+  "@uiCapped": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLastChange": "അവസാന മാറ്റം: {label}",
+  "@uiLastChange": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "uiLastChangeAt": "അവസാന മാറ്റം: {label} · {date}",
+  "@uiLastChangeAt": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiGiftVoucherApplied": "സമ്മാന വൗച്ചർ പ്രയോഗിച്ചു. {credits} ക്രെഡിറ്റുകൾ ചേർത്തു.",
+  "@uiGiftVoucherApplied": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "credits": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCouldNotSaveOriginal": "ഇതുവരെ ഒറിജിനൽ സംരക്ഷിക്കാൻ കഴിഞ്ഞില്ല. {reason}",
+  "@uiCouldNotSaveOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "uiFailedToRevoke": "അസാധുവാക്കുന്നതിൽ പരാജയപ്പെട്ടു: {reason}",
+  "@uiFailedToRevoke": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReferralShareMessage": "എൻ്റെ ഡോക്ലൈസർ റഫറൽ കോഡ് {code} ഉപയോഗിക്കുക: {link}",
+  "@uiReferralShareMessage": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAMomentAgo": "ഒരു നിമിഷം മുമ്പ്",
+  "@uiAMomentAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMinutesAgo": "{count} മിനിറ്റ് മുമ്പ്",
+  "@uiMinutesAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneHourAgo": "1 മണിക്കൂർ മുമ്പ്",
+  "@uiOneHourAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHoursAgo": "{count} മണിക്കൂർ മുമ്പ്",
+  "@uiHoursAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiToday": "ഇന്ന്",
+  "@uiToday": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYesterday": "ഇന്നലെ",
+  "@uiYesterday": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOneDayAgo": "1 ദിവസം മുമ്പ്",
+  "@uiOneDayAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDaysAgo": "{count} ദിവസം മുമ്പ്",
+  "@uiDaysAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneWeekAgo": "1 ആഴ്ച മുമ്പ്",
+  "@uiOneWeekAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWeeksAgo": "{count} ആഴ്ചകൾക്ക് മുമ്പ്",
+  "@uiWeeksAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneMonthAgo": "1 മാസം മുമ്പ്",
+  "@uiOneMonthAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMonthsAgo": "{count} മാസങ്ങൾക്ക് മുമ്പ്",
+  "@uiMonthsAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneYearAgo": "1 വർഷം മുമ്പ്",
+  "@uiOneYearAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYearsAgo": "{count} വർഷങ്ങൾക്ക് മുമ്പ്",
+  "@uiYearsAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiInOneDay": "1 ദിവസത്തിനുള്ളിൽ",
+  "@uiInOneDay": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInDays": "{count} ദിവസങ്ങളിൽ",
+  "@uiInDays": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiInMinutes": "{count} മിനിറ്റിൽ",
+  "@uiInMinutes": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiInOneHour": "1 മണിക്കൂറിനുള്ളിൽ",
+  "@uiInOneHour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInHours": "{count} മണിക്കൂറിൽ",
+  "@uiInHours": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiMissingExtractedTestName": "എക്‌സ്‌ട്രാക്‌റ്റുചെയ്‌ത ഫലത്തിൽ നിന്ന് പരിശോധനയുടെ പേര് കാണുന്നില്ല.",
+  "@uiMissingExtractedTestName": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMissingCapturedLabRange": "ഈ പരിശോധനയ്ക്കായി ലാബ് റഫറൻസ് ശ്രേണിയൊന്നും എടുത്തിട്ടില്ല.",
+  "@uiMissingCapturedLabRange": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNonNumericExtractedValue": "വേർതിരിച്ചെടുത്ത മൂല്യം ഒരു പ്ലെയിൻ നമ്പറല്ല. യഥാർത്ഥ റിപ്പോർട്ടിൽ അത് പരിശോധിക്കുക.",
+  "@uiNonNumericExtractedValue": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLabFlagRangeConflict": "ലാബ് ഫ്ലാഗ് അച്ചടിച്ച ശ്രേണിയുമായി വൈരുദ്ധ്യം കാണിക്കുന്നു. യഥാർത്ഥ റിപ്പോർട്ട് പരിശോധിക്കുക.",
+  "@uiLabFlagRangeConflict": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResultNeedsOriginalCheck": "എക്‌സ്‌ട്രാക്‌റ്റുചെയ്‌ത മൂല്യം, അച്ചടിച്ച ശ്രേണി അല്ലെങ്കിൽ ലാബ് ഫ്ലാഗ് എന്നിവ യഥാർത്ഥ റിപ്പോർട്ടിൽ പരിശോധിക്കേണ്ടതുണ്ട്.",
+  "@uiResultNeedsOriginalCheck": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInitialEntitlement": "പ്രാരംഭ അവകാശം",
+  "@uiInitialEntitlement": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditPackPurchase": "ക്രെഡിറ്റ് പായ്ക്ക് വാങ്ങൽ",
+  "@uiCreditPackPurchase": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSubscriptionUpgrade": "സബ്സ്ക്രിപ്ഷൻ അപ്ഗ്രേഡ്",
+  "@uiSubscriptionUpgrade": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPlanDowngrade": "ഡൗൺഗ്രേഡ് ആസൂത്രണം ചെയ്യുക",
+  "@uiPlanDowngrade": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAdminAdjustment": "അഡ്മിൻ ക്രമീകരണം",
+  "@uiAdminAdjustment": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSystemReconciliation": "സിസ്റ്റം അനുരഞ്ജനം",
+  "@uiSystemReconciliation": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralInviteBonus": "റഫറൽ ക്ഷണ ബോണസ്",
+  "@uiReferralInviteBonus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralAnalysisMilestone": "റഫറൽ വിശകലനത്തിൻ്റെ നാഴികക്കല്ല്",
+  "@uiReferralAnalysisMilestone": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralPurchaseMilestone": "റഫറൽ വാങ്ങൽ നാഴികക്കല്ല്",
+  "@uiReferralPurchaseMilestone": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFreePromoCreditPack": "സൗജന്യ പ്രമോ ക്രെഡിറ്റ് പായ്ക്ക്",
+  "@uiFreePromoCreditPack": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherRedeemed": "സമ്മാന വൗച്ചർ റിഡീം ചെയ്തു",
+  "@uiGiftVoucherRedeemed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotYetChanged": "ഇതുവരെ മാറിയിട്ടില്ല",
+  "@uiNotYetChanged": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotReachServer": "സെർവറിലേക്ക് എത്താൻ കഴിഞ്ഞില്ല. നിങ്ങളുടെ കണക്ഷൻ പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiCannotReachServer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInvalidEmailOrPassword": "അസാധുവായ ഇമെയിൽ അല്ലെങ്കിൽ പാസ്‌വേഡ്. നിങ്ങളുടെ വിശദാംശങ്ങൾ പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiInvalidEmailOrPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTooManyAuthAttempts": "വളരെയധികം ശ്രമങ്ങൾ. കുറച്ച് മിനിറ്റ് കാത്തിരുന്ന് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiTooManyAuthAttempts": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterValidEmail": "സാധുവായ ഒരു ഇമെയിൽ വിലാസം നൽകുക.",
+  "@uiEnterValidEmail": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPasswordRequirements": "പാസ്‌വേഡിൽ കുറഞ്ഞത് 8 പ്രതീകങ്ങൾ ഉണ്ടായിരിക്കണം, അതിൽ വലിയക്ഷരം, ചെറിയക്ഷരം, ഒരു സംഖ്യ, ഒരു പ്രത്യേക പ്രതീകം എന്നിവ ഉൾപ്പെടുന്നു.",
+  "@uiPasswordRequirements": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccountWithEmailExists": "ഈ ഇമെയിൽ ഉള്ള ഒരു അക്കൗണ്ട് ഇതിനകം നിലവിലുണ്ട്. സൈൻ ഇൻ ചെയ്യുക അല്ലെങ്കിൽ മറ്റൊരു ഇമെയിൽ ഉപയോഗിക്കുക.",
+  "@uiAccountWithEmailExists": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadedStatus": "അപ്‌ലോഡ് ചെയ്തു",
+  "@uiUploadedStatus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSupportAction": "പ്രവർത്തനം: {action}",
+  "@uiSupportAction": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSupportCorrelationId": "പരസ്പരബന്ധം ഐഡി: {id}",
+  "@uiSupportCorrelationId": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSupportClientActionId": "ക്ലയൻ്റ് പ്രവർത്തന ഐഡി: {id}",
+  "@uiSupportClientActionId": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSupportErrorCode": "പിശക് കോഡ്: {code}",
+  "@uiSupportErrorCode": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSupportError": "പിശക്: {error}",
+  "@uiSupportError": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSessionExpiredSignInAgain": "നിങ്ങളുടെ സെഷൻ അവസാനിച്ചു. വീണ്ടും സൈൻ ഇൻ ചെയ്യുക.",
+  "@uiSessionExpiredSignInAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProfileLimitReached": "നിങ്ങളുടെ പ്ലാൻ പ്രൊഫൈൽ പരിധി എത്തിയിരിക്കുന്നു. കൂടുതൽ ചേർക്കാൻ പ്ലാനും ക്രെഡിറ്റുകളും അവലോകനം ചെയ്യുക.",
+  "@uiProfileLimitReached": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCorrectionConflictReload": "ഈ ഫലം മറ്റൊരിടത്ത് മാറി. റിപ്പോർട്ട് ശരിയാക്കുന്നതിന് മുമ്പ് അത് വീണ്ടും ലോഡുചെയ്യുക.",
+  "@uiCorrectionConflictReload": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSeePlanCreditsOptions": "ലഭ്യമായ ഓപ്ഷനുകൾക്കായി പ്ലാനും ക്രെഡിറ്റുകളും കാണുക.",
+  "@uiSeePlanCreditsOptions": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareLinkLimitHelp": "നിങ്ങൾ സജീവമായ പങ്കിടൽ-ലിങ്ക് പരിധിയിലെത്തി.",
+  "@uiShareLinkLimitHelp": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiScopedExportUnavailable": "സ്‌കോപ്ഡ് എക്‌സ്‌പോർട്ട് ലഭ്യമല്ല. പിന്നീട് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiScopedExportUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRestorationUnavailable": "പുനഃസ്ഥാപിക്കൽ ലഭ്യമല്ല. പിന്നീട് വീണ്ടും ശ്രമിക്കുക.",
+  "@uiRestorationUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportRequestNotFound": "കയറ്റുമതി അഭ്യർത്ഥന കണ്ടെത്തിയില്ല. ഒരു പുതിയ കയറ്റുമതി അഭ്യർത്ഥിക്കുക.",
+  "@uiExportRequestNotFound": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiClosureConfirmationRequired": "തുടരുന്നതിന് അക്കൗണ്ട് അടച്ചുപൂട്ടൽ സ്ഥിരീകരിക്കുക.",
+  "@uiClosureConfirmationRequired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCurrentPasswordIncorrect": "നിലവിലെ പാസ്‌വേഡ് തെറ്റാണ്.",
+  "@uiCurrentPasswordIncorrect": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLaboratories": "ലബോറട്ടറികൾ",
+  "@uiLaboratories": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnlock": "അൺലോക്ക് ചെയ്യുക",
+  "@uiUnlock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  }
 }

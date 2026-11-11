@@ -1,3 +1,4 @@
+import '../auth_error_localization.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
@@ -78,15 +79,20 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false);
     } on AuthException catch (error) {
       if (!mounted) return;
+      final message = localizedAuthError(
+        context,
+        error,
+        fallback: context.l10n.loginFailed,
+      );
       setState(() {
-        _error = error.message;
+        _error = message;
         _isLoading = false;
         _supportContext = buildSupportRequestContext(
           actionType: SupportActionType.auth,
         );
-        _supportErrorMessage = error.message;
+        _supportErrorMessage = message;
       });
-      _showStatus(error.message);
+      _showStatus(message);
     } catch (_) {
       if (!mounted) return;
       final message = context.l10n.loginFailed;

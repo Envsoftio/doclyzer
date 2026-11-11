@@ -59,7 +59,7 @@ class ApiAuthRepository implements AuthRepository {
         preferredLanguage,
       );
     } on ApiException catch (e) {
-      throw AuthException(e.message);
+      throw AuthException(e.message, code: e.code);
     }
   }
 
@@ -97,7 +97,7 @@ class ApiAuthRepository implements AuthRepository {
     try {
       return await _loginImpl(email, password);
     } on ApiException catch (e) {
-      throw AuthException(_loginErrorMessage(e));
+      throw AuthException(_loginErrorMessage(e), code: e.code);
     } on Exception catch (e) {
       throw AuthException(_loginErrorMessage(e));
     }
@@ -148,7 +148,7 @@ class ApiAuthRepository implements AuthRepository {
         auth: false,
       );
     } on ApiException catch (e) {
-      throw AuthException(e.message);
+      throw AuthException(e.message, code: e.code);
     }
   }
 
@@ -164,7 +164,7 @@ class ApiAuthRepository implements AuthRepository {
         auth: false,
       );
     } on ApiException catch (e) {
-      throw AuthException(e.message);
+      throw AuthException(e.message, code: e.code);
     } finally {
       _client.clearAccessToken();
       await _tokenStorage.clear();
@@ -190,7 +190,7 @@ class ApiAuthRepository implements AuthRepository {
       );
       _client.setAccessToken(accessToken);
     } on ApiException catch (error) {
-      throw AuthException(error.message);
+      throw AuthException(error.message, code: error.code);
     }
   }
 

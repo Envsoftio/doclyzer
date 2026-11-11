@@ -1,4 +1,5 @@
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/core/localized_error.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
 
@@ -81,15 +82,17 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
     final name = _nameController.text.trim();
     final relation = _relationController.text.trim();
     if (name.isEmpty) {
-      setState(() => _nameError = 'Enter a name');
+      setState(() => _nameError = context.l10n.uiEnterAName);
       return;
     }
     if (name.length > 100) {
-      setState(() => _nameError = 'Use 100 characters or fewer');
+      setState(() => _nameError = context.l10n.uiUse100CharactersOrFewer);
       return;
     }
     if (relation.length > 50) {
-      setState(() => _error = 'Relationship must be 50 characters or fewer.');
+      setState(
+        () => _error = context.l10n.uiRelationshipMustBe50CharactersOrFewer,
+      );
       return;
     }
 
@@ -119,24 +122,26 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
       }
       if (!mounted) return;
       widget.onComplete();
-    } on ProfileLimitExceededException catch (e) {
+    } on ProfileLimitExceededException catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = e.message;
+        _error = context.l10n.uiProfileLimitReached;
         _submitting = false;
       });
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.message.isNotEmpty
-            ? e.message
-            : 'Failed to save profile. Please try again.';
+        _error = localizedError(
+          context,
+          e,
+          fallback: context.l10n.uiFailedToSaveProfilePleaseTryAgain,
+        );
         _submitting = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'Failed to save profile. Please try again.';
+        _error = context.l10n.uiFailedToSaveProfilePleaseTryAgain;
         _submitting = false;
       });
     }
@@ -148,7 +153,9 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEdit ? 'Edit profile' : 'Add profile'),
+        title: Text(
+          isEdit ? context.l10n.uiEditProfile : context.l10n.uiAddProfile,
+        ),
         leading: BackButton(onPressed: widget.onBack),
       ),
       bottomNavigationBar: SafeArea(
@@ -168,7 +175,11 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
                     dimension: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Text(isEdit ? 'Save changes' : 'Create profile'),
+                : Text(
+                    isEdit
+                        ? context.l10n.uiSaveChanges
+                        : context.l10n.uiCreateProfile,
+                  ),
           ),
         ),
       ),
@@ -198,14 +209,16 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  isEdit ? 'Update their details' : 'Who is this profile for?',
+                  isEdit
+                      ? context.l10n.uiUpdateTheirDetails
+                      : context.l10n.uiWhoIsThisProfileFor,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     color: theme.colorScheme.onPrimaryContainer,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Keep each person’s reports and trends together.',
+                  context.l10n.uiKeepEachPersonSReportsAndTrends,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onPrimaryContainer,
                   ),
@@ -231,7 +244,10 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
             ),
             const SizedBox(height: 20),
           ],
-          Text('Person details', style: theme.textTheme.titleMedium),
+          Text(
+            context.l10n.uiPersonDetails,
+            style: theme.textTheme.titleMedium,
+          ),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(20),
@@ -254,19 +270,22 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
                   textInputAction: TextInputAction.next,
                   maxLength: 100,
                   decoration: InputDecoration(
-                    hintText: 'Enter a name',
+                    hintText: context.l10n.uiEnterAName,
                     errorText: _nameError,
                     counterText: '',
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('Date of birth', style: theme.textTheme.labelLarge),
+                Text(
+                  context.l10n.uiDateOfBirth,
+                  style: theme.textTheme.labelLarge,
+                ),
                 const SizedBox(height: 8),
                 Semantics(
                   button: true,
-                  label: 'Date of birth, optional',
+                  label: context.l10n.uiDateOfBirthOptional,
                   value: _selectedDob == null
-                      ? 'Not selected'
+                      ? context.l10n.uiNotSelected
                       : AppDateFormat.date(_selectedDob!, local: false),
                   child: InkWell(
                     key: const Key('profile-dob-field'),
@@ -278,7 +297,7 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
                         suffixIcon: _selectedDob == null
                             ? const Icon(Icons.chevron_right_rounded)
                             : IconButton(
-                                tooltip: 'Clear date of birth',
+                                tooltip: context.l10n.uiClearDateOfBirth,
                                 onPressed: () =>
                                     setState(() => _selectedDob = null),
                                 icon: const Icon(Icons.close_rounded),
@@ -287,7 +306,7 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
                       child: Text(
                         _selectedDob != null
                             ? AppDateFormat.date(_selectedDob!, local: false)
-                            : 'Optional',
+                            : context.l10n.uiOptional,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: _selectedDob == null
                               ? theme.colorScheme.onSurfaceVariant
@@ -298,7 +317,10 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('Relationship', style: theme.textTheme.labelLarge),
+                Text(
+                  context.l10n.uiRelationship,
+                  style: theme.textTheme.labelLarge,
+                ),
                 const SizedBox(height: 8),
                 TextField(
                   key: const Key('profile-relation-field'),
@@ -307,8 +329,8 @@ class _CreateEditProfileScreenState extends State<CreateEditProfileScreen> {
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _submit(),
                   maxLength: 50,
-                  decoration: const InputDecoration(
-                    hintText: 'Optional, e.g. parent or child',
+                  decoration: InputDecoration(
+                    hintText: context.l10n.uiOptionalEGParentOrChild,
                     counterText: '',
                   ),
                 ),

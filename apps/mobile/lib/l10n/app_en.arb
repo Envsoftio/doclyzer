@@ -397,5 +397,3164 @@
   "testName": "Test name",
   "viewReport": "View report",
   "closeAccount": "Close account",
-  "createShareLink": "Create link"
+  "createShareLink": "Create link",
+  "uiAppearanceChangedButCouldNotBeSaved": "Appearance changed, but could not be saved for next time.",
+  "@uiAppearanceChangedButCouldNotBeSaved": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisReportIsNoLongerAvailable": "This report is no longer available.",
+  "@uiThisReportIsNoLongerAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenDeviceSettingsToManageNotificationPreviews": "Open device Settings to manage notification previews.",
+  "@uiOpenDeviceSettingsToManageNotificationPreviews": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepThisScreenOpenUntilTheUpload": "Keep this screen open until the upload is accepted.",
+  "@uiKeepThisScreenOpenUntilTheUpload": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAnUploadMayHaveBeenInterrupted": "An upload may have been interrupted",
+  "@uiAnUploadMayHaveBeenInterrupted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckReportsIfItIsMissingAdd": "Check Reports. If it is missing, add the same file again.",
+  "@uiCheckReportsIfItIsMissingAdd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotDismissNotificationsTryAgain": "Could not dismiss notifications. Try again.",
+  "@uiCouldNotDismissNotificationsTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiConnectionUnavailable": "Connection unavailable",
+  "@uiConnectionUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourSessionCouldNotBeCheckedConnect": "Your session could not be checked. Connect to the internet and try again.",
+  "@uiYourSessionCouldNotBeCheckedConnect": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSignInWithAnotherAccount": "Sign in with another account",
+  "@uiSignInWithAnotherAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoActiveProfile": "No active profile",
+  "@uiNoActiveProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDismissUploadNotice": "Dismiss upload notice",
+  "@uiDismissUploadNotice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDismissReadyNotifications": "Dismiss ready notifications",
+  "@uiDismissReadyNotifications": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRequestSupport": "Request support",
+  "@uiRequestSupport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWeWillIncludeDiagnosticIDsSoThe": "We will include diagnostic IDs so the team can investigate.",
+  "@uiWeWillIncludeDiagnosticIDsSoThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSendRequest": "Send request",
+  "@uiSendRequest": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhatHappenedOptional": "What happened? (optional)",
+  "@uiWhatHappenedOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewResult": "Review result",
+  "@uiReviewResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCompareTheseFieldsWithTheOriginalReport": "Compare these fields with the original report before saving.",
+  "@uiCompareTheseFieldsWithTheOriginalReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOriginallyExtracted": "Originally extracted",
+  "@uiOriginallyExtracted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReloadReport": "Reload report",
+  "@uiReloadReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResultAsPrinted": "Result as printed",
+  "@uiResultAsPrinted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnitIfShown": "Unit (if shown)",
+  "@uiUnitIfShown": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLabReferenceRangeIfShown": "Lab reference range (if shown)",
+  "@uiLabReferenceRangeIfShown": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckYourReport": "Check your report",
+  "@uiCheckYourReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoAttemptHistoryAvailable": "No attempt history available.",
+  "@uiNoAttemptHistoryAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiIInspectedTheOriginal": "I inspected the original",
+  "@uiIInspectedTheOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseTwoReports": "Choose two reports",
+  "@uiChooseTwoReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseRecordsForTheSamePersonMatching": "Use records for the same person. Matching tests will appear side by side.",
+  "@uiUseRecordsForTheSamePersonMatching": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseTheOlderReportFirstAndThe": "Choose the older report first and the newer report second.",
+  "@uiChooseTheOlderReportFirstAndThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiComparedOnlyWhenCompatibleDifferentUnitsOr": "Compared only when compatible. Different units or methods are shown separately until compatibility is confirmed.",
+  "@uiComparedOnlyWhenCompatibleDifferentUnitsOr": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAChangeIsNotADiagnosisCompare": "A change is not a diagnosis. Compare each result with its own report interval and discuss the context with your clinician.",
+  "@uiAChangeIsNotADiagnosisCompare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseDifferentReports": "Choose different reports",
+  "@uiChooseDifferentReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEarlierReport": "Earlier report",
+  "@uiEarlierReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLaterReport": "Later report",
+  "@uiLaterReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourReportPages": "Your report pages",
+  "@uiYourReportPages": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepPagesInTheSameOrderAs": "Keep pages in the same order as the report.",
+  "@uiKeepPagesInTheSameOrderAs": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAddAnotherPage": "Add another page",
+  "@uiAddAnotherPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChoosePagesFromGallery": "Choose pages from gallery",
+  "@uiChoosePagesFromGallery": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAdjustPage": "Adjust page",
+  "@uiAdjustPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRetake": "Retake",
+  "@uiRetake": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseAdjustedPage": "Use adjusted page",
+  "@uiUseAdjustedPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResetChanges": "Reset changes",
+  "@uiResetChanges": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepEveryResultInsideTheCorners": "Keep every result inside the corners.",
+  "@uiKeepEveryResultInsideTheCorners": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRotate": "Rotate",
+  "@uiRotate": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportRestored": "Report restored",
+  "@uiReportRestored": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeleteReportPermanently": "Delete report permanently?",
+  "@uiDeleteReportPermanently": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeletePermanently": "Delete permanently",
+  "@uiDeletePermanently": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportPermanentlyDeleted": "Report permanently deleted",
+  "@uiReportPermanentlyDeleted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEmptyRecycleBin": "Empty Recycle Bin?",
+  "@uiEmptyRecycleBin": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeleteAll": "Delete all",
+  "@uiDeleteAll": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRecycleBinIsEmpty": "Recycle bin is empty.",
+  "@uiRecycleBinIsEmpty": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeletedReportsWillAppearHereBeforeRemoval": "Deleted reports will appear here before removal.",
+  "@uiDeletedReportsWillAppearHereBeforeRemoval": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEmptyRecycleBind657e2": "Empty recycle bin",
+  "@uiEmptyRecycleBind657e2": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckDetectedResult": "Check detected result",
+  "@uiCheckDetectedResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCompareThisRowWithTheOriginalReport": "Compare this row with the original report. Correct any OCR mistakes before saving.",
+  "@uiCompareThisRowWithTheOriginalReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiICheckedThisResultAgainstTheOriginal": "I checked this result against the original report",
+  "@uiICheckedThisResultAgainstTheOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaving": "Saving…",
+  "@uiSaving": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaveVerifiedResult": "Save verified result",
+  "@uiSaveVerifiedResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoResultsWereDetectedViewTheOriginal": "No results were detected. View the original report or retry processing.",
+  "@uiNoResultsWereDetectedViewTheOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDetectedValuesNeedToBeCheckedAgainst": "Detected values need to be checked against the original report before they become saved results.",
+  "@uiDetectedValuesNeedToBeCheckedAgainst": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSomeRowsMayBeMissingInspectThe": "Some rows may be missing. Inspect the entire original report.",
+  "@uiSomeRowsMayBeMissingInspectThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResult": "Result",
+  "@uiResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnitOptional": "Unit (optional)",
+  "@uiUnitOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferenceRangeOptional": "Reference range (optional)",
+  "@uiReferenceRangeOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiVerified": "Verified",
+  "@uiVerified": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucher": "Gift Voucher",
+  "@uiGiftVoucher": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRedeemAGiftVoucherAndAddCredits": "Redeem a gift voucher and add credits directly to your balance.",
+  "@uiRedeemAGiftVoucherAndAddCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCurrentPlan": "Current Plan",
+  "@uiCurrentPlan": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditBalance": "Credit Balance",
+  "@uiCreditBalance": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPlanLimits": "Plan Limits",
+  "@uiPlanLimits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBuyCredits": "Buy Credits",
+  "@uiBuyCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRecentBillingActivity": "Recent Billing Activity",
+  "@uiRecentBillingActivity": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRefreshStatus": "Refresh status",
+  "@uiRefreshStatus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoRecentOrdersYet": "No recent orders yet.",
+  "@uiNoRecentOrdersYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiVoucherCode": "Voucher code",
+  "@uiVoucherCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckout": "Checkout",
+  "@uiCheckout": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiApply": "Apply",
+  "@uiApply": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiClear": "Clear",
+  "@uiClear": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPay": "Pay",
+  "@uiPay": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoCreditPacksAvailableAtThisTime": "No credit packs available at this time.",
+  "@uiNoCreditPacksAvailableAtThisTime": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBuy": "Buy",
+  "@uiBuy": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRetryPayment": "Retry payment",
+  "@uiRetryPayment": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCode": "Promo code",
+  "@uiPromoCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterPromoCode": "Enter promo code",
+  "@uiEnterPromoCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseAPlan": "Choose a Plan",
+  "@uiChooseAPlan": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoPlansAvailableAtThisTime": "No plans available at this time.",
+  "@uiNoPlansAvailableAtThisTime": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHaveAPromoCode": "Have a promo code?",
+  "@uiHaveAPromoCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCURRENTPLAN": "CURRENT PLAN",
+  "@uiCURRENTPLAN": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiManageNotifications": "Manage notifications",
+  "@uiManageNotifications": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAll": "All",
+  "@uiAll": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnread": "Unread",
+  "@uiUnread": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessStopsImmediatelyYouCanSignIn": "Access stops immediately. You can sign in and restore within 30 days. After that, your account and stored files are deleted from active storage.",
+  "@uiAccessStopsImmediatelyYouCanSignIn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCloseMyAccount": "Close My Account",
+  "@uiCloseMyAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourRecordsStayInDoclyzer": "Your records stay in Doclyzer.",
+  "@uiYourRecordsStayInDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTakeACopyOfYourRecords": "Take a copy of your records.",
+  "@uiTakeACopyOfYourRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhoseRecords": "Whose records?",
+  "@uiWhoseRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotLoadProfiles": "Could not load profiles",
+  "@uiCouldNotLoadProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLoadingProfiles": "Loading profiles…",
+  "@uiLoadingProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAllProfiles": "All profiles",
+  "@uiAllProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDateRange": "Date range",
+  "@uiDateRange": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseAllDates": "Use all dates",
+  "@uiUseAllDates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiINCLUDEINTHISEXPORT": "INCLUDE IN THIS EXPORT",
+  "@uiINCLUDEINTHISEXPORT": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOriginalReports": "Original reports",
+  "@uiOriginalReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPDFsAndImagesYouUploaded": "PDFs and images you uploaded",
+  "@uiPDFsAndImagesYouUploaded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTestResults": "Test results",
+  "@uiTestResults": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResultsAsCSVWithTheirReviewState": "Results as CSV, with their review state",
+  "@uiResultsAsCSVWithTheirReviewState": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportsContainPersonalInformationStoreThemSomewhere": "Exports contain personal information. Store them somewhere you trust.",
+  "@uiExportsContainPersonalInformationStoreThemSomewhere": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeleteAccount": "Delete account",
+  "@uiDeleteAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiContinueToDeletion": "Continue to deletion",
+  "@uiContinueToDeletion": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepMyAccount": "Keep my account",
+  "@uiKeepMyAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBeforeYouLeave": "Before you leave",
+  "@uiBeforeYouLeave": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPleaseReadWhatThisWillRemove": "Please read what this will remove.",
+  "@uiPleaseReadWhatThisWillRemove": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeletingYourAccountAffectsAllProfilesYou": "Deleting your account affects all profiles you manage.",
+  "@uiDeletingYourAccountAffectsAllProfilesYou": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountAndPersonalProfile": "Your account and personal profile",
+  "@uiYourAccountAndPersonalProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessThroughYourSharedLinks": "Access through your shared links",
+  "@uiAccessThroughYourSharedLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepACopyFirst": "Keep a copy first",
+  "@uiKeepACopyFirst": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportTheInformationYouWantToRetain": "Export the information you want to retain.",
+  "@uiExportTheInformationYouWantToRetain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportData": "Export data",
+  "@uiExportData": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessStopsImmediatelyYouCanRestoreWithin": "Access stops immediately. You can restore within 30 days. After that, your data is removed from active storage.",
+  "@uiAccessStopsImmediatelyYouCanRestoreWithin": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccountPendingDeletion": "Account pending deletion",
+  "@uiAccountPendingDeletion": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRestoreMyAccount": "Restore my account",
+  "@uiRestoreMyAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDownloadACopyOfYourAccountData": "Download a copy of your account data including your profile, profiles, and consent records.",
+  "@uiDownloadACopyOfYourAccountData": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountIsDisabledImmediatelyYouCan": "Your account is disabled immediately. You can restore it within 30 days. After that, your data is permanently deleted.",
+  "@uiYourAccountIsDisabledImmediatelyYouCan": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCurrentPassword": "Current password",
+  "@uiCurrentPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotChangeAppLockTryAgain": "Could not change App lock. Try again.",
+  "@uiCouldNotChangeAppLockTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourRecordsYourChoiceToShare": "Your records.\nYour choice to share.",
+  "@uiYourRecordsYourChoiceToShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewAccessWheneverYouNeed": "Review access whenever you need.",
+  "@uiReviewAccessWheneverYouNeed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAppLock": "App lock",
+  "@uiAppLock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseYourDeviceSBiometricOrPasscode": "Use your device’s biometric or passcode lock.",
+  "@uiUseYourDeviceSBiometricOrPasscode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationPreviews": "Notification previews",
+  "@uiNotificationPreviews": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiControlLockScreenPreviewsInYourDevice": "Control lock-screen previews in your device settings.",
+  "@uiControlLockScreenPreviewsInYourDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiContactSupport": "Contact support",
+  "@uiContactSupport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAttachReportsOnlyIfYouChooseTo": "Attach reports only if you choose to.",
+  "@uiAttachReportsOnlyIfYouChooseTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhatCanWeHelpYouWith": "What can we help you with?",
+  "@uiWhatCanWeHelpYouWith": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPOPULARQUESTIONS": "POPULAR QUESTIONS",
+  "@uiPOPULARQUESTIONS": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoHelpArticlesMatchYourSearch": "No help articles match your search.",
+  "@uiNoHelpArticlesMatchYourSearch": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiForQuestionsAboutYourHealthOrTest": "For questions about your health or test results, speak with a qualified healthcare professional.",
+  "@uiForQuestionsAboutYourHealthOrTest": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourReportsAClearerPicture": "Your reports. A clearer picture.",
+  "@uiYourReportsAClearerPicture": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepYourHealthHistoryTogether": "Keep your health history together.",
+  "@uiKeepYourHealthHistoryTogether": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiStoreReportsReviewResultsFollowChangesAnd": "Store reports, review results, follow changes and share with your clinician.",
+  "@uiStoreReportsReviewResultsFollowChangesAnd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEducationalInformationOnly": "Educational information only",
+  "@uiEducationalInformationOnly": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSearchHelpArticles": "Search help articles",
+  "@uiSearchHelpArticles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenTheDeviceSettingsAppToChange": "Open the device Settings app to change notification access.",
+  "@uiOpenTheDeviceSettingsAppToChange": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSavePreferences": "Save preferences",
+  "@uiSavePreferences": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDevicePermissionsCanBeChangedInSettings": "Device permissions can be changed in Settings.",
+  "@uiDevicePermissionsCanBeChangedInSettings": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGetReportUpdatesOnThisDevice": "Get report updates on this device",
+  "@uiGetReportUpdatesOnThisDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAllowNotificationsToKnowWhenAReport": "Allow notifications to know when a report is ready. Marketing is a separate choice below.",
+  "@uiAllowNotificationsToKnowWhenAReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiREPORTACTIVITY": "REPORT ACTIVITY",
+  "@uiREPORTACTIVITY": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportActivitySettingsRequireTheLatestServer": "Report activity settings require the latest server version.",
+  "@uiReportActivitySettingsRequireTheLatestServer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSensitiveLockScreenPreviews": "Sensitive lock-screen previews",
+  "@uiSensitiveLockScreenPreviews": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportNamesAndPersonalDetailsAreAlways": "Report names and personal details are always hidden.",
+  "@uiReportNamesAndPersonalDetailsAreAlways": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOTHERMESSAGES": "OTHER MESSAGES",
+  "@uiOTHERMESSAGES": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepEachPersonSReportsAndTrends": "Keep each person’s reports and trends together.",
+  "@uiKeepEachPersonSReportsAndTrends": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPersonDetails": "Person details",
+  "@uiPersonDetails": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDateOfBirth": "Date of birth",
+  "@uiDateOfBirth": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRelationship": "Relationship",
+  "@uiRelationship": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterAName": "Enter a name",
+  "@uiEnterAName": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiClearDateOfBirth": "Clear date of birth",
+  "@uiClearDateOfBirth": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOptionalEGParentOrChild": "Optional, e.g. parent or child",
+  "@uiOptionalEGParentOrChild": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInviteFriendsEarnCredits": "Invite friends, earn credits",
+  "@uiInviteFriendsEarnCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareYourCodeAndFollowEachInvite": "Share your code and follow each invite as rewards unlock.",
+  "@uiShareYourCodeAndFollowEachInvite": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYOURREFERRALCODE": "YOUR REFERRAL CODE",
+  "@uiYOURREFERRALCODE": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareInvite": "Share invite",
+  "@uiShareInvite": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCopyCode": "Copy code",
+  "@uiCopyCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHaveACode": "Have a code?",
+  "@uiHaveACode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterACodeSharedWithYouTo": "Enter a code shared with you to claim your invite reward.",
+  "@uiEnterACodeSharedWithYouTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHowRewardsWork": "How rewards work",
+  "@uiHowRewardsWork": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoFriendsReferredYet": "No friends referred yet",
+  "@uiNoFriendsReferredYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareYourInviteToSeeTheirProgress": "Share your invite to see their progress here.",
+  "@uiShareYourInviteToSeeTheirProgress": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralCode": "Referral code",
+  "@uiReferralCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSetNewPassword": "Set New Password",
+  "@uiSetNewPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterTheResetTokenFromTheLink": "Enter the reset token from the link in your email and your new password.",
+  "@uiEnterTheResetTokenFromTheLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResetPassword": "Reset Password",
+  "@uiResetPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBackToLogin": "Back to login",
+  "@uiBackToLogin": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResetToken": "Reset Token",
+  "@uiResetToken": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNewPassword": "New Password",
+  "@uiNewPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterTheEmailAddressAssociatedWithYour": "Enter the email address associated with your account and we'll send you a link to reset your password.",
+  "@uiEnterTheEmailAddressAssociatedWithYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSendResetLink": "Send Reset Link",
+  "@uiSendResetLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeSession": "Revoke session?",
+  "@uiRevokeSession": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCurrentSession": "Current session",
+  "@uiCurrentSession": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSkip": "Skip",
+  "@uiSkip": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChangePassword": "Change password",
+  "@uiChangePassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterYourCurrentPasswordAndChooseA": "Enter your current password and choose a new one.",
+  "@uiEnterYourCurrentPasswordAndChooseA": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNewPasswordd850ee": "New password",
+  "@uiNewPasswordd850ee": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiConfirmNewPassword": "Confirm new password",
+  "@uiConfirmNewPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGettingThingsReady": "Getting things ready…",
+  "@uiGettingThingsReady": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLinkAccessHistory": "Link Access History",
+  "@uiLinkAccessHistory": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoAccessEventsYet": "No access events yet.",
+  "@uiNoAccessEventsYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDefaultShareLinkExpiry": "Default Share Link Expiry",
+  "@uiDefaultShareLinkExpiry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSave": "Save",
+  "@uiSave": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewSharing": "Review sharing",
+  "@uiReviewSharing": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckThePersonReportsAndAccess": "Check the person, reports and access.",
+  "@uiCheckThePersonReportsAndAccess": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEditSelectionOrAccessSettings": "Edit selection or access settings",
+  "@uiEditSelectionOrAccessSettings": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeShareLink": "Revoke share link?",
+  "@uiRevokeShareLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisLinkWillStopWorkingYouCan": "This link will stop working. You can create a new one.",
+  "@uiThisLinkWillStopWorkingYouCan": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareLinkReady": "Share link ready",
+  "@uiShareLinkReady": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessCodeShareSeparately": "Access code — share separately",
+  "@uiAccessCodeShareSeparately": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCopyAccessCode": "Copy access code",
+  "@uiCopyAccessCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisCodeCouldNotBeSavedOn": "This code could not be saved on this device. Copy it now for later use.",
+  "@uiThisCodeCouldNotBeSavedOn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareLink": "Share link",
+  "@uiShareLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCopyLink": "Copy link",
+  "@uiCopyLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeLink": "Revoke link",
+  "@uiRevokeLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCodeUnavailableOnThisDeviceUseThe": "Code unavailable on this device. Use the saved code or create a new link.",
+  "@uiCodeUnavailableOnThisDeviceUseThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiActiveSharedLinks": "Active shared links",
+  "@uiActiveSharedLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShare": "Share",
+  "@uiShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreateANewShareLink": "Create a new share link",
+  "@uiCreateANewShareLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiIncludeCurrentAndFutureReportsForThis": "Include current and future reports for this profile.",
+  "@uiIncludeCurrentAndFutureReportsForThis": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseReports": "Choose reports",
+  "@uiChooseReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareOnlyTheReportsSelectedBelow": "Share only the reports selected below.",
+  "@uiShareOnlyTheReportsSelectedBelow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectAll": "Select all",
+  "@uiSelectAll": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoReviewedReportsAreAvailableToShare": "No reviewed reports are available to share.",
+  "@uiNoReviewedReportsAreAvailableToShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectedTestResults": "Selected test results",
+  "@uiSelectedTestResults": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiIncludeOnlyTheResultsYouChooseFrom": "Include only the results you choose from these reports.",
+  "@uiIncludeOnlyTheResultsYouChooseFrom": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoSavedTestResultsAreAvailableIn": "No saved test results are available in these reports.",
+  "@uiNoSavedTestResultsAreAvailableIn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUpgradeOrManage": "Upgrade or Manage",
+  "@uiUpgradeOrManage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExpiry": "Expiry:",
+  "@uiExpiry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRequireAnAccessCode": "Require an access code",
+  "@uiRequireAnAccessCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareTheCodeSeparatelyFromTheLink": "Share the code separately from the link.",
+  "@uiShareTheCodeSeparatelyFromTheLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTryAgain": "Try Again",
+  "@uiTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiClearExpiry": "Clear expiry",
+  "@uiClearExpiry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingStoreEyebrow": "01 / STORE",
+  "@onboardingStoreEyebrow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingStoreTitle": "Every report,\none familiar place.",
+  "@onboardingStoreTitle": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingStoreBody": "Keep PDFs and photos together, for you and the people you care for.",
+  "@onboardingStoreBody": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingUnderstandEyebrow": "02 / UNDERSTAND",
+  "@onboardingUnderstandEyebrow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingUnderstandTitle": "The numbers,\nmade easier to read.",
+  "@onboardingUnderstandTitle": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingUnderstandBody": "See each test, its unit and the interval from your report. Check the original anytime.",
+  "@onboardingUnderstandBody": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingTrackEyebrow": "03 / TRACK & SHARE",
+  "@onboardingTrackEyebrow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingTrackTitle": "See the changes.\nShare the context.",
+  "@onboardingTrackTitle": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingTrackBody": "Follow results over time and choose exactly what your clinician can see.",
+  "@onboardingTrackBody": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingNext": "Next",
+  "@onboardingNext": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingGetStarted": "Get started",
+  "@onboardingGetStarted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSupportRequestSent": "Support request sent.",
+  "@uiSupportRequestSent": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTestNameAndResultAreRequired": "Test name and result are required.",
+  "@uiTestNameAndResultAreRequired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseAValidCollectionDateInYYYY": "Use a valid collection date in YYYY-MM-DD format.",
+  "@uiUseAValidCollectionDateInYYYY": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotSaveThisCorrectionTryAgain": "Could not save this correction. Try again.",
+  "@uiCouldNotSaveThisCorrectionTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportsUnavailable": "Reports unavailable",
+  "@uiReportsUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTryAgain042c86": "Try again",
+  "@uiTryAgain042c86": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTwoReportsAreNeeded": "Two reports are needed",
+  "@uiTwoReportsAreNeeded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAddAnOlderReportForThisProfile": "Add an older report for this profile to compare results.",
+  "@uiAddAnOlderReportForThisProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotCompareYet": "Cannot compare yet",
+  "@uiCannotCompareYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTheseReportsHaveNoMatchingResultsAvailable": "These reports have no matching results available for comparison.",
+  "@uiTheseReportsHaveNoMatchingResultsAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadReportsTryAgain": "Unable to load reports. Try again.",
+  "@uiUnableToLoadReportsTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenPhotosOrCamera": "Could not open photos or camera.",
+  "@uiCouldNotOpenPhotosOrCamera": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenCamera": "Could not open camera.",
+  "@uiCouldNotOpenCamera": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotPrepareThesePagesRetakeAn": "Could not prepare these pages. Retake an unreadable page and try again.",
+  "@uiCouldNotPrepareThesePagesRetakeAn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotAdjustThisPage": "Could not adjust this page.",
+  "@uiCouldNotAdjustThisPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoChartableResultYet": "No chartable result yet",
+  "@uiNoChartableResultYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProfiles": "Profiles",
+  "@uiProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReports": "Reports",
+  "@uiReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareLinks": "Share links",
+  "@uiShareLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAIChat": "AI Chat",
+  "@uiAIChat": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadEntitlementSummaryPleaseTry": "Failed to load entitlement summary. Please try again.",
+  "@uiFailedToLoadEntitlementSummaryPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToRefreshBillingStatusPleaseTry": "Failed to refresh billing status. Please try again.",
+  "@uiFailedToRefreshBillingStatusPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReceiptDownloadWillBeAvailableSoon": "Receipt download will be available soon.",
+  "@uiReceiptDownloadWillBeAvailableSoon": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSubtotal": "Subtotal",
+  "@uiSubtotal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDiscount": "Discount",
+  "@uiDiscount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTotal": "Total",
+  "@uiTotal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadCreditPacksPleaseTry": "Failed to load credit packs. Please try again.",
+  "@uiFailedToLoadCreditPacksPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAPaymentIsPendingCaptureRefreshStatus": "A payment is pending capture. Refresh status before starting another checkout.",
+  "@uiAPaymentIsPendingCaptureRefreshStatus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditsWereAppliedSuccessfully": "Credits were applied successfully.",
+  "@uiCreditsWereAppliedSuccessfully": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToCreateOrderPleaseTryAgain": "Failed to create order. Please try again.",
+  "@uiFailedToCreateOrderPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentReceivedAwaitingServerReconciliationBeforeCredits": "Payment received. Awaiting server reconciliation before credits are added.",
+  "@uiPaymentReceivedAwaitingServerReconciliationBeforeCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentFailedYouCanRetryCheckoutWhen": "Payment failed. You can retry checkout when ready.",
+  "@uiPaymentFailedYouCanRetryCheckoutWhen": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentFailedTryAgain": "Payment failed. Try again.",
+  "@uiPaymentFailedTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditsAdded": "Credits added!",
+  "@uiCreditsAdded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeApplied": "Promo code applied.",
+  "@uiPromoCodeApplied": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentReceivedButThisOrderIsPending": "Payment received, but this order is pending review.",
+  "@uiPaymentReceivedButThisOrderIsPending": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentFailedDuringReconciliation": "Payment failed during reconciliation.",
+  "@uiPaymentFailedDuringReconciliation": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentConfirmedServerReconciliationIsStillPending": "Payment confirmed. Server reconciliation is still pending.",
+  "@uiPaymentConfirmedServerReconciliationIsStillPending": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentVerifiedReconciliationIsPendingPleaseRefresh": "Payment verified. Reconciliation is pending, please refresh shortly.",
+  "@uiPaymentVerifiedReconciliationIsPendingPleaseRefresh": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentReceivedButVerificationIsStillPending": "Payment received but verification is still pending. Please refresh status.",
+  "@uiPaymentReceivedButVerificationIsStillPending": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadPlansPleaseTryAgain": "Failed to load plans. Please try again.",
+  "@uiFailedToLoadPlansPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToCreateSubscriptionPleaseTryAgain": "Failed to create subscription. Please try again.",
+  "@uiFailedToCreateSubscriptionPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSubscriptionFailedTryAgain": "Subscription failed. Try again.",
+  "@uiSubscriptionFailedTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPlanUpgraded": "Plan upgraded!",
+  "@uiPlanUpgraded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentReceivedButVerificationFailedPlanWill": "Payment received but verification failed. Plan will be upgraded shortly.",
+  "@uiPaymentReceivedButVerificationFailedPlanWill": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationsUnavailable": "Notifications unavailable",
+  "@uiNotificationsUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAllQuietForNow": "All quiet for now.",
+  "@uiAllQuietForNow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportUpdatesAndSharingRemindersWillAppear": "Report updates and sharing reminders will appear here when there’s something new.",
+  "@uiReportUpdatesAndSharingRemindersWillAppear": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoUnreadUpdates": "No unread updates",
+  "@uiNoUnreadUpdates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouReAllCaughtUp": "You’re all caught up.",
+  "@uiYouReAllCaughtUp": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadNotificationsTryAgainWhen": "Unable to load notifications. Try again when connected.",
+  "@uiUnableToLoadNotificationsTryAgainWhen": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiManageSharedLinks": "Manage shared links",
+  "@uiManageSharedLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportYourData": "Export your data",
+  "@uiExportYourData": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReadThePrivacyPolicy": "Read the Privacy Policy",
+  "@uiReadThePrivacyPolicy": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTermsOfUse": "Terms of Use",
+  "@uiTermsOfUse": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPrivacyPolicy": "Privacy Policy",
+  "@uiPrivacyPolicy": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDateOfBirthOptional": "Date of birth, optional",
+  "@uiDateOfBirthOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRelationshipMustBe50CharactersOrFewer": "Relationship must be 50 characters or fewer.",
+  "@uiRelationshipMustBe50CharactersOrFewer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToSaveProfilePleaseTryAgain": "Failed to save profile. Please try again.",
+  "@uiFailedToSaveProfilePleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralsUnavailable": "Referrals unavailable",
+  "@uiReferralsUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourRewards": "Your rewards",
+  "@uiYourRewards": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralProgress": "Referral progress",
+  "@uiReferralProgress": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFriendsReferred": "Friends referred",
+  "@uiFriendsReferred": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditsEarned": "Credits earned",
+  "@uiCreditsEarned": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPendingRewards": "Pending rewards",
+  "@uiPendingRewards": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBlockedRewards": "Blocked rewards",
+  "@uiBlockedRewards": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInviteeBonus": "Invitee bonus",
+  "@uiInviteeBonus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFirstAnalysis": "First analysis",
+  "@uiFirstAnalysis": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFirstPurchase": "First purchase",
+  "@uiFirstPurchase": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMonthlyCap": "Monthly cap",
+  "@uiMonthlyCap": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadReferralsPleaseTryAgain": "Failed to load referrals. Please try again.",
+  "@uiFailedToLoadReferralsPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralCodeCopied": "Referral code copied.",
+  "@uiReferralCodeCopied": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterTheResetTokenFromYourEmail": "Enter the reset token from your email link",
+  "@uiEnterTheResetTokenFromYourEmail": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterYourNewPassword": "Enter your new password",
+  "@uiEnterYourNewPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToResetPasswordPleaseRequestA": "Unable to reset password. Please request a new link.",
+  "@uiUnableToResetPasswordPleaseRequestA": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterYourEmailAddress": "Enter your email address",
+  "@uiEnterYourEmailAddress": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToSendResetLinkPleaseTry": "Unable to send reset link. Please try again.",
+  "@uiUnableToSendResetLinkPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadSessions": "Failed to load sessions.",
+  "@uiFailedToLoadSessions": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToRevokeSession": "Failed to revoke session.",
+  "@uiFailedToRevokeSession": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToChangePasswordPleaseTryAgain": "Unable to change password. Please try again.",
+  "@uiUnableToChangePasswordPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenDeviceSettingsAndAllowNotificationsFor": "Open device Settings and allow notifications for Doclyzer.",
+  "@uiOpenDeviceSettingsAndAllowNotificationsFor": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportsCouldNotBeLoadedTryAgain": "Reports could not be loaded. Try again.",
+  "@uiReportsCouldNotBeLoadedTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTestResultsCouldNotBeLoadedTry": "Test results could not be loaded. Try again.",
+  "@uiTestResultsCouldNotBeLoadedTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectAtLeastOneReportToShare": "Select at least one report to share.",
+  "@uiSelectAtLeastOneReportToShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectAtLeastOneTestResultTo": "Select at least one test result to share.",
+  "@uiSelectAtLeastOneTestResultTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLinkCopiedToClipboard": "Link copied to clipboard",
+  "@uiLinkCopiedToClipboard": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessCodeCopiedToClipboard": "Access code copied to clipboard",
+  "@uiAccessCodeCopiedToClipboard": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOnePerson": "1 person",
+  "@uiOnePerson": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPeopleCount": "{count} people",
+  "@uiPeopleCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiActionsFor": "Actions for {name}",
+  "@uiActionsFor": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnableToSwitchProfilesDetail": "Unable to switch profiles. {message}",
+  "@uiUnableToSwitchProfilesDetail": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSwitchedTo": "Switched to {name}",
+  "@uiSwitchedTo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAnalyzeOnePage": "Analyze 1 page",
+  "@uiAnalyzeOnePage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAnalyzePages": "Analyze {count} pages",
+  "@uiAnalyzePages": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDragPagesIntoOrder": "Drag pages into the order shown in your report",
+  "@uiDragPagesIntoOrder": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckEveryPage": "Check every page before analyzing",
+  "@uiCheckEveryPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOnePageAdded": "1 page added",
+  "@uiOnePageAdded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPagesAdded": "{count} pages added",
+  "@uiPagesAdded": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReorder": "Reorder",
+  "@uiReorder": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPageNumber": "Page {number}",
+  "@uiPageNumber": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "uiRemovePage": "Remove page {number}",
+  "@uiRemovePage": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "uiProfilePage": "{name} · Page {number}",
+  "@uiProfilePage": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCropEdges": "Crop edges: {percent}%",
+  "@uiCropEdges": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSelectedReportsCount": "{count} selected reports",
+  "@uiSelectedReportsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSelectedTestResultsCount": "{count} selected test results",
+  "@uiSelectedTestResultsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAllCurrentFutureReports": "All current and future reports",
+  "@uiAllCurrentFutureReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoExpiry": "No expiry",
+  "@uiNoExpiry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExpiresDate": "Expires {date}",
+  "@uiExpiresDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAccessCodeRequiredSeparate": "Access code required. Share it separately from the link.",
+  "@uiAccessCodeRequiredSeparate": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoAccessCodeRequired": "No access code required.",
+  "@uiNoAccessCodeRequired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExpiresColonDate": "Expires: {date}",
+  "@uiExpiresColonDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiShareProfileReports": "Share {name}’s reports",
+  "@uiShareProfileReports": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiProfileReports": "{name}’s reports",
+  "@uiProfileReports": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSelectedResultsCount": "{count} selected results",
+  "@uiSelectedResultsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAccessCodeRequiredShort": "Access code required",
+  "@uiAccessCodeRequiredShort": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPastLinksCount": "Past links · {count}",
+  "@uiPastLinksCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiExpiredDate": "Expired {date}",
+  "@uiExpiredDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiRevokedCreatedDate": "Revoked · Created {date}",
+  "@uiRevokedCreatedDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUsingActiveLinks": "Using {current} of {maximum} active links.",
+  "@uiUsingActiveLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "maximum": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDeleteReportAndStoredFile": "Delete {filename} and its stored file? This cannot be undone.",
+  "@uiDeleteReportAndStoredFile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnableDeleteReportDetail": "Unable to delete report: {error}",
+  "@uiUnableDeleteReportDetail": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDeleteAllReportsAndFiles": "Permanently delete all {count} reports and their stored files? This cannot be undone.",
+  "@uiDeleteAllReportsAndFiles": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiRecycleBinEmptied": "Recycle Bin emptied",
+  "@uiRecycleBinEmptied": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSomeReportsDeleteFailed": "Deleted {deleted} reports. {failed} could not be deleted; try again.",
+  "@uiSomeReportsDeleteFailed": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "deleted": {
+        "type": "String"
+      },
+      "failed": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnableEmptyRecycleBinDetail": "Unable to empty Recycle Bin: {error}",
+  "@uiUnableEmptyRecycleBinDetail": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "uiProfileName": "Profile: {name}",
+  "@uiProfileName": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCollectedDate": "Collected: {date}",
+  "@uiCollectedDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUploadedDate": "Uploaded: {date}",
+  "@uiUploadedDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDeletedOn": "Deleted on: {date}",
+  "@uiDeletedOn": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiPermanentDeleteOn": "Permanent delete on: {date}",
+  "@uiPermanentDeleteOn": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDaysLeft": "Days left: {count}",
+  "@uiDaysLeft": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiConfirmAppLockForDoclyzer": "Confirm App lock for Doclyzer",
+  "@uiConfirmAppLockForDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiConfirmBeforeTurningOffAppLock": "Confirm before turning off App lock",
+  "@uiConfirmBeforeTurningOffAppLock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnlockDoclyzerToViewYourHealthRecords": "Unlock Doclyzer to view your health records",
+  "@uiUnlockDoclyzerToViewYourHealthRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreateADefaultProfileBeforeUploadingA": "Create a default profile before uploading a report.",
+  "@uiCreateADefaultProfileBeforeUploadingA": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreateADefaultProfileBeforeViewingYour": "Create a default profile before viewing your timeline.",
+  "@uiCreateADefaultProfileBeforeViewingYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadProfilesRightNow": "Unable to load profiles right now.",
+  "@uiUnableToLoadProfilesRightNow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotUploadRightNowBecauseProfileData": "Cannot upload right now because profile data could not be loaded. Please ensure API server is running and try again.",
+  "@uiCannotUploadRightNowBecauseProfileData": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotOpenTimelineRightNowBecauseProfile": "Cannot open timeline right now because profile data could not be loaded. Please ensure API server is running and try again.",
+  "@uiCannotOpenTimelineRightNowBecauseProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadProfilesRightNowPlease": "Unable to load profiles right now. Please try again.",
+  "@uiUnableToLoadProfilesRightNowPlease": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadSharingLinksPleaseTry": "Unable to load sharing links. Please try again.",
+  "@uiUnableToLoadSharingLinksPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPasswordChanged": "Password changed",
+  "@uiPasswordChanged": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToOpenThatReportTryThe": "Unable to open that report. Try the report library.",
+  "@uiUnableToOpenThatReportTryThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisActionIsTemporarilyUnavailableWhileYour": "This action is temporarily unavailable while your account is under review.",
+  "@uiThisActionIsTemporarilyUnavailableWhileYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToOpenThisSectionPleaseTry": "Unable to open this section. Please try again.",
+  "@uiUnableToOpenThisSectionPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAppLockIsUnavailable": "App lock is unavailable",
+  "@uiAppLockIsUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDoclyzerIsLocked": "Doclyzer is locked",
+  "@uiDoclyzerIsLocked": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotReadTheSavedAppLock": "Could not read the saved App lock setting. Retry to continue.",
+  "@uiCouldNotReadTheSavedAppLock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseYourDevicePasscodeOrBiometricsTo": "Use your device passcode or biometrics to continue.",
+  "@uiUseYourDevicePasscodeOrBiometricsTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadsAreTemporarilyUnavailableWhileYourAccount": "Uploads are temporarily unavailable while your account is under review.",
+  "@uiUploadsAreTemporarilyUnavailableWhileYourAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToStartAnUploadPleaseTry": "Unable to start an upload. Please try again.",
+  "@uiUnableToStartAnUploadPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiJustNow": "Just now",
+  "@uiJustNow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAdditionalDetails": "Additional details: ",
+  "@uiAdditionalDetails": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaveCorrection": "Save correction",
+  "@uiSaveCorrection": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenFilesCheckAccessAnd": "Could not open files. Check access and try again.",
+  "@uiCouldNotOpenFilesCheckAccessAnd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenCameraCheckPermissionAnd": "Could not open camera. Check permission and try again.",
+  "@uiCouldNotOpenCameraCheckPermissionAnd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenPhotosCheckPermissionAnd": "Could not open photos. Check permission and try again.",
+  "@uiCouldNotOpenPhotosCheckPermissionAnd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotAccessSelectedFile": "Could not access selected file.",
+  "@uiCouldNotAccessSelectedFile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotAccessSelectedFile45effa": "Could not access selected file",
+  "@uiCouldNotAccessSelectedFile45effa": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiConnectionLostTheUploadMayHaveReached": "Connection lost. The upload may have reached the server. Retry the same file safely.",
+  "@uiConnectionLostTheUploadMayHaveReached": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotLoadExistingReport": "Could not load existing report",
+  "@uiCouldNotLoadExistingReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAddingTo": "Adding to  ",
+  "@uiAddingTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSomeResultsNeedReviewYourOriginalReport": "Some results need review. Your original report is saved.",
+  "@uiSomeResultsNeedReviewYourOriginalReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWeCouldnTReadThisFormatYour": "We couldn't read this format. Your file is saved.",
+  "@uiWeCouldnTReadThisFormatYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportParsedSuccessfullyResultsAndTrendsAre": "Report parsed successfully. Results and trends are available.",
+  "@uiReportParsedSuccessfullyResultsAndTrendsAre": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourReportIsStillBeingAnalyzedOpen": "Your report is still being analyzed. Open it to check its status.",
+  "@uiYourReportIsStillBeingAnalyzedOpen": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProcessingStoppedYourFileIsSavedYou": "Processing stopped. Your file is saved. You can retry.",
+  "@uiProcessingStoppedYourFileIsSavedYou": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoExtractedTestValuesWereAddedYou": "No extracted test values were added. You can still open and share the document. Your trends are unchanged.",
+  "@uiNoExtractedTestValuesWereAddedYou": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourOriginalIsSaved": "Your original is saved.",
+  "@uiYourOriginalIsSaved": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInitialUpload": "Initial upload",
+  "@uiInitialUpload": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiParsedSuccessfully": "Parsed successfully",
+  "@uiParsedSuccessfully": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiParsingFailed": "Parsing failed",
+  "@uiParsingFailed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExtractionIncomplete": "Extraction incomplete",
+  "@uiExtractionIncomplete": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTransientFailure": "Transient failure",
+  "@uiTransientFailure": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTerminalFailure": "Terminal failure",
+  "@uiTerminalFailure": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadAttemptHistory": "Failed to load attempt history",
+  "@uiFailedToLoadAttemptHistory": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisReportSFileIsNoLonger": "This report's file is no longer available.",
+  "@uiThisReportSFileIsNoLonger": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCompareResults": "Compare results",
+  "@uiCompareResults": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoDifferenceCalculatedCompatibilityNeedsConfirmation": "No difference calculated. Compatibility needs confirmation.",
+  "@uiNoDifferenceCalculatedCompatibilityNeedsConfirmation": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnitNotRecorded": "Unit not recorded",
+  "@uiUnitNotRecorded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoNumericChangeBetweenTheseReports": "No numeric change between these reports.",
+  "@uiNoNumericChangeBetweenTheseReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToRestore": "Unable to restore: ",
+  "@uiUnableToRestore": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterAGiftVoucherCode": "Enter a gift voucher code.",
+  "@uiEnterAGiftVoucherCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiApplyVoucher": "Apply Voucher",
+  "@uiApplyVoucher": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotAvailable": "Not available",
+  "@uiNotAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiViewReceipt": "View receipt",
+  "@uiViewReceipt": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherIsInvalidOrAlreadyRedeemed": "Gift voucher is invalid or already redeemed.",
+  "@uiGiftVoucherIsInvalidOrAlreadyRedeemed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherHasAlreadyBeenRedeemed": "Gift voucher has already been redeemed.",
+  "@uiGiftVoucherHasAlreadyBeenRedeemed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherHasBeenVoided": "Gift voucher has been voided.",
+  "@uiGiftVoucherHasBeenVoided": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherHasExpired": "Gift voucher has expired.",
+  "@uiGiftVoucherHasExpired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToRedeemThisGiftVoucher": "Unable to redeem this gift voucher.",
+  "@uiUnableToRedeemThisGiftVoucher": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToRedeemThisGiftVoucherPlease": "Unable to redeem this gift voucher. Please try again.",
+  "@uiUnableToRedeemThisGiftVoucherPlease": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterAPromoCodeToApply": "Enter a promo code to apply.",
+  "@uiEnterAPromoCodeToApply": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeNotFound": "Promo code not found.",
+  "@uiPromoCodeNotFound": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeIsInactive": "Promo code is inactive.",
+  "@uiPromoCodeIsInactive": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeHasExpired": "Promo code has expired.",
+  "@uiPromoCodeHasExpired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeIsNotApplicableToThis": "Promo code is not applicable to this pack.",
+  "@uiPromoCodeIsNotApplicableToThis": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeUsageLimitReached": "Promo code usage limit reached.",
+  "@uiPromoCodeUsageLimitReached": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouHaveAlreadyUsedThisPromoCode": "You have already used this promo code.",
+  "@uiYouHaveAlreadyUsedThisPromoCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToApplyPromoCodePleaseTry": "Failed to apply promo code. Please try again.",
+  "@uiFailedToApplyPromoCodePleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisOrderWasFlaggedForReviewBefore": "This order was flagged for review before credits could be added.",
+  "@uiThisOrderWasFlaggedForReviewBefore": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentFailedDuringReconciliationYouCanRetry": "Payment failed during reconciliation. You can retry safely.",
+  "@uiPaymentFailedDuringReconciliationYouCanRetry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAwaitingCapture": "Awaiting capture",
+  "@uiAwaitingCapture": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLastPaymentFailed": "Last payment failed",
+  "@uiLastPaymentFailed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouCanRetryCheckoutSafely": "You can retry checkout safely.",
+  "@uiYouCanRetryCheckoutSafely": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodesNotSupportedForSubscriptionsYet": "Promo codes not supported for subscriptions yet.",
+  "@uiPromoCodesNotSupportedForSubscriptionsYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotDownloadTheExportTryAgain": "Could not download the export. Try again.",
+  "@uiCouldNotDownloadTheExportTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectOriginalReportsOrTestResults": "Select original reports or test results.",
+  "@uiSelectOriginalReportsOrTestResults": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportRequestedTapCheckStatusToRefresh": "Export requested. Tap \"Check Status\" to refresh.",
+  "@uiExportRequestedTapCheckStatusToRefresh": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToRequestExportPleaseTryAgain": "Failed to request export. Please try again.",
+  "@uiFailedToRequestExportPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportReadyDownloadURLAvailable": "Export ready. Download URL available.",
+  "@uiExportReadyDownloadURLAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToCheckExportStatusPleaseTry": "Failed to check export status. Please try again.",
+  "@uiFailedToCheckExportStatusPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToCloseAccountPleaseTryAgain": "Failed to close account. Please try again.",
+  "@uiFailedToCloseAccountPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPrepareExport": "Prepare export",
+  "@uiPrepareExport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaveExport": "Save export",
+  "@uiSaveExport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPrepareExportAgain": "Prepare export again",
+  "@uiPrepareExportAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAllDates": "All dates",
+  "@uiAllDates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPreparingAccountDetails": "Preparing account details",
+  "@uiPreparingAccountDetails": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFamilyMemberProfiles": "Family member profiles",
+  "@uiFamilyMemberProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadedReports": "Uploaded reports",
+  "@uiUploadedReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDownloadReady": "Download ready",
+  "@uiDownloadReady": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportNotificationsEnabledOnThisDevice": "Report notifications enabled on this device",
+  "@uiReportNotificationsEnabledOnThisDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeviceSettingsOpenedAllowNotificationsForDoclyzer": "Device settings opened. Allow notifications for Doclyzer, then return here.",
+  "@uiDeviceSettingsOpenedAllowNotificationsForDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationsAreStillOffAllowThemIn": "Notifications are still off. Allow them in device settings to receive report updates.",
+  "@uiNotificationsAreStillOffAllowThemIn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPreferencesSaved": "Preferences saved",
+  "@uiPreferencesSaved": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountChoiceWasSavedButThis": "Your account choice was saved, but this device did not finish registering for marketing push. Marketing remains blocked on this device; check notification permission and try saving again.",
+  "@uiYourAccountChoiceWasSavedButThis": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountChoiceWasSavedThisDevice": "Your account choice was saved. This device could not confirm its local preference yet, but marketing remains blocked at account level.",
+  "@uiYourAccountChoiceWasSavedThisDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountChoiceWasSavedButThisaf7de6": "Your account choice was saved, but this device could not enable marketing push. Check notification permission and try again.",
+  "@uiYourAccountChoiceWasSavedButThisaf7de6": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSavingTookTooLongCheckYourConnection": "Saving took too long. Check your connection and try again.",
+  "@uiSavingTookTooLongCheckYourConnection": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportReadyForReview": "Report ready for review",
+  "@uiReportReadyForReview": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKnowWhenYourResultsAreReadyTo": "Know when your results are ready to check.",
+  "@uiKnowWhenYourResultsAreReadyTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadUpdates": "Upload updates",
+  "@uiUploadUpdates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGetAMessageIfAnUploadNeeds": "Get a message if an upload needs attention.",
+  "@uiGetAMessageIfAnUploadNeeds": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSharedLinkReminders": "Shared link reminders",
+  "@uiSharedLinkReminders": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHearWhenALinkIsAboutTo": "Hear when a link is about to expire.",
+  "@uiHearWhenALinkIsAboutTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSecurityAlerts": "Security alerts",
+  "@uiSecurityAlerts": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRequiredForAccountSafety": "Required for account safety.",
+  "@uiRequiredForAccountSafety": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiComplianceNotices": "Compliance notices",
+  "@uiComplianceNotices": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRequiredAccountInformation": "Required account information.",
+  "@uiRequiredAccountInformation": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMarketingPushNotifications": "Marketing push notifications",
+  "@uiMarketingPushNotifications": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOffersAndAnnouncementsSavingThisChoiceAlso": "Offers and announcements. Saving this choice also applies it to this device.",
+  "@uiOffersAndAnnouncementsSavingThisChoiceAlso": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProductUpdates": "Product updates",
+  "@uiProductUpdates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOptionalNewsAboutDoclyzer": "Optional news about Doclyzer.",
+  "@uiOptionalNewsAboutDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotConnectToServerPleaseCheckYour": "Cannot connect to server. Please check your internet or API server.",
+  "@uiCannotConnectToServerPleaseCheckYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProfileUpdatesAreTemporarilyUnavailableWhileYour": "Profile updates are temporarily unavailable while your account is under review.",
+  "@uiProfileUpdatesAreTemporarilyUnavailableWhileYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUse100CharactersOrFewer": "Use 100 characters or fewer",
+  "@uiUse100CharactersOrFewer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAddProfile": "Add profile",
+  "@uiAddProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreateProfile": "Create profile",
+  "@uiCreateProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUpdateTheirDetails": "Update their details",
+  "@uiUpdateTheirDetails": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhoIsThisProfileFor": "Who is this profile for?",
+  "@uiWhoIsThisProfileFor": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotSelected": "Not selected",
+  "@uiNotSelected": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterAReferralCode": "Enter a referral code.",
+  "@uiEnterAReferralCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralAppliedBonusUnlocksAfterEmailVerification": "Referral applied. Bonus unlocks after email verification.",
+  "@uiReferralAppliedBonusUnlocksAfterEmailVerification": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralAppliedBonusCreditsAreReady": "Referral applied. Bonus credits are ready.",
+  "@uiReferralAppliedBonusCreditsAreReady": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiApplyCode": "Apply code",
+  "@uiApplyCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouCannotApplyYourOwnReferralCode": "You cannot apply your own referral code.",
+  "@uiYouCannotApplyYourOwnReferralCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralCodeIsInvalid": "Referral code is invalid.",
+  "@uiReferralCodeIsInvalid": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToApplyReferralCode": "Failed to apply referral code.",
+  "@uiFailedToApplyReferralCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToApplyReferralCodePleaseTry": "Failed to apply referral code. Please try again.",
+  "@uiFailedToApplyReferralCodePleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisDevice": "This device",
+  "@uiThisDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSignedInDevice": "Signed-in device",
+  "@uiSignedInDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnknownDevice": "Unknown device",
+  "@uiUnknownDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeAndLogOut": "Revoke and log out",
+  "@uiRevokeAndLogOut": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeSessionca8440": "Revoke session",
+  "@uiRevokeSessionca8440": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterYourCurrentPassword": "Enter your current password",
+  "@uiEnterYourCurrentPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseAtLeast8CharactersWithUppercase": "Use at least 8 characters with uppercase, lowercase, a number, and a special character",
+  "@uiUseAtLeast8CharactersWithUppercase": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseADifferentPassword": "Choose a different password",
+  "@uiChooseADifferentPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNewPasswordsDoNotMatch": "New passwords do not match",
+  "@uiNewPasswordsDoNotMatch": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouHaveUsedAllAvailableUploadCredits": "You have used all available upload credits. Visit Plan & Credits to add more.",
+  "@uiYouHaveUsedAllAvailableUploadCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationsAreDisabledForDoclyzerOpenDevice": "Notifications are disabled for Doclyzer. Open device Settings to allow report-ready and account updates. Marketing stays off unless you choose it.",
+  "@uiNotificationsAreDisabledForDoclyzerOpenDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGetReportReadyAndAccountUpdatesOn": "Get report-ready and account updates on this device. Marketing stays off unless you choose it.",
+  "@uiGetReportReadyAndAccountUpdatesOn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationsAreOffForThisDeviceOpen": "Notifications are off for this device. Open Settings to receive report-ready and account updates.",
+  "@uiNotificationsAreOffForThisDeviceOpen": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBlockedExpiredRevoked": "Blocked (expired/revoked)",
+  "@uiBlockedExpiredRevoked": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadPolicy": "Failed to load policy",
+  "@uiFailedToLoadPolicy": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadPaused": "Upload paused",
+  "@uiUploadPaused": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSevenDays": "7 days",
+  "@uiSevenDays": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThirtyDays": "30 days",
+  "@uiThirtyDays": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNinetyDays": "90 days",
+  "@uiNinetyDays": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadingAClearReport": "Uploading a clear report",
+  "@uiUploadingAClearReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPDFsPhotosAndMultiplePages": "PDFs, photos and multiple pages",
+  "@uiPDFsPhotosAndMultiplePages": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseAPDFOrTakeClearPhotos": "Choose a PDF or take clear photos of every page. Keep the whole page in frame, avoid glare, and check the page order before analyzing. You can correct extracted values against the original.",
+  "@uiChooseAPDFOrTakeClearPhotos": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCorrectingAResult": "Correcting a result",
+  "@uiCorrectingAResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewValuesAgainstTheOriginal": "Review values against the original",
+  "@uiReviewValuesAgainstTheOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenAReportReviewEachExtractedTest": "Open a report, review each extracted test against the original, and correct any value, unit, or date that was read incorrectly. Unconfirmed results should be checked before you rely on trends.",
+  "@uiOpenAReportReviewEachExtractedTest": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiManagingFamilyRecords": "Managing family records",
+  "@uiManagingFamilyRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProfilesAccessAndPermissions": "Profiles, access and permissions",
+  "@uiProfilesAccessAndPermissions": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseFamilyToCreateAndSwitchProfiles": "Use Family to create and switch profiles. Check the selected person before uploading or sharing a report. Manage only records you are authorized to access.",
+  "@uiUseFamilyToCreateAndSwitchProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSharingAndRevokingLinks": "Sharing and revoking links",
+  "@uiSharingAndRevokingLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiControlTheRecordsYouShare": "Control the records you share",
+  "@uiControlTheRecordsYouShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectTheReportsOrResultsYouWant": "Select the reports or results you want to share, review the expiry and access code, then send the link and code separately. Revoke an active link from Shared links when access is no longer needed.",
+  "@uiSelectTheReportsOrResultsYouWant": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInformationYouProvide": "Information you provide",
+  "@uiInformationYouProvide": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccountDetailsAndFamilyProfilesIdentifyWhose": "Account details and family profiles identify whose records you manage. Uploaded documents may contain sensitive health information.",
+  "@uiAccountDetailsAndFamilyProfilesIdentifyWhose": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSharingControls": "Sharing controls",
+  "@uiSharingControls": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewTheContentsExpiryAndAccessSettings": "Review the contents, expiry and access settings of each link. Manage active links from your account settings.",
+  "@uiReviewTheContentsExpiryAndAccessSettings": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportAndAccountChoices": "Export and account choices",
+  "@uiExportAndAccountChoices": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseSettingsToExportRecordsOrStart": "Use settings to export records or start an account deletion request. Retention details belong in the complete policy.",
+  "@uiUseSettingsToExportRecordsOrStart": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEducationalScope": "Educational scope",
+  "@uiEducationalScope": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDoclyzerOrganizesReportsAndShowsResultsOver": "Doclyzer organizes reports and shows results over time. Educational explanations are not medical advice or a diagnosis.",
+  "@uiDoclyzerOrganizesReportsAndShowsResultsOver": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewYourRecords": "Review your records",
+  "@uiReviewYourRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckExtractedValuesUnitsAndDatesAgainst": "Check extracted values, units and dates against the original report. Ask a healthcare professional about your results.",
+  "@uiCheckExtractedValuesUnitsAndDatesAgainst": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiManageAndShareResponsibly": "Manage and share responsibly",
+  "@uiManageAndShareResponsibly": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOnlyManageRecordsYouAreAuthorizedTo": "Only manage records you are authorized to access. Check the selected information and recipient before sharing.",
+  "@uiOnlyManageRecordsYouAreAuthorizedTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPrivacyPolicy7ceacd": "Privacy policy",
+  "@uiPrivacyPolicy7ceacd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTermsOfUse8a069e": "Terms of use",
+  "@uiTermsOfUse8a069e": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenPrivacyControls": "Open privacy controls",
+  "@uiOpenPrivacyControls": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGetHelpWithTheApp": "Get help with the app",
+  "@uiGetHelpWithTheApp": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportYourDataInAccountSettings": "Export your data in account settings",
+  "@uiExportYourDataInAccountSettings": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYOURDATACHOICES": "YOUR DATA & CHOICES",
+  "@uiYOURDATACHOICES": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUSINGDOCLYZER": "USING DOCLYZER",
+  "@uiUSINGDOCLYZER": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnderstandTheInformationYouKeepInDoclyzer": "Understand the information\nyou keep in Doclyzer.",
+  "@uiUnderstandTheInformationYouKeepInDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAClearUnderstandingOfTheAppsRole": "A clear understanding\nof the app’s role.",
+  "@uiAClearUnderstandingOfTheAppsRole": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportsFromLab": "{reportCount} from {name}",
+  "@uiReportsFromLab": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reportCount": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportsLatestDate": "{reportCount} · Latest {date}",
+  "@uiReportsLatestDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reportCount": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUploadReportForProfile": "Upload a report for {name} to start this library.",
+  "@uiUploadReportForProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiIpAddress": "IP address: {address}",
+  "@uiIpAddress": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSignedInAt": "Signed in: {date}",
+  "@uiSignedInAt": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnknown": "Unknown",
+  "@uiUnknown": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResultsFor": "Results for {name}",
+  "@uiResultsFor": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiLabParametersTracked": "{count} lab parameters tracked",
+  "@uiLabParametersTracked": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSampledDate": "Sampled {date}",
+  "@uiSampledDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCollectionDateValue": "Collection date: {date}",
+  "@uiCollectionDateValue": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiLabRangeValue": "Lab range: {range}",
+  "@uiLabRangeValue": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAiSuggestedRange": "AI read this range as {range}. Printed text: {printed}. Check the original report before relying on this comparison.",
+  "@uiAiSuggestedRange": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "range": {
+        "type": "String"
+      },
+      "printed": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportsReady": "{reportCount} ready",
+  "@uiReportsReady": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reportCount": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCreditsCount": "{count} credits",
+  "@uiCreditsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReferralCodeAlreadyApplied": "A referral code has already been applied to this account.",
+  "@uiReferralCodeAlreadyApplied": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSetDevicePasscodeForAppLock": "Set a device passcode before turning on App lock.",
+  "@uiSetDevicePasscodeForAppLock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLanguagePreferenceNotSaved": "Language preference was not saved.",
+  "@uiLanguagePreferenceNotSaved": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportUnavailable": "Export unavailable",
+  "@uiExportUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnreadableImage": "Unreadable image",
+  "@uiUnreadableImage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiStatusWithValue": "Status: {status}",
+  "@uiStatusWithValue": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "uiPending": "Pending",
+  "@uiPending": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCompleted": "Completed",
+  "@uiCompleted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailed": "Failed",
+  "@uiFailed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInactive": "Inactive",
+  "@uiInactive": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRestoreBeforeDate": "Restore before {date} to keep your reports and profiles.",
+  "@uiRestoreBeforeDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiThirtyDayDeadline": "the 30-day deadline",
+  "@uiThirtyDayDeadline": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhatsAffected": "What’s affected: {details}",
+  "@uiWhatsAffected": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "uiLastUpdatedAt": "Last updated: {date} at {time}",
+  "@uiLastUpdatedAt": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "uiMoveReportToProfile": "{filename} will appear under {name} instead of the current profile.",
+  "@uiMoveReportToProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneVerifiedResult": "1 verified result saved.",
+  "@uiOneVerifiedResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiVerifiedResultsCount": "{count} verified results saved.",
+  "@uiVerifiedResultsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnableToSwitchProfilesWithReason": "Unable to switch profiles. {reason}",
+  "@uiUnableToSwitchProfilesWithReason": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCollectedOn": "Collected: {date}",
+  "@uiCollectedOn": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUploadedPrefix": "Uploaded {date}",
+  "@uiUploadedPrefix": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportComparisonLabel": "{filename} · {date}",
+  "@uiReportComparisonLabel": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiIncreasedBy": "Increased by {amount}",
+  "@uiIncreasedBy": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDecreasedBy": "Decreased by {amount}",
+  "@uiDecreasedBy": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "uiPercentagePoints": " percentage points",
+  "@uiPercentagePoints": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTestValuesCount": "Test values ({count})",
+  "@uiTestValuesCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAiValueReviewNotice": "Value checked by AI during processing. Original OCR: {value}. Confirm it against the report.",
+  "@uiAiValueReviewNotice": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportAlreadyInProfile": "Report already in {name}",
+  "@uiReportAlreadyInProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportAddedToProfile": "Report added to {name}",
+  "@uiReportAddedToProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAddedOn": "Added {date}",
+  "@uiAddedOn": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUsingReportsLimit": "Using {current} of {max} reports.",
+  "@uiUsingReportsLimit": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "uiNeedHelp": "Need help?",
+  "@uiNeedHelp": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnabled": "Enabled",
+  "@uiEnabled": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnable": "Enable",
+  "@uiEnable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSubscribe": "Subscribe",
+  "@uiSubscribe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiApplying": "Applying",
+  "@uiApplying": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckStatus": "Check status",
+  "@uiCheckStatus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEditProfile": "Edit profile",
+  "@uiEditProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaveChanges": "Save changes",
+  "@uiSaveChanges": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOptional": "Optional",
+  "@uiOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPendingOrderReconciliation": "Order {orderId} is waiting for reconciliation. Buying is paused until status is clear.",
+  "@uiPendingOrderReconciliation": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "orderId": {
+        "type": "String"
+      }
+    }
+  },
+  "uiMonthlyPlanDescription": "Monthly Plan - {name}",
+  "@uiMonthlyPlanDescription": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCreditPackDescription": "Credit Pack - {name}",
+  "@uiCreditPackDescription": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnreadable": "Unreadable",
+  "@uiUnreadable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLatestValue": "Latest: {value}",
+  "@uiLatestValue": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "uiEarlier": "Earlier",
+  "@uiEarlier": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLater": "Later",
+  "@uiLater": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiViewed": "Viewed",
+  "@uiViewed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBlocked": "Blocked",
+  "@uiBlocked": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCapped": "Capped",
+  "@uiCapped": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLastChange": "Last change: {label}",
+  "@uiLastChange": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "uiLastChangeAt": "Last change: {label} · {date}",
+  "@uiLastChangeAt": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiGiftVoucherApplied": "Gift voucher applied. {credits} credits added.",
+  "@uiGiftVoucherApplied": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "credits": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCouldNotSaveOriginal": "Could not save the original yet. {reason}",
+  "@uiCouldNotSaveOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "uiFailedToRevoke": "Failed to revoke: {reason}",
+  "@uiFailedToRevoke": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReferralShareMessage": "Use my Doclyzer referral code {code}: {link}",
+  "@uiReferralShareMessage": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAMomentAgo": "A moment ago",
+  "@uiAMomentAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMinutesAgo": "{count} min ago",
+  "@uiMinutesAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneHourAgo": "1 hour ago",
+  "@uiOneHourAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHoursAgo": "{count} hours ago",
+  "@uiHoursAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiToday": "Today",
+  "@uiToday": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYesterday": "Yesterday",
+  "@uiYesterday": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOneDayAgo": "1 day ago",
+  "@uiOneDayAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDaysAgo": "{count} days ago",
+  "@uiDaysAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneWeekAgo": "1 week ago",
+  "@uiOneWeekAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWeeksAgo": "{count} weeks ago",
+  "@uiWeeksAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneMonthAgo": "1 month ago",
+  "@uiOneMonthAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMonthsAgo": "{count} months ago",
+  "@uiMonthsAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneYearAgo": "1 year ago",
+  "@uiOneYearAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYearsAgo": "{count} years ago",
+  "@uiYearsAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiInOneDay": "In 1 day",
+  "@uiInOneDay": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInDays": "In {count} days",
+  "@uiInDays": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiInMinutes": "In {count} min",
+  "@uiInMinutes": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiInOneHour": "In 1 hour",
+  "@uiInOneHour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInHours": "In {count} hours",
+  "@uiInHours": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiMissingExtractedTestName": "The test name is missing from the extracted result.",
+  "@uiMissingExtractedTestName": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMissingCapturedLabRange": "No lab reference range was captured for this test.",
+  "@uiMissingCapturedLabRange": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNonNumericExtractedValue": "The extracted value is not a plain number. Check it in the original report.",
+  "@uiNonNumericExtractedValue": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLabFlagRangeConflict": "The lab flag conflicts with the printed range. Check the original report.",
+  "@uiLabFlagRangeConflict": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResultNeedsOriginalCheck": "The extracted value, printed range, or lab flag needs checking in the original report.",
+  "@uiResultNeedsOriginalCheck": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInitialEntitlement": "Initial entitlement",
+  "@uiInitialEntitlement": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditPackPurchase": "Credit pack purchase",
+  "@uiCreditPackPurchase": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSubscriptionUpgrade": "Subscription upgrade",
+  "@uiSubscriptionUpgrade": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPlanDowngrade": "Plan downgrade",
+  "@uiPlanDowngrade": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAdminAdjustment": "Admin adjustment",
+  "@uiAdminAdjustment": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSystemReconciliation": "System reconciliation",
+  "@uiSystemReconciliation": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralInviteBonus": "Referral invite bonus",
+  "@uiReferralInviteBonus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralAnalysisMilestone": "Referral analysis milestone",
+  "@uiReferralAnalysisMilestone": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralPurchaseMilestone": "Referral purchase milestone",
+  "@uiReferralPurchaseMilestone": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFreePromoCreditPack": "Free promo credit pack",
+  "@uiFreePromoCreditPack": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherRedeemed": "Gift voucher redeemed",
+  "@uiGiftVoucherRedeemed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotYetChanged": "Not yet changed",
+  "@uiNotYetChanged": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotReachServer": "Unable to reach the server. Check your connection and try again.",
+  "@uiCannotReachServer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInvalidEmailOrPassword": "Invalid email or password. Check your details and try again.",
+  "@uiInvalidEmailOrPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTooManyAuthAttempts": "Too many attempts. Wait a few minutes and try again.",
+  "@uiTooManyAuthAttempts": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterValidEmail": "Please enter a valid email address.",
+  "@uiEnterValidEmail": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPasswordRequirements": "Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.",
+  "@uiPasswordRequirements": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccountWithEmailExists": "An account with this email already exists. Sign in or use a different email.",
+  "@uiAccountWithEmailExists": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadedStatus": "Uploaded",
+  "@uiUploadedStatus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSupportAction": "Action: {action}",
+  "@uiSupportAction": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSupportCorrelationId": "Correlation ID: {id}",
+  "@uiSupportCorrelationId": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSupportClientActionId": "Client Action ID: {id}",
+  "@uiSupportClientActionId": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSupportErrorCode": "Error Code: {code}",
+  "@uiSupportErrorCode": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSupportError": "Error: {error}",
+  "@uiSupportError": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSessionExpiredSignInAgain": "Your session ended. Sign in again.",
+  "@uiSessionExpiredSignInAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProfileLimitReached": "Your plan profile limit has been reached. Review Plan & Credits to add more.",
+  "@uiProfileLimitReached": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCorrectionConflictReload": "This result changed elsewhere. Reload the report before correcting it.",
+  "@uiCorrectionConflictReload": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSeePlanCreditsOptions": "See Plan & Credits for available options.",
+  "@uiSeePlanCreditsOptions": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareLinkLimitHelp": "You have reached the active share-link limit.",
+  "@uiShareLinkLimitHelp": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiScopedExportUnavailable": "Scoped export is unavailable. Try again later.",
+  "@uiScopedExportUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRestorationUnavailable": "Restoration is unavailable. Try again later.",
+  "@uiRestorationUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportRequestNotFound": "Export request not found. Request a new export.",
+  "@uiExportRequestNotFound": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiClosureConfirmationRequired": "Confirm account closure to continue.",
+  "@uiClosureConfirmationRequired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCurrentPasswordIncorrect": "Current password is incorrect.",
+  "@uiCurrentPasswordIncorrect": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLaboratories": "Laboratories",
+  "@uiLaboratories": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnlock": "Unlock",
+  "@uiUnlock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  }
 }

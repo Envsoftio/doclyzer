@@ -1,4 +1,5 @@
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/core/localized_error.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/api_client.dart';
@@ -66,13 +67,11 @@ class _ResultCorrectionScreenState extends State<ResultCorrectionScreen> {
     final value = _value.text.trim();
     final date = _date.text.trim();
     if (name.isEmpty || value.isEmpty) {
-      setState(() => _error = 'Test name and result are required.');
+      setState(() => _error = context.l10n.uiTestNameAndResultAreRequired);
       return;
     }
     if (!_validDate(date)) {
-      setState(
-        () => _error = 'Use a valid collection date in YYYY-MM-DD format.',
-      );
+      setState(() => _error = context.l10n.uiUseAValidCollectionDateInYYYY);
       return;
     }
     setState(() {
@@ -95,11 +94,19 @@ class _ResultCorrectionScreenState extends State<ResultCorrectionScreen> {
       if (!mounted) return;
       setState(() {
         _conflict = error.code == 'REPORT_RESULT_VERSION_CONFLICT';
-        _error = error.message;
+        _error = error.code == 'REPORT_RESULT_VERSION_CONFLICT'
+            ? context.l10n.uiCorrectionConflictReload
+            : localizedError(
+                context,
+                error,
+                fallback: context.l10n.uiCouldNotSaveThisCorrectionTryAgain,
+              );
       });
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Could not save this correction. Try again.');
+        setState(
+          () => _error = context.l10n.uiCouldNotSaveThisCorrectionTryAgain,
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -110,13 +117,13 @@ class _ResultCorrectionScreenState extends State<ResultCorrectionScreen> {
   Widget build(BuildContext context) {
     final source = widget.result.sourceSnapshot;
     return Scaffold(
-      appBar: AppBar(title: const Text('Review result')),
+      appBar: AppBar(title: Text(context.l10n.uiReviewResult)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             Text(
-              'Compare these fields with the original report before saving.',
+              context.l10n.uiCompareTheseFieldsWithTheOriginalReport,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
@@ -134,16 +141,22 @@ class _ResultCorrectionScreenState extends State<ResultCorrectionScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Originally extracted'),
+                      Text(context.l10n.uiOriginallyExtracted),
                       Text(
                         '${source['parameterName'] ?? ''}: ${source['value'] ?? ''} ${source['unit'] ?? ''}'
                             .trim(),
                       ),
                       Text(
-                        'Collection date: ${source['sampleDate'] ?? 'Unknown'}',
+                        context.l10n.uiCollectionDateValue(
+                          source['sampleDate']?.toString() ??
+                              context.l10n.uiUnknown,
+                        ),
                       ),
                       Text(
-                        'Lab range: ${source['referenceRange'] ?? 'Unknown'}',
+                        context.l10n.uiLabRangeValue(
+                          source['referenceRange']?.toString() ??
+                              context.l10n.uiUnknown,
+                        ),
                       ),
                     ],
                   ),
@@ -161,13 +174,17 @@ class _ResultCorrectionScreenState extends State<ResultCorrectionScreen> {
               key: const Key('correction-value'),
               controller: _value,
               maxLength: 512,
-              decoration: InputDecoration(labelText: 'Result as printed'),
+              decoration: InputDecoration(
+                labelText: context.l10n.uiResultAsPrinted,
+              ),
             ),
             TextField(
               key: const Key('correction-unit'),
               controller: _unit,
               maxLength: 64,
-              decoration: const InputDecoration(labelText: 'Unit (if shown)'),
+              decoration: InputDecoration(
+                labelText: context.l10n.uiUnitIfShown,
+              ),
             ),
             TextField(
               key: const Key('correction-date'),
@@ -182,8 +199,8 @@ class _ResultCorrectionScreenState extends State<ResultCorrectionScreen> {
               key: const Key('correction-range'),
               controller: _range,
               maxLength: 256,
-              decoration: const InputDecoration(
-                labelText: 'Lab reference range (if shown)',
+              decoration: InputDecoration(
+                labelText: context.l10n.uiLabReferenceRangeIfShown,
               ),
             ),
             if (_error != null) ...[
@@ -196,14 +213,16 @@ class _ResultCorrectionScreenState extends State<ResultCorrectionScreen> {
                 TextButton(
                   key: const Key('correction-reload'),
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Reload report'),
+                  child: Text(context.l10n.uiReloadReport),
                 ),
             ],
             const SizedBox(height: 16),
             FilledButton(
               key: const Key('correction-save'),
               onPressed: _saving ? null : _save,
-              child: Text(_saving ? 'Saving…' : 'Save correction'),
+              child: Text(
+                _saving ? context.l10n.uiSaving : context.l10n.uiSaveCorrection,
+              ),
             ),
           ],
         ),

@@ -1,3 +1,4 @@
+import 'package:mobile/core/localized_error.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'dart:async';
@@ -161,7 +162,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
           _refreshing = false;
           _errorMessage = e is TimeoutException
               ? context.l10n.reportLoadSlow
-              : e.toString().replaceFirst('Exception: ', '');
+              : localizedError(
+                  context,
+                  e,
+                  fallback: context.l10n.reportRefreshFailed,
+                );
         });
       }
     }
@@ -395,7 +400,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
       if (mounted) {
         setState(() {
           _state = _ReportDetailState.loaded;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = localizedError(
+            context,
+            e,
+            fallback: context.l10n.reportRefreshFailed,
+          );
         });
       }
     }
@@ -517,9 +526,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.confirmMoveReport),
+        title: Text(ctx.l10n.confirmMoveReport),
         content: Text(
-          '${report.originalFileName} will appear under ${selected.name} instead of the current profile.',
+          ctx.l10n.uiMoveReportToProfile(
+            report.originalFileName,
+            selected.name,
+          ),
         ),
         actions: [
           TextButton(
@@ -909,12 +921,16 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
                       style: mutedStyle,
                     ),
                     Text(
-                      'Uploaded ${AppDateFormat.date(report.createdAt)}',
+                      context.l10n.uploadedOn(
+                        AppDateFormat.date(report.createdAt),
+                      ),
                       style: mutedStyle,
                     ),
                     if (hasSampleDate)
                       Text(
-                        'Sampled ${AppDateFormat.fromRaw(sampleDate)}',
+                        context.l10n.uiSampledDate(
+                          AppDateFormat.fromRaw(sampleDate),
+                        ),
                         style: mutedStyle,
                       )
                     else
@@ -1090,7 +1106,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen>
             Text(
               report.status == 'content_not_recognized'
                   ? context.l10n.verifiedResults
-                  : 'Test values (${results.length})',
+                  : context.l10n.uiTestValuesCount('${results.length}'),
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -1404,7 +1420,9 @@ class _ResultCard extends StatelessWidget {
         ? null
         : result.reviewVersion == 0 &&
               result.sourceSnapshot?['valueSource'] == 'ai_suggestion'
-        ? 'Value checked by AI during processing. Original OCR: ${result.sourceSnapshot?['originalValue']}. Confirm it against the report.'
+        ? context.l10n.uiAiValueReviewNotice(
+            '${result.sourceSnapshot?['originalValue']}',
+          )
         : result.sourceSnapshot?['rangeSource'] == 'ai_suggestion'
         ? context.l10n.aiRangeHelp
         : null;
@@ -1510,7 +1528,7 @@ class _ResultCard extends StatelessWidget {
                 if (position == RangePosition.unknown) ...[
                   const SizedBox(height: 8),
                   Text(
-                    unavailableRangeReason(result),
+                    unavailableRangeReason(result, l10n: context.l10n),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colors.onSurfaceVariant,
                     ),

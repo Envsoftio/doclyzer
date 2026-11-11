@@ -86,7 +86,8 @@ class _CommunicationPreferencesScreenState
       if (mounted) {
         setState(() {
           if (enabled && !_pushEnabled && _pushFeedback != null) {
-            _pushFeedback = 'Report notifications enabled on this device';
+            _pushFeedback =
+                context.l10n.uiReportNotificationsEnabledOnThisDevice;
             _pushFeedbackTone = _PushFeedbackTone.success;
           }
           _pushEnabled = enabled;
@@ -122,17 +123,18 @@ class _CommunicationPreferencesScreenState
         switch (result) {
           case DeviceNotificationActionResult.enabled:
             _pushEnabled = true;
-            _pushFeedback = 'Report notifications enabled on this device';
+            _pushFeedback =
+                context.l10n.uiReportNotificationsEnabledOnThisDevice;
             _pushFeedbackTone = _PushFeedbackTone.success;
             break;
           case DeviceNotificationActionResult.settingsOpened:
-            _pushFeedback =
-                'Device settings opened. Allow notifications for Doclyzer, then return here.';
+            _pushFeedback = context
+                .l10n
+                .uiDeviceSettingsOpenedAllowNotificationsForDoclyzer;
             _pushFeedbackTone = _PushFeedbackTone.warning;
             break;
           case DeviceNotificationActionResult.denied:
-            _pushFeedback =
-                'Notifications are still off. Allow them in device settings to receive report updates.';
+            _pushFeedback = context.l10n.uiNotificationsAreStillOffAllowThemIn;
             _pushFeedbackTone = _PushFeedbackTone.warning;
             break;
         }
@@ -140,8 +142,7 @@ class _CommunicationPreferencesScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _pushFeedback =
-            'Could not enable notifications. Check your connection and try again.';
+        _pushFeedback = context.l10n.notificationsFailed;
         _pushFeedbackTone = _PushFeedbackTone.error;
         _supportContext = buildSupportRequestContext(
           actionType: SupportActionType.notificationPreferences,
@@ -210,7 +211,7 @@ class _CommunicationPreferencesScreenState
       setState(() {
         _preferences = result.preferences;
         _pendingChanges.clear();
-        _successMessage = 'Preferences saved';
+        _successMessage = context.l10n.uiPreferencesSaved;
       });
 
       if (changes.containsKey('marketingPush') &&
@@ -223,16 +224,16 @@ class _CommunicationPreferencesScreenState
           if (mounted) {
             setState(() {
               _warning = changes['marketingPush']!
-                  ? 'Your account choice was saved, but this device did not finish registering for marketing push. Marketing remains blocked on this device; check notification permission and try saving again.'
-                  : 'Your account choice was saved. This device could not confirm its local preference yet, but marketing remains blocked at account level.';
+                  ? context.l10n.uiYourAccountChoiceWasSavedButThis
+                  : context.l10n.uiYourAccountChoiceWasSavedThisDevice;
             });
           }
         } catch (_) {
           if (mounted) {
             setState(() {
               _warning = changes['marketingPush']!
-                  ? 'Your account choice was saved, but this device could not enable marketing push. Check notification permission and try again.'
-                  : 'Your account choice was saved. This device could not confirm its local preference yet, but marketing remains blocked at account level.';
+                  ? context.l10n.uiYourAccountChoiceWasSavedButThisaf7de6
+                  : context.l10n.uiYourAccountChoiceWasSavedThisDevice;
             });
           }
         }
@@ -241,7 +242,7 @@ class _CommunicationPreferencesScreenState
       if (!mounted) return;
       setState(() {
         _error = e is TimeoutException
-            ? 'Saving took too long. Check your connection and try again.'
+            ? context.l10n.uiSavingTookTooLongCheckYourConnection
             : e.toString();
         _supportContext = buildSupportRequestContext(
           actionType: SupportActionType.notificationPreferences,
@@ -256,10 +257,8 @@ class _CommunicationPreferencesScreenState
   Future<void> _openDeviceSettings() async {
     if (!await openDeviceNotificationSettings() && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Open the device Settings app to change notification access.',
-          ),
+        SnackBar(
+          content: Text(context.l10n.uiOpenTheDeviceSettingsAppToChange),
         ),
       );
     }
@@ -300,7 +299,7 @@ class _CommunicationPreferencesScreenState
                       dimension: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Save preferences'),
+                  : Text(context.l10n.uiSavePreferences),
             ),
             TextButton(
               onPressed: _openDeviceSettings,
@@ -325,16 +324,16 @@ class _CommunicationPreferencesScreenState
                     leading: const Icon(Icons.info_outline),
                     title: Text(context.l10n.notificationPreferences),
                     subtitle: Text(
-                      'Device permissions can be changed in Settings.',
+                      context.l10n.uiDevicePermissionsCanBeChangedInSettings,
                     ),
                   ),
                 ),
                 if (widget.onEnablePush != null) ...[
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Get report updates on this device'),
-                    subtitle: const Text(
-                      'Allow notifications to know when a report is ready. Marketing is a separate choice below.',
+                    title: Text(context.l10n.uiGetReportUpdatesOnThisDevice),
+                    subtitle: Text(
+                      context.l10n.uiAllowNotificationsToKnowWhenAReport,
                     ),
                     trailing: TextButton.icon(
                       key: const Key('enable-report-notifications'),
@@ -352,7 +351,11 @@ class _CommunicationPreferencesScreenState
                                   : Icons.notifications_active_outlined,
                               size: 18,
                             ),
-                      label: Text(_pushEnabled ? 'Enabled' : 'Enable'),
+                      label: Text(
+                        _pushEnabled
+                            ? context.l10n.uiEnabled
+                            : context.l10n.uiEnable,
+                      ),
                     ),
                   ),
                   if (_pushFeedback != null)
@@ -380,15 +383,15 @@ class _CommunicationPreferencesScreenState
                 ],
                 const SizedBox(height: 32),
                 Text(
-                  'REPORT ACTIVITY',
+                  context.l10n.uiREPORTACTIVITY,
                   style: theme.textTheme.labelSmall?.copyWith(
                     letterSpacing: 1.2,
                   ),
                 ),
                 const SizedBox(height: 8),
                 if (reportPreferences.isEmpty && !_loading)
-                  const Text(
-                    'Report activity settings require the latest server version.',
+                  Text(
+                    context.l10n.uiReportActivitySettingsRequireTheLatestServer,
                   ),
                 for (final item in reportPreferences)
                   _PreferenceRow(
@@ -401,18 +404,18 @@ class _CommunicationPreferencesScreenState
                           ),
                   ),
                 const SizedBox(height: 4),
-                const ListTile(
+                ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text('Sensitive lock-screen previews'),
+                  title: Text(context.l10n.uiSensitiveLockScreenPreviews),
                   subtitle: Text(
-                    'Report names and personal details are always hidden.',
+                    context.l10n.uiReportNamesAndPersonalDetailsAreAlways,
                   ),
                   trailing: Icon(Icons.lock_outline),
                 ),
                 if (otherPreferences.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   Text(
-                    'OTHER MESSAGES',
+                    context.l10n.uiOTHERMESSAGES,
                     style: theme.textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
                     ),
@@ -483,34 +486,34 @@ class _PreferenceRow extends StatelessWidget {
   final bool effectiveEnabled;
   final ValueChanged<bool>? onChanged;
 
-  (String, String) get _copy => switch (item.category) {
+  (String, String) _copy(BuildContext context) => switch (item.category) {
     commPrefCategoryReportReady => (
-      'Report ready for review',
-      'Know when your results are ready to check.',
+      context.l10n.uiReportReadyForReview,
+      context.l10n.uiKnowWhenYourResultsAreReadyTo,
     ),
     commPrefCategoryUploadUpdates => (
-      'Upload updates',
-      'Get a message if an upload needs attention.',
+      context.l10n.uiUploadUpdates,
+      context.l10n.uiGetAMessageIfAnUploadNeeds,
     ),
     commPrefCategoryShareReminders => (
-      'Shared link reminders',
-      'Hear when a link is about to expire.',
+      context.l10n.uiSharedLinkReminders,
+      context.l10n.uiHearWhenALinkIsAboutTo,
     ),
     commPrefCategorySecurity => (
-      'Security alerts',
-      'Required for account safety.',
+      context.l10n.uiSecurityAlerts,
+      context.l10n.uiRequiredForAccountSafety,
     ),
     commPrefCategoryCompliance => (
-      'Compliance notices',
-      'Required account information.',
+      context.l10n.uiComplianceNotices,
+      context.l10n.uiRequiredAccountInformation,
     ),
     'marketingPush' => (
-      'Marketing push notifications',
-      'Offers and announcements. Saving this choice also applies it to this device.',
+      context.l10n.uiMarketingPushNotifications,
+      context.l10n.uiOffersAndAnnouncementsSavingThisChoiceAlso,
     ),
     commPrefCategoryProduct => (
-      'Product updates',
-      'Optional news about Doclyzer.',
+      context.l10n.uiProductUpdates,
+      context.l10n.uiOptionalNewsAboutDoclyzer,
     ),
     _ => (item.category, ''),
   };
@@ -526,9 +529,15 @@ class _PreferenceRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_copy.$1, style: Theme.of(context).textTheme.titleSmall),
+                  Text(
+                    _copy(context).$1,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                   const SizedBox(height: 4),
-                  Text(_copy.$2, style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    _copy(context).$2,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             ),

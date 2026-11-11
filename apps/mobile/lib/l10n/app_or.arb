@@ -397,5 +397,3164 @@
   "testName": "ପରୀକ୍ଷାର ନାମ",
   "viewReport": "ରିପୋର୍ଟ ଦେଖନ୍ତୁ",
   "closeAccount": "ଆକାଉଣ୍ଟ ବନ୍ଦ କରନ୍ତୁ",
-  "createShareLink": "ସେୟାର୍ ଲିଙ୍କ୍ ତିଆରି କରନ୍ତୁ"
+  "createShareLink": "ସେୟାର୍ ଲିଙ୍କ୍ ତିଆରି କରନ୍ତୁ",
+  "uiAppearanceChangedButCouldNotBeSaved": "ଦୃଶ୍ୟ ବଦଳିଗଲା, କିନ୍ତୁ ପରବର୍ତ୍ତୀ ଥର ପାଇଁ ସଞ୍ଚୟ ହୋଇପାରିଲା ନାହିଁ",
+  "@uiAppearanceChangedButCouldNotBeSaved": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisReportIsNoLongerAvailable": "ଏହି ରିପୋର୍ଟ ଆଉ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiThisReportIsNoLongerAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenDeviceSettingsToManageNotificationPreviews": "ବିଜ୍ଞପ୍ତି ପୂର୍ବାବଲୋକନ ପରିଚାଳନା କରିବାକୁ ଉପକରଣ ସେଟିଂସମୂହ ଖୋଲନ୍ତୁ",
+  "@uiOpenDeviceSettingsToManageNotificationPreviews": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepThisScreenOpenUntilTheUpload": "ଅପଲୋଡ୍ ଗ୍ରହଣ ନହେବା ପର୍ଯ୍ୟନ୍ତ ଏହି ପରଦାକୁ ଖୋଲା ରଖନ୍ତୁ",
+  "@uiKeepThisScreenOpenUntilTheUpload": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAnUploadMayHaveBeenInterrupted": "ଏକ ଅପଲୋଡ୍ ବାଧାପ୍ରାପ୍ତ ହୋଇଥାଇପାରେ",
+  "@uiAnUploadMayHaveBeenInterrupted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckReportsIfItIsMissingAdd": "ରିପୋର୍ଟଗୁଡିକ ଯାଞ୍ଚ କରନ୍ତୁ । ଯଦି ଏହା ହଜିଯାଉଛି, ପୁନର୍ବାର ସମାନ ଫାଇଲ୍ ଯୋଡନ୍ତୁ",
+  "@uiCheckReportsIfItIsMissingAdd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotDismissNotificationsTryAgain": "ବିଜ୍ଞପ୍ତିକୁ ଖାରଜ କରିପାରିଲା ନାହିଁ । ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiCouldNotDismissNotificationsTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiConnectionUnavailable": "ସଂଯୋଗ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiConnectionUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourSessionCouldNotBeCheckedConnect": "ଆପଣଙ୍କର ଅଧିବେଶନ ଯାଞ୍ଚ ହୋଇପାରିଲା ନାହିଁ । ଇଣ୍ଟରନେଟ୍ ସହିତ ସଂଯୋଗ କରନ୍ତୁ ଏବଂ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiYourSessionCouldNotBeCheckedConnect": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSignInWithAnotherAccount": "ଅନ୍ୟ ଏକ ଖାତା ସହିତ ସାଇନ୍ ଇନ୍ କରନ୍ତୁ",
+  "@uiSignInWithAnotherAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoActiveProfile": "କ active ଣସି ସକ୍ରିୟ ପ୍ରୋଫାଇଲ୍ ନାହିଁ",
+  "@uiNoActiveProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDismissUploadNotice": "ଅପଲୋଡ୍ ନୋଟିସ୍ ଖାରଜ କରନ୍ତୁ",
+  "@uiDismissUploadNotice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDismissReadyNotifications": "ପ୍ରସ୍ତୁତ ବିଜ୍ଞପ୍ତିକୁ ବରଖାସ୍ତ କରନ୍ତୁ",
+  "@uiDismissReadyNotifications": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRequestSupport": "ସମର୍ଥନ ଅନୁରୋଧ",
+  "@uiRequestSupport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWeWillIncludeDiagnosticIDsSoThe": "ଆମେ ଡାଇଗ୍ନୋଷ୍ଟିକ୍ ଆଇଡି ଅନ୍ତର୍ଭୂକ୍ତ କରିବୁ ଯାହା ଦ୍ team ାରା ଦଳ ଅନୁସନ୍ଧାନ କରିପାରିବ।",
+  "@uiWeWillIncludeDiagnosticIDsSoThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSendRequest": "ଅନୁରୋଧ ପଠାନ୍ତୁ",
+  "@uiSendRequest": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhatHappenedOptional": "କ’ଣ ହେଲା? (ବ al କଳ୍ପିକ)",
+  "@uiWhatHappenedOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewResult": "ଫଳାଫଳ ସମୀକ୍ଷା କରନ୍ତୁ",
+  "@uiReviewResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCompareTheseFieldsWithTheOriginalReport": "ସଞ୍ଚୟ କରିବା ପୂର୍ବରୁ ଏହି କ୍ଷେତ୍ରଗୁଡ଼ିକୁ ମୂଳ ରିପୋର୍ଟ ସହିତ ତୁଳନା କରନ୍ତୁ",
+  "@uiCompareTheseFieldsWithTheOriginalReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOriginallyExtracted": "ମୂଳତ extr ବାହାର କରାଯାଇଛି",
+  "@uiOriginallyExtracted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReloadReport": "ରିପୋର୍ଟ ପୁନ elo ଲୋଡ୍ କରନ୍ତୁ",
+  "@uiReloadReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResultAsPrinted": "ମୁଦ୍ରିତ ପରି ଫଳାଫଳ",
+  "@uiResultAsPrinted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnitIfShown": "ୟୁନିଟ୍ (ଯଦି ଦେଖାଯାଏ)",
+  "@uiUnitIfShown": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLabReferenceRangeIfShown": "ଲ୍ୟାବ୍ ରେଫରେନ୍ସ ପରିସର (ଯଦି ଦେଖାଯାଏ)",
+  "@uiLabReferenceRangeIfShown": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckYourReport": "ଆପଣଙ୍କର ରିପୋର୍ଟ ଯାଞ୍ଚ କରନ୍ତୁ",
+  "@uiCheckYourReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoAttemptHistoryAvailable": "କ attempt ଣସି ପ୍ରୟାସ ଇତିହାସ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiNoAttemptHistoryAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiIInspectedTheOriginal": "ମୁଁ ମୂଳ ଯାଞ୍ଚ କଲି",
+  "@uiIInspectedTheOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseTwoReports": "ଦୁଇଟି ରିପୋର୍ଟ ବାଛନ୍ତୁ",
+  "@uiChooseTwoReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseRecordsForTheSamePersonMatching": "ସମାନ ବ୍ୟକ୍ତିଙ୍କ ପାଇଁ ରେକର୍ଡ ବ୍ୟବହାର କରନ୍ତୁ । ମେଳ ପରୀକ୍ଷଣଗୁଡ଼ିକ ପାର୍ଶ୍ୱରେ ଦେଖାଯିବ",
+  "@uiUseRecordsForTheSamePersonMatching": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseTheOlderReportFirstAndThe": "ପ୍ରଥମେ ପୁରୁଣା ରିପୋର୍ଟ ଏବଂ ଦ୍ୱିତୀୟଟି ନୂତନ ରିପୋର୍ଟ ବାଛନ୍ତୁ",
+  "@uiChooseTheOlderReportFirstAndThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiComparedOnlyWhenCompatibleDifferentUnitsOr": "କେବଳ ସୁସଙ୍ଗତ ହେଲେ ତୁଳନା କରାଯାଏ । ସୁସଙ୍ଗତତା ନିଶ୍ଚିତ ନହେବା ପର୍ଯ୍ୟନ୍ତ ବିଭିନ୍ନ ୟୁନିଟ୍ କିମ୍ବା ପଦ୍ଧତି ପୃଥକ ଭାବରେ ଦେଖାଯାଏ",
+  "@uiComparedOnlyWhenCompatibleDifferentUnitsOr": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAChangeIsNotADiagnosisCompare": "ପରିବର୍ତ୍ତନ ଏକ ନିରାକରଣ ନୁହେଁ । ପ୍ରତ୍ୟେକ ଫଳାଫଳକୁ ନିଜସ୍ୱ ରିପୋର୍ଟ ବ୍ୟବଧାନ ସହିତ ତୁଳନା କରନ୍ତୁ ଏବଂ ଆପଣଙ୍କର କ୍ଲିନିକ୍ ସହିତ ପ୍ରସଙ୍ଗ ବିଷୟରେ ଆଲୋଚନା କରନ୍ତୁ",
+  "@uiAChangeIsNotADiagnosisCompare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseDifferentReports": "ବିଭିନ୍ନ ରିପୋର୍ଟ ବାଛନ୍ତୁ",
+  "@uiChooseDifferentReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEarlierReport": "ପୂର୍ବରୁ ରିପୋର୍ଟ",
+  "@uiEarlierReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLaterReport": "ପରେ ରିପୋର୍ଟ କରନ୍ତୁ",
+  "@uiLaterReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourReportPages": "ତୁମର ରିପୋର୍ଟ ପୃଷ୍ଠାଗୁଡ଼ିକ",
+  "@uiYourReportPages": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepPagesInTheSameOrderAs": "ରିପୋର୍ଟଗୁଡିକ ସହିତ ସମାନ କ୍ରମରେ ପୃଷ୍ଠାଗୁଡିକ ରଖନ୍ତୁ",
+  "@uiKeepPagesInTheSameOrderAs": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAddAnotherPage": "ଅନ୍ୟ ଏକ ପୃଷ୍ଠା ଯୋଡନ୍ତୁ",
+  "@uiAddAnotherPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChoosePagesFromGallery": "ଗ୍ୟାଲେରୀରୁ ପୃଷ୍ଠାଗୁଡିକ ବାଛନ୍ତୁ",
+  "@uiChoosePagesFromGallery": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAdjustPage": "ପୃଷ୍ଠା ଆଡଜଷ୍ଟ କରନ୍ତୁ",
+  "@uiAdjustPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRetake": "ପୁନ ake ଗ୍ରହଣ କରନ୍ତୁ",
+  "@uiRetake": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseAdjustedPage": "ନିୟନ୍ତ୍ରିତ ପୃଷ୍ଠା ବ୍ୟବହାର କରନ୍ତୁ",
+  "@uiUseAdjustedPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResetChanges": "ପରିବର୍ତ୍ତନଗୁଡିକ ପୁନ Res ସେଟ୍ କରନ୍ତୁ",
+  "@uiResetChanges": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepEveryResultInsideTheCorners": "ପ୍ରତ୍ୟେକ ଫଳାଫଳକୁ କୋଣ ଭିତରେ ରଖନ୍ତୁ",
+  "@uiKeepEveryResultInsideTheCorners": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRotate": "ଘୂର୍ଣ୍ଣନ କରନ୍ତୁ",
+  "@uiRotate": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportRestored": "ରିପୋର୍ଟ ପୁନ restored ସ୍ଥାପିତ ହୋଇଛି",
+  "@uiReportRestored": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeleteReportPermanently": "ସ୍ଥାୟୀ ଭାବରେ ରିପୋର୍ଟ ବିଲୋପ କରିବେ କି?",
+  "@uiDeleteReportPermanently": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeletePermanently": "ସ୍ଥାୟୀ ଭାବରେ ବିଲୋପ କରନ୍ତୁ",
+  "@uiDeletePermanently": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportPermanentlyDeleted": "ସ୍ଥାୟୀ ଭାବରେ ବିଲୋପ ହୋଇଥିବା ରିପୋର୍ଟ କରନ୍ତୁ",
+  "@uiReportPermanentlyDeleted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEmptyRecycleBin": "ଖାଲି ରିସାଇକ୍ଲି ବିନ୍?",
+  "@uiEmptyRecycleBin": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeleteAll": "ସମସ୍ତ ବିଲୋପ କରନ୍ତୁ",
+  "@uiDeleteAll": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRecycleBinIsEmpty": "ରିସାଇକ୍ଲି ବିନ୍ ଖାଲି ଅଛି",
+  "@uiRecycleBinIsEmpty": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeletedReportsWillAppearHereBeforeRemoval": "ବିଲୋପ ହୋଇଥିବା ରିପୋର୍ଟଗୁଡିକ ଅପସାରଣ ପୂର୍ବରୁ ଏଠାରେ ଦେଖାଯିବ",
+  "@uiDeletedReportsWillAppearHereBeforeRemoval": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEmptyRecycleBind657e2": "ଖାଲି ରିସାଇକ୍ଲି ବିନ୍",
+  "@uiEmptyRecycleBind657e2": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckDetectedResult": "ଚିହ୍ନଟ ଫଳାଫଳ ଯାଞ୍ଚ କରନ୍ତୁ",
+  "@uiCheckDetectedResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCompareThisRowWithTheOriginalReport": "ଏହି ଧାଡିଟି ମୂଳ ରିପୋର୍ଟ ସହିତ ତୁଳନା କରନ୍ତୁ । ସଞ୍ଚୟ କରିବା ପୂର୍ବରୁ ଯେକ any ଣସି OCR ତ୍ରୁଟି ସଂଶୋଧନ କରନ୍ତୁ",
+  "@uiCompareThisRowWithTheOriginalReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiICheckedThisResultAgainstTheOriginal": "ମୁଁ ମୂଳ ରିପୋର୍ଟ ବିରୁଦ୍ଧରେ ଏହି ଫଳାଫଳ ଯାଞ୍ଚ କରିଥିଲି",
+  "@uiICheckedThisResultAgainstTheOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaving": "ସଞ୍ଚୟ…",
+  "@uiSaving": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaveVerifiedResult": "ଯାଞ୍ଚ ହୋଇଥିବା ଫଳାଫଳ ସଞ୍ଚୟ କରନ୍ତୁ",
+  "@uiSaveVerifiedResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoResultsWereDetectedViewTheOriginal": "କ results ଣସି ଫଳାଫଳ ଚିହ୍ନଟ ହୋଇନାହିଁ । ମୂଳ ରିପୋର୍ଟ ଦେଖନ୍ତୁ କିମ୍ବା ପୁନ ry ପ୍ରକ୍ରିୟାକରଣ",
+  "@uiNoResultsWereDetectedViewTheOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDetectedValuesNeedToBeCheckedAgainst": "ସଂରକ୍ଷିତ ଫଳାଫଳ ହେବା ପୂର୍ବରୁ ଚିହ୍ନଟ ହୋଇଥିବା ମୂଲ୍ୟଗୁଡିକ ମୂଳ ରିପୋର୍ଟ ବିରୁଦ୍ଧରେ ଯାଞ୍ଚ କରାଯିବା ଆବଶ୍ୟକ",
+  "@uiDetectedValuesNeedToBeCheckedAgainst": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSomeRowsMayBeMissingInspectThe": "କିଛି ଧାଡି ନିଖୋଜ ହୋଇପାରେ । ସମଗ୍ର ମୂଳ ରିପୋର୍ଟ ଯାଞ୍ଚ କରନ୍ତୁ",
+  "@uiSomeRowsMayBeMissingInspectThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResult": "ଫଳାଫଳ",
+  "@uiResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnitOptional": "ଏକକ (ବ al କଳ୍ପିକ)",
+  "@uiUnitOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferenceRangeOptional": "ସନ୍ଦର୍ଭ ପରିସର (ବ al କଳ୍ପିକ)",
+  "@uiReferenceRangeOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiVerified": "ଯାଞ୍ଚ ହୋଇଛି",
+  "@uiVerified": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucher": "ଉପହାର ଭାଉଚର୍",
+  "@uiGiftVoucher": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRedeemAGiftVoucherAndAddCredits": "ଏକ ଉପହାର ଭାଉଚରକୁ ମୁକ୍ତ କର ଏବଂ ସିଧାସଳଖ ତୁମର ବାଲାନ୍ସରେ କ୍ରେଡିଟ୍ ଯୋଡ",
+  "@uiRedeemAGiftVoucherAndAddCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCurrentPlan": "ସାମ୍ପ୍ରତିକ ଯୋଜନା",
+  "@uiCurrentPlan": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditBalance": "କ୍ରେଡିଟ୍ ବାଲାନ୍ସ",
+  "@uiCreditBalance": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPlanLimits": "ଯୋଜନା ସୀମା",
+  "@uiPlanLimits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBuyCredits": "କ୍ରେଡିଟ୍ କିଣନ୍ତୁ",
+  "@uiBuyCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRecentBillingActivity": "ସମ୍ପ୍ରତି ବିଲିଂ କାର୍ଯ୍ୟକଳାପ",
+  "@uiRecentBillingActivity": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRefreshStatus": "ସ୍ଥିତି ସତେଜ କରନ୍ତୁ",
+  "@uiRefreshStatus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoRecentOrdersYet": "ବର୍ତ୍ତମାନ ପର୍ଯ୍ୟନ୍ତ କ orders ଣସି ଆଦେଶ ନାହିଁ",
+  "@uiNoRecentOrdersYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiVoucherCode": "ଭାଉଚର୍ କୋଡ୍",
+  "@uiVoucherCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckout": "ଚେକଆଉଟ୍",
+  "@uiCheckout": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiApply": "ପ୍ରୟୋଗ କରନ୍ତୁ",
+  "@uiApply": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiClear": "ସଫା",
+  "@uiClear": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPay": "ଦେୟ ଦିଅ",
+  "@uiPay": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoCreditPacksAvailableAtThisTime": "ଏହି ସମୟରେ କ credit ଣସି କ୍ରେଡିଟ୍ ପ୍ୟାକ୍ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiNoCreditPacksAvailableAtThisTime": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBuy": "କିଣନ୍ତୁ",
+  "@uiBuy": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRetryPayment": "ଦେୟ ପୁନ ry ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiRetryPayment": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCode": "ପ୍ରୋମୋ କୋଡ୍",
+  "@uiPromoCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterPromoCode": "ପ୍ରୋମୋ କୋଡ୍ ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiEnterPromoCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseAPlan": "ଏକ ଯୋଜନା ବାଛନ୍ତୁ",
+  "@uiChooseAPlan": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoPlansAvailableAtThisTime": "ଏହି ସମୟରେ କ plans ଣସି ଯୋଜନା ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiNoPlansAvailableAtThisTime": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHaveAPromoCode": "ଏକ ପ୍ରୋମୋ କୋଡ୍ ଅଛି କି?",
+  "@uiHaveAPromoCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCURRENTPLAN": "ବର୍ତ୍ତମାନର ଯୋଜନା",
+  "@uiCURRENTPLAN": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiManageNotifications": "ବିଜ୍ଞପ୍ତିଗୁଡିକ ପରିଚାଳନା କରନ୍ତୁ",
+  "@uiManageNotifications": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAll": "ସମସ୍ତ",
+  "@uiAll": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnread": "ପ read ା ନାହିଁ",
+  "@uiUnread": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessStopsImmediatelyYouCanSignIn": "ପ୍ରବେଶ ତୁରନ୍ତ ବନ୍ଦ ହୋଇଯାଏ । ଆପଣ 30 ଦିନ ମଧ୍ୟରେ ସାଇନ୍ ଇନ୍ ଏବଂ ପୁନ restore ସ୍ଥାପନ କରିପାରିବେ । ଏହା ପରେ, ଆପଣଙ୍କର ଆକାଉଣ୍ଟ୍ ଏବଂ ଗଚ୍ଛିତ ଫାଇଲଗୁଡିକ ସକ୍ରିୟ ଷ୍ଟୋରେଜ୍ ରୁ ଡିଲିଟ୍ ହୋଇଯାଏ",
+  "@uiAccessStopsImmediatelyYouCanSignIn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCloseMyAccount": "ମୋ ଖାତା ବନ୍ଦ କରନ୍ତୁ",
+  "@uiCloseMyAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourRecordsStayInDoclyzer": "ଆପଣଙ୍କର ରେକର୍ଡଗୁଡିକ ଡକ୍ଲିଜରରେ ରହିଥାଏ",
+  "@uiYourRecordsStayInDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTakeACopyOfYourRecords": "ତୁମର ରେକର୍ଡଗୁଡ଼ିକର ଏକ କପି ନିଅ",
+  "@uiTakeACopyOfYourRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhoseRecords": "କାହାର ରେକର୍ଡ?",
+  "@uiWhoseRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotLoadProfiles": "ପ୍ରୋଫାଇଲ୍ ଲୋଡ୍ ହୋଇପାରିଲା ନାହିଁ",
+  "@uiCouldNotLoadProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLoadingProfiles": "ପ୍ରୋଫାଇଲ୍ ଲୋଡ୍ କରୁଛି…",
+  "@uiLoadingProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAllProfiles": "ସମସ୍ତ ପ୍ରୋଫାଇଲ୍",
+  "@uiAllProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDateRange": "ତାରିଖ ପରିସର",
+  "@uiDateRange": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseAllDates": "ସମସ୍ତ ତାରିଖ ବ୍ୟବହାର କରନ୍ତୁ",
+  "@uiUseAllDates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiINCLUDEINTHISEXPORT": "ଏହି ରପ୍ତାନିରେ ଅନ୍ତର୍ଭୂକ୍ତ କରନ୍ତୁ",
+  "@uiINCLUDEINTHISEXPORT": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOriginalReports": "ମୂଳ ରିପୋର୍ଟଗୁଡିକ",
+  "@uiOriginalReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPDFsAndImagesYouUploaded": "ଆପଣ ଅପଲୋଡ୍ କରିଥିବା PDF ଏବଂ ପ୍ରତିଛବିଗୁଡିକ",
+  "@uiPDFsAndImagesYouUploaded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTestResults": "ପରୀକ୍ଷା ଫଳାଫଳ",
+  "@uiTestResults": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResultsAsCSVWithTheirReviewState": "ସେମାନଙ୍କର ସମୀକ୍ଷା ସ୍ଥିତି ସହିତ CSV ଭାବରେ ଫଳାଫଳ",
+  "@uiResultsAsCSVWithTheirReviewState": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportsContainPersonalInformationStoreThemSomewhere": "ରପ୍ତାନିରେ ବ୍ୟକ୍ତିଗତ ସୂଚନା ଥାଏ । ଆପଣ ବିଶ୍ trust ାସ କରୁଥିବା ସ୍ଥାନରେ ସେଗୁଡିକୁ ସଂରକ୍ଷଣ କରନ୍ତୁ",
+  "@uiExportsContainPersonalInformationStoreThemSomewhere": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeleteAccount": "ଖାତା ବିଲୋପ କରନ୍ତୁ",
+  "@uiDeleteAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiContinueToDeletion": "ବିଲୋପ ଜାରି ରଖ",
+  "@uiContinueToDeletion": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepMyAccount": "ମୋ ଖାତା ରଖ",
+  "@uiKeepMyAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBeforeYouLeave": "ଆପଣ ଯିବା ପୂର୍ବରୁ",
+  "@uiBeforeYouLeave": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPleaseReadWhatThisWillRemove": "ଏହା କ’ଣ ଅପସାରଣ କରିବ ଦୟାକରି ପ read ନ୍ତୁ",
+  "@uiPleaseReadWhatThisWillRemove": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeletingYourAccountAffectsAllProfilesYou": "ତୁମର ଖାତା ବିଲୋପ କରିବା ତୁମେ ପରିଚାଳନା କରୁଥିବା ସମସ୍ତ ପ୍ରୋଫାଇଲକୁ ପ୍ରଭାବିତ କରେ",
+  "@uiDeletingYourAccountAffectsAllProfilesYou": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountAndPersonalProfile": "ଆପଣଙ୍କର ଖାତା ଏବଂ ବ୍ୟକ୍ତିଗତ ପ୍ରୋଫାଇଲ୍",
+  "@uiYourAccountAndPersonalProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessThroughYourSharedLinks": "ଆପଣଙ୍କର ଅଂଶୀଦାର ଲିଙ୍କ୍ ମାଧ୍ୟମରେ ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiAccessThroughYourSharedLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepACopyFirst": "ପ୍ରଥମେ ଏକ କପି ରଖ",
+  "@uiKeepACopyFirst": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportTheInformationYouWantToRetain": "ଆପଣ ରଖିବାକୁ ଚାହୁଁଥିବା ସୂଚନା ରପ୍ତାନି କରନ୍ତୁ",
+  "@uiExportTheInformationYouWantToRetain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportData": "ଡାଟା ରପ୍ତାନି କରନ୍ତୁ",
+  "@uiExportData": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessStopsImmediatelyYouCanRestoreWithin": "ପ୍ରବେଶ ତୁରନ୍ତ ବନ୍ଦ ହୋଇଯାଏ । ଆପଣ 30 ଦିନ ମଧ୍ୟରେ ପୁନ restore ସ୍ଥାପନ କରିପାରିବେ । ଏହା ପରେ, ଆପଣଙ୍କର ତଥ୍ୟ ସକ୍ରିୟ ସଂରକ୍ଷଣ ସ୍ଥାନରୁ ଅପସାରିତ ହୋଇଛି",
+  "@uiAccessStopsImmediatelyYouCanRestoreWithin": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccountPendingDeletion": "ବିଲୋପ ବିଚାରାଧୀନ ଥିବା ଖାତା",
+  "@uiAccountPendingDeletion": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRestoreMyAccount": "ମୋ ଖାତା ପୁନରୁଦ୍ଧାର କରନ୍ତୁ",
+  "@uiRestoreMyAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDownloadACopyOfYourAccountData": "ଆପଣଙ୍କର ପ୍ରୋଫାଇଲ୍, ପ୍ରୋଫାଇଲ୍ ଏବଂ ସମ୍ମତି ରେକର୍ଡଗୁଡିକ ସହିତ ଆପଣଙ୍କର ଆକାଉଣ୍ଟ୍ ତଥ୍ୟର ଏକ କପି ଡାଉନଲୋଡ୍ କରନ୍ତୁ",
+  "@uiDownloadACopyOfYourAccountData": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountIsDisabledImmediatelyYouCan": "ତୁମର ଖାତା ତୁରନ୍ତ ଅକ୍ଷମ ହୋଇଛି । ଆପଣ ଏହାକୁ 30 ଦିନ ମଧ୍ୟରେ ପୁନ restore ସ୍ଥାପନ କରିପାରିବେ । ଏହା ପରେ, ଆପଣଙ୍କର ତଥ୍ୟ ସବୁଦିନ ପାଇଁ ବିଲୋପ ହୋଇଯାଏ",
+  "@uiYourAccountIsDisabledImmediatelyYouCan": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCurrentPassword": "ସାମ୍ପ୍ରତିକ ପାସୱାର୍ଡ",
+  "@uiCurrentPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotChangeAppLockTryAgain": "ଆପ୍ ଲକ୍ ପରିବର୍ତ୍ତନ କରିପାରିବ ନାହିଁ । ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiCouldNotChangeAppLockTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourRecordsYourChoiceToShare": "ଆପଣଙ୍କର ରେକର୍ଡଗୁଡିକ\nଅଂଶୀଦାର କରିବାକୁ ଆପଣଙ୍କର ପସନ୍ଦ",
+  "@uiYourRecordsYourChoiceToShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewAccessWheneverYouNeed": "ଯେତେବେଳେ ଆପଣ ଆବଶ୍ୟକ କରନ୍ତି ପ୍ରବେଶ ସମୀକ୍ଷା କରନ୍ତୁ",
+  "@uiReviewAccessWheneverYouNeed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAppLock": "ଆପ୍ ଲକ୍",
+  "@uiAppLock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseYourDeviceSBiometricOrPasscode": "ଆପଣଙ୍କର ଡିଭାଇସର ବାୟୋମେଟ୍ରିକ୍ କିମ୍ବା ପାସକୋଡ୍ ଲକ୍ ବ୍ୟବହାର କରନ୍ତୁ",
+  "@uiUseYourDeviceSBiometricOrPasscode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationPreviews": "ବିଜ୍ଞପ୍ତି ପୂର୍ବାବଲୋକନ",
+  "@uiNotificationPreviews": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiControlLockScreenPreviewsInYourDevice": "ଆପଣଙ୍କର ଡିଭାଇସ୍ ସେଟିଂସମୂହରେ ଲକ୍-ସ୍କ୍ରିନ୍ ପୂର୍ବାବଲୋକନକୁ ନିୟନ୍ତ୍ରଣ କରନ୍ତୁ",
+  "@uiControlLockScreenPreviewsInYourDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiContactSupport": "ସମର୍ଥନ ଯୋଗାଯୋଗ କରନ୍ତୁ",
+  "@uiContactSupport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAttachReportsOnlyIfYouChooseTo": "ଯଦି ଆପଣ ପସନ୍ଦ କରନ୍ତି ତେବେ ରିପୋର୍ଟଗୁଡିକ ସଂଲଗ୍ନ କରନ୍ତୁ",
+  "@uiAttachReportsOnlyIfYouChooseTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhatCanWeHelpYouWith": "ଆମେ ଆପଣଙ୍କୁ କ’ଣ ସାହାଯ୍ୟ କରିପାରିବା?",
+  "@uiWhatCanWeHelpYouWith": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPOPULARQUESTIONS": "ସାଧାରଣ ପ୍ରଶ୍ନଗୁଡିକ",
+  "@uiPOPULARQUESTIONS": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoHelpArticlesMatchYourSearch": "କ search ଣସି ସାହାଯ୍ୟ ପ୍ରବନ୍ଧଗୁଡ଼ିକ ତୁମର ସନ୍ଧାନ ସହିତ ମେଳ ଖାଉ ନାହିଁ",
+  "@uiNoHelpArticlesMatchYourSearch": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiForQuestionsAboutYourHealthOrTest": "ଆପଣଙ୍କର ସ୍ୱାସ୍ଥ୍ୟ କିମ୍ବା ପରୀକ୍ଷା ଫଳାଫଳ ବିଷୟରେ ପ୍ରଶ୍ନ ପାଇଁ, ଜଣେ ଯୋଗ୍ୟ ସ୍ୱାସ୍ଥ୍ୟସେବା ବୃତ୍ତିଗତଙ୍କ ସହିତ କଥା ହୁଅନ୍ତୁ",
+  "@uiForQuestionsAboutYourHealthOrTest": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourReportsAClearerPicture": "ତୁମର ରିପୋର୍ଟଗୁଡିକ ଏକ ସ୍ୱଚ୍ଛ ଚିତ୍ର",
+  "@uiYourReportsAClearerPicture": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepYourHealthHistoryTogether": "ଆପଣଙ୍କର ସ୍ୱାସ୍ଥ୍ୟ ଇତିହାସକୁ ଏକତ୍ର ରଖନ୍ତୁ",
+  "@uiKeepYourHealthHistoryTogether": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiStoreReportsReviewResultsFollowChangesAnd": "ରିପୋର୍ଟ ଗଚ୍ଛିତ କରନ୍ତୁ, ଫଳାଫଳ ସମୀକ୍ଷା କରନ୍ତୁ, ପରିବର୍ତ୍ତନଗୁଡିକ ଅନୁସରଣ କରନ୍ତୁ ଏବଂ ଆପଣଙ୍କର କ୍ଲିନିକ୍ ସହିତ ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@uiStoreReportsReviewResultsFollowChangesAnd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEducationalInformationOnly": "କେବଳ ଶିକ୍ଷାଗତ ସୂଚନା",
+  "@uiEducationalInformationOnly": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSearchHelpArticles": "ସହାୟତା ପ୍ରବନ୍ଧଗୁଡିକ ସନ୍ଧାନ କରନ୍ତୁ",
+  "@uiSearchHelpArticles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenTheDeviceSettingsAppToChange": "ବିଜ୍ଞପ୍ତି ପ୍ରବେଶ ପରିବର୍ତ୍ତନ କରିବାକୁ ଡିଭାଇସ୍ ସେଟିଂସମୂହ ଆପ୍ ଖୋଲନ୍ତୁ",
+  "@uiOpenTheDeviceSettingsAppToChange": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSavePreferences": "ପସନ୍ଦଗୁଡିକ ସଞ୍ଚୟ କରନ୍ତୁ",
+  "@uiSavePreferences": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDevicePermissionsCanBeChangedInSettings": "ସେଟିଂସମୂହରେ ଉପକରଣ ଅନୁମତି ପରିବର୍ତ୍ତନ କରାଯାଇପାରିବ",
+  "@uiDevicePermissionsCanBeChangedInSettings": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGetReportUpdatesOnThisDevice": "ଏହି ଡିଭାଇସରେ ରିପୋର୍ଟ ଅଦ୍ୟତନଗୁଡିକ ପ୍ରାପ୍ତ କରନ୍ତୁ",
+  "@uiGetReportUpdatesOnThisDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAllowNotificationsToKnowWhenAReport": "ଏକ ରିପୋର୍ଟ ପ୍ରସ୍ତୁତ ହେଲେ ଜାଣିବାକୁ ବିଜ୍ଞପ୍ତିକୁ ଅନୁମତି ଦିଅନ୍ତୁ । ମାର୍କେଟିଂ ନିମ୍ନରେ ଏକ ଅଲଗା ପସନ୍ଦ",
+  "@uiAllowNotificationsToKnowWhenAReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiREPORTACTIVITY": "ରିପୋର୍ଟ କାର୍ଯ୍ୟକଳାପ",
+  "@uiREPORTACTIVITY": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportActivitySettingsRequireTheLatestServer": "ରିପୋର୍ଟ କାର୍ଯ୍ୟକଳାପ ସେଟିଂସମୂହ ସର୍ବଶେଷ ସର୍ଭର ସଂସ୍କରଣ ଆବଶ୍ୟକ କରେ",
+  "@uiReportActivitySettingsRequireTheLatestServer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSensitiveLockScreenPreviews": "ସମ୍ବେଦନଶୀଳ ଲକ୍-ସ୍କ୍ରିନ୍ ପୂର୍ବାବଲୋକନ",
+  "@uiSensitiveLockScreenPreviews": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportNamesAndPersonalDetailsAreAlways": "ରିପୋର୍ଟ ନାମ ଏବଂ ବ୍ୟକ୍ତିଗତ ବିବରଣୀ ସବୁବେଳେ ଲୁକ୍କାୟିତ",
+  "@uiReportNamesAndPersonalDetailsAreAlways": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOTHERMESSAGES": "ଅନ୍ୟାନ୍ୟ ବାର୍ତ୍ତା",
+  "@uiOTHERMESSAGES": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKeepEachPersonSReportsAndTrends": "ପ୍ରତ୍ୟେକ ବ୍ୟକ୍ତିଙ୍କ ରିପୋର୍ଟ ଏବଂ ଧାରାକୁ ଏକତ୍ର ରଖନ୍ତୁ",
+  "@uiKeepEachPersonSReportsAndTrends": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPersonDetails": "ବ୍ୟକ୍ତି ବିବରଣୀ",
+  "@uiPersonDetails": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDateOfBirth": "ଜନ୍ମ ତାରିଖ",
+  "@uiDateOfBirth": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRelationship": "ସମ୍ପର୍କ",
+  "@uiRelationship": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterAName": "ଏକ ନାମ ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiEnterAName": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiClearDateOfBirth": "ଜନ୍ମ ତାରିଖ ସଫା କରନ୍ତୁ",
+  "@uiClearDateOfBirth": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOptionalEGParentOrChild": "ବ tion କଳ୍ପିକ, ଯଥା ପିତାମାତା କିମ୍ବା ପିଲା",
+  "@uiOptionalEGParentOrChild": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInviteFriendsEarnCredits": "ସାଙ୍ଗମାନଙ୍କୁ ଆମନ୍ତ୍ରଣ କରନ୍ତୁ, କ୍ରେଡିଟ୍ ରୋଜଗାର କରନ୍ତୁ",
+  "@uiInviteFriendsEarnCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareYourCodeAndFollowEachInvite": "ଆପଣଙ୍କର କୋଡ୍ ଅଂଶୀଦାର କରନ୍ତୁ ଏବଂ ପୁରସ୍କାର ଅନଲକ୍ ଭାବରେ ପ୍ରତ୍ୟେକ ନିମନ୍ତ୍ରଣକୁ ଅନୁସରଣ କରନ୍ତୁ",
+  "@uiShareYourCodeAndFollowEachInvite": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYOURREFERRALCODE": "ଆପଣଙ୍କର ରେଫରାଲ୍ କୋଡ୍",
+  "@uiYOURREFERRALCODE": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareInvite": "ନିମନ୍ତ୍ରଣ ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@uiShareInvite": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCopyCode": "କୋଡ୍ କପି କରନ୍ତୁ",
+  "@uiCopyCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHaveACode": "ଏକ କୋଡ୍ ଅଛି କି?",
+  "@uiHaveACode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterACodeSharedWithYouTo": "ଆପଣଙ୍କର ନିମନ୍ତ୍ରଣ ପୁରସ୍କାର ଦାବି କରିବାକୁ ଆପଣଙ୍କ ସହିତ ଅଂଶୀଦାର ହୋଇଥିବା ଏକ କୋଡ୍ ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiEnterACodeSharedWithYouTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHowRewardsWork": "ପୁରସ୍କାର କିପରି କାମ କରେ",
+  "@uiHowRewardsWork": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoFriendsReferredYet": "କ No ଣସି ସାଙ୍ଗ ଏପର୍ଯ୍ୟନ୍ତ ରେଫର୍ କରିନାହାଁନ୍ତି",
+  "@uiNoFriendsReferredYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareYourInviteToSeeTheirProgress": "ସେମାନଙ୍କର ଅଗ୍ରଗତି ଏଠାରେ ଦେଖିବା ପାଇଁ ଆପଣଙ୍କର ନିମନ୍ତ୍ରଣ ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@uiShareYourInviteToSeeTheirProgress": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralCode": "ରେଫରାଲ୍ କୋଡ୍",
+  "@uiReferralCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSetNewPassword": "ନୂତନ ପାସୱାର୍ଡ ସେଟ୍ କରନ୍ତୁ",
+  "@uiSetNewPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterTheResetTokenFromTheLink": "ଆପଣଙ୍କର ଇମେଲ ଏବଂ ଆପଣଙ୍କର ନୂତନ ପାସୱାର୍ଡରେ ଥିବା ଲିଙ୍କରୁ ପୁନ et ସେଟ୍ ଟୋକନ୍ ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiEnterTheResetTokenFromTheLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResetPassword": "ପାସୱାର୍ଡ ପୁନ Res ସେଟ୍ କରନ୍ତୁ",
+  "@uiResetPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBackToLogin": "ଲଗଇନ୍ କୁ ଫେରନ୍ତୁ",
+  "@uiBackToLogin": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResetToken": "ଟୋକେନ୍ ପୁନ Res ସେଟ୍ କରନ୍ତୁ",
+  "@uiResetToken": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNewPassword": "ନୂତନ ପାସୱାର୍ଡ",
+  "@uiNewPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterTheEmailAddressAssociatedWithYour": "ଆପଣଙ୍କର ଖାତା ସହିତ ଜଡିତ ଇମେଲ୍ ଠିକଣା ପ୍ରବେଶ କରନ୍ତୁ ଏବଂ ଆମେ ଆପଣଙ୍କର ପାସୱାର୍ଡ ପୁନ res ସେଟ୍ କରିବାକୁ ଏକ ଲିଙ୍କ୍ ପଠାଇବୁ",
+  "@uiEnterTheEmailAddressAssociatedWithYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSendResetLink": "ପୁନ Res ସେଟ୍ ଲିଙ୍କ୍ ପଠାନ୍ତୁ",
+  "@uiSendResetLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeSession": "ଅଧିବେଶନ ପ୍ରତ୍ୟାହାର?",
+  "@uiRevokeSession": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCurrentSession": "ସାମ୍ପ୍ରତିକ ଅଧିବେଶନ",
+  "@uiCurrentSession": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSkip": "ଛାଡିଦିଅ",
+  "@uiSkip": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChangePassword": "ପାସୱାର୍ଡ ପରିବର୍ତ୍ତନ କରନ୍ତୁ",
+  "@uiChangePassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterYourCurrentPasswordAndChooseA": "ଆପଣଙ୍କର ସାମ୍ପ୍ରତିକ ପାସୱାର୍ଡ ପ୍ରବେଶ କରନ୍ତୁ ଏବଂ ଏକ ନୂତନ ବାଛନ୍ତୁ",
+  "@uiEnterYourCurrentPasswordAndChooseA": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNewPasswordd850ee": "ନୂତନ ପାସୱାର୍ଡ",
+  "@uiNewPasswordd850ee": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiConfirmNewPassword": "ନୂତନ ପାସୱାର୍ଡ ନିଶ୍ଚିତ କରନ୍ତୁ",
+  "@uiConfirmNewPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGettingThingsReady": "ଜିନିଷ ପ୍ରସ୍ତୁତ କରିବା…",
+  "@uiGettingThingsReady": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLinkAccessHistory": "ଲିଙ୍କ୍ ଆକ୍ସେସ୍ ଇତିହାସ",
+  "@uiLinkAccessHistory": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoAccessEventsYet": "ଏପର୍ଯ୍ୟନ୍ତ କ access ଣସି ପ୍ରବେଶ ଇଭେଣ୍ଟ ନାହିଁ",
+  "@uiNoAccessEventsYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDefaultShareLinkExpiry": "ଡିଫଲ୍ଟ ସେୟାର ଲିଙ୍କ୍ ସମାପ୍ତି",
+  "@uiDefaultShareLinkExpiry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSave": "ସଞ୍ଚୟ କରନ୍ତୁ",
+  "@uiSave": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewSharing": "ଅଂଶୀଦାର ସମୀକ୍ଷା କରନ୍ତୁ",
+  "@uiReviewSharing": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckThePersonReportsAndAccess": "ବ୍ୟକ୍ତି, ରିପୋର୍ଟ ଏବଂ ପ୍ରବେଶ ଯାଞ୍ଚ କରନ୍ତୁ",
+  "@uiCheckThePersonReportsAndAccess": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEditSelectionOrAccessSettings": "ଚୟନ କିମ୍ବା ପ୍ରବେଶ ସେଟିଂସମୂହ ସଂପାଦନ କରନ୍ତୁ",
+  "@uiEditSelectionOrAccessSettings": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeShareLink": "ସେୟାର ଲିଙ୍କ୍ ପ୍ରତ୍ୟାହାର କରନ୍ତୁ?",
+  "@uiRevokeShareLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisLinkWillStopWorkingYouCan": "ଏହି ଲିଙ୍କ୍ କାମ ବନ୍ଦ କରିବ । ଆପଣ ଏକ ନୂତନ ସୃଷ୍ଟି କରିପାରିବେ",
+  "@uiThisLinkWillStopWorkingYouCan": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareLinkReady": "ଅଂଶୀଦାର ଲିଙ୍କ୍ ପ୍ରସ୍ତୁତ",
+  "@uiShareLinkReady": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessCodeShareSeparately": "ଆକ୍ସେସ୍ କୋଡ୍ - ପୃଥକ ଭାବରେ ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@uiAccessCodeShareSeparately": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCopyAccessCode": "ଆକସେସ୍ କୋଡ୍ କପି କରନ୍ତୁ",
+  "@uiCopyAccessCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisCodeCouldNotBeSavedOn": "ଏହି କୋଡ୍ ଏହି ଡିଭାଇସରେ ସଞ୍ଚୟ ହୋଇପାରିବ ନାହିଁ । ପରବର୍ତ୍ତୀ ବ୍ୟବହାର ପାଇଁ ଏହାକୁ ବର୍ତ୍ତମାନ କପି କରନ୍ତୁ",
+  "@uiThisCodeCouldNotBeSavedOn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareLink": "ଲିଙ୍କ୍ ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@uiShareLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCopyLink": "ଲିଙ୍କ୍ କପି କରନ୍ତୁ",
+  "@uiCopyLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeLink": "ଲିଙ୍କ୍ ପ୍ରତ୍ୟାହାର କରନ୍ତୁ",
+  "@uiRevokeLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCodeUnavailableOnThisDeviceUseThe": "ଏହି ଡିଭାଇସରେ କୋଡ୍ ଉପଲବ୍ଧ ନାହିଁ । ସଞ୍ଚିତ କୋଡ୍ ବ୍ୟବହାର କରନ୍ତୁ କିମ୍ବା ଏକ ନୂତନ ଲିଙ୍କ୍ ସୃଷ୍ଟି କରନ୍ତୁ",
+  "@uiCodeUnavailableOnThisDeviceUseThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiActiveSharedLinks": "ସକ୍ରିୟ ଅଂଶୀଦାର ଲିଙ୍କ୍",
+  "@uiActiveSharedLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShare": "ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@uiShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreateANewShareLink": "ଏକ ନୂତନ ଅଂଶୀଦାର ଲିଙ୍କ୍ ସୃଷ୍ଟି କରନ୍ତୁ",
+  "@uiCreateANewShareLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiIncludeCurrentAndFutureReportsForThis": "ଏହି ପ୍ରୋଫାଇଲ୍ ପାଇଁ ସାମ୍ପ୍ରତିକ ଏବଂ ଭବିଷ୍ୟତ ରିପୋର୍ଟଗୁଡିକ ଅନ୍ତର୍ଭୂକ୍ତ କରନ୍ତୁ",
+  "@uiIncludeCurrentAndFutureReportsForThis": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseReports": "ରିପୋର୍ଟଗୁଡିକ ବାଛନ୍ତୁ",
+  "@uiChooseReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareOnlyTheReportsSelectedBelow": "ନିମ୍ନରେ ମନୋନୀତ ହୋଇଥିବା ରିପୋର୍ଟଗୁଡିକ କେବଳ ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@uiShareOnlyTheReportsSelectedBelow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectAll": "ସମସ୍ତ ଚୟନ କରନ୍ତୁ",
+  "@uiSelectAll": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoReviewedReportsAreAvailableToShare": "ଅଂଶୀଦାର କରିବାକୁ କ review ଣସି ସମୀକ୍ଷା ହୋଇଥିବା ରିପୋର୍ଟ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiNoReviewedReportsAreAvailableToShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectedTestResults": "ମନୋନୀତ ପରୀକ୍ଷା ଫଳାଫଳ",
+  "@uiSelectedTestResults": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiIncludeOnlyTheResultsYouChooseFrom": "ଏହି ରିପୋର୍ଟଗୁଡିକରୁ ଆପଣ ବାଛିଥିବା ଫଳାଫଳଗୁଡିକ କେବଳ ଅନ୍ତର୍ଭୂକ୍ତ କରନ୍ତୁ",
+  "@uiIncludeOnlyTheResultsYouChooseFrom": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoSavedTestResultsAreAvailableIn": "ଏହି ରିପୋର୍ଟଗୁଡିକରେ କ saved ଣସି ସଞ୍ଚିତ ପରୀକ୍ଷା ଫଳାଫଳ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiNoSavedTestResultsAreAvailableIn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUpgradeOrManage": "ଅପଗ୍ରେଡ୍ କିମ୍ବା ପରିଚାଳନା କରନ୍ତୁ",
+  "@uiUpgradeOrManage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExpiry": "ସମାପ୍ତି:",
+  "@uiExpiry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRequireAnAccessCode": "ଏକ ପ୍ରବେଶ ସଂକେତ ଆବଶ୍ୟକ କରନ୍ତୁ",
+  "@uiRequireAnAccessCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareTheCodeSeparatelyFromTheLink": "ଲିଙ୍କ୍ ଠାରୁ ପୃଥକ ଭାବରେ କୋଡ୍ ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@uiShareTheCodeSeparatelyFromTheLink": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTryAgain": "ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiClearExpiry": "ମିଆଦ ପୂର୍ଣ୍ଣ କରନ୍ତୁ",
+  "@uiClearExpiry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingStoreEyebrow": "01 / ସଂରକ୍ଷଣ କରନ୍ତୁ",
+  "@onboardingStoreEyebrow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingStoreTitle": "ପ୍ରତ୍ୟେକ ରିପୋର୍ଟ,\nଗୋଟିଏ ପରିଚିତ ସ୍ଥାନ",
+  "@onboardingStoreTitle": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingStoreBody": "ଆପଣ ଏବଂ ଆପଣ ଯତ୍ନ ନେଉଥିବା ଲୋକଙ୍କ ପାଇଁ PDF ଏବଂ ଫଟୋ ଏକାଠି ରଖନ୍ତୁ",
+  "@onboardingStoreBody": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingUnderstandEyebrow": "02 / ବୁଝନ୍ତୁ",
+  "@onboardingUnderstandEyebrow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingUnderstandTitle": "ସଂଖ୍ୟା,\nପ to ିବା ସହଜ କଲା",
+  "@onboardingUnderstandTitle": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingUnderstandBody": "ପ୍ରତ୍ୟେକ ରିପୋର୍ଟ, ଏହାର ୟୁନିଟ୍ ଏବଂ ଆପଣଙ୍କର ରିପୋର୍ଟରୁ ବ୍ୟବଧାନ ଦେଖନ୍ତୁ । ଯେକ time ଣସି ସମୟରେ ମୂଳ ଯାଞ୍ଚ କରନ୍ତୁ",
+  "@onboardingUnderstandBody": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingTrackEyebrow": "03 / ଟ୍ରାକ୍ ଏବଂ ଅଂଶୀଦାର",
+  "@onboardingTrackEyebrow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingTrackTitle": "ପରିବର୍ତ୍ତନଗୁଡିକ ଦେଖନ୍ତୁ ।\nପ୍ରସଙ୍ଗ ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@onboardingTrackTitle": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingTrackBody": "ସମୟ ସହିତ ଫଳାଫଳ ଅନୁସରଣ କରନ୍ତୁ ଏବଂ ଆପଣଙ୍କର କ୍ଲିନିକ୍ କ’ଣ ଦେଖିପାରିବେ ତାହା ବାଛନ୍ତୁ",
+  "@onboardingTrackBody": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingNext": "ପରବର୍ତ୍ତୀ",
+  "@onboardingNext": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "onboardingGetStarted": "ଆରମ୍ଭ କର",
+  "@onboardingGetStarted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSupportRequestSent": "ସମର୍ଥନ ଅନୁରୋଧ ପଠାଯାଇଛି",
+  "@uiSupportRequestSent": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTestNameAndResultAreRequired": "ପରୀକ୍ଷା ନାମ ଏବଂ ଫଳାଫଳ ଆବଶ୍ୟକ",
+  "@uiTestNameAndResultAreRequired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseAValidCollectionDateInYYYY": "YYYY-MM-DD ଫର୍ମାଟରେ ଏକ ବ valid ଧ ସଂଗ୍ରହ ତାରିଖ ବ୍ୟବହାର କରନ୍ତୁ",
+  "@uiUseAValidCollectionDateInYYYY": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotSaveThisCorrectionTryAgain": "ଏହି ସଂଶୋଧନକୁ ସଞ୍ଚୟ କରିପାରିଲା ନାହିଁ । ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiCouldNotSaveThisCorrectionTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportsUnavailable": "ରିପୋର୍ଟ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiReportsUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTryAgain042c86": "ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiTryAgain042c86": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTwoReportsAreNeeded": "ଦୁଇଟି ରିପୋର୍ଟ ଆବଶ୍ୟକ",
+  "@uiTwoReportsAreNeeded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAddAnOlderReportForThisProfile": "ଫଳାଫଳ ତୁଳନା କରିବାକୁ ଏହି ପ୍ରୋଫାଇଲ୍ ପାଇଁ ଏକ ପୁରୁଣା ରିପୋର୍ଟ ଯୋଡନ୍ତୁ",
+  "@uiAddAnOlderReportForThisProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotCompareYet": "ଏପର୍ଯ୍ୟନ୍ତ ତୁଳନା କରିପାରିବ ନାହିଁ",
+  "@uiCannotCompareYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTheseReportsHaveNoMatchingResultsAvailable": "ଏହି ରିପୋର୍ଟଗୁଡିକର ତୁଳନା ପାଇଁ କ match ଣସି ମେଳଣ ଫଳାଫଳ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiTheseReportsHaveNoMatchingResultsAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadReportsTryAgain": "ରିପୋର୍ଟ ଲୋଡ୍ କରିବାକୁ ଅସମର୍ଥ । ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiUnableToLoadReportsTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenPhotosOrCamera": "ଫଟୋ କିମ୍ବା କ୍ୟାମେରା ଖୋଲିପାରିଲା ନାହିଁ",
+  "@uiCouldNotOpenPhotosOrCamera": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenCamera": "କ୍ୟାମେରା ଖୋଲିପାରିଲା ନାହିଁ",
+  "@uiCouldNotOpenCamera": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotPrepareThesePagesRetakeAn": "ଏହି ପୃଷ୍ଠାଗୁଡିକ ପ୍ରସ୍ତୁତ କରିପାରିଲା ନାହିଁ । ଏକ ପ read ଼ା ନଥିବା ପୃଷ୍ଠା ପୁନ ake ଚେଷ୍ଟା କର ଏବଂ ପୁନର୍ବାର ଚେଷ୍ଟା କର",
+  "@uiCouldNotPrepareThesePagesRetakeAn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotAdjustThisPage": "ଏହି ପୃଷ୍ଠା ସଜାଡି ପାରିଲା ନାହିଁ",
+  "@uiCouldNotAdjustThisPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoChartableResultYet": "ଏପର୍ଯ୍ୟନ୍ତ କ chart ଣସି ଚାର୍ଟେବଲ୍ ଫଳାଫଳ ନାହିଁ",
+  "@uiNoChartableResultYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProfiles": "ପ୍ରୋଫାଇଲ୍",
+  "@uiProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReports": "ରିପୋର୍ଟ",
+  "@uiReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareLinks": "ଲିଙ୍କ୍ ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@uiShareLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAIChat": "AI ଚାଟ୍",
+  "@uiAIChat": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadEntitlementSummaryPleaseTry": "ଅଧିକାର ସାରାଂଶ ଲୋଡ୍ କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToLoadEntitlementSummaryPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToRefreshBillingStatusPleaseTry": "ବିଲିଂ ସ୍ଥିତି ସତେଜ କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToRefreshBillingStatusPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReceiptDownloadWillBeAvailableSoon": "ରସିଦ ଡାଉନଲୋଡ୍ ଶୀଘ୍ର ଉପଲବ୍ଧ ହେବ",
+  "@uiReceiptDownloadWillBeAvailableSoon": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSubtotal": "ସବଟୋଟାଲ୍",
+  "@uiSubtotal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDiscount": "ରିହାତି",
+  "@uiDiscount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTotal": "ସମୁଦାୟ",
+  "@uiTotal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadCreditPacksPleaseTry": "କ୍ରେଡିଟ୍ ପ୍ୟାକ୍ ଲୋଡ୍ କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToLoadCreditPacksPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAPaymentIsPendingCaptureRefreshStatus": "ଏକ ଦେୟ କ୍ୟାପଚର ବିଚାରାଧୀନ ଅଛି । ଅନ୍ୟ ଏକ ଚେକଆଉଟ୍ ଆରମ୍ଭ କରିବା ପୂର୍ବରୁ ସ୍ଥିତି ସତେଜ କରନ୍ତୁ",
+  "@uiAPaymentIsPendingCaptureRefreshStatus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditsWereAppliedSuccessfully": "କ୍ରେଡିଟ୍ ସଫଳତାର ସହିତ ପ୍ରୟୋଗ କରାଯାଇଥିଲା",
+  "@uiCreditsWereAppliedSuccessfully": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToCreateOrderPleaseTryAgain": "କ୍ରମ ସୃଷ୍ଟି କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToCreateOrderPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentReceivedAwaitingServerReconciliationBeforeCredits": "ଦେୟ ଗ୍ରହଣ କରାଯାଇଛି କ୍ରେଡିଟ୍ ଯୋଡିବା ପୂର୍ବରୁ ସର୍ଭର ପୁନ iliation ନିର୍ମାଣକୁ ଅପେକ୍ଷା",
+  "@uiPaymentReceivedAwaitingServerReconciliationBeforeCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentFailedYouCanRetryCheckoutWhen": "ଦେୟ ବିଫଳ ହେଲା । ପ୍ରସ୍ତୁତ ହୋଇଗଲେ ଆପଣ ଚେକଆଉଟ୍ ପୁନ ry ଚେଷ୍ଟା କରିପାରିବେ",
+  "@uiPaymentFailedYouCanRetryCheckoutWhen": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentFailedTryAgain": "ଦେୟ ବିଫଳ ହେଲା । ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiPaymentFailedTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditsAdded": "କ୍ରେଡିଟ୍ ଯୋଡା ଯାଇଛି!",
+  "@uiCreditsAdded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeApplied": "ପ୍ରୋମୋ କୋଡ୍ ପ୍ରୟୋଗ ହେଲା",
+  "@uiPromoCodeApplied": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentReceivedButThisOrderIsPending": "ଦେୟ ଗ୍ରହଣ କରାଯାଇଛି, କିନ୍ତୁ ଏହି ଆଦେଶ ସମୀକ୍ଷା ପାଇଁ ବିଚାରାଧୀନ ଅଛି",
+  "@uiPaymentReceivedButThisOrderIsPending": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentFailedDuringReconciliation": "ପୁନ iliation ନିର୍ମାଣ ସମୟରେ ଦେୟ ବିଫଳ ହେଲା",
+  "@uiPaymentFailedDuringReconciliation": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentConfirmedServerReconciliationIsStillPending": "ଦେୟ ନିଶ୍ଚିତ ହୋଇଛି । ସର୍ଭର ପୁନ iliation ନିର୍ମାଣ ବିଚାରାଧୀନ ଅଛି",
+  "@uiPaymentConfirmedServerReconciliationIsStillPending": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentVerifiedReconciliationIsPendingPleaseRefresh": "ଦେୟ ଯାଞ୍ଚ ହୋଇଛି । ପୁନ on ସମନ୍ୱୟ ବିଚାରାଧୀନ ଅଛି, ଦୟାକରି ଶୀଘ୍ର ସତେଜ କରନ୍ତୁ",
+  "@uiPaymentVerifiedReconciliationIsPendingPleaseRefresh": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentReceivedButVerificationIsStillPending": "ଦେୟ ଗ୍ରହଣ କରାଯାଇଛି କିନ୍ତୁ ଯାଞ୍ଚ ବିଚାରାଧୀନ ଅଛି । ଦୟାକରି ସ୍ଥିତି ସତେଜ କରନ୍ତୁ",
+  "@uiPaymentReceivedButVerificationIsStillPending": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadPlansPleaseTryAgain": "ଯୋଜନା ଲୋଡ୍ କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToLoadPlansPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToCreateSubscriptionPleaseTryAgain": "ସଦସ୍ୟତା ସୃଷ୍ଟି କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToCreateSubscriptionPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSubscriptionFailedTryAgain": "ସଦସ୍ୟତା ବିଫଳ ହେଲା । ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiSubscriptionFailedTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPlanUpgraded": "ଯୋଜନା ଅପଗ୍ରେଡ୍!",
+  "@uiPlanUpgraded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentReceivedButVerificationFailedPlanWill": "ଦେୟ ଗ୍ରହଣ କରାଯାଇଥିଲା କିନ୍ତୁ ଯାଞ୍ଚ ବିଫଳ ହେଲା । ଯୋଜନା ଶୀଘ୍ର ଅପଗ୍ରେଡ୍ ହେବ",
+  "@uiPaymentReceivedButVerificationFailedPlanWill": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationsUnavailable": "ବିଜ୍ଞପ୍ତିଗୁଡିକ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiNotificationsUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAllQuietForNow": "ବର୍ତ୍ତମାନ ପାଇଁ ସମସ୍ତେ ଚୁପ୍ ଅଛନ୍ତି",
+  "@uiAllQuietForNow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportUpdatesAndSharingRemindersWillAppear": "କିଛି ନୂଆ ଥିବାବେଳେ ରିପୋର୍ଟ୍ ଅପଡେଟ୍ ଏବଂ ସେୟାର୍ ରିମାଇଣ୍ଡର୍ ଏଠାରେ ଦେଖାଯିବ",
+  "@uiReportUpdatesAndSharingRemindersWillAppear": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoUnreadUpdates": "କ un ଣସି ପ read ା ଅପଡେଟ୍ ନାହିଁ",
+  "@uiNoUnreadUpdates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouReAllCaughtUp": "ତୁମେ ସମସ୍ତେ ଧରାପଡିଛ",
+  "@uiYouReAllCaughtUp": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadNotificationsTryAgainWhen": "ବିଜ୍ଞପ୍ତି ଲୋଡ୍ କରିବାକୁ ଅସମର୍ଥ । ସଂଯୁକ୍ତ ହେଲେ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiUnableToLoadNotificationsTryAgainWhen": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiManageSharedLinks": "ଅଂଶୀଦାର ଲିଙ୍କଗୁଡିକ ପରିଚାଳନା କରନ୍ତୁ",
+  "@uiManageSharedLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportYourData": "ଆପଣଙ୍କ ତଥ୍ୟ ଏକ୍ସପୋର୍ଟ କରନ୍ତୁ",
+  "@uiExportYourData": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReadThePrivacyPolicy": "ଗୋପନୀୟତା ନୀତି ପ Read ନ୍ତୁ",
+  "@uiReadThePrivacyPolicy": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTermsOfUse": "ବ୍ୟବହାର ସର୍ତ୍ତାବଳୀ",
+  "@uiTermsOfUse": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPrivacyPolicy": "ଗୋପନୀୟତା ନୀତି",
+  "@uiPrivacyPolicy": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDateOfBirthOptional": "ଜନ୍ମ ତାରିଖ, ବ al କଳ୍ପିକ",
+  "@uiDateOfBirthOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRelationshipMustBe50CharactersOrFewer": "ସମ୍ପର୍କ 50 ଅକ୍ଷର କିମ୍ବା କମ୍ ହେବା ଜରୁରୀ",
+  "@uiRelationshipMustBe50CharactersOrFewer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToSaveProfilePleaseTryAgain": "ପ୍ରୋଫାଇଲ୍ ସଞ୍ଚୟ କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToSaveProfilePleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralsUnavailable": "ରେଫରାଲ୍ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiReferralsUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourRewards": "ତୁମର ପୁରସ୍କାର",
+  "@uiYourRewards": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralProgress": "ରେଫରାଲ୍ ଅଗ୍ରଗତି",
+  "@uiReferralProgress": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFriendsReferred": "ସାଙ୍ଗମାନେ ରେଫର୍ କରିଛନ୍ତି",
+  "@uiFriendsReferred": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditsEarned": "କ୍ରେଡିଟ୍ ଅର୍ଜନ",
+  "@uiCreditsEarned": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPendingRewards": "ପୁରସ୍କାର ବିଚାରାଧୀନ ଅଛି",
+  "@uiPendingRewards": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBlockedRewards": "ଅବରୋଧିତ ପୁରସ୍କାର",
+  "@uiBlockedRewards": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInviteeBonus": "ନିମନ୍ତ୍ରଣ ବୋନସ୍",
+  "@uiInviteeBonus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFirstAnalysis": "ପ୍ରଥମ ବିଶ୍ଳେଷଣ",
+  "@uiFirstAnalysis": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFirstPurchase": "ପ୍ରଥମେ କ୍ରୟ",
+  "@uiFirstPurchase": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMonthlyCap": "ମାସିକ କ୍ୟାପ୍",
+  "@uiMonthlyCap": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadReferralsPleaseTryAgain": "ରେଫରାଲ୍ ଲୋଡ୍ କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToLoadReferralsPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralCodeCopied": "ରେଫରାଲ୍ କୋଡ୍ କପି ହୋଇଛି",
+  "@uiReferralCodeCopied": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterTheResetTokenFromYourEmail": "ଆପଣଙ୍କର ଇମେଲ୍ ଲିଙ୍କରୁ ପୁନ et ସେଟ୍ ଟୋକନ୍ ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiEnterTheResetTokenFromYourEmail": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterYourNewPassword": "ଆପଣଙ୍କର ନୂତନ ପାସୱାର୍ଡ ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiEnterYourNewPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToResetPasswordPleaseRequestA": "ପାସୱାର୍ଡ ପୁନ res ସେଟ୍ କରିବାକୁ ଅସମର୍ଥ । ଦୟାକରି ଏକ ନୂତନ ଲିଙ୍କ୍ ଅନୁରୋଧ",
+  "@uiUnableToResetPasswordPleaseRequestA": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterYourEmailAddress": "ଆପଣଙ୍କର ଇମେଲ୍ ଠିକଣା ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiEnterYourEmailAddress": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToSendResetLinkPleaseTry": "ପୁନ res ସେଟ୍ ଲିଙ୍କ୍ ପଠାଇବାକୁ ଅସମର୍ଥ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiUnableToSendResetLinkPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadSessions": "ଅଧିବେଶନ ଲୋଡ୍ କରିବାରେ ବିଫଳ",
+  "@uiFailedToLoadSessions": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToRevokeSession": "ଅଧିବେଶନ ପ୍ରତ୍ୟାହାର କରିବାରେ ବିଫଳ",
+  "@uiFailedToRevokeSession": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToChangePasswordPleaseTryAgain": "ପାସୱାର୍ଡ ପରିବର୍ତ୍ତନ କରିବାକୁ ଅସମର୍ଥ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiUnableToChangePasswordPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenDeviceSettingsAndAllowNotificationsFor": "ଡିଭାଇସ୍ ସେଟିଂସମୂହ ଖୋଲନ୍ତୁ ଏବଂ ଡକଲିଜର ପାଇଁ ବିଜ୍ଞପ୍ତିକୁ ଅନୁମତି ଦିଅନ୍ତୁ",
+  "@uiOpenDeviceSettingsAndAllowNotificationsFor": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportsCouldNotBeLoadedTryAgain": "ରିପୋର୍ଟଗୁଡିକ ଲୋଡ୍ ହୋଇପାରିଲା ନାହିଁ । ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiReportsCouldNotBeLoadedTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTestResultsCouldNotBeLoadedTry": "ପରୀକ୍ଷା ଫଳାଫଳ ଲୋଡ୍ ହୋଇପାରିଲା ନାହିଁ । ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiTestResultsCouldNotBeLoadedTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectAtLeastOneReportToShare": "ଅଂଶୀଦାର କରିବାକୁ ଅତିକମରେ ଗୋଟିଏ ରିପୋର୍ଟ ଚୟନ କରନ୍ତୁ",
+  "@uiSelectAtLeastOneReportToShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectAtLeastOneTestResultTo": "ଅଂଶୀଦାର କରିବାକୁ ଅତିକମରେ ଗୋଟିଏ ପରୀକ୍ଷା ଫଳାଫଳ ଚୟନ କରନ୍ତୁ",
+  "@uiSelectAtLeastOneTestResultTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLinkCopiedToClipboard": "ଲିଙ୍କ୍ କ୍ଲିପବୋର୍ଡରେ କପି ହୋଇଛି",
+  "@uiLinkCopiedToClipboard": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccessCodeCopiedToClipboard": "ଆକ୍ସେସ୍ କୋଡ୍ କ୍ଲିପବୋର୍ଡରେ କପି ହୋଇଛି",
+  "@uiAccessCodeCopiedToClipboard": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOnePerson": "1 ଜଣ",
+  "@uiOnePerson": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPeopleCount": "{count} ଲୋକ",
+  "@uiPeopleCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiActionsFor": "{name} ପାଇଁ କାର୍ଯ୍ୟ",
+  "@uiActionsFor": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnableToSwitchProfilesDetail": "ପ୍ରୋଫାଇଲ୍ ସୁଇଚ୍ କରିବାକୁ ଅସମର୍ଥ । {message}",
+  "@uiUnableToSwitchProfilesDetail": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSwitchedTo": "{name} କୁ ସୁଇଚ୍ ହୋଇଛି",
+  "@uiSwitchedTo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAnalyzeOnePage": "1 ପୃଷ୍ଠା ବିଶ୍ଳେଷଣ କରନ୍ତୁ",
+  "@uiAnalyzeOnePage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAnalyzePages": "{count} ପୃଷ୍ଠାଗୁଡ଼ିକୁ ବିଶ୍ଳେଷଣ କରନ୍ତୁ",
+  "@uiAnalyzePages": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDragPagesIntoOrder": "ଆପଣଙ୍କ ରିପୋର୍ଟରେ ଦେଖାଯାଇଥିବା କ୍ରମରେ ପୃଷ୍ଠାଗୁଡ଼ିକୁ ଡ୍ରାଗ୍ କରନ୍ତୁ",
+  "@uiDragPagesIntoOrder": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckEveryPage": "ବିଶ୍ଳେଷଣ କରିବା ପୂର୍ବରୁ ପ୍ରତ୍ୟେକ ପୃଷ୍ଠା ଯାଞ୍ଚ କରନ୍ତୁ",
+  "@uiCheckEveryPage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOnePageAdded": "1 ପୃଷ୍ଠା ଯୋଡା ଯାଇଛି",
+  "@uiOnePageAdded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPagesAdded": "{count} ପୃଷ୍ଠାଗୁଡ଼ିକ ଯୋଗ କରାଯାଇଛି",
+  "@uiPagesAdded": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReorder": "ରେକର୍ଡ",
+  "@uiReorder": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPageNumber": "ପୃଷ୍ଠା {number}",
+  "@uiPageNumber": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "uiRemovePage": "ପୃଷ୍ଠା {number} ଅପସାରଣ କରନ୍ତୁ",
+  "@uiRemovePage": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "uiProfilePage": "{name} · ପୃଷ୍ଠା {number}",
+  "@uiProfilePage": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCropEdges": "ଫସଲ ଧାର: {percent}%",
+  "@uiCropEdges": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSelectedReportsCount": "{count} ମନୋନୀତ ରିପୋର୍ଟଗୁଡିକ",
+  "@uiSelectedReportsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSelectedTestResultsCount": "{count} ମନୋନୀତ ପରୀକ୍ଷା ଫଳାଫଳ",
+  "@uiSelectedTestResultsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAllCurrentFutureReports": "ସମସ୍ତ ସାମ୍ପ୍ରତିକ ଏବଂ ଭବିଷ୍ୟତ ରିପୋର୍ଟଗୁଡିକ",
+  "@uiAllCurrentFutureReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoExpiry": "କ exp ଣସି ସମାପ୍ତି ନାହିଁ",
+  "@uiNoExpiry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExpiresDate": "{date} ମିଆଦ ପୂର୍ଣ୍ଣ ହୁଏ",
+  "@uiExpiresDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAccessCodeRequiredSeparate": "ଆକ୍ସେସ୍ କୋଡ୍ ଆବଶ୍ୟକ । ଲିଙ୍କ୍ ଠାରୁ ଏହାକୁ ପୃଥକ ଭାବରେ ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@uiAccessCodeRequiredSeparate": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoAccessCodeRequired": "କ access ଣସି ପ୍ରବେଶ ସଂକେତ ଆବଶ୍ୟକ ନାହିଁ",
+  "@uiNoAccessCodeRequired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExpiresColonDate": "ମିଆଦ ପୂର୍ଣ୍ଣ: {date}",
+  "@uiExpiresColonDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiShareProfileReports": "{name} ର ରିପୋର୍ଟଗୁଡିକ ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@uiShareProfileReports": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiProfileReports": "{name} ର ରିପୋର୍ଟଗୁଡିକ",
+  "@uiProfileReports": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSelectedResultsCount": "{count} ମନୋନୀତ ଫଳାଫଳଗୁଡିକ",
+  "@uiSelectedResultsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAccessCodeRequiredShort": "ଆକ୍ସେସ୍ କୋଡ୍ ଆବଶ୍ୟକ",
+  "@uiAccessCodeRequiredShort": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPastLinksCount": "ଅତୀତ ଲିଙ୍କ୍ · {count}",
+  "@uiPastLinksCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiExpiredDate": "ମିଆଦ ପୂର୍ଣ୍ଣ {date}",
+  "@uiExpiredDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiRevokedCreatedDate": "ପ୍ରତ୍ୟାହାର · {date} ସୃଷ୍ଟି",
+  "@uiRevokedCreatedDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUsingActiveLinks": "{maximum} ସକ୍ରିୟ ଲିଙ୍କଗୁଡ଼ିକର {current} ବ୍ୟବହାର କରି",
+  "@uiUsingActiveLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "maximum": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDeleteReportAndStoredFile": "{filename} ଏବଂ ଏହାର ଗଚ୍ଛିତ ଫାଇଲକୁ ବିଲୋପ କରନ୍ତୁ? ଏହାକୁ ପୂର୍ବବତ୍ କରାଯାଇପାରିବ ନାହିଁ",
+  "@uiDeleteReportAndStoredFile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnableDeleteReportDetail": "ରିପୋର୍ଟ ବିଲୋପ କରିବାରେ ଅସମର୍ଥ: {error}",
+  "@uiUnableDeleteReportDetail": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDeleteAllReportsAndFiles": "ସମସ୍ତ {count} ରିପୋର୍ଟ ଏବଂ ସେମାନଙ୍କର ଗଚ୍ଛିତ ଫାଇଲଗୁଡ଼ିକୁ ସ୍ଥାୟୀଭାବେ ବିଲୋପ କରନ୍ତୁ? ଏହାକୁ ପୂର୍ବବତ୍ କରାଯାଇପାରିବ ନାହିଁ",
+  "@uiDeleteAllReportsAndFiles": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiRecycleBinEmptied": "ରିସାଇକ୍ଲି ବିନ୍ ଖାଲି ହେଲା",
+  "@uiRecycleBinEmptied": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSomeReportsDeleteFailed": "{deleted} ରିପୋର୍ଟ ବିଲୋପ ହୋଇଛି । {failed} ବିଲୋପ ହୋଇପାରିବ ନାହିଁ; ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiSomeReportsDeleteFailed": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "deleted": {
+        "type": "String"
+      },
+      "failed": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnableEmptyRecycleBinDetail": "ରିସାଇକ୍ଲି ବିନ୍ ଖାଲି କରିବାକୁ ଅସମର୍ଥ: {error}",
+  "@uiUnableEmptyRecycleBinDetail": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "uiProfileName": "ପ୍ରୋଫାଇଲ୍: {name}",
+  "@uiProfileName": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCollectedDate": "ସଂଗୃହିତ: {date}",
+  "@uiCollectedDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUploadedDate": "ଅପଲୋଡ୍ ହୋଇଛି: {date}",
+  "@uiUploadedDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDeletedOn": "ବିଲୋପ ହୋଇଛି: {date}",
+  "@uiDeletedOn": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiPermanentDeleteOn": "ସ୍ଥାୟୀ ବିଲୋପ: {date}",
+  "@uiPermanentDeleteOn": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDaysLeft": "ବାକି ଦିନ: {count}",
+  "@uiDaysLeft": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiConfirmAppLockForDoclyzer": "ଡକଲିଜର ପାଇଁ ଆପ୍ ଲକ୍ ନିଶ୍ଚିତ କରନ୍ତୁ",
+  "@uiConfirmAppLockForDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiConfirmBeforeTurningOffAppLock": "ଆପ୍ ଲକ୍ ବନ୍ଦ କରିବା ପୂର୍ବରୁ ନିଶ୍ଚିତ କରନ୍ତୁ",
+  "@uiConfirmBeforeTurningOffAppLock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnlockDoclyzerToViewYourHealthRecords": "ଆପଣଙ୍କର ସ୍ୱାସ୍ଥ୍ୟ ରେକର୍ଡଗୁଡିକ ଦେଖିବା ପାଇଁ ଡକଲିଜର ଅନଲକ୍ କରନ୍ତୁ",
+  "@uiUnlockDoclyzerToViewYourHealthRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreateADefaultProfileBeforeUploadingA": "ଏକ ରିପୋର୍ଟ ଅପଲୋଡ୍ କରିବା ପୂର୍ବରୁ ଏକ ଡିଫଲ୍ଟ ପ୍ରୋଫାଇଲ୍ ସୃଷ୍ଟି କରନ୍ତୁ",
+  "@uiCreateADefaultProfileBeforeUploadingA": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreateADefaultProfileBeforeViewingYour": "ଆପଣଙ୍କର ଟାଇମଲାଇନ୍ ଦେଖିବା ପୂର୍ବରୁ ଏକ ଡିଫଲ୍ଟ ପ୍ରୋଫାଇଲ୍ ସୃଷ୍ଟି କରନ୍ତୁ",
+  "@uiCreateADefaultProfileBeforeViewingYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadProfilesRightNow": "ବର୍ତ୍ତମାନ ପ୍ରୋଫାଇଲ୍ ଲୋଡ୍ କରିବାକୁ ଅସମର୍ଥ",
+  "@uiUnableToLoadProfilesRightNow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotUploadRightNowBecauseProfileData": "ବର୍ତ୍ତମାନ ଅପଲୋଡ୍ କରିପାରିବ ନାହିଁ କାରଣ ପ୍ରୋଫାଇଲ୍ ଡାଟା ଲୋଡ୍ ହୋଇପାରିଲା ନାହିଁ । ଦୟାକରି ନିଶ୍ଚିତ କରନ୍ତୁ ଯେ API ସର୍ଭର ଚାଲୁଛି ଏବଂ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiCannotUploadRightNowBecauseProfileData": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotOpenTimelineRightNowBecauseProfile": "ବର୍ତ୍ତମାନ ସମୟ ସୀମା ଖୋଲିପାରିବ ନାହିଁ କାରଣ ପ୍ରୋଫାଇଲ୍ ତଥ୍ୟ ଲୋଡ୍ ହୋଇପାରିଲା ନାହିଁ । ଦୟାକରି ନିଶ୍ଚିତ କରନ୍ତୁ ଯେ API ସର୍ଭର ଚାଲୁଛି ଏବଂ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiCannotOpenTimelineRightNowBecauseProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadProfilesRightNowPlease": "ବର୍ତ୍ତମାନ ପ୍ରୋଫାଇଲ୍ ଲୋଡ୍ କରିବାକୁ ଅସମର୍ଥ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiUnableToLoadProfilesRightNowPlease": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToLoadSharingLinksPleaseTry": "ଅଂଶୀଦାର ଲିଙ୍କ୍ ଲୋଡ୍ କରିବାକୁ ଅସମର୍ଥ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiUnableToLoadSharingLinksPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPasswordChanged": "ପାସୱାର୍ଡ ବଦଳିଲା",
+  "@uiPasswordChanged": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToOpenThatReportTryThe": "ସେହି ରିପୋର୍ଟ ଖୋଲିବାକୁ ଅସମର୍ଥ । ରିପୋର୍ଟ ଲାଇବ୍ରେରୀ ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiUnableToOpenThatReportTryThe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisActionIsTemporarilyUnavailableWhileYour": "ଆପଣଙ୍କର ଆକାଉଣ୍ଟ୍ ସମୀକ୍ଷା ଚାଲିଥିବାବେଳେ ଏହି କାର୍ଯ୍ୟ ସାମୟିକ ଭାବରେ ଉପଲବ୍ଧ ନୁହେଁ",
+  "@uiThisActionIsTemporarilyUnavailableWhileYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToOpenThisSectionPleaseTry": "ଏହି ବିଭାଗ ଖୋଲିବାକୁ ଅସମର୍ଥ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiUnableToOpenThisSectionPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAppLockIsUnavailable": "ଆପ୍ ଲକ୍ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiAppLockIsUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDoclyzerIsLocked": "ଡକଲିଜର ଲକ୍ ହୋଇଛି",
+  "@uiDoclyzerIsLocked": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotReadTheSavedAppLock": "ସଞ୍ଚିତ ଆପ୍ ଲକ୍ ସେଟିଂ ପ read ିପାରିଲା ନାହିଁ । ଜାରି ରଖିବାକୁ ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiCouldNotReadTheSavedAppLock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseYourDevicePasscodeOrBiometricsTo": "ଜାରି ରଖିବାକୁ ଆପଣଙ୍କର ଡିଭାଇସ୍ ପାସକୋଡ୍ କିମ୍ବା ବାୟୋମେଟ୍ରିକ୍ସ ବ୍ୟବହାର କରନ୍ତୁ",
+  "@uiUseYourDevicePasscodeOrBiometricsTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadsAreTemporarilyUnavailableWhileYourAccount": "ଆପଣଙ୍କର ଖାତା ସମୀକ୍ଷା ଚାଲିଥିବାବେଳେ ଅପଲୋଡ୍ ଗୁଡିକ ସାମୟିକ ଭାବରେ ଉପଲବ୍ଧ ନୁହେଁ",
+  "@uiUploadsAreTemporarilyUnavailableWhileYourAccount": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToStartAnUploadPleaseTry": "ଏକ ଅପଲୋଡ୍ ଆରମ୍ଭ କରିବାକୁ ଅସମର୍ଥ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiUnableToStartAnUploadPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiJustNow": "ବର୍ତ୍ତମାନ",
+  "@uiJustNow": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAdditionalDetails": "ଅତିରିକ୍ତ ବିବରଣୀ:",
+  "@uiAdditionalDetails": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaveCorrection": "ସଂଶୋଧନ ସଞ୍ଚୟ କରନ୍ତୁ",
+  "@uiSaveCorrection": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenFilesCheckAccessAnd": "ଫାଇଲ୍ ଖୋଲିପାରିଲା ନାହିଁ । ପ୍ରବେଶ ଯାଞ୍ଚ କରନ୍ତୁ ଏବଂ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiCouldNotOpenFilesCheckAccessAnd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenCameraCheckPermissionAnd": "କ୍ୟାମେରା ଖୋଲିପାରିଲା ନାହିଁ । ଅନୁମତି ଯାଞ୍ଚ କରନ୍ତୁ ଏବଂ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiCouldNotOpenCameraCheckPermissionAnd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotOpenPhotosCheckPermissionAnd": "ଫଟୋ ଖୋଲିପାରିଲା ନାହିଁ । ଅନୁମତି ଯାଞ୍ଚ କରନ୍ତୁ ଏବଂ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiCouldNotOpenPhotosCheckPermissionAnd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotAccessSelectedFile": "ମନୋନୀତ ଫାଇଲକୁ ପ୍ରବେଶ କରିପାରିଲା ନାହିଁ",
+  "@uiCouldNotAccessSelectedFile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotAccessSelectedFile45effa": "ମନୋନୀତ ଫାଇଲକୁ ପ୍ରବେଶ କରିପାରିଲା ନାହିଁ",
+  "@uiCouldNotAccessSelectedFile45effa": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiConnectionLostTheUploadMayHaveReached": "ସଂଯୋଗ ହଜିଗଲା । ଅପଲୋଡ୍ ସର୍ଭରରେ ପହଞ୍ଚିଥାଇପାରେ । ସମାନ ଫାଇଲକୁ ସୁରକ୍ଷିତ ଭାବରେ ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiConnectionLostTheUploadMayHaveReached": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotLoadExistingReport": "ବିଦ୍ୟମାନ ରିପୋର୍ଟ ଲୋଡ୍ ହୋଇପାରିଲା ନାହିଁ",
+  "@uiCouldNotLoadExistingReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAddingTo": "ସହିତ ଯୋଗ କରୁଛି",
+  "@uiAddingTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSomeResultsNeedReviewYourOriginalReport": "କିଛି ଫଳାଫଳ ସମୀକ୍ଷା ଆବଶ୍ୟକ କରେ । ତୁମର ମୂଳ ରିପୋର୍ଟ ସଞ୍ଚୟ ହୋଇଛି",
+  "@uiSomeResultsNeedReviewYourOriginalReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWeCouldnTReadThisFormatYour": "ଆମେ ଏହି ଫର୍ମାଟ୍ ପ read ି ପାରିଲୁ ନାହିଁ । ଆପଣଙ୍କର ଫାଇଲ୍ ସେଭ୍ ହୋଇଛି",
+  "@uiWeCouldnTReadThisFormatYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportParsedSuccessfullyResultsAndTrendsAre": "ରିପୋର୍ଟ ସଫଳତାର ସହିତ ବିଶ୍ଳେଷଣ କରାଯାଇଛି । ଫଳାଫଳ ଏବଂ ଧାରା ଉପଲବ୍ଧ",
+  "@uiReportParsedSuccessfullyResultsAndTrendsAre": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourReportIsStillBeingAnalyzedOpen": "ତୁମର ରିପୋର୍ଟ ଏପର୍ଯ୍ୟନ୍ତ ବିଶ୍ଳେଷଣ କରାଯାଉଛି । ଏହାର ସ୍ଥିତି ଯାଞ୍ଚ କରିବାକୁ ଏହାକୁ ଖୋଲ",
+  "@uiYourReportIsStillBeingAnalyzedOpen": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProcessingStoppedYourFileIsSavedYou": "ପ୍ରକ୍ରିୟାକରଣ ବନ୍ଦ ହେଲା । ଆପଣଙ୍କର ଫାଇଲ୍ ସେଭ୍ ହୋଇଛି । ଆପଣ ପୁନ ry ଚେଷ୍ଟା କରିପାରିବେ",
+  "@uiProcessingStoppedYourFileIsSavedYou": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoExtractedTestValuesWereAddedYou": "କ No ଣସି ବାହାର କରାଯାଇଥିବା ପରୀକ୍ଷା ମୂଲ୍ୟ ଯୋଗ କରାଯାଇ ନାହିଁ । ଆପଣ ତଥାପି ଡକ୍ୟୁମେଣ୍ଟ୍ ଖୋଲିପାରିବେ ଏବଂ ଅଂଶୀଦାର କରିପାରିବେ । ତୁମର ଧାରା ଅପରିବର୍ତ୍ତିତ",
+  "@uiNoExtractedTestValuesWereAddedYou": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourOriginalIsSaved": "ତୁମର ମୂଳ ସଞ୍ଚୟ ହୋଇଛି",
+  "@uiYourOriginalIsSaved": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInitialUpload": "ପ୍ରାରମ୍ଭିକ ଅପଲୋଡ୍",
+  "@uiInitialUpload": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiParsedSuccessfully": "ସଫଳତାର ସହିତ ପାର୍ସ ହୋଇଛି",
+  "@uiParsedSuccessfully": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiParsingFailed": "ପାର୍ସିଂ ବିଫଳ ହେଲା",
+  "@uiParsingFailed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExtractionIncomplete": "ନିଷ୍କାସନ ଅସମ୍ପୂର୍ଣ୍ଣ",
+  "@uiExtractionIncomplete": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTransientFailure": "କ୍ଷଣସ୍ଥାୟୀ ବିଫଳତା",
+  "@uiTransientFailure": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTerminalFailure": "ଟର୍ମିନାଲ୍ ବିଫଳତା",
+  "@uiTerminalFailure": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadAttemptHistory": "ଚେଷ୍ଟା ଇତିହାସ ଲୋଡ୍ କରିବାରେ ବିଫଳ",
+  "@uiFailedToLoadAttemptHistory": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisReportSFileIsNoLonger": "ଏହି ରିପୋର୍ଟର ଫାଇଲ୍ ଆଉ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiThisReportSFileIsNoLonger": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCompareResults": "ଫଳାଫଳ ତୁଳନା କରନ୍ତୁ",
+  "@uiCompareResults": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoDifferenceCalculatedCompatibilityNeedsConfirmation": "କ difference ଣସି ପାର୍ଥକ୍ୟ ଗଣନା କରାଯାଇ ନାହିଁ । ସୁସଙ୍ଗତତା ନିଶ୍ଚିତକରଣ ଆବଶ୍ୟକ କରେ",
+  "@uiNoDifferenceCalculatedCompatibilityNeedsConfirmation": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnitNotRecorded": "ୟୁନିଟ୍ ରେକର୍ଡ ହୋଇନାହିଁ",
+  "@uiUnitNotRecorded": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNoNumericChangeBetweenTheseReports": "ଏହି ରିପୋର୍ଟଗୁଡିକ ମଧ୍ୟରେ କ numer ଣସି ସାଂଖ୍ୟିକ ପରିବର୍ତ୍ତନ ନାହିଁ",
+  "@uiNoNumericChangeBetweenTheseReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToRestore": "ପୁନରୁଦ୍ଧାର କରିବାକୁ ଅସମର୍ଥ:",
+  "@uiUnableToRestore": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterAGiftVoucherCode": "ଏକ ଉପହାର ଭାଉଚର କୋଡ୍ ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiEnterAGiftVoucherCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiApplyVoucher": "ଭାଉଚର୍ ପ୍ରୟୋଗ କରନ୍ତୁ",
+  "@uiApplyVoucher": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotAvailable": "ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiNotAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiViewReceipt": "ରସିଦ ଦେଖନ୍ତୁ",
+  "@uiViewReceipt": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherIsInvalidOrAlreadyRedeemed": "ଉପହାର ଭାଉଚର ଅବ alid ଧ କିମ୍ବା ପୂର୍ବରୁ ମୁକ୍ତ ହୋଇସାରିଛି",
+  "@uiGiftVoucherIsInvalidOrAlreadyRedeemed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherHasAlreadyBeenRedeemed": "ଉପହାର ଭାଉଚର୍ ପୂର୍ବରୁ ମୁକ୍ତ ହୋଇସାରିଛି",
+  "@uiGiftVoucherHasAlreadyBeenRedeemed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherHasBeenVoided": "ଉପହାର ଭାଉଚରକୁ ବାତିଲ କରାଯାଇଛି",
+  "@uiGiftVoucherHasBeenVoided": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherHasExpired": "ଉପହାର ଭାଉଚରର ସମୟ ସମାପ୍ତ ହୋଇଛି",
+  "@uiGiftVoucherHasExpired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToRedeemThisGiftVoucher": "ଏହି ଉପହାର ଭାଉଚରକୁ ମୁକ୍ତ କରିବାକୁ ଅସମର୍ଥ",
+  "@uiUnableToRedeemThisGiftVoucher": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnableToRedeemThisGiftVoucherPlease": "ଏହି ଉପହାର ଭାଉଚରକୁ ମୁକ୍ତ କରିବାକୁ ଅସମର୍ଥ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiUnableToRedeemThisGiftVoucherPlease": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterAPromoCodeToApply": "ଆବେଦନ କରିବାକୁ ଏକ ପ୍ରୋମୋ କୋଡ୍ ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiEnterAPromoCodeToApply": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeNotFound": "ପ୍ରୋମୋ କୋଡ୍ ମିଳିଲା ନାହିଁ",
+  "@uiPromoCodeNotFound": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeIsInactive": "ପ୍ରୋମୋ କୋଡ୍ ନିଷ୍କ୍ରିୟ ଅଟେ",
+  "@uiPromoCodeIsInactive": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeHasExpired": "ପ୍ରୋମୋ କୋଡ୍ ମିଆଦ ପୂର୍ଣ୍ଣ ହୋଇଛି",
+  "@uiPromoCodeHasExpired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeIsNotApplicableToThis": "ଏହି ପ୍ୟାକ୍ ପାଇଁ ପ୍ରୋମୋ କୋଡ୍ ପ୍ରଯୁଜ୍ୟ ନୁହେଁ",
+  "@uiPromoCodeIsNotApplicableToThis": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodeUsageLimitReached": "ପ୍ରୋମୋ କୋଡ୍ ବ୍ୟବହାର ସୀମା ପହଞ୍ଚିଛି",
+  "@uiPromoCodeUsageLimitReached": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouHaveAlreadyUsedThisPromoCode": "ଆପଣ ଏହି ପ୍ରୋମୋ କୋଡ୍ ବ୍ୟବହାର କରିସାରିଛନ୍ତି",
+  "@uiYouHaveAlreadyUsedThisPromoCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToApplyPromoCodePleaseTry": "ପ୍ରୋମୋ କୋଡ୍ ପ୍ରୟୋଗ କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToApplyPromoCodePleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisOrderWasFlaggedForReviewBefore": "କ୍ରେଡିଟ୍ ଯୋଡିବା ପୂର୍ବରୁ ସମୀକ୍ଷା ପାଇଁ ଏହି କ୍ରମକୁ ଫ୍ଲାଗ୍ କରାଯାଇଥିଲା",
+  "@uiThisOrderWasFlaggedForReviewBefore": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPaymentFailedDuringReconciliationYouCanRetry": "ପୁନ iliation ନିର୍ମାଣ ସମୟରେ ଦେୟ ବିଫଳ ହେଲା । ଆପଣ ନିରାପଦରେ ପୁନ ry ଚେଷ୍ଟା କରିପାରିବେ",
+  "@uiPaymentFailedDuringReconciliationYouCanRetry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAwaitingCapture": "ଧରିବାକୁ ଅପେକ୍ଷା କରିଛି",
+  "@uiAwaitingCapture": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLastPaymentFailed": "ଶେଷ ଦେୟ ବିଫଳ ହେଲା",
+  "@uiLastPaymentFailed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouCanRetryCheckoutSafely": "ଆପଣ ସୁରକ୍ଷିତ ଭାବରେ ଚେକଆଉଟ୍ ପୁନ ry ଚେଷ୍ଟା କରିପାରିବେ",
+  "@uiYouCanRetryCheckoutSafely": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPromoCodesNotSupportedForSubscriptionsYet": "ସବସ୍କ୍ରିପସନ୍ ପାଇଁ ପ୍ରୋମୋ କୋଡ୍ ଏପର୍ଯ୍ୟନ୍ତ ସମର୍ଥିତ ନୁହେଁ",
+  "@uiPromoCodesNotSupportedForSubscriptionsYet": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCouldNotDownloadTheExportTryAgain": "ରପ୍ତାନି ଡାଉନଲୋଡ୍ କରିପାରିଲା ନାହିଁ । ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiCouldNotDownloadTheExportTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectOriginalReportsOrTestResults": "ମୂଳ ରିପୋର୍ଟ କିମ୍ବା ପରୀକ୍ଷା ଫଳାଫଳ ଚୟନ କରନ୍ତୁ",
+  "@uiSelectOriginalReportsOrTestResults": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportRequestedTapCheckStatusToRefresh": "ରପ୍ତାନି ଅନୁରୋଧ । ସତେଜ କରିବାକୁ \"ସ୍ଥିତି ଯାଞ୍ଚ କରନ୍ତୁ\" ଟ୍ୟାପ୍ କରନ୍ତୁ",
+  "@uiExportRequestedTapCheckStatusToRefresh": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToRequestExportPleaseTryAgain": "ରପ୍ତାନି ଅନୁରୋଧ କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToRequestExportPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportReadyDownloadURLAvailable": "ରପ୍ତାନି ପ୍ରସ୍ତୁତ । ଉପଲବ୍ଧ URL ଡାଉନଲୋଡ୍ କରନ୍ତୁ",
+  "@uiExportReadyDownloadURLAvailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToCheckExportStatusPleaseTry": "ରପ୍ତାନି ସ୍ଥିତି ଯାଞ୍ଚ କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToCheckExportStatusPleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToCloseAccountPleaseTryAgain": "ଖାତା ବନ୍ଦ କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToCloseAccountPleaseTryAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPrepareExport": "ରପ୍ତାନି ପ୍ରସ୍ତୁତ କରନ୍ତୁ",
+  "@uiPrepareExport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaveExport": "ରପ୍ତାନି ସଞ୍ଚୟ କରନ୍ତୁ",
+  "@uiSaveExport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPrepareExportAgain": "ପୁନର୍ବାର ରପ୍ତାନି ପ୍ରସ୍ତୁତ କରନ୍ତୁ",
+  "@uiPrepareExportAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAllDates": "ସମସ୍ତ ତାରିଖ",
+  "@uiAllDates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPreparingAccountDetails": "ଖାତା ବିବରଣୀ ପ୍ରସ୍ତୁତ କରୁଛି",
+  "@uiPreparingAccountDetails": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFamilyMemberProfiles": "ପରିବାର ସଦସ୍ୟ ପ୍ରୋଫାଇଲ୍",
+  "@uiFamilyMemberProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadedReports": "ରିପୋର୍ଟଗୁଡିକ ଅପଲୋଡ୍ ହୋଇଛି",
+  "@uiUploadedReports": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDownloadReady": "ଡାଉନଲୋଡ୍ ପ୍ରସ୍ତୁତ",
+  "@uiDownloadReady": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportNotificationsEnabledOnThisDevice": "ଏହି ଉପକରଣରେ ରିପୋର୍ଟ ବିଜ୍ଞପ୍ତି ସକ୍ଷମ ହୋଇଛି",
+  "@uiReportNotificationsEnabledOnThisDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDeviceSettingsOpenedAllowNotificationsForDoclyzer": "ଉପକରଣ ସେଟିଂସମୂହ ଖୋଲିଲା । ଡକଲିଜର ପାଇଁ ବିଜ୍ଞପ୍ତିକୁ ଅନୁମତି ଦିଅନ୍ତୁ, ତାପରେ ଏଠାରେ ଫେରନ୍ତୁ",
+  "@uiDeviceSettingsOpenedAllowNotificationsForDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationsAreStillOffAllowThemIn": "ବିଜ୍ଞପ୍ତିଗୁଡିକ ଏପର୍ଯ୍ୟନ୍ତ ବନ୍ଦ ଅଛି । ରିପୋର୍ଟ ଅଦ୍ୟତନ ଗ୍ରହଣ କରିବାକୁ ସେମାନଙ୍କୁ ଡିଭାଇସ୍ ସେଟିଂସମୂହରେ ଅନୁମତି ଦିଅନ୍ତୁ",
+  "@uiNotificationsAreStillOffAllowThemIn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPreferencesSaved": "ପସନ୍ଦଗୁଡିକ ସଞ୍ଚୟ ହୋଇଛି",
+  "@uiPreferencesSaved": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountChoiceWasSavedButThis": "ଆପଣଙ୍କର ଆକାଉଣ୍ଟ୍ ପସନ୍ଦ ସଞ୍ଚୟ ହୋଇଛି, କିନ୍ତୁ ଏହି ଡିଭାଇସ୍ ମାର୍କେଟିଂ ପୁସ୍ ପାଇଁ ପଞ୍ଜୀକରଣ ଶେଷ କରିନାହିଁ । ଏହି ଡିଭାଇସରେ ମାର୍କେଟିଂ ଅବରୋଧ ହୋଇ ରହିଛି; ବିଜ୍ଞପ୍ତି ଅନୁମତି ଯାଞ୍ଚ କରନ୍ତୁ ଏବଂ ପୁନର୍ବାର ସଞ୍ଚୟ କରିବାକୁ ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiYourAccountChoiceWasSavedButThis": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountChoiceWasSavedThisDevice": "ଆପଣଙ୍କର ଖାତା ପସନ୍ଦ ସଞ୍ଚୟ ହୋଇଛି । ଏହି ଡିଭାଇସ୍ ଏପର୍ଯ୍ୟନ୍ତ ଏହାର ସ୍ଥାନୀୟ ପସନ୍ଦ ନିଶ୍ଚିତ କରିପାରିବ ନାହିଁ, କିନ୍ତୁ ମାର୍କେଟିଂ ଆକାଉଣ୍ଟ୍ ସ୍ତରରେ ଅବରୋଧିତ",
+  "@uiYourAccountChoiceWasSavedThisDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYourAccountChoiceWasSavedButThisaf7de6": "ଆପଣଙ୍କର ଆକାଉଣ୍ଟ୍ ପସନ୍ଦ ସଞ୍ଚୟ ହୋଇଛି, କିନ୍ତୁ ଏହି ଡିଭାଇସ୍ ମାର୍କେଟିଂ ପୁସ୍ ସକ୍ଷମ କରିପାରିବ ନାହିଁ । ବିଜ୍ଞପ୍ତି ଅନୁମତି ଯାଞ୍ଚ କରନ୍ତୁ ଏବଂ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiYourAccountChoiceWasSavedButThisaf7de6": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSavingTookTooLongCheckYourConnection": "ସଞ୍ଚୟ ବହୁତ ସମୟ ନେଇଗଲା । ଆପଣଙ୍କର ସଂଯୋଗ ଯାଞ୍ଚ କରନ୍ତୁ ଏବଂ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiSavingTookTooLongCheckYourConnection": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportReadyForReview": "ସମୀକ୍ଷା ପାଇଁ ପ୍ରସ୍ତୁତ ରିପୋର୍ଟ କରନ୍ତୁ",
+  "@uiReportReadyForReview": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiKnowWhenYourResultsAreReadyTo": "ଯେତେବେଳେ ଆପଣଙ୍କର ଫଳାଫଳ ଯାଞ୍ଚ କରିବାକୁ ପ୍ରସ୍ତୁତ ଅଛି ଜାଣନ୍ତୁ",
+  "@uiKnowWhenYourResultsAreReadyTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadUpdates": "ଅଦ୍ୟତନଗୁଡିକ ଅପଲୋଡ୍ କରନ୍ତୁ",
+  "@uiUploadUpdates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGetAMessageIfAnUploadNeeds": "ଯଦି ଏକ ଅପଲୋଡ୍ ଧ୍ୟାନ ଆବଶ୍ୟକ କରେ ତେବେ ଏକ ସନ୍ଦେଶ ପାଆନ୍ତୁ",
+  "@uiGetAMessageIfAnUploadNeeds": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSharedLinkReminders": "ଅଂଶୀଦାର ଲିଙ୍କ୍ ସ୍ମାରକଗୁଡିକ",
+  "@uiSharedLinkReminders": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHearWhenALinkIsAboutTo": "ଯେତେବେଳେ ଏକ ଲିଙ୍କ୍ ସମାପ୍ତ ହେବାକୁ ଯାଉଛି ଶୁଣ",
+  "@uiHearWhenALinkIsAboutTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSecurityAlerts": "ସୁରକ୍ଷା ଆଲର୍ଟ",
+  "@uiSecurityAlerts": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRequiredForAccountSafety": "ଖାତା ସୁରକ୍ଷା ପାଇଁ ଆବଶ୍ୟକ",
+  "@uiRequiredForAccountSafety": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiComplianceNotices": "ଅନୁପାଳନ ବିଜ୍ଞପ୍ତିଗୁଡିକ",
+  "@uiComplianceNotices": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRequiredAccountInformation": "ଆବଶ୍ୟକ ଖାତା ସୂଚନା",
+  "@uiRequiredAccountInformation": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMarketingPushNotifications": "ମାର୍କେଟିଂ ପୁସ୍ ବିଜ୍ଞପ୍ତିଗୁଡିକ",
+  "@uiMarketingPushNotifications": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOffersAndAnnouncementsSavingThisChoiceAlso": "ଅଫର୍ ଏବଂ ଘୋଷଣା ଏହି ପସନ୍ଦ ସଞ୍ଚୟ କରିବା ମଧ୍ୟ ଏହାକୁ ଏହି ଉପକରଣରେ ପ୍ରୟୋଗ କରେ",
+  "@uiOffersAndAnnouncementsSavingThisChoiceAlso": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProductUpdates": "ଉତ୍ପାଦ ଅଦ୍ୟତନଗୁଡ଼ିକ",
+  "@uiProductUpdates": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOptionalNewsAboutDoclyzer": "ଡକଲିଜର ବିଷୟରେ ବ tion କଳ୍ପିକ ଖବର",
+  "@uiOptionalNewsAboutDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotConnectToServerPleaseCheckYour": "ସର୍ଭର ସହିତ ସଂଯୋଗ ହୋଇପାରିବ ନାହିଁ । ଦୟାକରି ଆପଣଙ୍କର ଇଣ୍ଟରନେଟ୍ କିମ୍ବା API ସର୍ଭର ଯାଞ୍ଚ କରନ୍ତୁ",
+  "@uiCannotConnectToServerPleaseCheckYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProfileUpdatesAreTemporarilyUnavailableWhileYour": "ଆପଣଙ୍କର ଖାତା ସମୀକ୍ଷା ଚାଲିଥିବାବେଳେ ପ୍ରୋଫାଇଲ୍ ଅଦ୍ୟତନଗୁଡିକ ସାମୟିକ ଭାବରେ ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiProfileUpdatesAreTemporarilyUnavailableWhileYour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUse100CharactersOrFewer": "100 ଅକ୍ଷର କିମ୍ବା କମ୍ ବ୍ୟବହାର କରନ୍ତୁ",
+  "@uiUse100CharactersOrFewer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAddProfile": "ପ୍ରୋଫାଇଲ୍ ଯୋଡନ୍ତୁ",
+  "@uiAddProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreateProfile": "ପ୍ରୋଫାଇଲ୍ ସୃଷ୍ଟି କରନ୍ତୁ",
+  "@uiCreateProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUpdateTheirDetails": "ସେମାନଙ୍କର ବିବରଣୀ ଅଦ୍ୟତନ କରନ୍ତୁ",
+  "@uiUpdateTheirDetails": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhoIsThisProfileFor": "ଏହି ପ୍ରୋଫାଇଲ୍ କାହା ପାଇଁ?",
+  "@uiWhoIsThisProfileFor": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotSelected": "ମନୋନୀତ ହୋଇନାହିଁ",
+  "@uiNotSelected": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterAReferralCode": "ଏକ ରେଫରାଲ୍ କୋଡ୍ ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiEnterAReferralCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralAppliedBonusUnlocksAfterEmailVerification": "ରେଫରାଲ୍ ପ୍ରୟୋଗ । ଇମେଲ ଯାଞ୍ଚ ପରେ ବୋନସ ଅନଲକ୍ କରେ",
+  "@uiReferralAppliedBonusUnlocksAfterEmailVerification": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralAppliedBonusCreditsAreReady": "ରେଫରାଲ୍ ପ୍ରୟୋଗ । ବୋନସ୍ କ୍ରେଡିଟ୍ ପ୍ରସ୍ତୁତ",
+  "@uiReferralAppliedBonusCreditsAreReady": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiApplyCode": "କୋଡ୍ ପ୍ରୟୋଗ କରନ୍ତୁ",
+  "@uiApplyCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouCannotApplyYourOwnReferralCode": "ଆପଣ ନିଜର ରେଫରାଲ୍ କୋଡ୍ ପ୍ରୟୋଗ କରିପାରିବେ ନାହିଁ",
+  "@uiYouCannotApplyYourOwnReferralCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralCodeIsInvalid": "ରେଫରାଲ୍ କୋଡ୍ ଅବ alid ଧ ଅଟେ",
+  "@uiReferralCodeIsInvalid": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToApplyReferralCode": "ରେଫରାଲ୍ କୋଡ୍ ପ୍ରୟୋଗ କରିବାରେ ବିଫଳ",
+  "@uiFailedToApplyReferralCode": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToApplyReferralCodePleaseTry": "ରେଫରାଲ୍ କୋଡ୍ ପ୍ରୟୋଗ କରିବାରେ ବିଫଳ । ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiFailedToApplyReferralCodePleaseTry": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThisDevice": "ଏହି ଉପକରଣ",
+  "@uiThisDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSignedInDevice": "ସାଇନ୍ ଇନ୍ ଡିଭାଇସ୍",
+  "@uiSignedInDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnknownDevice": "ଅଜ୍ଞାତ ଉପକରଣ",
+  "@uiUnknownDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeAndLogOut": "ପ୍ରତ୍ୟାହାର ଏବଂ ଲଗ୍ ଆଉଟ୍ କରନ୍ତୁ",
+  "@uiRevokeAndLogOut": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRevokeSessionca8440": "ଅଧିବେଶନ ପ୍ରତ୍ୟାହାର କରନ୍ତୁ",
+  "@uiRevokeSessionca8440": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterYourCurrentPassword": "ଆପଣଙ୍କର ସାମ୍ପ୍ରତିକ ପାସୱାର୍ଡ ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiEnterYourCurrentPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseAtLeast8CharactersWithUppercase": "ଅକ୍ଷର, ଛୋଟ ଅକ୍ଷର, ଏକ ସଂଖ୍ୟା ଏବଂ ଏକ ବିଶେଷ ବର୍ଣ୍ଣ ସହିତ ଅତିକମରେ 8 ଅକ୍ଷର ବ୍ୟବହାର କରନ୍ତୁ",
+  "@uiUseAtLeast8CharactersWithUppercase": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseADifferentPassword": "ଏକ ଭିନ୍ନ ପାସୱାର୍ଡ ବାଛନ୍ତୁ",
+  "@uiChooseADifferentPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNewPasswordsDoNotMatch": "ନୂତନ ପାସୱାର୍ଡଗୁଡ଼ିକ ମେଳ ଖାଉ ନାହିଁ",
+  "@uiNewPasswordsDoNotMatch": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYouHaveUsedAllAvailableUploadCredits": "ଆପଣ ସମସ୍ତ ଉପଲବ୍ଧ ଅପଲୋଡ୍ କ୍ରେଡିଟ୍ ବ୍ୟବହାର କରିଛନ୍ତି । ଅଧିକ ଯୋଗ କରିବାକୁ ଯୋଜନା ଏବଂ କ୍ରେଡିଟ୍ ପରିଦର୍ଶନ କରନ୍ତୁ",
+  "@uiYouHaveUsedAllAvailableUploadCredits": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationsAreDisabledForDoclyzerOpenDevice": "ଡକଲିଜର ପାଇଁ ବିଜ୍ଞପ୍ତିଗୁଡିକ ଅକ୍ଷମ ହୋଇଛି । ରିପୋର୍ଟ-ପ୍ରସ୍ତୁତ ଏବଂ ଖାତା ଅଦ୍ୟତନକୁ ଅନୁମତି ଦେବା ପାଇଁ ଉପକରଣ ସେଟିଂସମୂହ ଖୋଲନ୍ତୁ । ଯଦି ଆପଣ ଏହାକୁ ବାଛି ନାହାଁନ୍ତି ମାର୍କେଟିଂ ବନ୍ଦ ହୋଇଯାଏ",
+  "@uiNotificationsAreDisabledForDoclyzerOpenDevice": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGetReportReadyAndAccountUpdatesOn": "ଏହି ଡିଭାଇସରେ ରିପୋର୍ଟ-ପ୍ରସ୍ତୁତ ଏବଂ ଆକାଉଣ୍ଟ୍ ଅପଡେଟ୍ ପାଆନ୍ତୁ । ଯଦି ଆପଣ ଏହାକୁ ବାଛି ନାହାଁନ୍ତି ମାର୍କେଟିଂ ବନ୍ଦ ହୋଇଯାଏ",
+  "@uiGetReportReadyAndAccountUpdatesOn": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotificationsAreOffForThisDeviceOpen": "ଏହି ଡିଭାଇସ୍ ପାଇଁ ବିଜ୍ଞପ୍ତିଗୁଡିକ ବନ୍ଦ ଅଛି । ରିପୋର୍ଟ-ପ୍ରସ୍ତୁତ ଏବଂ ଖାତା ଅଦ୍ୟତନ ଗ୍ରହଣ କରିବାକୁ ସେଟିଂସମୂହ ଖୋଲନ୍ତୁ",
+  "@uiNotificationsAreOffForThisDeviceOpen": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBlockedExpiredRevoked": "ଅବରୋଧିତ (ମିଆଦ ପୂର୍ଣ୍ଣ / ପ୍ରତ୍ୟାହାର)",
+  "@uiBlockedExpiredRevoked": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailedToLoadPolicy": "ନୀତି ଲୋଡ୍ କରିବାରେ ବିଫଳ",
+  "@uiFailedToLoadPolicy": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadPaused": "ଅପଲୋଡ୍ ବିରତ",
+  "@uiUploadPaused": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSevenDays": "7 ଦିନ",
+  "@uiSevenDays": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiThirtyDays": "30 ଦିନ",
+  "@uiThirtyDays": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNinetyDays": "90 ଦିନ",
+  "@uiNinetyDays": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadingAClearReport": "ଏକ ସ୍ପଷ୍ଟ ରିପୋର୍ଟ ଅପଲୋଡ୍ କରୁଛି",
+  "@uiUploadingAClearReport": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPDFsPhotosAndMultiplePages": "PDF, ଫଟୋ ଏବଂ ଏକାଧିକ ପୃଷ୍ଠା",
+  "@uiPDFsPhotosAndMultiplePages": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiChooseAPDFOrTakeClearPhotos": "ଏକ PDF ବାଛନ୍ତୁ କିମ୍ବା ପ୍ରତ୍ୟେକ ପୃଷ୍ଠାର ସ୍ପଷ୍ଟ ଫଟୋ ନିଅନ୍ତୁ । ପୁରା ପୃଷ୍ଠାକୁ ଫ୍ରେମରେ ରଖ, ଚମକରୁ ଦୂରେଇ ରୁହ, ଏବଂ ବିଶ୍ଳେଷଣ କରିବା ପୂର୍ବରୁ ପୃଷ୍ଠା କ୍ରମ ଯାଞ୍ଚ କର । ଆପଣ ମୂଳ ବିରୁଦ୍ଧରେ ବାହାର କରାଯାଇଥିବା ମୂଲ୍ୟଗୁଡ଼ିକୁ ସଂଶୋଧନ କରିପାରିବେ",
+  "@uiChooseAPDFOrTakeClearPhotos": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCorrectingAResult": "ଏକ ଫଳାଫଳ ସଂଶୋଧନ କରିବା",
+  "@uiCorrectingAResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewValuesAgainstTheOriginal": "ମୂଳ ବିରୁଦ୍ଧରେ ମୂଲ୍ୟ ସମୀକ୍ଷା କରନ୍ତୁ",
+  "@uiReviewValuesAgainstTheOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenAReportReviewEachExtractedTest": "ଏକ ରିପୋର୍ଟ ଖୋଲନ୍ତୁ, ମୂଳ ବିରୁଦ୍ଧରେ ପ୍ରତ୍ୟେକ ବାହାର କରାଯାଇଥିବା ପରୀକ୍ଷଣକୁ ସମୀକ୍ଷା କରନ୍ତୁ ଏବଂ ଭୁଲ ଭାବରେ ପ read ଼ାଯାଇଥିବା ଯେକ value ଣସି ମୂଲ୍ୟ, ଏକକ, କିମ୍ବା ତାରିଖ ସଂଶୋଧନ କରନ୍ତୁ । ଆପଣ ଟ୍ରେଣ୍ଡ ଉପରେ ନିର୍ଭର କରିବା ପୂର୍ବରୁ ଅନିଶ୍ଚିତ ଫଳାଫଳଗୁଡିକ ଯାଞ୍ଚ କରାଯିବା ଉଚିତ୍",
+  "@uiOpenAReportReviewEachExtractedTest": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiManagingFamilyRecords": "ପାରିବାରିକ ରେକର୍ଡଗୁଡିକ ପରିଚାଳନା",
+  "@uiManagingFamilyRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProfilesAccessAndPermissions": "ପ୍ରୋଫାଇଲ୍, ପ୍ରବେଶ ଏବଂ ଅନୁମତି",
+  "@uiProfilesAccessAndPermissions": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseFamilyToCreateAndSwitchProfiles": "ପ୍ରୋଫାଇଲ୍ ସୃଷ୍ଟି ଏବଂ ସୁଇଚ୍ କରିବାକୁ ପରିବାର ବ୍ୟବହାର କରନ୍ତୁ । ଏକ ରିପୋର୍ଟ ଅପଲୋଡ୍ କିମ୍ବା ଅଂଶୀଦାର କରିବା ପୂର୍ବରୁ ମନୋନୀତ ବ୍ୟକ୍ତିଙ୍କୁ ଯାଞ୍ଚ କରନ୍ତୁ । କେବଳ ରେକର୍ଡଗୁଡିକ ପରିଚାଳନା କରନ୍ତୁ ଯାହାକୁ ଆପଣ ପ୍ରବେଶ କରିବାକୁ ଅନୁମତିପ୍ରାପ୍ତ",
+  "@uiUseFamilyToCreateAndSwitchProfiles": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSharingAndRevokingLinks": "ଲିଙ୍କ୍ ଅଂଶୀଦାର ଏବଂ ପ୍ରତ୍ୟାହାର",
+  "@uiSharingAndRevokingLinks": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiControlTheRecordsYouShare": "ଆପଣ ଅଂଶୀଦାର କରୁଥିବା ରେକର୍ଡଗୁଡ଼ିକୁ ନିୟନ୍ତ୍ରଣ କରନ୍ତୁ",
+  "@uiControlTheRecordsYouShare": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSelectTheReportsOrResultsYouWant": "ଆପଣ ଅଂଶୀଦାର କରିବାକୁ ଚାହୁଁଥିବା ରିପୋର୍ଟ କିମ୍ବା ଫଳାଫଳ ଚୟନ କରନ୍ତୁ, ସମାପ୍ତି ସମୀକ୍ଷା କରନ୍ତୁ ଏବଂ ପ୍ରବେଶ ସଂକେତକୁ ସମୀକ୍ଷା କରନ୍ତୁ, ତାପରେ ଲିଙ୍କ୍ ଏବଂ କୋଡ୍ ପୃଥକ ଭାବରେ ପଠାନ୍ତୁ । ଯେତେବେଳେ ପ୍ରବେଶ ଆଉ ଆବଶ୍ୟକ ହୁଏ ନାହିଁ, ଅଂଶୀଦାର ଲିଙ୍କରୁ ଏକ ସକ୍ରିୟ ଲିଙ୍କ୍ ପ୍ରତ୍ୟାହାର କରନ୍ତୁ",
+  "@uiSelectTheReportsOrResultsYouWant": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInformationYouProvide": "ଆପଣ ପ୍ରଦାନ କରୁଥିବା ସୂଚନା",
+  "@uiInformationYouProvide": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccountDetailsAndFamilyProfilesIdentifyWhose": "ଖାତା ବିବରଣୀ ଏବଂ ପରିବାର ପ୍ରୋଫାଇଲ୍ ଚିହ୍ନଟ କରେ ଯାହାର ରେକର୍ଡ ଆପଣ ପରିଚାଳନା କରନ୍ତି । ଅପଲୋଡ୍ ହୋଇଥିବା ଦଲିଲଗୁଡ଼ିକ ସମ୍ବେଦନଶୀଳ ସ୍ୱାସ୍ଥ୍ୟ ସୂଚନା ଧାରଣ କରିପାରେ",
+  "@uiAccountDetailsAndFamilyProfilesIdentifyWhose": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSharingControls": "ନିୟନ୍ତ୍ରଣ ଅଂଶୀଦାର",
+  "@uiSharingControls": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewTheContentsExpiryAndAccessSettings": "ପ୍ରତ୍ୟେକ ଲିଙ୍କ୍ ର ବିଷୟବସ୍ତୁ, ସମାପ୍ତି ଏବଂ ପ୍ରବେଶ ସେଟିଂସମୂହ ସମୀକ୍ଷା କରନ୍ତୁ । ଆପଣଙ୍କର ଖାତା ସେଟିଂସମୂହରୁ ସକ୍ରିୟ ଲିଙ୍କ୍ ପରିଚାଳନା କରନ୍ତୁ",
+  "@uiReviewTheContentsExpiryAndAccessSettings": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportAndAccountChoices": "ରପ୍ତାନି ଏବଂ ଖାତା ପସନ୍ଦ",
+  "@uiExportAndAccountChoices": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUseSettingsToExportRecordsOrStart": "ରେକର୍ଡଗୁଡିକ ରପ୍ତାନି କରିବାକୁ କିମ୍ବା ଏକ ଖାତା ବିଲୋପ ଅନୁରୋଧ ଆରମ୍ଭ କରିବାକୁ ସେଟିଂସମୂହ ବ୍ୟବହାର କରନ୍ତୁ । ଧାରଣ ବିବରଣୀଗୁଡିକ ସମ୍ପୂର୍ଣ୍ଣ ନୀତିରେ ଅଛି",
+  "@uiUseSettingsToExportRecordsOrStart": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEducationalScope": "ଶିକ୍ଷାଗତ ପରିସର",
+  "@uiEducationalScope": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDoclyzerOrganizesReportsAndShowsResultsOver": "ଡକଲିଜର ରିପୋର୍ଟଗୁଡିକ ସଂଗଠିତ କରେ ଏବଂ ସମୟ ସହିତ ଫଳାଫଳ ଦେଖାଏ । ଶିକ୍ଷାଗତ ବ୍ୟାଖ୍ୟା ଡାକ୍ତରୀ ପରାମର୍ଶ କିମ୍ବା ନିରାକରଣ ନୁହେଁ",
+  "@uiDoclyzerOrganizesReportsAndShowsResultsOver": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReviewYourRecords": "ଆପଣଙ୍କର ରେକର୍ଡଗୁଡିକ ସମୀକ୍ଷା କରନ୍ତୁ",
+  "@uiReviewYourRecords": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckExtractedValuesUnitsAndDatesAgainst": "ମୂଳ ରିପୋର୍ଟ ବିରୁଦ୍ଧରେ ବାହାର କରାଯାଇଥିବା ମୂଲ୍ୟ, ଏକକ ଏବଂ ତାରିଖ ଯାଞ୍ଚ କରନ୍ତୁ । ତୁମର ଫଳାଫଳ ବିଷୟରେ ଏକ ସ୍ୱାସ୍ଥ୍ୟ ସେବା ବୃତ୍ତିଗତଙ୍କୁ ପଚାର",
+  "@uiCheckExtractedValuesUnitsAndDatesAgainst": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiManageAndShareResponsibly": "ଦାୟିତ୍ ibly ବୋଧକ ଭାବରେ ପରିଚାଳନା ଏବଂ ଅଂଶୀଦାର କରନ୍ତୁ",
+  "@uiManageAndShareResponsibly": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOnlyManageRecordsYouAreAuthorizedTo": "କେବଳ ରେକର୍ଡଗୁଡିକ ପରିଚାଳନା କରନ୍ତୁ ଯାହାକୁ ଆପଣ ପ୍ରବେଶ କରିବାକୁ ଅନୁମତିପ୍ରାପ୍ତ । ବାଣ୍ଟିବା ପୂର୍ବରୁ ମନୋନୀତ ସୂଚନା ଏବଂ ପ୍ରାପ୍ତକର୍ତ୍ତା ଯାଞ୍ଚ କରନ୍ତୁ",
+  "@uiOnlyManageRecordsYouAreAuthorizedTo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPrivacyPolicy7ceacd": "ଗୋପନୀୟତା ନୀତି",
+  "@uiPrivacyPolicy7ceacd": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTermsOfUse8a069e": "ବ୍ୟବହାର ସର୍ତ୍ତାବଳୀ",
+  "@uiTermsOfUse8a069e": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOpenPrivacyControls": "ଗୋପନୀୟତା ନିୟନ୍ତ୍ରଣ ଖୋଲନ୍ତୁ",
+  "@uiOpenPrivacyControls": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGetHelpWithTheApp": "ଆପ୍ ସହିତ ସାହାଯ୍ୟ ନିଅନ୍ତୁ",
+  "@uiGetHelpWithTheApp": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportYourDataInAccountSettings": "ଖାତା ସେଟିଂସମୂହରେ ଆପଣଙ୍କର ତଥ୍ୟ ରପ୍ତାନି କରନ୍ତୁ",
+  "@uiExportYourDataInAccountSettings": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYOURDATACHOICES": "ଆପଣଙ୍କର ତଥ୍ୟ ଏବଂ ଚୟନ",
+  "@uiYOURDATACHOICES": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUSINGDOCLYZER": "ଡୋକଲାଇଜର ବ୍ୟବହାର",
+  "@uiUSINGDOCLYZER": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnderstandTheInformationYouKeepInDoclyzer": "ଆପଣ ଡକ୍ଲିଜରରେ ରଖୁଥିବା ସୂଚନା\nବୁ .ନ୍ତୁ",
+  "@uiUnderstandTheInformationYouKeepInDoclyzer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAClearUnderstandingOfTheAppsRole": "ଆପର ଭୂମିକା ବିଷୟରେ ଏକ ସ୍ପଷ୍ଟ ବୁ understanding ାମଣା",
+  "@uiAClearUnderstandingOfTheAppsRole": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReportsFromLab": "{name} ରୁ {reportCount}",
+  "@uiReportsFromLab": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reportCount": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportsLatestDate": "{reportCount} · ସର୍ବଶେଷ {date}",
+  "@uiReportsLatestDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reportCount": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUploadReportForProfile": "ଏହି ଲାଇବ୍ରେରୀ ଆରମ୍ଭ କରିବା ପାଇଁ {name} ପାଇଁ ଏକ ରିପୋର୍ଟ ଅପଲୋଡ୍ କରନ୍ତୁ",
+  "@uiUploadReportForProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiIpAddress": "IP ଠିକଣା: {address}",
+  "@uiIpAddress": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSignedInAt": "ସାଇନ୍ ଇନ୍: {date}",
+  "@uiSignedInAt": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnknown": "ଅଜ୍ଞାତ",
+  "@uiUnknown": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResultsFor": "{name} ପାଇଁ ଫଳାଫଳ",
+  "@uiResultsFor": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiLabParametersTracked": "{count} ଲ୍ୟାବ ପାରାମିଟରଗୁଡିକ ଟ୍ରାକ୍ ହୋଇଛି",
+  "@uiLabParametersTracked": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSampledDate": "ନମୁନା {date}",
+  "@uiSampledDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCollectionDateValue": "ସଂଗ୍ରହ ତାରିଖ: {date}",
+  "@uiCollectionDateValue": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiLabRangeValue": "ଲ୍ୟାବ୍ ପରିସର: {range}",
+  "@uiLabRangeValue": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAiSuggestedRange": "AI ଏହି ପରିସରକୁ {range} ଭାବରେ ପ read ଼ିଲା । ମୁଦ୍ରିତ ପାଠ: {printed} । ଏହି ତୁଳନା ଉପରେ ନିର୍ଭର କରିବା ପୂର୍ବରୁ ମୂଳ ରିପୋର୍ଟ ଯାଞ୍ଚ କରନ୍ତୁ",
+  "@uiAiSuggestedRange": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "range": {
+        "type": "String"
+      },
+      "printed": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportsReady": "{reportCount} ପ୍ରସ୍ତୁତ",
+  "@uiReportsReady": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reportCount": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCreditsCount": "{count} କ୍ରେଡିଟ୍",
+  "@uiCreditsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReferralCodeAlreadyApplied": "ଏହି ଆକାଉଣ୍ଟରେ ଏକ ରେଫରାଲ୍ କୋଡ୍ ପ୍ରୟୋଗ ହୋଇସାରିଛି",
+  "@uiReferralCodeAlreadyApplied": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSetDevicePasscodeForAppLock": "ଆପ୍ ଲକ୍ ଅନ୍ କରିବା ପୂର୍ବରୁ ଏକ ଡିଭାଇସ୍ ପାସକୋଡ୍ ସେଟ୍ କରନ୍ତୁ",
+  "@uiSetDevicePasscodeForAppLock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLanguagePreferenceNotSaved": "ଭାଷା ପସନ୍ଦ ସଞ୍ଚୟ ହୋଇନାହିଁ",
+  "@uiLanguagePreferenceNotSaved": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportUnavailable": "ରପ୍ତାନି ଉପଲବ୍ଧ ନାହିଁ",
+  "@uiExportUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnreadableImage": "ପଠନୀୟ ପ୍ରତିଛବି",
+  "@uiUnreadableImage": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiStatusWithValue": "ସ୍ଥିତି: {status}",
+  "@uiStatusWithValue": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "uiPending": "ବିଚାରାଧୀନ ଅଛି",
+  "@uiPending": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCompleted": "ସମାପ୍ତ",
+  "@uiCompleted": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFailed": "ବିଫଳ",
+  "@uiFailed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInactive": "ନିଷ୍କ୍ରିୟ",
+  "@uiInactive": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRestoreBeforeDate": "ଆପଣଙ୍କର ରିପୋର୍ଟ ଏବଂ ପ୍ରୋଫାଇଲ୍ ରଖିବା ପାଇଁ {date} ପୂର୍ବରୁ ପୁନ ore ସ୍ଥାପନ କରନ୍ତୁ",
+  "@uiRestoreBeforeDate": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiThirtyDayDeadline": "30 ଦିନର ସମୟସୀମା",
+  "@uiThirtyDayDeadline": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWhatsAffected": "କ’ଣ ପ୍ରଭାବିତ ହୋଇଛି: {details}",
+  "@uiWhatsAffected": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "uiLastUpdatedAt": "ଶେଷ ଅଦ୍ୟତନ: {time} ରେ {date}",
+  "@uiLastUpdatedAt": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "uiMoveReportToProfile": "ସାମ୍ପ୍ରତିକ ପ୍ରୋଫାଇଲ୍ ପରିବର୍ତ୍ତେ {filename} {name} ଅଧୀନରେ ଦେଖାଯିବ",
+  "@uiMoveReportToProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneVerifiedResult": "1 ଯାଞ୍ଚ ହୋଇଥିବା ଫଳାଫଳ ସଞ୍ଚୟ ହୋଇଛି",
+  "@uiOneVerifiedResult": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiVerifiedResultsCount": "{count} ଯାଞ୍ଚ ହୋଇଥିବା ଫଳାଫଳଗୁଡିକ ସଞ୍ଚୟ ହୋଇଛି",
+  "@uiVerifiedResultsCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnableToSwitchProfilesWithReason": "ପ୍ରୋଫାଇଲ୍ ସୁଇଚ୍ କରିବାକୁ ଅସମର୍ଥ । {reason}",
+  "@uiUnableToSwitchProfilesWithReason": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCollectedOn": "ସଂଗୃହିତ: {date}",
+  "@uiCollectedOn": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUploadedPrefix": "ଅପଲୋଡ୍ ତାରିଖ {date}",
+  "@uiUploadedPrefix": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportComparisonLabel": "{filename} · {date}",
+  "@uiReportComparisonLabel": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "filename": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiIncreasedBy": "{amount} ଦ୍ୱାରା ବୃଦ୍ଧି",
+  "@uiIncreasedBy": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "uiDecreasedBy": "{amount} ଦ୍ୱାରା ହ୍ରାସ",
+  "@uiDecreasedBy": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "uiPercentagePoints": "ଶତକଡ଼ା ପଏଣ୍ଟ",
+  "@uiPercentagePoints": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTestValuesCount": "ପରୀକ୍ଷା ମୂଲ୍ୟ ({count})",
+  "@uiTestValuesCount": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAiValueReviewNotice": "ପ୍ରକ୍ରିୟାକରଣ ସମୟରେ AI ଦ୍ୱାରା ମୂଲ୍ୟ ଯାଞ୍ଚ କରାଯାଇଥାଏ । ମୂଳ OCR: {value} । ରିପୋର୍ଟ ବିରୋଧରେ ଏହାକୁ ନିଶ୍ଚିତ କରନ୍ତୁ",
+  "@uiAiValueReviewNotice": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportAlreadyInProfile": "{name} ରେ ପୂର୍ବରୁ ରିପୋର୍ଟ କରନ୍ତୁ",
+  "@uiReportAlreadyInProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReportAddedToProfile": "ରିପୋର୍ଟ {name} ରେ ଯୋଡା ଯାଇଛି",
+  "@uiReportAddedToProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAddedOn": "{date} ଯୋଗ କରାଯାଇଛି",
+  "@uiAddedOn": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUsingReportsLimit": "{max} ରିପୋର୍ଟର {current} ବ୍ୟବହାର କରି",
+  "@uiUsingReportsLimit": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "uiNeedHelp": "ସହାୟତା ଦରକାର କି?",
+  "@uiNeedHelp": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnabled": "ସକ୍ଷମ",
+  "@uiEnabled": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnable": "ସକ୍ଷମ କରନ୍ତୁ",
+  "@uiEnable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSubscribe": "ସବସ୍କ୍ରାଇବ କରନ୍ତୁ",
+  "@uiSubscribe": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiApplying": "ପ୍ରୟୋଗ",
+  "@uiApplying": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCheckStatus": "ସ୍ଥିତି ଯାଞ୍ଚ କରନ୍ତୁ",
+  "@uiCheckStatus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEditProfile": "ପ୍ରୋଫାଇଲ୍ ସମ୍ପାଦନ କରନ୍ତୁ",
+  "@uiEditProfile": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSaveChanges": "ପରିବର୍ତ୍ତନ ସେଭ୍ କରନ୍ତୁ",
+  "@uiSaveChanges": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOptional": "ବ tion କଳ୍ପିକ",
+  "@uiOptional": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPendingOrderReconciliation": "ଅର୍ଡର {orderId} ପୁନ iliation ନିର୍ମାଣ ପାଇଁ ଅପେକ୍ଷା କରିଛି । ସ୍ଥିତି ସ୍ପଷ୍ଟ ନହେବା ପର୍ଯ୍ୟନ୍ତ କ୍ରୟ ବନ୍ଦ ହୋଇଯାଏ",
+  "@uiPendingOrderReconciliation": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "orderId": {
+        "type": "String"
+      }
+    }
+  },
+  "uiMonthlyPlanDescription": "ମାସିକ ଯୋଜନା - {name}",
+  "@uiMonthlyPlanDescription": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCreditPackDescription": "କ୍ରେଡିଟ୍ ପ୍ୟାକ୍ - {name}",
+  "@uiCreditPackDescription": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "uiUnreadable": "ପଠନୀୟ ନୁହେଁ",
+  "@uiUnreadable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLatestValue": "ସର୍ବଶେଷ: {value}",
+  "@uiLatestValue": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "uiEarlier": "ପୂର୍ବରୁ",
+  "@uiEarlier": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLater": "ପରେ",
+  "@uiLater": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiViewed": "ଦେଖାଯାଇଛି",
+  "@uiViewed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiBlocked": "ଅବରୋଧିତ",
+  "@uiBlocked": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCapped": "କ୍ୟାପଟେଡ୍",
+  "@uiCapped": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLastChange": "ଶେଷ ପରିବର୍ତ୍ତନ: {label}",
+  "@uiLastChange": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "uiLastChangeAt": "ଶେଷ ପରିବର୍ତ୍ତନ: {label} · {date}",
+  "@uiLastChangeAt": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "uiGiftVoucherApplied": "ଉପହାର ଭାଉଚର ପ୍ରୟୋଗ ହେଲା । {credits} କ୍ରେଡିଟ୍ ଯୋଗ କରାଯାଇଛି",
+  "@uiGiftVoucherApplied": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "credits": {
+        "type": "String"
+      }
+    }
+  },
+  "uiCouldNotSaveOriginal": "ମୂଳ ସଞ୍ଚୟ କରିପାରିଲା ନାହିଁ । {reason}",
+  "@uiCouldNotSaveOriginal": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "uiFailedToRevoke": "ପ୍ରତ୍ୟାହାର କରିବାରେ ବିଫଳ: {reason}",
+  "@uiFailedToRevoke": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "uiReferralShareMessage": "ମୋର ଡକଲିଜର ରେଫରାଲ୍ କୋଡ୍ {code}: {link} ବ୍ୟବହାର କରନ୍ତୁ",
+  "@uiReferralShareMessage": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "uiAMomentAgo": "କିଛି ସମୟ ପୂର୍ବରୁ",
+  "@uiAMomentAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMinutesAgo": "{count} ମିନିଟ୍ ପୂର୍ବରୁ",
+  "@uiMinutesAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneHourAgo": "1 ଘଣ୍ଟା ପୂର୍ବରୁ",
+  "@uiOneHourAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiHoursAgo": "{count} ଘଣ୍ଟା ପୂର୍ବରୁ",
+  "@uiHoursAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiToday": "ଆଜି",
+  "@uiToday": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYesterday": "ଗତକାଲି",
+  "@uiYesterday": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiOneDayAgo": "1 ଦିନ ପୂର୍ବରୁ",
+  "@uiOneDayAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiDaysAgo": "{count} ଦିନ ପୂର୍ବରୁ",
+  "@uiDaysAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneWeekAgo": "1 ସପ୍ତାହ ପୂର୍ବରୁ",
+  "@uiOneWeekAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiWeeksAgo": "{count} ସପ୍ତାହ ପୂର୍ବରୁ",
+  "@uiWeeksAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneMonthAgo": "1 ମାସ ପୂର୍ବରୁ",
+  "@uiOneMonthAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMonthsAgo": "{count} ମାସ ପୂର୍ବରୁ",
+  "@uiMonthsAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiOneYearAgo": "1 ବର୍ଷ ପୂର୍ବେ",
+  "@uiOneYearAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiYearsAgo": "{count} ବର୍ଷ ପୂର୍ବେ",
+  "@uiYearsAgo": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiInOneDay": "1 ଦିନରେ",
+  "@uiInOneDay": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInDays": "{count} ଦିନରେ",
+  "@uiInDays": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiInMinutes": "{count} ମିନିଟ୍ ରେ",
+  "@uiInMinutes": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiInOneHour": "1 ଘଣ୍ଟାରେ",
+  "@uiInOneHour": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInHours": "{count} ଘଣ୍ଟାରେ",
+  "@uiInHours": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "uiMissingExtractedTestName": "ବାହାର କରାଯାଇଥିବା ଫଳାଫଳରୁ ପରୀକ୍ଷା ନାମ ହଜିଯାଇଛି",
+  "@uiMissingExtractedTestName": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiMissingCapturedLabRange": "ଏହି ପରୀକ୍ଷା ପାଇଁ କ lab ଣସି ଲ୍ୟାବ ରେଫରେନ୍ସ ପରିସର ଧରାଯାଇ ନାହିଁ",
+  "@uiMissingCapturedLabRange": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNonNumericExtractedValue": "ବାହାର କରାଯାଇଥିବା ମୂଲ୍ୟ ଏକ ସାଧା ସଂଖ୍ୟା ନୁହେଁ । ମୂଳ ରିପୋର୍ଟରେ ଏହାକୁ ଯାଞ୍ଚ କରନ୍ତୁ",
+  "@uiNonNumericExtractedValue": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLabFlagRangeConflict": "ଲ୍ୟାବ ପତାକା ମୁଦ୍ରିତ ପରିସର ସହିତ ବିବାଦ କରେ । ମୂଳ ରିପୋର୍ଟ ଯାଞ୍ଚ କରନ୍ତୁ",
+  "@uiLabFlagRangeConflict": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiResultNeedsOriginalCheck": "ବାହାର କରାଯାଇଥିବା ମୂଲ୍ୟ, ମୁଦ୍ରିତ ପରିସର, କିମ୍ବା ଲ୍ୟାବ ପତାକା ମୂଳ ରିପୋର୍ଟରେ ଯାଞ୍ଚ ଆବଶ୍ୟକ କରେ",
+  "@uiResultNeedsOriginalCheck": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInitialEntitlement": "ପ୍ରାରମ୍ଭିକ ଅଧିକାର",
+  "@uiInitialEntitlement": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCreditPackPurchase": "କ୍ରେଡିଟ୍ ପ୍ୟାକ୍ କ୍ରୟ",
+  "@uiCreditPackPurchase": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSubscriptionUpgrade": "ସଦସ୍ୟତା ଉନ୍ନୟନ",
+  "@uiSubscriptionUpgrade": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPlanDowngrade": "ଡାଉନଗ୍ରେଡ୍ ଯୋଜନା କରନ୍ତୁ",
+  "@uiPlanDowngrade": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAdminAdjustment": "ଆଡମିନି ଆଡଜଷ୍ଟମେଣ୍ଟ୍",
+  "@uiAdminAdjustment": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSystemReconciliation": "ସିଷ୍ଟମ୍ ପୁନ iliation ନିର୍ମାଣ",
+  "@uiSystemReconciliation": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralInviteBonus": "ରେଫରାଲ୍ ଆମନ୍ତ୍ରଣ ବୋନସ୍",
+  "@uiReferralInviteBonus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralAnalysisMilestone": "ରେଫରାଲ୍ ବିଶ୍ଳେଷଣ ମାଇଲଖୁଣ୍ଟ",
+  "@uiReferralAnalysisMilestone": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiReferralPurchaseMilestone": "ରେଫରାଲ୍ କ୍ରୟ ମାଇଲଖୁଣ୍ଟ",
+  "@uiReferralPurchaseMilestone": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiFreePromoCreditPack": "ମାଗଣା ପ୍ରୋମୋ କ୍ରେଡିଟ୍ ପ୍ୟାକ୍",
+  "@uiFreePromoCreditPack": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiGiftVoucherRedeemed": "ଉପହାର ଭାଉଚର ମୁକ୍ତ ହୋଇଛି",
+  "@uiGiftVoucherRedeemed": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiNotYetChanged": "ଏପର୍ଯ୍ୟନ୍ତ ପରିବର୍ତ୍ତନ ହୋଇନାହିଁ",
+  "@uiNotYetChanged": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCannotReachServer": "ସର୍ଭରରେ ପହଞ୍ଚିବାରେ ଅସମର୍ଥ । ଆପଣଙ୍କର ସଂଯୋଗ ଯାଞ୍ଚ କରନ୍ତୁ ଏବଂ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiCannotReachServer": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiInvalidEmailOrPassword": "ଅବ val ଧ ଇମେଲ କିମ୍ବା ପାସୱାର୍ଡ । ଆପଣଙ୍କର ବିବରଣୀ ଯାଞ୍ଚ କରନ୍ତୁ ଏବଂ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiInvalidEmailOrPassword": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiTooManyAuthAttempts": "ବହୁତ ଚେଷ୍ଟା । କିଛି ମିନିଟ୍ ଅପେକ୍ଷା କର ଏବଂ ପୁନର୍ବାର ଚେଷ୍ଟା କର",
+  "@uiTooManyAuthAttempts": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiEnterValidEmail": "ଦୟାକରି ଏକ ବ email ଧ ଇମେଲ୍ ଠିକଣା ପ୍ରବେଶ କରନ୍ତୁ",
+  "@uiEnterValidEmail": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiPasswordRequirements": "ପାସୱାର୍ଡ ଅତିକମରେ 8 ଅକ୍ଷର ହେବା ଆବଶ୍ୟକ ଏବଂ ଏଥିରେ ବଡ ଅକ୍ଷର, ଲୋୟର କେସ୍, ଏକ ସଂଖ୍ୟା, ଏବଂ ଏକ ସ୍ୱତନ୍ତ୍ର ବର୍ଣ୍ଣ ଅନ୍ତର୍ଭୁକ୍ତ",
+  "@uiPasswordRequirements": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiAccountWithEmailExists": "ଏହି ଇମେଲ ସହିତ ଏକ ଖାତା ପୂର୍ବରୁ ବିଦ୍ୟମାନ ଅଛି । ସାଇନ୍ ଇନ୍ କରନ୍ତୁ କିମ୍ବା ଏକ ଭିନ୍ନ ଇମେଲ୍ ବ୍ୟବହାର କରନ୍ତୁ",
+  "@uiAccountWithEmailExists": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUploadedStatus": "ଅପଲୋଡ୍ ହୋଇଛି",
+  "@uiUploadedStatus": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSupportAction": "କାର୍ଯ୍ୟ: {action}",
+  "@uiSupportAction": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSupportCorrelationId": "ସମ୍ପର୍କ ID: {id}",
+  "@uiSupportCorrelationId": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSupportClientActionId": "କ୍ଲାଏଣ୍ଟ ଆକ୍ସନ୍ ID: {id}",
+  "@uiSupportClientActionId": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSupportErrorCode": "ତ୍ରୁଟି ସଂକେତ: {code}",
+  "@uiSupportErrorCode": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSupportError": "ତ୍ରୁଟି: {error}",
+  "@uiSupportError": {
+    "description": "Draft mobile UI translation; native-language review required before release.",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "uiSessionExpiredSignInAgain": "ତୁମର ଅଧିବେଶନ ସମାପ୍ତ ହେଲା । ପୁନର୍ବାର ସାଇନ୍ ଇନ୍ କରନ୍ତୁ",
+  "@uiSessionExpiredSignInAgain": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiProfileLimitReached": "ଆପଣଙ୍କର ଯୋଜନା ପ୍ରୋଫାଇଲ୍ ସୀମା ପହଞ୍ଚିସାରିଛି । ଅଧିକ ଯୋଗ କରିବାକୁ ଯୋଜନା ଏବଂ କ୍ରେଡିଟ୍ ସମୀକ୍ଷା କରନ୍ତୁ",
+  "@uiProfileLimitReached": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCorrectionConflictReload": "ଏହି ଫଳାଫଳ ଅନ୍ୟତ୍ର ବଦଳିଗଲା । ଏହାକୁ ସଂଶୋଧନ କରିବା ପୂର୍ବରୁ ରିପୋର୍ଟକୁ ପୁନ elo ଲୋଡ୍ କରନ୍ତୁ",
+  "@uiCorrectionConflictReload": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiSeePlanCreditsOptions": "ଉପଲବ୍ଧ ବିକଳ୍ପଗୁଡ଼ିକ ପାଇଁ ଯୋଜନା ଏବଂ କ୍ରେଡିଟ୍ ଦେଖନ୍ତୁ",
+  "@uiSeePlanCreditsOptions": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiShareLinkLimitHelp": "ଆପଣ ସକ୍ରିୟ ଅଂଶୀଦାର-ଲିଙ୍କ୍ ସୀମାରେ ପହଞ୍ଚିଛନ୍ତି",
+  "@uiShareLinkLimitHelp": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiScopedExportUnavailable": "ସ୍କୋପଡ୍ ରପ୍ତାନି ଉପଲବ୍ଧ ନାହିଁ । ପରେ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiScopedExportUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiRestorationUnavailable": "ପୁନରୁଦ୍ଧାର ଉପଲବ୍ଧ ନାହିଁ । ପରେ ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ",
+  "@uiRestorationUnavailable": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiExportRequestNotFound": "ରପ୍ତାନି ଅନୁରୋଧ ମିଳିଲା ନାହିଁ । ଏକ ନୂତନ ରପ୍ତାନି ପାଇଁ ଅନୁରୋଧ",
+  "@uiExportRequestNotFound": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiClosureConfirmationRequired": "ଜାରି ରଖିବାକୁ ଖାତା ବନ୍ଦକୁ ନିଶ୍ଚିତ କରନ୍ତୁ",
+  "@uiClosureConfirmationRequired": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiCurrentPasswordIncorrect": "ସାମ୍ପ୍ରତିକ ପାସୱାର୍ଡ ଭୁଲ୍ ଅଟେ",
+  "@uiCurrentPasswordIncorrect": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiLaboratories": "ଲାବୋରେଟୋରୀଗୁଡିକ",
+  "@uiLaboratories": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  },
+  "uiUnlock": "ଅନଲକ୍ କରନ୍ତୁ",
+  "@uiUnlock": {
+    "description": "Draft mobile UI translation; native-language review required before release."
+  }
 }

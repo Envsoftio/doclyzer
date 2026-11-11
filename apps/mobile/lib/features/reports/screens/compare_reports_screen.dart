@@ -63,7 +63,7 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
       });
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Unable to load reports. Try again.');
+        setState(() => _error = context.l10n.uiUnableToLoadReportsTryAgain);
       }
     }
   }
@@ -81,7 +81,10 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
       collectionDate ?? report.createdAt,
       hasTime: false,
     );
-    return '${report.originalFileName} · ${collectionDate == null ? 'Uploaded ' : ''}$date';
+    return context.l10n.uiReportComparisonLabel(
+      report.originalFileName,
+      collectionDate == null ? context.l10n.uiUploadedPrefix(date) : date,
+    );
   }
 
   bool get _selectedOrderValid {
@@ -189,7 +192,11 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(_showResults ? 'Compare results' : 'Compare reports'),
+        title: Text(
+          _showResults
+              ? context.l10n.uiCompareResults
+              : context.l10n.compareReports,
+        ),
       ),
       body: AnimatedSwitcher(
         duration: MediaQuery.disableAnimationsOf(context)
@@ -204,18 +211,17 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
             ? DesignEmptyState(
                 key: const Key('compare-error'),
                 icon: Icons.wifi_off_outlined,
-                title: 'Reports unavailable',
+                title: context.l10n.uiReportsUnavailable,
                 message: _error!,
-                action: 'Try again',
+                action: context.l10n.uiTryAgain042c86,
                 onAction: _load,
               )
             : reports!.length < 2
-            ? const DesignEmptyState(
+            ? DesignEmptyState(
                 key: Key('compare-empty'),
                 icon: Icons.compare_arrows_rounded,
-                title: 'Two reports are needed',
-                message:
-                    'Add an older report for this profile to compare results.',
+                title: context.l10n.uiTwoReportsAreNeeded,
+                message: context.l10n.uiAddAnOlderReportForThisProfile,
               )
             : _showResults
             ? _buildResults(theme)
@@ -235,17 +241,18 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
       children: [
         Text(widget.profileName, style: theme.textTheme.bodyMedium),
         const SizedBox(height: 20),
-        Text('Choose two reports', style: theme.textTheme.headlineSmall),
-        const SizedBox(height: 8),
-        const Text(
-          'Use records for the same person. Matching tests will appear side by side.',
+        Text(
+          context.l10n.uiChooseTwoReports,
+          style: theme.textTheme.headlineSmall,
         ),
+        const SizedBox(height: 8),
+        Text(context.l10n.uiUseRecordsForTheSamePersonMatching),
         const SizedBox(height: 24),
         DropdownButtonFormField<String>(
           key: const Key('compare-earlier'),
           isExpanded: true,
           initialValue: _earlierId,
-          decoration: InputDecoration(labelText: 'Earlier report'),
+          decoration: InputDecoration(labelText: context.l10n.uiEarlierReport),
           items: [
             for (final report in reports)
               DropdownMenuItem(
@@ -263,7 +270,7 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
           key: const Key('compare-later'),
           isExpanded: true,
           initialValue: _laterId,
-          decoration: const InputDecoration(labelText: 'Later report'),
+          decoration: InputDecoration(labelText: context.l10n.uiLaterReport),
           items: [
             for (final report in reports)
               DropdownMenuItem(
@@ -279,7 +286,7 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
         const SizedBox(height: 16),
         if (_earlierId != _laterId && !_selectedOrderValid) ...[
           Text(
-            'Choose the older report first and the newer report second.',
+            context.l10n.uiChooseTheOlderReportFirstAndThe,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.error,
             ),
@@ -295,7 +302,7 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Compared only when compatible. Different units or methods are shown separately until compatibility is confirmed.',
+                    context.l10n.uiComparedOnlyWhenCompatibleDifferentUnitsOr,
                     style: theme.textTheme.bodySmall,
                   ),
                 ),
@@ -337,11 +344,11 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
             ),
           const SizedBox(height: 20),
           if (rows.isEmpty)
-            const DesignEmptyState(
+            DesignEmptyState(
               icon: Icons.rule_outlined,
-              title: 'Cannot compare yet',
+              title: context.l10n.uiCannotCompareYet,
               message:
-                  'These reports have no matching results available for comparison.',
+                  context.l10n.uiTheseReportsHaveNoMatchingResultsAvailable,
             )
           else
             for (final row in rows) ...[
@@ -357,7 +364,7 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
                         children: [
                           Expanded(
                             child: _valueColumn(
-                              'Earlier',
+                              context.l10n.uiEarlier,
                               row.earlier,
                               row.earlierUnit,
                               theme,
@@ -366,7 +373,7 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: _valueColumn(
-                              'Later',
+                              context.l10n.uiLater,
                               row.later,
                               row.laterUnit,
                               theme,
@@ -377,7 +384,9 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
                       const SizedBox(height: 12),
                       Text(
                         row.change == null
-                            ? 'No difference calculated. Compatibility needs confirmation.'
+                            ? context
+                                  .l10n
+                                  .uiNoDifferenceCalculatedCompatibilityNeedsConfirmation
                             : _changeText(row.change!, row.normalizedUnit),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColors.tealText,
@@ -390,13 +399,11 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
               const SizedBox(height: 10),
             ],
           const SizedBox(height: 12),
-          const Text(
-            'A change is not a diagnosis. Compare each result with its own report interval and discuss the context with your clinician.',
-          ),
+          Text(context.l10n.uiAChangeIsNotADiagnosisCompare),
           const SizedBox(height: 16),
           OutlinedButton(
             onPressed: () => setState(() => _showResults = false),
-            child: const Text('Choose different reports'),
+            child: Text(context.l10n.uiChooseDifferentReports),
           ),
         ],
       ),
@@ -414,23 +421,28 @@ class _CompareReportsScreenState extends State<CompareReportsScreen> {
       Text(label, style: theme.textTheme.bodySmall),
       const SizedBox(height: 4),
       Text(value, style: theme.textTheme.headlineSmall),
-      Text(unit ?? 'Unit not recorded', style: theme.textTheme.bodySmall),
+      Text(
+        unit ?? context.l10n.uiUnitNotRecorded,
+        style: theme.textTheme.bodySmall,
+      ),
     ],
   );
 
   String _changeText(double change, String? unit) {
-    if (change == 0) return 'No numeric change between these reports.';
+    if (change == 0) return context.l10n.uiNoNumericChangeBetweenTheseReports;
     final amount = change
         .abs()
         .toStringAsFixed(2)
         .replaceFirst(RegExp(r'0+$'), '')
         .replaceFirst(RegExp(r'\.$'), '');
     final unitText = unit == '%'
-        ? ' percentage points'
+        ? context.l10n.uiPercentagePoints
         : unit == null || unit.isEmpty
         ? ''
         : ' $unit';
-    return '${change > 0 ? 'Increased' : 'Decreased'} by $amount$unitText';
+    return change > 0
+        ? context.l10n.uiIncreasedBy('$amount$unitText')
+        : context.l10n.uiDecreasedBy('$amount$unitText');
   }
 }
 

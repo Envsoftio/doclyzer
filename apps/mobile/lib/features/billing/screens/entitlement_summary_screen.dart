@@ -70,7 +70,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Failed to load entitlement summary. Please try again.';
+          _error = context.l10n.uiFailedToLoadEntitlementSummaryPleaseTry;
           _loading = false;
         });
       }
@@ -94,7 +94,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
       if (mounted) {
         StatusMessenger.showError(
           context,
-          'Failed to refresh billing status. Please try again.',
+          context.l10n.uiFailedToRefreshBillingStatusPleaseTry,
         );
       }
     } finally {
@@ -110,7 +110,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
     final code = _voucherController.text.trim();
     if (code.isEmpty) {
       setState(() {
-        _voucherError = 'Enter a gift voucher code.';
+        _voucherError = context.l10n.uiEnterAGiftVoucherCode;
       });
       return;
     }
@@ -130,7 +130,9 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
       ConfettiBurst.show(context);
       StatusMessenger.showSuccess(
         context,
-        'Gift voucher applied. ${result.creditsAdded.toStringAsFixed(2)} credits added.',
+        context.l10n.uiGiftVoucherApplied(
+          result.creditsAdded.toStringAsFixed(2),
+        ),
       );
     } catch (error) {
       if (!mounted) return;
@@ -233,10 +235,13 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Gift Voucher', style: theme.textTheme.titleMedium),
+            Text(
+              context.l10n.uiGiftVoucher,
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text(
-              'Redeem a gift voucher and add credits directly to your balance.',
+              context.l10n.uiRedeemAGiftVoucherAndAddCredits,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -248,8 +253,8 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
               textCapitalization: TextCapitalization.characters,
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _redeemGiftVoucher(),
-              decoration: const InputDecoration(
-                labelText: 'Voucher code',
+              decoration: InputDecoration(
+                labelText: context.l10n.uiVoucherCode,
                 prefixIcon: Icon(Icons.card_giftcard_rounded),
               ),
             ),
@@ -275,7 +280,11 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.redeem_rounded),
-                label: Text(_redeemingVoucher ? 'Applying' : 'Apply Voucher'),
+                label: Text(
+                  _redeemingVoucher
+                      ? context.l10n.uiApplying
+                      : context.l10n.uiApplyVoucher,
+                ),
               ),
             ),
           ],
@@ -295,7 +304,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Current Plan',
+                    context.l10n.uiCurrentPlan,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -342,7 +351,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Credit Balance',
+              context.l10n.uiCreditBalance,
               style: theme.textTheme.labelMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -359,7 +368,14 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Status: ${summary.status}',
+              context.l10n.uiStatusWithValue(switch (summary.status
+                  .toLowerCase()) {
+                'active' => context.l10n.active,
+                'inactive' => context.l10n.uiInactive,
+                'pending' => context.l10n.uiPending,
+                'failed' => context.l10n.uiFailed,
+                _ => summary.status,
+              }),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -386,31 +402,33 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Plan Limits', style: theme.textTheme.titleMedium),
+            Text(context.l10n.uiPlanLimits, style: theme.textTheme.titleMedium),
             const SizedBox(height: 12),
             _buildLimitRow(
               theme,
               icon: Icons.person_outline,
-              label: 'Profiles',
+              label: context.l10n.uiProfiles,
               value: '${limits.maxProfiles}',
             ),
             _buildLimitRow(
               theme,
               icon: Icons.description_outlined,
-              label: 'Reports',
+              label: context.l10n.uiReports,
               value: '${limits.maxReports}',
             ),
             _buildLimitRow(
               theme,
               icon: Icons.link,
-              label: 'Share links',
+              label: context.l10n.uiShareLinks,
               value: '${limits.maxShareLinks}',
             ),
             _buildLimitRow(
               theme,
               icon: Icons.smart_toy_outlined,
-              label: 'AI Chat',
-              value: limits.aiChatEnabled ? 'Enabled' : 'Not available',
+              label: context.l10n.uiAIChat,
+              value: limits.aiChatEnabled
+                  ? context.l10n.uiEnabled
+                  : context.l10n.uiNotAvailable,
             ),
           ],
         ),
@@ -458,7 +476,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
         FilledButton.tonal(
           onPressed: widget.onBuyCredits,
           style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-          child: const Text('Buy Credits'),
+          child: Text(context.l10n.uiBuyCredits),
         ),
       ],
     );
@@ -475,7 +493,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    'Recent Billing Activity',
+                    context.l10n.uiRecentBillingActivity,
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
@@ -488,13 +506,13 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.refresh_rounded),
-                  label: const Text('Refresh status'),
+                  label: Text(context.l10n.uiRefreshStatus),
                 ),
               ],
             ),
             if (_recentOrders.isEmpty)
               Text(
-                'No recent orders yet.',
+                context.l10n.uiNoRecentOrdersYet,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -515,10 +533,10 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
   Widget _buildOrderRow(ThemeData theme, BillingOrderStatusItem order) {
     final chipColors = _orderChipColors(theme, order.status);
     final actionLabel = order.canRetry
-        ? 'Retry payment'
+        ? context.l10n.uiRetryPayment
         : order.isReconciled
-        ? 'View receipt'
-        : 'Refresh status';
+        ? context.l10n.uiViewReceipt
+        : context.l10n.uiRefreshStatus;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -586,7 +604,7 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
               if (order.isReconciled) {
                 StatusMessenger.showInfo(
                   context,
-                  'Receipt download will be available soon.',
+                  context.l10n.uiReceiptDownloadWillBeAvailableSoon,
                 );
                 return;
               }
@@ -637,12 +655,25 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
   }
 
   String _buildLastChangeLine(EntitlementSummary summary) {
-    final label = summary.lastChangeLabel;
+    final label = switch (summary.lastChangeReason) {
+      'initial_provision' => context.l10n.uiInitialEntitlement,
+      'credit_pack_purchase' => context.l10n.uiCreditPackPurchase,
+      'subscription_upgrade' => context.l10n.uiSubscriptionUpgrade,
+      'plan_downgrade' => context.l10n.uiPlanDowngrade,
+      'admin_adjustment' => context.l10n.uiAdminAdjustment,
+      'system_reconciliation' => context.l10n.uiSystemReconciliation,
+      'referral_invitee_bonus' => context.l10n.uiReferralInviteBonus,
+      'referral_milestone_a' => context.l10n.uiReferralAnalysisMilestone,
+      'referral_milestone_b' => context.l10n.uiReferralPurchaseMilestone,
+      'promo_free_credit_pack' => context.l10n.uiFreePromoCreditPack,
+      'gift_voucher_redeem' => context.l10n.uiGiftVoucherRedeemed,
+      _ => context.l10n.uiNotYetChanged,
+    };
     final changedAt = summary.lastChangeAt;
     if (changedAt == null) {
-      return 'Last change: $label';
+      return context.l10n.uiLastChange(label);
     }
-    return 'Last change: $label · ${_formatLongDateTime(changedAt)}';
+    return context.l10n.uiLastChangeAt(label, _formatLongDateTime(changedAt));
   }
 
   String _formatLongDateTime(DateTime time) {
@@ -653,20 +684,18 @@ class _EntitlementSummaryScreenState extends State<EntitlementSummaryScreen> {
     if (error is ApiException) {
       switch (error.code) {
         case 'GIFT_VOUCHER_INVALID':
-          return 'Gift voucher is invalid or already redeemed.';
+          return context.l10n.uiGiftVoucherIsInvalidOrAlreadyRedeemed;
         case 'GIFT_VOUCHER_ALREADY_REDEEMED':
-          return 'Gift voucher has already been redeemed.';
+          return context.l10n.uiGiftVoucherHasAlreadyBeenRedeemed;
         case 'GIFT_VOUCHER_VOIDED':
-          return 'Gift voucher has been voided.';
+          return context.l10n.uiGiftVoucherHasBeenVoided;
         case 'GIFT_VOUCHER_EXPIRED':
-          return 'Gift voucher has expired.';
+          return context.l10n.uiGiftVoucherHasExpired;
         case 'GIFT_VOUCHER_CODE_REQUIRED':
-          return 'Enter a gift voucher code.';
+          return context.l10n.uiEnterAGiftVoucherCode;
       }
-      return error.message.isNotEmpty
-          ? error.message
-          : 'Unable to redeem this gift voucher.';
+      return context.l10n.uiUnableToRedeemThisGiftVoucher;
     }
-    return 'Unable to redeem this gift voucher. Please try again.';
+    return context.l10n.uiUnableToRedeemThisGiftVoucherPlease;
   }
 }

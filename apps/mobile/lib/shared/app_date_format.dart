@@ -1,23 +1,27 @@
-/// Dates shown to people use DD-MMM-YYYY; API dates keep their original format.
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
+import 'package:mobile/l10n/app_localizations.dart';
+
+/// Formats user-visible dates for the app's active language.
+/// API date strings keep their original format.
 class AppDateFormat {
-  static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
+  static AppLocalizations? _l10n;
+  static bool _dateSymbolsLoaded = false;
+
+  static void configure(AppLocalizations? l10n) {
+    _l10n = l10n;
+  }
+
+  static void _ensureDateSymbols() {
+    if (_dateSymbolsLoaded) return;
+    initializeDateFormatting();
+    _dateSymbolsLoaded = true;
+  }
 
   static String date(DateTime value, {bool local = true}) {
+    _ensureDateSymbols();
     final d = local ? value.toLocal() : value;
-    return '${d.day.toString().padLeft(2, '0')}-${_months[d.month - 1]}-${d.year.toString().padLeft(4, '0')}';
+    return DateFormat('dd-MMM-yyyy', _l10n?.localeName ?? 'en').format(d);
   }
 
   static String dateTime(DateTime value) {
@@ -34,10 +38,16 @@ class AppDateFormat {
         difference.inDays.abs(),
       );
     }
-    if (difference.inSeconds < 60) return 'A moment ago';
-    if (difference.inMinutes < 60) return '${difference.inMinutes} min ago';
+    if (difference.inSeconds < 60) return _l10n?.uiAMomentAgo ?? 'A moment ago';
+    if (difference.inMinutes < 60) {
+      return _l10n?.uiMinutesAgo('${difference.inMinutes}') ??
+          '${difference.inMinutes} min ago';
+    }
     if (difference.inHours < 24) {
-      return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
+      final hours = difference.inHours;
+      return hours == 1
+          ? (_l10n?.uiOneHourAgo ?? '1 hour ago')
+          : (_l10n?.uiHoursAgo('$hours') ?? '$hours hours ago');
     }
     return _relativeDays(difference.inDays);
   }
@@ -47,8 +57,8 @@ class AppDateFormat {
     final local = value.toLocal();
     final dayDifference = _calendarDaysBetween(current, local);
     if (dayDifference < 0) return _relativeFuture(0, -dayDifference);
-    if (dayDifference == 0) return 'Today';
-    if (dayDifference == 1) return 'Yesterday';
+    if (dayDifference == 0) return _l10n?.uiToday ?? 'Today';
+    if (dayDifference == 1) return _l10n?.uiYesterday ?? 'Yesterday';
     return _relativeDays(dayDifference);
   }
 
@@ -67,17 +77,27 @@ class AppDateFormat {
       '${relativeDateTime(value, now: now)} · ${dateTime(value)}';
 
   static String _relativeDays(int days) {
-    if (days < 7) return '$days ${days == 1 ? 'day' : 'days'} ago';
+    if (days < 7) {
+      return days == 1
+          ? (_l10n?.uiOneDayAgo ?? '1 day ago')
+          : (_l10n?.uiDaysAgo('$days') ?? '$days days ago');
+    }
     if (days < 30) {
       final count = days ~/ 7;
-      return '$count ${count == 1 ? 'week' : 'weeks'} ago';
+      return count == 1
+          ? (_l10n?.uiOneWeekAgo ?? '1 week ago')
+          : (_l10n?.uiWeeksAgo('$count') ?? '$count weeks ago');
     }
     if (days < 365) {
       final count = days ~/ 30;
-      return '$count ${count == 1 ? 'month' : 'months'} ago';
+      return count == 1
+          ? (_l10n?.uiOneMonthAgo ?? '1 month ago')
+          : (_l10n?.uiMonthsAgo('$count') ?? '$count months ago');
     }
     final count = days ~/ 365;
-    return '$count ${count == 1 ? 'year' : 'years'} ago';
+    return count == 1
+        ? (_l10n?.uiOneYearAgo ?? '1 year ago')
+        : (_l10n?.uiYearsAgo('$count') ?? '$count years ago');
   }
 
   static int _calendarDaysBetween(DateTime current, DateTime other) =>
@@ -88,11 +108,19 @@ class AppDateFormat {
       ).difference(DateTime.utc(other.year, other.month, other.day)).inDays;
 
   static String _relativeFuture(int minutes, int days) {
-    if (days > 0) return 'In $days ${days == 1 ? 'day' : 'days'}';
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return 'In $minutes min';
+    if (days > 0) {
+      return days == 1
+          ? (_l10n?.uiInOneDay ?? 'In 1 day')
+          : (_l10n?.uiInDays('$days') ?? 'In $days days');
+    }
+    if (minutes < 1) return _l10n?.uiJustNow ?? 'Just now';
+    if (minutes < 60) {
+      return _l10n?.uiInMinutes('$minutes') ?? 'In $minutes min';
+    }
     final hours = minutes ~/ 60;
-    return 'In $hours ${hours == 1 ? 'hour' : 'hours'}';
+    return hours == 1
+        ? (_l10n?.uiInOneHour ?? 'In 1 hour')
+        : (_l10n?.uiInHours('$hours') ?? 'In $hours hours');
   }
 
   /// Preserve an unrecognized lab date instead of guessing its day/month order.
@@ -115,9 +143,9 @@ class AppDateFormat {
       final relative = dayDifference < 0
           ? _relativeFuture(0, -dayDifference)
           : dayDifference == 0
-          ? 'Today'
+          ? (_l10n?.uiToday ?? 'Today')
           : dayDifference == 1
-          ? 'Yesterday'
+          ? (_l10n?.uiYesterday ?? 'Yesterday')
           : _relativeDays(dayDifference);
       return '$relative · ${date(parsed, local: false)}';
     }

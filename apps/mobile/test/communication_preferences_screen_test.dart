@@ -49,8 +49,9 @@ void main() {
             onMarketingChanged: (enabled) async {
               expect(enabled, isTrue);
               syncCalls++;
-              if (syncCalls == 1)
+              if (syncCalls == 1) {
                 throw StateError('Temporary device sync failure');
+              }
             },
           ),
         ),

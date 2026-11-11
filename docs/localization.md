@@ -7,10 +7,15 @@ account settings persist `users.preferred_language`. Mobile and consumer web
 restore this preference after login. The description language control is local
 to that description; it does not change the account preference.
 
-Core consumer navigation, signup/login, account, upload, report list/detail, and
-insight labels use catalogs. Admin, marketing, legal, and some secondary screens
-and server-provided error messages remain English. Uploaded reports, names,
-clinical test names, units, and original extracted values are not translated.
+Mobile consumer screen copy, including onboarding, account and family settings,
+report review, sharing, billing, help, legal, and error states, uses the ARB
+catalogs. The latest 672 mobile UI keys have machine-drafted translations in
+all ten non-English languages. They are marked for native review in the ARBs
+and `localization/mobile-ui-draft-review.json`. Mobile relative dates and month
+names follow the selected language. Uploaded reports, names, clinical test
+names, units, and original extracted values are not translated. Server-provided
+free text can still use the server's language; unknown API failures now use
+localized fallback messages.
 
 ## Deployment
 
@@ -91,11 +96,11 @@ and catalog parity, placeholder multiplicity, numeric literals, plural branches,
 and scripts. `python3 scripts/check-locale-fonts.py` checks the bundled fonts
 cover every catalog letter and combining mark.
 
-`node scripts/audit-mobile-localization.mjs` lists direct English UI literals
-that are still outside the mobile catalogs. Its findings and coverage limits
-are recorded in `localization/mobile-ui-audit.md` and
-`localization/mobile-ui-audit.json`. Catalog parity does not imply complete UI
-coverage.
+`node scripts/audit-mobile-localization.mjs --strict` checks direct widget
+literals outside the mobile catalogs. Its current result and coverage limits
+are in `localization/mobile-ui-audit.md` and
+`localization/mobile-ui-audit.json`. This scan excludes interpolated content
+and does not establish translation quality or live-device coverage.
 
 An opt-in live provider check uses only synthetic passages:
 
@@ -110,7 +115,11 @@ limitations. They are review fixtures, not patient records or proof of accuracy.
 A fresh service instance must reuse each accepted cached result without another
 provider call. UI catalogs for the added languages also received a separate
 automated comparison/correction pass against the English strings. Versioned
-catalog hashes and review counts are recorded in `localization/catalog-review.json`. Punjabi synthetic report checks are saved separately in `localization/punjabi-narrative-review-fixtures.json`.
+catalog hashes and review counts for the earlier catalog version are recorded
+in `localization/catalog-review.json`. The newly added mobile strings are a
+separate unreviewed draft batch in `localization/mobile-ui-draft-review.json`.
+Punjabi synthetic report checks are saved separately in
+`localization/punjabi-narrative-review-fixtures.json`.
 
 ## Native clinical review before release
 

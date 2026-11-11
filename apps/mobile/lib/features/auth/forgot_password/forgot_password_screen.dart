@@ -1,3 +1,4 @@
+import '../auth_error_localization.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
@@ -37,7 +38,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
       setState(() {
-        _error = 'Enter your email address';
+        _error = context.l10n.uiEnterYourEmailAddress;
       });
       return;
     }
@@ -46,12 +47,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       await widget.onSubmit(email);
       widget.onResetSent();
     } on AuthException catch (error) {
+      if (!mounted) return;
       setState(() {
-        _error = error.message;
+        _error = localizedAuthError(context, error);
       });
     } catch (_) {
       setState(() {
-        _error = 'Unable to send reset link. Please try again.';
+        _error = context.l10n.uiUnableToSendResetLinkPleaseTry;
       });
     }
   }
@@ -68,8 +70,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Enter the email address associated with your account and we\'ll send you a link to reset your password.',
+            Text(
+              context.l10n.uiEnterTheEmailAddressAssociatedWithYour,
               style: TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 16),
@@ -88,12 +90,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             FilledButton(
               key: const Key('forgot-password-submit'),
               onPressed: _submit,
-              child: const Text('Send Reset Link'),
+              child: Text(context.l10n.uiSendResetLink),
             ),
             TextButton(
               key: const Key('forgot-password-back-to-login'),
               onPressed: widget.onGoToLogin,
-              child: const Text('Back to login'),
+              child: Text(context.l10n.uiBackToLogin),
             ),
           ],
         ),

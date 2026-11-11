@@ -1,3 +1,4 @@
+import 'package:mobile/core/localized_error.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
@@ -51,35 +52,39 @@ class _ProcessingHistoryScreenState extends State<ProcessingHistoryScreen> {
       if (mounted) {
         setState(() {
           _state = _ProcessingHistoryState.error;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = localizedError(
+            context,
+            e,
+            fallback: context.l10n.genericError,
+          );
         });
       }
     }
   }
 
-  static String _triggerLabel(String trigger) {
+  String _triggerLabel(String trigger) {
     switch (trigger) {
       case 'initial_upload':
-        return 'Initial upload';
+        return context.l10n.uiInitialUpload;
       case 'retry':
-        return 'Retry';
+        return context.l10n.retry;
       default:
         return trigger;
     }
   }
 
-  static String _outcomeLabel(String outcome) {
+  String _outcomeLabel(String outcome) {
     switch (outcome) {
       case 'parsed':
-        return 'Parsed successfully';
+        return context.l10n.uiParsedSuccessfully;
       case 'unparsed':
-        return 'Parsing failed';
+        return context.l10n.uiParsingFailed;
       case 'content_not_recognized':
-        return 'Extraction incomplete';
+        return context.l10n.uiExtractionIncomplete;
       case 'failed_transient':
-        return 'Transient failure';
+        return context.l10n.uiTransientFailure;
       case 'failed_terminal':
-        return 'Terminal failure';
+        return context.l10n.uiTerminalFailure;
       default:
         return outcome;
     }
@@ -126,7 +131,7 @@ class _ProcessingHistoryScreenState extends State<ProcessingHistoryScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              _errorMessage ?? 'Failed to load attempt history',
+              _errorMessage ?? context.l10n.uiFailedToLoadAttemptHistory,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
               textAlign: TextAlign.center,
             ),
@@ -140,9 +145,9 @@ class _ProcessingHistoryScreenState extends State<ProcessingHistoryScreen> {
       );
     }
     if (_attempts.isEmpty) {
-      return const Center(
+      return Center(
         key: Key('processing-history-empty'),
-        child: Text('No attempt history available.'),
+        child: Text(context.l10n.uiNoAttemptHistoryAvailable),
       );
     }
     return ListView.separated(

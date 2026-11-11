@@ -25,7 +25,9 @@ for (const [folder, file] of [['apps/mobile/lib/l10n', locale => `app_${locale}.
       assert.deepEqual(placeholders(value), placeholders(source[key]), `${label}: changed placeholders`)
       assert.equal((value.match(/\|/g) ?? []).length, (source[key].match(/\|/g) ?? []).length, `${label}: changed plural branches`)
       assert.deepEqual((value.match(/[0-9]+(?:\.[0-9]+)?/g) ?? []).sort(), (source[key].match(/[0-9]+(?:\.[0-9]+)?/g) ?? []).sort(), `${label}: changed numbers`)
-      if (locale !== 'en') assert.ok(new RegExp(`\\p{Script=${script}}`, 'u').test(value), `${label}: missing target script`)
+      // A message made only of placeholders and punctuation has no words to translate.
+      const translatableSource = source[key].replace(/\{[a-zA-Z][a-zA-Z0-9_]*\}/g, '').replace(/[\d\W]/g, '')
+      if (locale !== 'en' && translatableSource) assert.ok(new RegExp(`\\p{Script=${script}}`, 'u').test(value), `${label}: missing target script`)
       assert.equal(value.includes('\uFFFD'), false, `${label}: broken Unicode`)
     }
     if (file(locale).endsWith('.arb')) {

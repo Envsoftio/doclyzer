@@ -1,0 +1,4811 @@
+{
+  "scope": "New mobile UI catalog entries only; existing catalog entries are outside this draft batch.",
+  "translationMethod": "Google Translate draft using placeholder masking; numeric digits normalized to ASCII; onboarding STORE verb corrected manually in all ten locales and UNDERSTAND corrected in Odia.",
+  "locales": [
+    "hi",
+    "kn",
+    "te",
+    "ml",
+    "ta",
+    "bn",
+    "or",
+    "gu",
+    "pa",
+    "mr"
+  ],
+  "newKeyCount": 672,
+  "status": "draft_needs_native_review",
+  "entries": [
+    {
+      "key": "uiAppearanceChangedButCouldNotBeSaved",
+      "english": "Appearance changed, but could not be saved for next time.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiThisReportIsNoLongerAvailable",
+      "english": "This report is no longer available.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOpenDeviceSettingsToManageNotificationPreviews",
+      "english": "Open device Settings to manage notification previews.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiKeepThisScreenOpenUntilTheUpload",
+      "english": "Keep this screen open until the upload is accepted.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAnUploadMayHaveBeenInterrupted",
+      "english": "An upload may have been interrupted",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCheckReportsIfItIsMissingAdd",
+      "english": "Check Reports. If it is missing, add the same file again.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotDismissNotificationsTryAgain",
+      "english": "Could not dismiss notifications. Try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiConnectionUnavailable",
+      "english": "Connection unavailable",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourSessionCouldNotBeCheckedConnect",
+      "english": "Your session could not be checked. Connect to the internet and try again.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSignInWithAnotherAccount",
+      "english": "Sign in with another account",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoActiveProfile",
+      "english": "No active profile",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDismissUploadNotice",
+      "english": "Dismiss upload notice",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDismissReadyNotifications",
+      "english": "Dismiss ready notifications",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRequestSupport",
+      "english": "Request support",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiWeWillIncludeDiagnosticIDsSoThe",
+      "english": "We will include diagnostic IDs so the team can investigate.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSendRequest",
+      "english": "Send request",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiWhatHappenedOptional",
+      "english": "What happened? (optional)",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReviewResult",
+      "english": "Review result",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCompareTheseFieldsWithTheOriginalReport",
+      "english": "Compare these fields with the original report before saving.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOriginallyExtracted",
+      "english": "Originally extracted",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReloadReport",
+      "english": "Reload report",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiResultAsPrinted",
+      "english": "Result as printed",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnitIfShown",
+      "english": "Unit (if shown)",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLabReferenceRangeIfShown",
+      "english": "Lab reference range (if shown)",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCheckYourReport",
+      "english": "Check your report",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoAttemptHistoryAvailable",
+      "english": "No attempt history available.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiIInspectedTheOriginal",
+      "english": "I inspected the original",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiChooseTwoReports",
+      "english": "Choose two reports",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUseRecordsForTheSamePersonMatching",
+      "english": "Use records for the same person. Matching tests will appear side by side.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiChooseTheOlderReportFirstAndThe",
+      "english": "Choose the older report first and the newer report second.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiComparedOnlyWhenCompatibleDifferentUnitsOr",
+      "english": "Compared only when compatible. Different units or methods are shown separately until compatibility is confirmed.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAChangeIsNotADiagnosisCompare",
+      "english": "A change is not a diagnosis. Compare each result with its own report interval and discuss the context with your clinician.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiChooseDifferentReports",
+      "english": "Choose different reports",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEarlierReport",
+      "english": "Earlier report",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLaterReport",
+      "english": "Later report",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourReportPages",
+      "english": "Your report pages",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiKeepPagesInTheSameOrderAs",
+      "english": "Keep pages in the same order as the report.",
+      "reviewCategories": [
+        "clinical",
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAddAnotherPage",
+      "english": "Add another page",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiChoosePagesFromGallery",
+      "english": "Choose pages from gallery",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAdjustPage",
+      "english": "Adjust page",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRetake",
+      "english": "Retake",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUseAdjustedPage",
+      "english": "Use adjusted page",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiResetChanges",
+      "english": "Reset changes",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiKeepEveryResultInsideTheCorners",
+      "english": "Keep every result inside the corners.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRotate",
+      "english": "Rotate",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportRestored",
+      "english": "Report restored",
+      "reviewCategories": [
+        "clinical",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDeleteReportPermanently",
+      "english": "Delete report permanently?",
+      "reviewCategories": [
+        "clinical",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDeletePermanently",
+      "english": "Delete permanently",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportPermanentlyDeleted",
+      "english": "Report permanently deleted",
+      "reviewCategories": [
+        "clinical",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEmptyRecycleBin",
+      "english": "Empty Recycle Bin?",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDeleteAll",
+      "english": "Delete all",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRecycleBinIsEmpty",
+      "english": "Recycle bin is empty.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDeletedReportsWillAppearHereBeforeRemoval",
+      "english": "Deleted reports will appear here before removal.",
+      "reviewCategories": [
+        "clinical",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEmptyRecycleBind657e2",
+      "english": "Empty recycle bin",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCheckDetectedResult",
+      "english": "Check detected result",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCompareThisRowWithTheOriginalReport",
+      "english": "Compare this row with the original report. Correct any OCR mistakes before saving.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiICheckedThisResultAgainstTheOriginal",
+      "english": "I checked this result against the original report",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSaving",
+      "english": "Saving…",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSaveVerifiedResult",
+      "english": "Save verified result",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoResultsWereDetectedViewTheOriginal",
+      "english": "No results were detected. View the original report or retry processing.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDetectedValuesNeedToBeCheckedAgainst",
+      "english": "Detected values need to be checked against the original report before they become saved results.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSomeRowsMayBeMissingInspectThe",
+      "english": "Some rows may be missing. Inspect the entire original report.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiResult",
+      "english": "Result",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnitOptional",
+      "english": "Unit (optional)",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferenceRangeOptional",
+      "english": "Reference range (optional)",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiVerified",
+      "english": "Verified",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiGiftVoucher",
+      "english": "Gift Voucher",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRedeemAGiftVoucherAndAddCredits",
+      "english": "Redeem a gift voucher and add credits directly to your balance.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCurrentPlan",
+      "english": "Current Plan",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCreditBalance",
+      "english": "Credit Balance",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPlanLimits",
+      "english": "Plan Limits",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiBuyCredits",
+      "english": "Buy Credits",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRecentBillingActivity",
+      "english": "Recent Billing Activity",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRefreshStatus",
+      "english": "Refresh status",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoRecentOrdersYet",
+      "english": "No recent orders yet.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiVoucherCode",
+      "english": "Voucher code",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCheckout",
+      "english": "Checkout",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiApply",
+      "english": "Apply",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiClear",
+      "english": "Clear",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPay",
+      "english": "Pay",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoCreditPacksAvailableAtThisTime",
+      "english": "No credit packs available at this time.",
+      "reviewCategories": [
+        "clinical",
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiBuy",
+      "english": "Buy",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRetryPayment",
+      "english": "Retry payment",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPromoCode",
+      "english": "Promo code",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterPromoCode",
+      "english": "Enter promo code",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiChooseAPlan",
+      "english": "Choose a Plan",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoPlansAvailableAtThisTime",
+      "english": "No plans available at this time.",
+      "reviewCategories": [
+        "clinical",
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiHaveAPromoCode",
+      "english": "Have a promo code?",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCURRENTPLAN",
+      "english": "CURRENT PLAN",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiManageNotifications",
+      "english": "Manage notifications",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAll",
+      "english": "All",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnread",
+      "english": "Unread",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAccessStopsImmediatelyYouCanSignIn",
+      "english": "Access stops immediately. You can sign in and restore within 30 days. After that, your account and stored files are deleted from active storage.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCloseMyAccount",
+      "english": "Close My Account",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourRecordsStayInDoclyzer",
+      "english": "Your records stay in Doclyzer.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTakeACopyOfYourRecords",
+      "english": "Take a copy of your records.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiWhoseRecords",
+      "english": "Whose records?",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotLoadProfiles",
+      "english": "Could not load profiles",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLoadingProfiles",
+      "english": "Loading profiles…",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAllProfiles",
+      "english": "All profiles",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDateRange",
+      "english": "Date range",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUseAllDates",
+      "english": "Use all dates",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiINCLUDEINTHISEXPORT",
+      "english": "INCLUDE IN THIS EXPORT",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOriginalReports",
+      "english": "Original reports",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPDFsAndImagesYouUploaded",
+      "english": "PDFs and images you uploaded",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTestResults",
+      "english": "Test results",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiResultsAsCSVWithTheirReviewState",
+      "english": "Results as CSV, with their review state",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExportsContainPersonalInformationStoreThemSomewhere",
+      "english": "Exports contain personal information. Store them somewhere you trust.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDeleteAccount",
+      "english": "Delete account",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiContinueToDeletion",
+      "english": "Continue to deletion",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiKeepMyAccount",
+      "english": "Keep my account",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiBeforeYouLeave",
+      "english": "Before you leave",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPleaseReadWhatThisWillRemove",
+      "english": "Please read what this will remove.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDeletingYourAccountAffectsAllProfilesYou",
+      "english": "Deleting your account affects all profiles you manage.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourAccountAndPersonalProfile",
+      "english": "Your account and personal profile",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAccessThroughYourSharedLinks",
+      "english": "Access through your shared links",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiKeepACopyFirst",
+      "english": "Keep a copy first",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExportTheInformationYouWantToRetain",
+      "english": "Export the information you want to retain.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExportData",
+      "english": "Export data",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAccessStopsImmediatelyYouCanRestoreWithin",
+      "english": "Access stops immediately. You can restore within 30 days. After that, your data is removed from active storage.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAccountPendingDeletion",
+      "english": "Account pending deletion",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRestoreMyAccount",
+      "english": "Restore my account",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDownloadACopyOfYourAccountData",
+      "english": "Download a copy of your account data including your profile, profiles, and consent records.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourAccountIsDisabledImmediatelyYouCan",
+      "english": "Your account is disabled immediately. You can restore it within 30 days. After that, your data is permanently deleted.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCurrentPassword",
+      "english": "Current password",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotChangeAppLockTryAgain",
+      "english": "Could not change App lock. Try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourRecordsYourChoiceToShare",
+      "english": "Your records.\nYour choice to share.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReviewAccessWheneverYouNeed",
+      "english": "Review access whenever you need.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAppLock",
+      "english": "App lock",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUseYourDeviceSBiometricOrPasscode",
+      "english": "Use your device’s biometric or passcode lock.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNotificationPreviews",
+      "english": "Notification previews",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiControlLockScreenPreviewsInYourDevice",
+      "english": "Control lock-screen previews in your device settings.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiContactSupport",
+      "english": "Contact support",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAttachReportsOnlyIfYouChooseTo",
+      "english": "Attach reports only if you choose to.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiWhatCanWeHelpYouWith",
+      "english": "What can we help you with?",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPOPULARQUESTIONS",
+      "english": "POPULAR QUESTIONS",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoHelpArticlesMatchYourSearch",
+      "english": "No help articles match your search.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiForQuestionsAboutYourHealthOrTest",
+      "english": "For questions about your health or test results, speak with a qualified healthcare professional.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourReportsAClearerPicture",
+      "english": "Your reports. A clearer picture.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiKeepYourHealthHistoryTogether",
+      "english": "Keep your health history together.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiStoreReportsReviewResultsFollowChangesAnd",
+      "english": "Store reports, review results, follow changes and share with your clinician.",
+      "reviewCategories": [
+        "clinical",
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEducationalInformationOnly",
+      "english": "Educational information only",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSearchHelpArticles",
+      "english": "Search help articles",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOpenTheDeviceSettingsAppToChange",
+      "english": "Open the device Settings app to change notification access.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSavePreferences",
+      "english": "Save preferences",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDevicePermissionsCanBeChangedInSettings",
+      "english": "Device permissions can be changed in Settings.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiGetReportUpdatesOnThisDevice",
+      "english": "Get report updates on this device",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAllowNotificationsToKnowWhenAReport",
+      "english": "Allow notifications to know when a report is ready. Marketing is a separate choice below.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiREPORTACTIVITY",
+      "english": "REPORT ACTIVITY",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportActivitySettingsRequireTheLatestServer",
+      "english": "Report activity settings require the latest server version.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSensitiveLockScreenPreviews",
+      "english": "Sensitive lock-screen previews",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportNamesAndPersonalDetailsAreAlways",
+      "english": "Report names and personal details are always hidden.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOTHERMESSAGES",
+      "english": "OTHER MESSAGES",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiKeepEachPersonSReportsAndTrends",
+      "english": "Keep each person’s reports and trends together.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPersonDetails",
+      "english": "Person details",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDateOfBirth",
+      "english": "Date of birth",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRelationship",
+      "english": "Relationship",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterAName",
+      "english": "Enter a name",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiClearDateOfBirth",
+      "english": "Clear date of birth",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOptionalEGParentOrChild",
+      "english": "Optional, e.g. parent or child",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiInviteFriendsEarnCredits",
+      "english": "Invite friends, earn credits",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiShareYourCodeAndFollowEachInvite",
+      "english": "Share your code and follow each invite as rewards unlock.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYOURREFERRALCODE",
+      "english": "YOUR REFERRAL CODE",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiShareInvite",
+      "english": "Share invite",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCopyCode",
+      "english": "Copy code",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiHaveACode",
+      "english": "Have a code?",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterACodeSharedWithYouTo",
+      "english": "Enter a code shared with you to claim your invite reward.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiHowRewardsWork",
+      "english": "How rewards work",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoFriendsReferredYet",
+      "english": "No friends referred yet",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiShareYourInviteToSeeTheirProgress",
+      "english": "Share your invite to see their progress here.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferralCode",
+      "english": "Referral code",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSetNewPassword",
+      "english": "Set New Password",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterTheResetTokenFromTheLink",
+      "english": "Enter the reset token from the link in your email and your new password.",
+      "reviewCategories": [
+        "sharing",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiResetPassword",
+      "english": "Reset Password",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiBackToLogin",
+      "english": "Back to login",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiResetToken",
+      "english": "Reset Token",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNewPassword",
+      "english": "New Password",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterTheEmailAddressAssociatedWithYour",
+      "english": "Enter the email address associated with your account and we'll send you a link to reset your password.",
+      "reviewCategories": [
+        "sharing",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSendResetLink",
+      "english": "Send Reset Link",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRevokeSession",
+      "english": "Revoke session?",
+      "reviewCategories": [
+        "sharing",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCurrentSession",
+      "english": "Current session",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSkip",
+      "english": "Skip",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiChangePassword",
+      "english": "Change password",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterYourCurrentPasswordAndChooseA",
+      "english": "Enter your current password and choose a new one.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNewPasswordd850ee",
+      "english": "New password",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiConfirmNewPassword",
+      "english": "Confirm new password",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiGettingThingsReady",
+      "english": "Getting things ready…",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLinkAccessHistory",
+      "english": "Link Access History",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoAccessEventsYet",
+      "english": "No access events yet.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDefaultShareLinkExpiry",
+      "english": "Default Share Link Expiry",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSave",
+      "english": "Save",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReviewSharing",
+      "english": "Review sharing",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCheckThePersonReportsAndAccess",
+      "english": "Check the person, reports and access.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEditSelectionOrAccessSettings",
+      "english": "Edit selection or access settings",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRevokeShareLink",
+      "english": "Revoke share link?",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiThisLinkWillStopWorkingYouCan",
+      "english": "This link will stop working. You can create a new one.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiShareLinkReady",
+      "english": "Share link ready",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAccessCodeShareSeparately",
+      "english": "Access code — share separately",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCopyAccessCode",
+      "english": "Copy access code",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiThisCodeCouldNotBeSavedOn",
+      "english": "This code could not be saved on this device. Copy it now for later use.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiShareLink",
+      "english": "Share link",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCopyLink",
+      "english": "Copy link",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRevokeLink",
+      "english": "Revoke link",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCodeUnavailableOnThisDeviceUseThe",
+      "english": "Code unavailable on this device. Use the saved code or create a new link.",
+      "reviewCategories": [
+        "clinical",
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiActiveSharedLinks",
+      "english": "Active shared links",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiShare",
+      "english": "Share",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCreateANewShareLink",
+      "english": "Create a new share link",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiIncludeCurrentAndFutureReportsForThis",
+      "english": "Include current and future reports for this profile.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiChooseReports",
+      "english": "Choose reports",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiShareOnlyTheReportsSelectedBelow",
+      "english": "Share only the reports selected below.",
+      "reviewCategories": [
+        "clinical",
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSelectAll",
+      "english": "Select all",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoReviewedReportsAreAvailableToShare",
+      "english": "No reviewed reports are available to share.",
+      "reviewCategories": [
+        "clinical",
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSelectedTestResults",
+      "english": "Selected test results",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiIncludeOnlyTheResultsYouChooseFrom",
+      "english": "Include only the results you choose from these reports.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoSavedTestResultsAreAvailableIn",
+      "english": "No saved test results are available in these reports.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUpgradeOrManage",
+      "english": "Upgrade or Manage",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExpiry",
+      "english": "Expiry:",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRequireAnAccessCode",
+      "english": "Require an access code",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiShareTheCodeSeparatelyFromTheLink",
+      "english": "Share the code separately from the link.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTryAgain",
+      "english": "Try Again",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiClearExpiry",
+      "english": "Clear expiry",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "onboardingStoreEyebrow",
+      "english": "01 / STORE",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "onboardingStoreTitle",
+      "english": "Every report,\none familiar place.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "onboardingStoreBody",
+      "english": "Keep PDFs and photos together, for you and the people you care for.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "onboardingUnderstandEyebrow",
+      "english": "02 / UNDERSTAND",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "onboardingUnderstandTitle",
+      "english": "The numbers,\nmade easier to read.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "onboardingUnderstandBody",
+      "english": "See each test, its unit and the interval from your report. Check the original anytime.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "onboardingTrackEyebrow",
+      "english": "03 / TRACK & SHARE",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "onboardingTrackTitle",
+      "english": "See the changes.\nShare the context.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "onboardingTrackBody",
+      "english": "Follow results over time and choose exactly what your clinician can see.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "onboardingNext",
+      "english": "Next",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "onboardingGetStarted",
+      "english": "Get started",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSupportRequestSent",
+      "english": "Support request sent.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTestNameAndResultAreRequired",
+      "english": "Test name and result are required.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUseAValidCollectionDateInYYYY",
+      "english": "Use a valid collection date in YYYY-MM-DD format.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotSaveThisCorrectionTryAgain",
+      "english": "Could not save this correction. Try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportsUnavailable",
+      "english": "Reports unavailable",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTryAgain042c86",
+      "english": "Try again",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTwoReportsAreNeeded",
+      "english": "Two reports are needed",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAddAnOlderReportForThisProfile",
+      "english": "Add an older report for this profile to compare results.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCannotCompareYet",
+      "english": "Cannot compare yet",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTheseReportsHaveNoMatchingResultsAvailable",
+      "english": "These reports have no matching results available for comparison.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToLoadReportsTryAgain",
+      "english": "Unable to load reports. Try again.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotOpenPhotosOrCamera",
+      "english": "Could not open photos or camera.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotOpenCamera",
+      "english": "Could not open camera.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotPrepareThesePagesRetakeAn",
+      "english": "Could not prepare these pages. Retake an unreadable page and try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotAdjustThisPage",
+      "english": "Could not adjust this page.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoChartableResultYet",
+      "english": "No chartable result yet",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiProfiles",
+      "english": "Profiles",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReports",
+      "english": "Reports",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiShareLinks",
+      "english": "Share links",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAIChat",
+      "english": "AI Chat",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToLoadEntitlementSummaryPleaseTry",
+      "english": "Failed to load entitlement summary. Please try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToRefreshBillingStatusPleaseTry",
+      "english": "Failed to refresh billing status. Please try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReceiptDownloadWillBeAvailableSoon",
+      "english": "Receipt download will be available soon.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSubtotal",
+      "english": "Subtotal",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDiscount",
+      "english": "Discount",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTotal",
+      "english": "Total",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToLoadCreditPacksPleaseTry",
+      "english": "Failed to load credit packs. Please try again.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAPaymentIsPendingCaptureRefreshStatus",
+      "english": "A payment is pending capture. Refresh status before starting another checkout.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCreditsWereAppliedSuccessfully",
+      "english": "Credits were applied successfully.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToCreateOrderPleaseTryAgain",
+      "english": "Failed to create order. Please try again.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPaymentReceivedAwaitingServerReconciliationBeforeCredits",
+      "english": "Payment received. Awaiting server reconciliation before credits are added.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPaymentFailedYouCanRetryCheckoutWhen",
+      "english": "Payment failed. You can retry checkout when ready.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPaymentFailedTryAgain",
+      "english": "Payment failed. Try again.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCreditsAdded",
+      "english": "Credits added!",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPromoCodeApplied",
+      "english": "Promo code applied.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPaymentReceivedButThisOrderIsPending",
+      "english": "Payment received, but this order is pending review.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPaymentFailedDuringReconciliation",
+      "english": "Payment failed during reconciliation.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPaymentConfirmedServerReconciliationIsStillPending",
+      "english": "Payment confirmed. Server reconciliation is still pending.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPaymentVerifiedReconciliationIsPendingPleaseRefresh",
+      "english": "Payment verified. Reconciliation is pending, please refresh shortly.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPaymentReceivedButVerificationIsStillPending",
+      "english": "Payment received but verification is still pending. Please refresh status.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToLoadPlansPleaseTryAgain",
+      "english": "Failed to load plans. Please try again.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToCreateSubscriptionPleaseTryAgain",
+      "english": "Failed to create subscription. Please try again.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSubscriptionFailedTryAgain",
+      "english": "Subscription failed. Try again.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPlanUpgraded",
+      "english": "Plan upgraded!",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPaymentReceivedButVerificationFailedPlanWill",
+      "english": "Payment received but verification failed. Plan will be upgraded shortly.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNotificationsUnavailable",
+      "english": "Notifications unavailable",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAllQuietForNow",
+      "english": "All quiet for now.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportUpdatesAndSharingRemindersWillAppear",
+      "english": "Report updates and sharing reminders will appear here when there’s something new.",
+      "reviewCategories": [
+        "clinical",
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoUnreadUpdates",
+      "english": "No unread updates",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYouReAllCaughtUp",
+      "english": "You’re all caught up.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToLoadNotificationsTryAgainWhen",
+      "english": "Unable to load notifications. Try again when connected.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiManageSharedLinks",
+      "english": "Manage shared links",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExportYourData",
+      "english": "Export your data",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReadThePrivacyPolicy",
+      "english": "Read the Privacy Policy",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTermsOfUse",
+      "english": "Terms of Use",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPrivacyPolicy",
+      "english": "Privacy Policy",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDateOfBirthOptional",
+      "english": "Date of birth, optional",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRelationshipMustBe50CharactersOrFewer",
+      "english": "Relationship must be 50 characters or fewer.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToSaveProfilePleaseTryAgain",
+      "english": "Failed to save profile. Please try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferralsUnavailable",
+      "english": "Referrals unavailable",
+      "reviewCategories": [
+        "clinical",
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourRewards",
+      "english": "Your rewards",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferralProgress",
+      "english": "Referral progress",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFriendsReferred",
+      "english": "Friends referred",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCreditsEarned",
+      "english": "Credits earned",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPendingRewards",
+      "english": "Pending rewards",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiBlockedRewards",
+      "english": "Blocked rewards",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiInviteeBonus",
+      "english": "Invitee bonus",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFirstAnalysis",
+      "english": "First analysis",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFirstPurchase",
+      "english": "First purchase",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiMonthlyCap",
+      "english": "Monthly cap",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToLoadReferralsPleaseTryAgain",
+      "english": "Failed to load referrals. Please try again.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferralCodeCopied",
+      "english": "Referral code copied.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterTheResetTokenFromYourEmail",
+      "english": "Enter the reset token from your email link",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterYourNewPassword",
+      "english": "Enter your new password",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToResetPasswordPleaseRequestA",
+      "english": "Unable to reset password. Please request a new link.",
+      "reviewCategories": [
+        "sharing",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterYourEmailAddress",
+      "english": "Enter your email address",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToSendResetLinkPleaseTry",
+      "english": "Unable to send reset link. Please try again.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToLoadSessions",
+      "english": "Failed to load sessions.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToRevokeSession",
+      "english": "Failed to revoke session.",
+      "reviewCategories": [
+        "sharing",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToChangePasswordPleaseTryAgain",
+      "english": "Unable to change password. Please try again.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOpenDeviceSettingsAndAllowNotificationsFor",
+      "english": "Open device Settings and allow notifications for Doclyzer.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportsCouldNotBeLoadedTryAgain",
+      "english": "Reports could not be loaded. Try again.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTestResultsCouldNotBeLoadedTry",
+      "english": "Test results could not be loaded. Try again.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSelectAtLeastOneReportToShare",
+      "english": "Select at least one report to share.",
+      "reviewCategories": [
+        "clinical",
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSelectAtLeastOneTestResultTo",
+      "english": "Select at least one test result to share.",
+      "reviewCategories": [
+        "clinical",
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLinkCopiedToClipboard",
+      "english": "Link copied to clipboard",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAccessCodeCopiedToClipboard",
+      "english": "Access code copied to clipboard",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOnePerson",
+      "english": "1 person",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPeopleCount",
+      "english": "{count} people",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiActionsFor",
+      "english": "Actions for {name}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToSwitchProfilesDetail",
+      "english": "Unable to switch profiles. {message}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSwitchedTo",
+      "english": "Switched to {name}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAnalyzeOnePage",
+      "english": "Analyze 1 page",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAnalyzePages",
+      "english": "Analyze {count} pages",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDragPagesIntoOrder",
+      "english": "Drag pages into the order shown in your report",
+      "reviewCategories": [
+        "clinical",
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCheckEveryPage",
+      "english": "Check every page before analyzing",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOnePageAdded",
+      "english": "1 page added",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPagesAdded",
+      "english": "{count} pages added",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReorder",
+      "english": "Reorder",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPageNumber",
+      "english": "Page {number}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRemovePage",
+      "english": "Remove page {number}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiProfilePage",
+      "english": "{name} · Page {number}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCropEdges",
+      "english": "Crop edges: {percent}%",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSelectedReportsCount",
+      "english": "{count} selected reports",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSelectedTestResultsCount",
+      "english": "{count} selected test results",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAllCurrentFutureReports",
+      "english": "All current and future reports",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoExpiry",
+      "english": "No expiry",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExpiresDate",
+      "english": "Expires {date}",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAccessCodeRequiredSeparate",
+      "english": "Access code required. Share it separately from the link.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoAccessCodeRequired",
+      "english": "No access code required.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExpiresColonDate",
+      "english": "Expires: {date}",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiShareProfileReports",
+      "english": "Share {name}’s reports",
+      "reviewCategories": [
+        "clinical",
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiProfileReports",
+      "english": "{name}’s reports",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSelectedResultsCount",
+      "english": "{count} selected results",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAccessCodeRequiredShort",
+      "english": "Access code required",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPastLinksCount",
+      "english": "Past links · {count}",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExpiredDate",
+      "english": "Expired {date}",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRevokedCreatedDate",
+      "english": "Revoked · Created {date}",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUsingActiveLinks",
+      "english": "Using {current} of {maximum} active links.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDeleteReportAndStoredFile",
+      "english": "Delete {filename} and its stored file? This cannot be undone.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableDeleteReportDetail",
+      "english": "Unable to delete report: {error}",
+      "reviewCategories": [
+        "clinical",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDeleteAllReportsAndFiles",
+      "english": "Permanently delete all {count} reports and their stored files? This cannot be undone.",
+      "reviewCategories": [
+        "clinical",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRecycleBinEmptied",
+      "english": "Recycle Bin emptied",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSomeReportsDeleteFailed",
+      "english": "Deleted {deleted} reports. {failed} could not be deleted; try again.",
+      "reviewCategories": [
+        "clinical",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableEmptyRecycleBinDetail",
+      "english": "Unable to empty Recycle Bin: {error}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiProfileName",
+      "english": "Profile: {name}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCollectedDate",
+      "english": "Collected: {date}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUploadedDate",
+      "english": "Uploaded: {date}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDeletedOn",
+      "english": "Deleted on: {date}",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPermanentDeleteOn",
+      "english": "Permanent delete on: {date}",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDaysLeft",
+      "english": "Days left: {count}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiConfirmAppLockForDoclyzer",
+      "english": "Confirm App lock for Doclyzer",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiConfirmBeforeTurningOffAppLock",
+      "english": "Confirm before turning off App lock",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnlockDoclyzerToViewYourHealthRecords",
+      "english": "Unlock Doclyzer to view your health records",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCreateADefaultProfileBeforeUploadingA",
+      "english": "Create a default profile before uploading a report.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCreateADefaultProfileBeforeViewingYour",
+      "english": "Create a default profile before viewing your timeline.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToLoadProfilesRightNow",
+      "english": "Unable to load profiles right now.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCannotUploadRightNowBecauseProfileData",
+      "english": "Cannot upload right now because profile data could not be loaded. Please ensure API server is running and try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCannotOpenTimelineRightNowBecauseProfile",
+      "english": "Cannot open timeline right now because profile data could not be loaded. Please ensure API server is running and try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToLoadProfilesRightNowPlease",
+      "english": "Unable to load profiles right now. Please try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToLoadSharingLinksPleaseTry",
+      "english": "Unable to load sharing links. Please try again.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPasswordChanged",
+      "english": "Password changed",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToOpenThatReportTryThe",
+      "english": "Unable to open that report. Try the report library.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiThisActionIsTemporarilyUnavailableWhileYour",
+      "english": "This action is temporarily unavailable while your account is under review.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToOpenThisSectionPleaseTry",
+      "english": "Unable to open this section. Please try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAppLockIsUnavailable",
+      "english": "App lock is unavailable",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDoclyzerIsLocked",
+      "english": "Doclyzer is locked",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotReadTheSavedAppLock",
+      "english": "Could not read the saved App lock setting. Retry to continue.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUseYourDevicePasscodeOrBiometricsTo",
+      "english": "Use your device passcode or biometrics to continue.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUploadsAreTemporarilyUnavailableWhileYourAccount",
+      "english": "Uploads are temporarily unavailable while your account is under review.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToStartAnUploadPleaseTry",
+      "english": "Unable to start an upload. Please try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiJustNow",
+      "english": "Just now",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAdditionalDetails",
+      "english": "Additional details: ",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSaveCorrection",
+      "english": "Save correction",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotOpenFilesCheckAccessAnd",
+      "english": "Could not open files. Check access and try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotOpenCameraCheckPermissionAnd",
+      "english": "Could not open camera. Check permission and try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotOpenPhotosCheckPermissionAnd",
+      "english": "Could not open photos. Check permission and try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotAccessSelectedFile",
+      "english": "Could not access selected file.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotAccessSelectedFile45effa",
+      "english": "Could not access selected file",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiConnectionLostTheUploadMayHaveReached",
+      "english": "Connection lost. The upload may have reached the server. Retry the same file safely.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotLoadExistingReport",
+      "english": "Could not load existing report",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAddingTo",
+      "english": "Adding to  ",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSomeResultsNeedReviewYourOriginalReport",
+      "english": "Some results need review. Your original report is saved.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiWeCouldnTReadThisFormatYour",
+      "english": "We couldn't read this format. Your file is saved.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportParsedSuccessfullyResultsAndTrendsAre",
+      "english": "Report parsed successfully. Results and trends are available.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourReportIsStillBeingAnalyzedOpen",
+      "english": "Your report is still being analyzed. Open it to check its status.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiProcessingStoppedYourFileIsSavedYou",
+      "english": "Processing stopped. Your file is saved. You can retry.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoExtractedTestValuesWereAddedYou",
+      "english": "No extracted test values were added. You can still open and share the document. Your trends are unchanged.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourOriginalIsSaved",
+      "english": "Your original is saved.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiInitialUpload",
+      "english": "Initial upload",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiParsedSuccessfully",
+      "english": "Parsed successfully",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiParsingFailed",
+      "english": "Parsing failed",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExtractionIncomplete",
+      "english": "Extraction incomplete",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTransientFailure",
+      "english": "Transient failure",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTerminalFailure",
+      "english": "Terminal failure",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToLoadAttemptHistory",
+      "english": "Failed to load attempt history",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiThisReportSFileIsNoLonger",
+      "english": "This report's file is no longer available.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCompareResults",
+      "english": "Compare results",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoDifferenceCalculatedCompatibilityNeedsConfirmation",
+      "english": "No difference calculated. Compatibility needs confirmation.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnitNotRecorded",
+      "english": "Unit not recorded",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNoNumericChangeBetweenTheseReports",
+      "english": "No numeric change between these reports.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToRestore",
+      "english": "Unable to restore: ",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterAGiftVoucherCode",
+      "english": "Enter a gift voucher code.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiApplyVoucher",
+      "english": "Apply Voucher",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNotAvailable",
+      "english": "Not available",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiViewReceipt",
+      "english": "View receipt",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiGiftVoucherIsInvalidOrAlreadyRedeemed",
+      "english": "Gift voucher is invalid or already redeemed.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiGiftVoucherHasAlreadyBeenRedeemed",
+      "english": "Gift voucher has already been redeemed.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiGiftVoucherHasBeenVoided",
+      "english": "Gift voucher has been voided.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiGiftVoucherHasExpired",
+      "english": "Gift voucher has expired.",
+      "reviewCategories": [
+        "sharing",
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToRedeemThisGiftVoucher",
+      "english": "Unable to redeem this gift voucher.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToRedeemThisGiftVoucherPlease",
+      "english": "Unable to redeem this gift voucher. Please try again.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterAPromoCodeToApply",
+      "english": "Enter a promo code to apply.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPromoCodeNotFound",
+      "english": "Promo code not found.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPromoCodeIsInactive",
+      "english": "Promo code is inactive.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPromoCodeHasExpired",
+      "english": "Promo code has expired.",
+      "reviewCategories": [
+        "sharing",
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPromoCodeIsNotApplicableToThis",
+      "english": "Promo code is not applicable to this pack.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPromoCodeUsageLimitReached",
+      "english": "Promo code usage limit reached.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYouHaveAlreadyUsedThisPromoCode",
+      "english": "You have already used this promo code.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToApplyPromoCodePleaseTry",
+      "english": "Failed to apply promo code. Please try again.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiThisOrderWasFlaggedForReviewBefore",
+      "english": "This order was flagged for review before credits could be added.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPaymentFailedDuringReconciliationYouCanRetry",
+      "english": "Payment failed during reconciliation. You can retry safely.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAwaitingCapture",
+      "english": "Awaiting capture",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLastPaymentFailed",
+      "english": "Last payment failed",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYouCanRetryCheckoutSafely",
+      "english": "You can retry checkout safely.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPromoCodesNotSupportedForSubscriptionsYet",
+      "english": "Promo codes not supported for subscriptions yet.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotDownloadTheExportTryAgain",
+      "english": "Could not download the export. Try again.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSelectOriginalReportsOrTestResults",
+      "english": "Select original reports or test results.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExportRequestedTapCheckStatusToRefresh",
+      "english": "Export requested. Tap \"Check Status\" to refresh.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToRequestExportPleaseTryAgain",
+      "english": "Failed to request export. Please try again.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExportReadyDownloadURLAvailable",
+      "english": "Export ready. Download URL available.",
+      "reviewCategories": [
+        "clinical",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToCheckExportStatusPleaseTry",
+      "english": "Failed to check export status. Please try again.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToCloseAccountPleaseTryAgain",
+      "english": "Failed to close account. Please try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPrepareExport",
+      "english": "Prepare export",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSaveExport",
+      "english": "Save export",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPrepareExportAgain",
+      "english": "Prepare export again",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAllDates",
+      "english": "All dates",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPreparingAccountDetails",
+      "english": "Preparing account details",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFamilyMemberProfiles",
+      "english": "Family member profiles",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUploadedReports",
+      "english": "Uploaded reports",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDownloadReady",
+      "english": "Download ready",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportNotificationsEnabledOnThisDevice",
+      "english": "Report notifications enabled on this device",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDeviceSettingsOpenedAllowNotificationsForDoclyzer",
+      "english": "Device settings opened. Allow notifications for Doclyzer, then return here.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNotificationsAreStillOffAllowThemIn",
+      "english": "Notifications are still off. Allow them in device settings to receive report updates.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPreferencesSaved",
+      "english": "Preferences saved",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourAccountChoiceWasSavedButThis",
+      "english": "Your account choice was saved, but this device did not finish registering for marketing push. Marketing remains blocked on this device; check notification permission and try saving again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourAccountChoiceWasSavedThisDevice",
+      "english": "Your account choice was saved. This device could not confirm its local preference yet, but marketing remains blocked at account level.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYourAccountChoiceWasSavedButThisaf7de6",
+      "english": "Your account choice was saved, but this device could not enable marketing push. Check notification permission and try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSavingTookTooLongCheckYourConnection",
+      "english": "Saving took too long. Check your connection and try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportReadyForReview",
+      "english": "Report ready for review",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiKnowWhenYourResultsAreReadyTo",
+      "english": "Know when your results are ready to check.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUploadUpdates",
+      "english": "Upload updates",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiGetAMessageIfAnUploadNeeds",
+      "english": "Get a message if an upload needs attention.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSharedLinkReminders",
+      "english": "Shared link reminders",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiHearWhenALinkIsAboutTo",
+      "english": "Hear when a link is about to expire.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSecurityAlerts",
+      "english": "Security alerts",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRequiredForAccountSafety",
+      "english": "Required for account safety.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiComplianceNotices",
+      "english": "Compliance notices",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRequiredAccountInformation",
+      "english": "Required account information.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiMarketingPushNotifications",
+      "english": "Marketing push notifications",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOffersAndAnnouncementsSavingThisChoiceAlso",
+      "english": "Offers and announcements. Saving this choice also applies it to this device.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiProductUpdates",
+      "english": "Product updates",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOptionalNewsAboutDoclyzer",
+      "english": "Optional news about Doclyzer.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCannotConnectToServerPleaseCheckYour",
+      "english": "Cannot connect to server. Please check your internet or API server.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiProfileUpdatesAreTemporarilyUnavailableWhileYour",
+      "english": "Profile updates are temporarily unavailable while your account is under review.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUse100CharactersOrFewer",
+      "english": "Use 100 characters or fewer",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAddProfile",
+      "english": "Add profile",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCreateProfile",
+      "english": "Create profile",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUpdateTheirDetails",
+      "english": "Update their details",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiWhoIsThisProfileFor",
+      "english": "Who is this profile for?",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNotSelected",
+      "english": "Not selected",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterAReferralCode",
+      "english": "Enter a referral code.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferralAppliedBonusUnlocksAfterEmailVerification",
+      "english": "Referral applied. Bonus unlocks after email verification.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferralAppliedBonusCreditsAreReady",
+      "english": "Referral applied. Bonus credits are ready.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiApplyCode",
+      "english": "Apply code",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYouCannotApplyYourOwnReferralCode",
+      "english": "You cannot apply your own referral code.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferralCodeIsInvalid",
+      "english": "Referral code is invalid.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToApplyReferralCode",
+      "english": "Failed to apply referral code.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToApplyReferralCodePleaseTry",
+      "english": "Failed to apply referral code. Please try again.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiThisDevice",
+      "english": "This device",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSignedInDevice",
+      "english": "Signed-in device",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnknownDevice",
+      "english": "Unknown device",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRevokeAndLogOut",
+      "english": "Revoke and log out",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRevokeSessionca8440",
+      "english": "Revoke session",
+      "reviewCategories": [
+        "sharing",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterYourCurrentPassword",
+      "english": "Enter your current password",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUseAtLeast8CharactersWithUppercase",
+      "english": "Use at least 8 characters with uppercase, lowercase, a number, and a special character",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiChooseADifferentPassword",
+      "english": "Choose a different password",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNewPasswordsDoNotMatch",
+      "english": "New passwords do not match",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYouHaveUsedAllAvailableUploadCredits",
+      "english": "You have used all available upload credits. Visit Plan & Credits to add more.",
+      "reviewCategories": [
+        "clinical",
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNotificationsAreDisabledForDoclyzerOpenDevice",
+      "english": "Notifications are disabled for Doclyzer. Open device Settings to allow report-ready and account updates. Marketing stays off unless you choose it.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiGetReportReadyAndAccountUpdatesOn",
+      "english": "Get report-ready and account updates on this device. Marketing stays off unless you choose it.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNotificationsAreOffForThisDeviceOpen",
+      "english": "Notifications are off for this device. Open Settings to receive report-ready and account updates.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiBlockedExpiredRevoked",
+      "english": "Blocked (expired/revoked)",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToLoadPolicy",
+      "english": "Failed to load policy",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUploadPaused",
+      "english": "Upload paused",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSevenDays",
+      "english": "7 days",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiThirtyDays",
+      "english": "30 days",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNinetyDays",
+      "english": "90 days",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUploadingAClearReport",
+      "english": "Uploading a clear report",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPDFsPhotosAndMultiplePages",
+      "english": "PDFs, photos and multiple pages",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiChooseAPDFOrTakeClearPhotos",
+      "english": "Choose a PDF or take clear photos of every page. Keep the whole page in frame, avoid glare, and check the page order before analyzing. You can correct extracted values against the original.",
+      "reviewCategories": [
+        "clinical",
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCorrectingAResult",
+      "english": "Correcting a result",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReviewValuesAgainstTheOriginal",
+      "english": "Review values against the original",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOpenAReportReviewEachExtractedTest",
+      "english": "Open a report, review each extracted test against the original, and correct any value, unit, or date that was read incorrectly. Unconfirmed results should be checked before you rely on trends.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiManagingFamilyRecords",
+      "english": "Managing family records",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiProfilesAccessAndPermissions",
+      "english": "Profiles, access and permissions",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUseFamilyToCreateAndSwitchProfiles",
+      "english": "Use Family to create and switch profiles. Check the selected person before uploading or sharing a report. Manage only records you are authorized to access.",
+      "reviewCategories": [
+        "clinical",
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSharingAndRevokingLinks",
+      "english": "Sharing and revoking links",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiControlTheRecordsYouShare",
+      "english": "Control the records you share",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSelectTheReportsOrResultsYouWant",
+      "english": "Select the reports or results you want to share, review the expiry and access code, then send the link and code separately. Revoke an active link from Shared links when access is no longer needed.",
+      "reviewCategories": [
+        "clinical",
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiInformationYouProvide",
+      "english": "Information you provide",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAccountDetailsAndFamilyProfilesIdentifyWhose",
+      "english": "Account details and family profiles identify whose records you manage. Uploaded documents may contain sensitive health information.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSharingControls",
+      "english": "Sharing controls",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReviewTheContentsExpiryAndAccessSettings",
+      "english": "Review the contents, expiry and access settings of each link. Manage active links from your account settings.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExportAndAccountChoices",
+      "english": "Export and account choices",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUseSettingsToExportRecordsOrStart",
+      "english": "Use settings to export records or start an account deletion request. Retention details belong in the complete policy.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEducationalScope",
+      "english": "Educational scope",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDoclyzerOrganizesReportsAndShowsResultsOver",
+      "english": "Doclyzer organizes reports and shows results over time. Educational explanations are not medical advice or a diagnosis.",
+      "reviewCategories": [
+        "clinical",
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReviewYourRecords",
+      "english": "Review your records",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCheckExtractedValuesUnitsAndDatesAgainst",
+      "english": "Check extracted values, units and dates against the original report. Ask a healthcare professional about your results.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiManageAndShareResponsibly",
+      "english": "Manage and share responsibly",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOnlyManageRecordsYouAreAuthorizedTo",
+      "english": "Only manage records you are authorized to access. Check the selected information and recipient before sharing.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPrivacyPolicy7ceacd",
+      "english": "Privacy policy",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTermsOfUse8a069e",
+      "english": "Terms of use",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOpenPrivacyControls",
+      "english": "Open privacy controls",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiGetHelpWithTheApp",
+      "english": "Get help with the app",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExportYourDataInAccountSettings",
+      "english": "Export your data in account settings",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYOURDATACHOICES",
+      "english": "YOUR DATA & CHOICES",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUSINGDOCLYZER",
+      "english": "USING DOCLYZER",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnderstandTheInformationYouKeepInDoclyzer",
+      "english": "Understand the information\nyou keep in Doclyzer.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAClearUnderstandingOfTheAppsRole",
+      "english": "A clear understanding\nof the app’s role.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportsFromLab",
+      "english": "{reportCount} from {name}",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportsLatestDate",
+      "english": "{reportCount} · Latest {date}",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUploadReportForProfile",
+      "english": "Upload a report for {name} to start this library.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiIpAddress",
+      "english": "IP address: {address}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSignedInAt",
+      "english": "Signed in: {date}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnknown",
+      "english": "Unknown",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiResultsFor",
+      "english": "Results for {name}",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLabParametersTracked",
+      "english": "{count} lab parameters tracked",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSampledDate",
+      "english": "Sampled {date}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCollectionDateValue",
+      "english": "Collection date: {date}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLabRangeValue",
+      "english": "Lab range: {range}",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAiSuggestedRange",
+      "english": "AI read this range as {range}. Printed text: {printed}. Check the original report before relying on this comparison.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportsReady",
+      "english": "{reportCount} ready",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCreditsCount",
+      "english": "{count} credits",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferralCodeAlreadyApplied",
+      "english": "A referral code has already been applied to this account.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSetDevicePasscodeForAppLock",
+      "english": "Set a device passcode before turning on App lock.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLanguagePreferenceNotSaved",
+      "english": "Language preference was not saved.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExportUnavailable",
+      "english": "Export unavailable",
+      "reviewCategories": [
+        "clinical",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnreadableImage",
+      "english": "Unreadable image",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiStatusWithValue",
+      "english": "Status: {status}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPending",
+      "english": "Pending",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCompleted",
+      "english": "Completed",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailed",
+      "english": "Failed",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiInactive",
+      "english": "Inactive",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRestoreBeforeDate",
+      "english": "Restore before {date} to keep your reports and profiles.",
+      "reviewCategories": [
+        "clinical",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiThirtyDayDeadline",
+      "english": "the 30-day deadline",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiWhatsAffected",
+      "english": "What’s affected: {details}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLastUpdatedAt",
+      "english": "Last updated: {date} at {time}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiMoveReportToProfile",
+      "english": "{filename} will appear under {name} instead of the current profile.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOneVerifiedResult",
+      "english": "1 verified result saved.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiVerifiedResultsCount",
+      "english": "{count} verified results saved.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnableToSwitchProfilesWithReason",
+      "english": "Unable to switch profiles. {reason}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCollectedOn",
+      "english": "Collected: {date}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUploadedPrefix",
+      "english": "Uploaded {date}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportComparisonLabel",
+      "english": "{filename} · {date}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiIncreasedBy",
+      "english": "Increased by {amount}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDecreasedBy",
+      "english": "Decreased by {amount}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPercentagePoints",
+      "english": " percentage points",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTestValuesCount",
+      "english": "Test values ({count})",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAiValueReviewNotice",
+      "english": "Value checked by AI during processing. Original OCR: {value}. Confirm it against the report.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportAlreadyInProfile",
+      "english": "Report already in {name}",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReportAddedToProfile",
+      "english": "Report added to {name}",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAddedOn",
+      "english": "Added {date}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUsingReportsLimit",
+      "english": "Using {current} of {max} reports.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNeedHelp",
+      "english": "Need help?",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnabled",
+      "english": "Enabled",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnable",
+      "english": "Enable",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSubscribe",
+      "english": "Subscribe",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiApplying",
+      "english": "Applying",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCheckStatus",
+      "english": "Check status",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEditProfile",
+      "english": "Edit profile",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSaveChanges",
+      "english": "Save changes",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOptional",
+      "english": "Optional",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPendingOrderReconciliation",
+      "english": "Order {orderId} is waiting for reconciliation. Buying is paused until status is clear.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiMonthlyPlanDescription",
+      "english": "Monthly Plan - {name}",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCreditPackDescription",
+      "english": "Credit Pack - {name}",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnreadable",
+      "english": "Unreadable",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLatestValue",
+      "english": "Latest: {value}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEarlier",
+      "english": "Earlier",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLater",
+      "english": "Later",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiViewed",
+      "english": "Viewed",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiBlocked",
+      "english": "Blocked",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCapped",
+      "english": "Capped",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLastChange",
+      "english": "Last change: {label}",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLastChangeAt",
+      "english": "Last change: {label} · {date}",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiGiftVoucherApplied",
+      "english": "Gift voucher applied. {credits} credits added.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCouldNotSaveOriginal",
+      "english": "Could not save the original yet. {reason}",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFailedToRevoke",
+      "english": "Failed to revoke: {reason}",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferralShareMessage",
+      "english": "Use my Doclyzer referral code {code}: {link}",
+      "reviewCategories": [
+        "sharing",
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAMomentAgo",
+      "english": "A moment ago",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiMinutesAgo",
+      "english": "{count} min ago",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOneHourAgo",
+      "english": "1 hour ago",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiHoursAgo",
+      "english": "{count} hours ago",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiToday",
+      "english": "Today",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYesterday",
+      "english": "Yesterday",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOneDayAgo",
+      "english": "1 day ago",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiDaysAgo",
+      "english": "{count} days ago",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOneWeekAgo",
+      "english": "1 week ago",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiWeeksAgo",
+      "english": "{count} weeks ago",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOneMonthAgo",
+      "english": "1 month ago",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiMonthsAgo",
+      "english": "{count} months ago",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiOneYearAgo",
+      "english": "1 year ago",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiYearsAgo",
+      "english": "{count} years ago",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiInOneDay",
+      "english": "In 1 day",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiInDays",
+      "english": "In {count} days",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiInMinutes",
+      "english": "In {count} min",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiInOneHour",
+      "english": "In 1 hour",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiInHours",
+      "english": "In {count} hours",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiMissingExtractedTestName",
+      "english": "The test name is missing from the extracted result.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiMissingCapturedLabRange",
+      "english": "No lab reference range was captured for this test.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNonNumericExtractedValue",
+      "english": "The extracted value is not a plain number. Check it in the original report.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLabFlagRangeConflict",
+      "english": "The lab flag conflicts with the printed range. Check the original report.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiResultNeedsOriginalCheck",
+      "english": "The extracted value, printed range, or lab flag needs checking in the original report.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiInitialEntitlement",
+      "english": "Initial entitlement",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCreditPackPurchase",
+      "english": "Credit pack purchase",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSubscriptionUpgrade",
+      "english": "Subscription upgrade",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPlanDowngrade",
+      "english": "Plan downgrade",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAdminAdjustment",
+      "english": "Admin adjustment",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSystemReconciliation",
+      "english": "System reconciliation",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferralInviteBonus",
+      "english": "Referral invite bonus",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferralAnalysisMilestone",
+      "english": "Referral analysis milestone",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiReferralPurchaseMilestone",
+      "english": "Referral purchase milestone",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiFreePromoCreditPack",
+      "english": "Free promo credit pack",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiGiftVoucherRedeemed",
+      "english": "Gift voucher redeemed",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiNotYetChanged",
+      "english": "Not yet changed",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCannotReachServer",
+      "english": "Unable to reach the server. Check your connection and try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiInvalidEmailOrPassword",
+      "english": "Invalid email or password. Check your details and try again.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiTooManyAuthAttempts",
+      "english": "Too many attempts. Wait a few minutes and try again.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiEnterValidEmail",
+      "english": "Please enter a valid email address.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiPasswordRequirements",
+      "english": "Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiAccountWithEmailExists",
+      "english": "An account with this email already exists. Sign in or use a different email.",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUploadedStatus",
+      "english": "Uploaded",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSupportAction",
+      "english": "Action: {action}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSupportCorrelationId",
+      "english": "Correlation ID: {id}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSupportClientActionId",
+      "english": "Client Action ID: {id}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSupportErrorCode",
+      "english": "Error Code: {code}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSupportError",
+      "english": "Error: {error}",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSessionExpiredSignInAgain",
+      "english": "Your session ended. Sign in again.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiProfileLimitReached",
+      "english": "Your plan profile limit has been reached. Review Plan & Credits to add more.",
+      "reviewCategories": [
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCorrectionConflictReload",
+      "english": "This result changed elsewhere. Reload the report before correcting it.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiSeePlanCreditsOptions",
+      "english": "See Plan & Credits for available options.",
+      "reviewCategories": [
+        "clinical",
+        "billing_referral"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiShareLinkLimitHelp",
+      "english": "You have reached the active share-link limit.",
+      "reviewCategories": [
+        "sharing"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiScopedExportUnavailable",
+      "english": "Scoped export is unavailable. Try again later.",
+      "reviewCategories": [
+        "clinical",
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiRestorationUnavailable",
+      "english": "Restoration is unavailable. Try again later.",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiExportRequestNotFound",
+      "english": "Export request not found. Request a new export.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiClosureConfirmationRequired",
+      "english": "Confirm account closure to continue.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiCurrentPasswordIncorrect",
+      "english": "Current password is incorrect.",
+      "reviewCategories": [
+        "account_safety"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiLaboratories",
+      "english": "Laboratories",
+      "reviewCategories": [
+        "clinical"
+      ],
+      "status": "draft_needs_native_review"
+    },
+    {
+      "key": "uiUnlock",
+      "english": "Unlock",
+      "reviewCategories": [],
+      "status": "draft_needs_native_review"
+    }
+  ]
+}

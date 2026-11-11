@@ -175,7 +175,12 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('correction-save')));
     await tester.pumpAndSettle();
-    expect(find.text('Result changed'), findsOneWidget);
+    expect(
+      find.text(
+        'This result changed elsewhere. Reload the report before correcting it.',
+      ),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('correction-reload')), findsOneWidget);
   });
 }

@@ -1,7 +1,6 @@
 import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/api_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/design_components.dart';
 import '../../reports/reports_repository.dart';
@@ -81,12 +80,9 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
     try {
       await widget.profilesRepository.activateProfile(id);
       if (mounted) await _loadProfiles();
-    } catch (error) {
+    } catch (_) {
       if (mounted) {
-        setState(
-          () => _error =
-              'Unable to switch profiles. ${error is ApiException && error.message.isNotEmpty ? error.message : context.l10n.pleaseTryAgain}',
-        );
+        setState(() => _error = context.l10n.switchProfileFailed);
       }
     }
   }
@@ -96,13 +92,13 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         key: const Key('profile-delete-dialog'),
-        title: Text(context.l10n.deleteProfileConfirm),
-        content: Text(context.l10n.deleteProfileHelp),
+        title: Text(ctx.l10n.deleteProfileConfirm),
+        content: Text(ctx.l10n.deleteProfileHelp),
         actions: [
           TextButton(
             key: const Key('profile-delete-cancel'),
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(context.l10n.cancel),
+            child: Text(ctx.l10n.cancel),
           ),
           TextButton(
             key: const Key('profile-delete-confirm'),
@@ -110,16 +106,17 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(ctx).colorScheme.error,
             ),
-            child: Text(context.l10n.delete),
+            child: Text(ctx.l10n.delete),
           ),
         ],
       ),
     );
-    if (confirmed == true) {
+    if (confirmed == true && mounted) {
       try {
         await widget.profilesRepository.deleteProfile(profile.id);
         await _loadProfiles();
       } catch (e) {
+        if (!mounted) return;
         setState(() {
           _error = context.l10n.profileDeleteFailed;
         });
@@ -213,7 +210,11 @@ class _ProfileListScreenState extends State<ProfileListScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${_profiles.length} ${_profiles.length == 1 ? 'person' : 'people'}',
+                          _profiles.length == 1
+                              ? context.l10n.uiOnePerson
+                              : context.l10n.uiPeopleCount(
+                                  _profiles.length.toString(),
+                                ),
                           style: theme.textTheme.titleLarge?.copyWith(
                             color: theme.colorScheme.onPrimaryContainer,
                           ),
@@ -424,7 +425,7 @@ class _ProfileCard extends StatelessWidget {
                             style: theme.textTheme.bodySmall,
                           ),
                         Text(
-                          '$reportCount ${reportCount == 1 ? 'report' : 'reports'}',
+                          context.l10n.reportCount(reportCount),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -434,7 +435,7 @@ class _ProfileCard extends StatelessWidget {
                   ),
                   PopupMenuButton<String>(
                     key: Key('profile-actions-${profile.id}'),
-                    tooltip: 'Actions for ${profile.name}',
+                    tooltip: context.l10n.uiActionsFor(profile.name),
                     icon: const Icon(Icons.more_vert_rounded),
                     onSelected: (action) {
                       if (action == 'edit') onEdit();

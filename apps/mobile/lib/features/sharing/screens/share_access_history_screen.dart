@@ -1,3 +1,4 @@
+import 'package:mobile/core/localized_error.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
@@ -47,7 +48,11 @@ class _ShareAccessHistoryScreenState extends State<ShareAccessHistoryScreen> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = localizedError(
+            context,
+            e,
+            fallback: context.l10n.genericError,
+          );
         });
       }
     }
@@ -56,15 +61,15 @@ class _ShareAccessHistoryScreenState extends State<ShareAccessHistoryScreen> {
   String _formatDateTime(DateTime dt) => AppDateFormat.dateTimeWithRelative(dt);
 
   String _outcomeLabel(String outcome) => switch (outcome) {
-    'accessed' => 'Viewed',
-    'expired_or_revoked' => 'Blocked (expired/revoked)',
+    'accessed' => context.l10n.uiViewed,
+    'expired_or_revoked' => context.l10n.uiBlockedExpiredRevoked,
     _ => outcome,
   };
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Link Access History')),
+      appBar: AppBar(title: Text(context.l10n.uiLinkAccessHistory)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: _loading
@@ -88,9 +93,9 @@ class _ShareAccessHistoryScreenState extends State<ShareAccessHistoryScreen> {
                 ],
               )
             : _events.isEmpty
-            ? const Center(
+            ? Center(
                 child: Text(
-                  'No access events yet.',
+                  context.l10n.uiNoAccessEventsYet,
                   key: Key('access-history-empty'),
                 ),
               )

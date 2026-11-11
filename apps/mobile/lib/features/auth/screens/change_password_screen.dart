@@ -1,3 +1,5 @@
+import '../auth_error_localization.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../auth_repository.dart';
@@ -33,18 +35,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final confirmation = _confirmPassword.text;
     String? error;
     if (current.isEmpty) {
-      error = 'Enter your current password';
+      error = context.l10n.uiEnterYourCurrentPassword;
     } else if (next.length < 8 ||
         !RegExp(r'[A-Z]').hasMatch(next) ||
         !RegExp(r'[a-z]').hasMatch(next) ||
         !RegExp(r'[0-9]').hasMatch(next) ||
         !RegExp(r'[^A-Za-z0-9]').hasMatch(next)) {
-      error =
-          'Use at least 8 characters with uppercase, lowercase, a number, and a special character';
+      error = context.l10n.uiUseAtLeast8CharactersWithUppercase;
     } else if (next == current) {
-      error = 'Choose a different password';
+      error = context.l10n.uiChooseADifferentPassword;
     } else if (next != confirmation) {
-      error = 'New passwords do not match';
+      error = context.l10n.uiNewPasswordsDoNotMatch;
     }
     if (error != null) {
       setState(() => _error = error);
@@ -62,10 +63,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       );
       if (mounted) Navigator.of(context).pop(true);
     } on AuthException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (mounted) setState(() => _error = localizedAuthError(context, error));
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Unable to change password. Please try again.');
+        setState(
+          () => _error = context.l10n.uiUnableToChangePasswordPleaseTryAgain,
+        );
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -75,11 +78,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Change password')),
+      appBar: AppBar(title: Text(context.l10n.uiChangePassword)),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          const Text('Enter your current password and choose a new one.'),
+          Text(context.l10n.uiEnterYourCurrentPasswordAndChooseA),
           const SizedBox(height: 20),
           TextField(
             key: const Key('change-password-current'),
@@ -88,7 +91,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             autocorrect: false,
             enableSuggestions: false,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(labelText: 'Current password'),
+            decoration: InputDecoration(
+              labelText: context.l10n.uiCurrentPassword,
+            ),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -98,7 +103,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             autocorrect: false,
             enableSuggestions: false,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(labelText: 'New password'),
+            decoration: InputDecoration(
+              labelText: context.l10n.uiNewPasswordd850ee,
+            ),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -109,8 +116,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             enableSuggestions: false,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
-            decoration: const InputDecoration(
-              labelText: 'Confirm new password',
+            decoration: InputDecoration(
+              labelText: context.l10n.uiConfirmNewPassword,
             ),
           ),
           if (_error != null) ...[
@@ -130,7 +137,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     dimension: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Change password'),
+                : Text(context.l10n.uiChangePassword),
           ),
         ],
       ),

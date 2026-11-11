@@ -1,3 +1,4 @@
+import 'package:mobile/core/localized_error.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../sharing_repository.dart';
@@ -14,13 +15,6 @@ class SharePolicyScreen extends StatefulWidget {
 
 class _SharePolicyScreenState extends State<SharePolicyScreen> {
   static const List<int?> _options = [null, 7, 30, 90];
-  static const List<String> _labels = [
-    'No expiry',
-    '7 days',
-    '30 days',
-    '90 days',
-  ];
-
   _PolicyState _state = _PolicyState.loading;
   int? _selected;
   String? _error;
@@ -48,7 +42,11 @@ class _SharePolicyScreenState extends State<SharePolicyScreen> {
       if (mounted) {
         setState(() {
           _state = _PolicyState.error;
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = localizedError(
+            context,
+            e,
+            fallback: context.l10n.genericError,
+          );
         });
       }
     }
@@ -65,7 +63,11 @@ class _SharePolicyScreenState extends State<SharePolicyScreen> {
       if (mounted) {
         setState(() {
           _state = _PolicyState.error;
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = localizedError(
+            context,
+            e,
+            fallback: context.l10n.genericError,
+          );
         });
       }
     }
@@ -74,7 +76,7 @@ class _SharePolicyScreenState extends State<SharePolicyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Default Share Link Expiry')),
+      appBar: AppBar(title: Text(context.l10n.uiDefaultShareLinkExpiry)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: _buildBody(context),
@@ -94,7 +96,7 @@ class _SharePolicyScreenState extends State<SharePolicyScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _error ?? 'Failed to load policy',
+            _error ?? context.l10n.uiFailedToLoadPolicy,
             style: const TextStyle(color: Colors.red),
           ),
           const SizedBox(height: 8),
@@ -121,7 +123,14 @@ class _SharePolicyScreenState extends State<SharePolicyScreen> {
                 : Key('share-policy-option-$option');
             return RadioListTile<int?>(
               key: key,
-              title: Text(_labels[idx]),
+              title: Text(
+                [
+                  context.l10n.uiNoExpiry,
+                  context.l10n.uiSevenDays,
+                  context.l10n.uiThirtyDays,
+                  context.l10n.uiNinetyDays,
+                ][idx],
+              ),
               value: option,
               selected: option == _selected,
               enabled: _state != _PolicyState.saving,
@@ -134,7 +143,7 @@ class _SharePolicyScreenState extends State<SharePolicyScreen> {
             FilledButton(
               key: const Key('share-policy-save-button'),
               onPressed: _save,
-              child: const Text('Save'),
+              child: Text(context.l10n.uiSave),
             ),
         ],
       ),

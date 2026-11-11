@@ -78,11 +78,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const String _defaultBlockedMessage =
-      'This action is temporarily unavailable while your account is under review.';
-  static const String _uploadBlockedFallbackMessage =
-      'You have used all available upload credits. Visit Plan & Credits to add more.';
-
   RestrictionStatus? _restrictionStatus;
   List<Report>? _reports;
   Profile? _activeProfile;
@@ -116,8 +111,8 @@ class _HomeScreenState extends State<HomeScreen> {
             title: Text(context.l10n.enableNotificationsConfirm),
             content: Text(
               result[1]
-                  ? 'Notifications are disabled for Doclyzer. Open device Settings to allow report-ready and account updates. Marketing stays off unless you choose it.'
-                  : 'Get report-ready and account updates on this device. Marketing stays off unless you choose it.',
+                  ? context.l10n.uiNotificationsAreDisabledForDoclyzerOpenDevice
+                  : context.l10n.uiGetReportReadyAndAccountUpdatesOn,
             ),
             actions: [
               TextButton(
@@ -168,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (!completed) {
           StatusMessenger.showWarning(
             context,
-            'Open device Settings and allow notifications for Doclyzer.',
+            context.l10n.uiOpenDeviceSettingsAndAllowNotificationsFor,
           );
         }
       } else if (completed) {
@@ -303,7 +298,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _upload() async {
     if (_isActionBlocked('upload_report')) {
-      _showBlockedMessage(fallbackMessage: _uploadBlockedFallbackMessage);
+      _showBlockedMessage(
+        fallbackMessage: context.l10n.uiYouHaveUsedAllAvailableUploadCredits,
+      );
       return;
     }
     await widget.onGoToUploadReport();
@@ -313,6 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final profiles = await widget.profilesRepository.getProfiles();
       if (!mounted) return;
+      var manageFamilyRequested = false;
       final selected = await showModalBottomSheet<Profile>(
         context: context,
         showDragHandle: true,
@@ -323,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
                 child: Text(
-                  context.l10n.switchProfile,
+                  sheetContext.l10n.switchProfile,
                   style: Theme.of(sheetContext).textTheme.titleLarge,
                 ),
               ),
@@ -332,8 +330,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: Text(profile.name),
                   subtitle: Text(
                     profile.isActive
-                        ? context.l10n.currentProfile
-                        : context.l10n.viewProfile,
+                        ? sheetContext.l10n.currentProfile
+                        : sheetContext.l10n.viewProfile,
                   ),
                   leading: CircleAvatar(child: Text(_initials(profile.name))),
                   trailing: profile.isActive
@@ -343,16 +341,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ListTile(
                 leading: const Icon(Icons.person_add_outlined),
-                title: Text(context.l10n.manageFamily),
+                title: Text(sheetContext.l10n.manageFamily),
                 onTap: () {
+                  manageFamilyRequested = true;
                   Navigator.of(sheetContext).pop();
-                  widget.onGoToProfiles();
                 },
               ),
             ],
           ),
         ),
       );
+      if (!mounted) return;
+      if (manageFamilyRequested) {
+        widget.onGoToProfiles();
+        return;
+      }
       if (selected != null && !selected.isActive) {
         await widget.profilesRepository.activateProfile(selected.id);
         if (!mounted) return;
@@ -363,17 +366,15 @@ class _HomeScreenState extends State<HomeScreen> {
         });
         await _refresh();
         if (mounted && !_loadFailed) {
-          StatusMessenger.showSuccess(context, 'Switched to ${selected.name}');
+          StatusMessenger.showSuccess(
+            context,
+            context.l10n.uiSwitchedTo(selected.name),
+          );
         }
       }
-    } catch (error) {
+    } catch (_) {
       if (mounted) {
-        StatusMessenger.showError(
-          context,
-          error is ApiException && error.message.isNotEmpty
-              ? 'Unable to switch profiles. ${error.message}'
-              : context.l10n.switchProfileFailed,
-        );
+        StatusMessenger.showError(context, context.l10n.switchProfileFailed);
       }
     }
   }
@@ -432,7 +433,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final status = _restrictionStatus;
     final nextSteps = status?.nextSteps?.trim();
     final rationale = status?.rationale?.trim();
-    final defaultMessage = fallbackMessage ?? _defaultBlockedMessage;
+    final defaultMessage =
+        fallbackMessage ??
+        context.l10n.uiThisActionIsTemporarilyUnavailableWhileYour;
     final message = (nextSteps != null && nextSteps.isNotEmpty)
         ? nextSteps
         : ((rationale != null && rationale.isNotEmpty)
@@ -847,8 +850,8 @@ class _PushPermissionCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   requiresSettings
-                      ? 'Notifications are off for this device. Open Settings to receive report-ready and account updates.'
-                      : 'Get report-ready and account updates on this device. Marketing stays off unless you choose it.',
+                      ? context.l10n.uiNotificationsAreOffForThisDeviceOpen
+                      : context.l10n.uiGetReportReadyAndAccountUpdatesOn,
                   style: theme.textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),

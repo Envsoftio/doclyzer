@@ -1,3 +1,4 @@
+import 'package:mobile/core/localized_error.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
@@ -50,7 +51,11 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
     } catch (error) {
       if (mounted) {
         setState(() {
-          _error = error.toString().replaceFirst('Exception: ', '');
+          _error = localizedError(
+            context,
+            error,
+            fallback: context.l10n.genericError,
+          );
           _loading = false;
         });
       }
@@ -74,7 +79,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, updateDialog) => AlertDialog(
-          title: const Text('Check detected result'),
+          title: Text(context.l10n.uiCheckDetectedResult),
           content: SizedBox(
             width: 440,
             child: SingleChildScrollView(
@@ -82,9 +87,7 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Compare this row with the original report. Correct any OCR mistakes before saving.',
-                  ),
+                  Text(context.l10n.uiCompareThisRowWithTheOriginalReport),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     key: const Key('review-view-original'),
@@ -121,22 +124,24 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                     key: const Key('review-result-value'),
                     initialValue: value,
                     onChanged: (text) => updateDialog(() => value = text),
-                    decoration: InputDecoration(labelText: 'Result'),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.uiResult,
+                    ),
                   ),
                   TextFormField(
                     key: const Key('review-unit'),
                     initialValue: unit,
                     onChanged: (text) => updateDialog(() => unit = text),
-                    decoration: const InputDecoration(
-                      labelText: 'Unit (optional)',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.uiUnitOptional,
                     ),
                   ),
                   TextFormField(
                     key: const Key('review-range'),
                     initialValue: range,
                     onChanged: (text) => updateDialog(() => range = text),
-                    decoration: const InputDecoration(
-                      labelText: 'Reference range (optional)',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.uiReferenceRangeOptional,
                     ),
                   ),
                   CheckboxListTile(
@@ -148,8 +153,8 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                             () => sourceChecked = checked ?? false,
                           )
                         : null,
-                    title: const Text(
-                      'I checked this result against the original report',
+                    title: Text(
+                      context.l10n.uiICheckedThisResultAgainstTheOriginal,
                     ),
                   ),
                   if (saveError != null)
@@ -228,8 +233,8 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       }
                     },
               child: saving
-                  ? const Text('Saving…')
-                  : const Text('Save verified result'),
+                  ? Text(context.l10n.uiSaving)
+                  : Text(context.l10n.uiSaveVerifiedResult),
             ),
           ],
         ),
@@ -259,23 +264,19 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
               ),
             )
           : review == null || review.candidates.isEmpty
-          ? const Center(
-              child: Text(
-                'No results were detected. View the original report or retry processing.',
-              ),
+          ? Center(
+              child: Text(context.l10n.uiNoResultsWereDetectedViewTheOriginal),
             )
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
-                  'Detected values need to be checked against the original report before they become saved results.',
+                  context.l10n.uiDetectedValuesNeedToBeCheckedAgainst,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 if (review.partial) ...[
                   const SizedBox(height: 8),
-                  const Text(
-                    'Some rows may be missing. Inspect the entire original report.',
-                  ),
+                  Text(context.l10n.uiSomeRowsMayBeMissingInspectThe),
                 ],
                 const SizedBox(height: 12),
                 for (final candidate in review.candidates)
@@ -284,12 +285,12 @@ class _ReportReviewScreenState extends State<ReportReviewScreen> {
                       key: Key('review-candidate-${candidate.id}'),
                       title: Text(candidate.testRaw),
                       subtitle: Text(
-                        '${candidate.resultRaw ?? 'Unreadable'}${candidate.unitRaw == null ? '' : ' ${candidate.unitRaw}'}',
+                        '${candidate.resultRaw ?? context.l10n.uiUnreadable}${candidate.unitRaw == null ? '' : ' ${candidate.unitRaw}'}',
                       ),
                       trailing: review.applied.contains(candidate.id)
-                          ? const Icon(
+                          ? Icon(
                               Icons.check_circle,
-                              semanticLabel: 'Verified',
+                              semanticLabel: context.l10n.uiVerified,
                             )
                           : const Icon(Icons.chevron_right),
                       onTap: review.applied.contains(candidate.id)

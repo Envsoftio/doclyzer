@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -35,7 +36,7 @@ class StartupLoadingScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Your reports. A clearer picture.',
+                          context.l10n.uiYourReportsAClearerPicture,
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: colors.onSurfaceVariant,
@@ -67,7 +68,7 @@ class StartupLoadingScreen extends StatelessWidget {
                               const SizedBox(width: 12),
                               Flexible(
                                 child: Text(
-                                  'Getting things ready…',
+                                  context.l10n.uiGettingThingsReady,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: colors.onSurface,
                                     fontWeight: FontWeight.w600,

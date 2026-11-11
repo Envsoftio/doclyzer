@@ -81,12 +81,13 @@ Widget _home({
   Future<bool> Function()? onEnablePushPermission,
   Future<bool> Function()? onOpenPushSettings,
   VoidCallback? onPushPermissionPromptHandled,
+  VoidCallback? onGoToProfiles,
 }) => MaterialApp(
   theme: AppTheme.light,
   home: HomeScreen(
     onLogout: () async {},
     onGoToAccount: () {},
-    onGoToProfiles: () {},
+    onGoToProfiles: onGoToProfiles ?? () {},
     onGoToSessions: () {},
     onGoToCommunicationPreferences: () {},
     onGoToDataRights: () {},
@@ -108,6 +109,30 @@ Widget _home({
 );
 
 void main() {
+  testWidgets('manage family closes the profile sheet before leaving home', (
+    tester,
+  ) async {
+    final showFamily = ValueNotifier(false);
+    addTearDown(showFamily.dispose);
+    await tester.pumpWidget(
+      ValueListenableBuilder<bool>(
+        valueListenable: showFamily,
+        builder: (context, opened, child) => opened
+            ? const MaterialApp(home: Scaffold(body: Text('Family opened')))
+            : _home(onGoToProfiles: () => showFamily.value = true),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('dashboard-account-avatar')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Manage family'));
+    await tester.pumpAndSettle();
+
+    expect(showFamily.value, isTrue);
+    expect(find.text('Family opened'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('home header and upload card fit the Pen phone width', (
     tester,
   ) async {

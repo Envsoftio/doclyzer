@@ -45,9 +45,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not change App lock. Try again.'),
-          ),
+          SnackBar(content: Text(context.l10n.uiCouldNotChangeAppLockTryAgain)),
         );
       }
     } finally {
@@ -62,7 +60,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
       minimum: const EdgeInsets.fromLTRB(24, 6, 24, 18),
       child: TextButton(
         onPressed: widget.onDeleteAccount,
-        child: const Text('Delete account'),
+        child: Text(context.l10n.uiDeleteAccount),
       ),
     ),
     body: ListView(
@@ -74,7 +72,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
             color: AppColors.blue,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -86,7 +84,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                   ),
                   SizedBox(width: 16),
                   Text(
-                    'Your records.\nYour choice to share.',
+                    context.l10n.uiYourRecordsYourChoiceToShare,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -97,7 +95,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
               ),
               SizedBox(height: 16),
               Text(
-                'Review access whenever you need.',
+                context.l10n.uiReviewAccessWheneverYouNeed,
                 style: TextStyle(color: Colors.white70),
               ),
             ],
@@ -107,17 +105,17 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
         _SettingsLink(
           key: const Key('privacy-change-password'),
           icon: Icons.lock_outline_rounded,
-          title: 'Change password',
+          title: context.l10n.uiChangePassword,
           onTap: widget.onChangePassword,
         ),
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: Text(
-            'App lock',
+            context.l10n.uiAppLock,
             style: Theme.of(context).textTheme.titleSmall,
           ),
           subtitle: Text(
-            'Use your device’s biometric or passcode lock.',
+            context.l10n.uiUseYourDeviceSBiometricOrPasscode,
             style: Theme.of(context).textTheme.bodySmall,
           ),
           trailing: Switch.adaptive(
@@ -131,10 +129,8 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
           key: const Key('privacy-notification-settings'),
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.notifications_outlined),
-          title: const Text('Notification previews'),
-          subtitle: const Text(
-            'Control lock-screen previews in your device settings.',
-          ),
+          title: Text(context.l10n.uiNotificationPreviews),
+          subtitle: Text(context.l10n.uiControlLockScreenPreviewsInYourDevice),
           trailing: const Icon(Icons.chevron_right),
           onTap: widget.onNotificationSettings,
         ),
@@ -142,17 +138,17 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
         const SizedBox(height: 20),
         _SettingsLink(
           icon: Icons.link,
-          title: 'Manage shared links',
+          title: context.l10n.uiManageSharedLinks,
           onTap: widget.onSharedLinks,
         ),
         _SettingsLink(
           icon: Icons.download_outlined,
-          title: 'Export your data',
+          title: context.l10n.uiExportYourData,
           onTap: widget.onExport,
         ),
         _SettingsLink(
           icon: Icons.policy_outlined,
-          title: 'Read the Privacy Policy',
+          title: context.l10n.uiReadThePrivacyPolicy,
           onTap: widget.onPrivacyPolicy,
         ),
       ],
@@ -171,36 +167,36 @@ class HelpSupportScreen extends StatefulWidget {
 class _HelpSupportScreenState extends State<HelpSupportScreen> {
   String _query = '';
 
-  static const _articles = [
+  List<(String, String, IconData, String)> _articles(BuildContext context) => [
     (
-      'Uploading a clear report',
-      'PDFs, photos and multiple pages',
+      context.l10n.uiUploadingAClearReport,
+      context.l10n.uiPDFsPhotosAndMultiplePages,
       Icons.document_scanner_outlined,
-      'Choose a PDF or take clear photos of every page. Keep the whole page in frame, avoid glare, and check the page order before analyzing. You can correct extracted values against the original.',
+      context.l10n.uiChooseAPDFOrTakeClearPhotos,
     ),
     (
-      'Correcting a result',
-      'Review values against the original',
+      context.l10n.uiCorrectingAResult,
+      context.l10n.uiReviewValuesAgainstTheOriginal,
       Icons.edit_outlined,
-      'Open a report, review each extracted test against the original, and correct any value, unit, or date that was read incorrectly. Unconfirmed results should be checked before you rely on trends.',
+      context.l10n.uiOpenAReportReviewEachExtractedTest,
     ),
     (
-      'Managing family records',
-      'Profiles, access and permissions',
+      context.l10n.uiManagingFamilyRecords,
+      context.l10n.uiProfilesAccessAndPermissions,
       Icons.people_outline,
-      'Use Family to create and switch profiles. Check the selected person before uploading or sharing a report. Manage only records you are authorized to access.',
+      context.l10n.uiUseFamilyToCreateAndSwitchProfiles,
     ),
     (
-      'Sharing and revoking links',
-      'Control the records you share',
+      context.l10n.uiSharingAndRevokingLinks,
+      context.l10n.uiControlTheRecordsYouShare,
       Icons.link,
-      'Select the reports or results you want to share, review the expiry and access code, then send the link and code separately. Revoke an active link from Shared links when access is no longer needed.',
+      context.l10n.uiSelectTheReportsOrResultsYouWant,
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _articles
+    final filtered = _articles(context)
         .where(
           (article) => '${article.$1} ${article.$2} ${article.$4}'
               .toLowerCase()
@@ -222,11 +218,11 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   actionType: SupportActionType.productHelp,
                 ),
               ),
-              child: const Text('Contact support'),
+              child: Text(context.l10n.uiContactSupport),
             ),
             const SizedBox(height: 8),
             Text(
-              'Attach reports only if you choose to.',
+              context.l10n.uiAttachReportsOnlyIfYouChooseTo,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -236,26 +232,26 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
         padding: const EdgeInsets.all(24),
         children: [
           Text(
-            'What can we help you with?',
+            context.l10n.uiWhatCanWeHelpYouWith,
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 20),
           TextField(
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               prefixIcon: Icon(Icons.search),
-              hintText: 'Search help articles',
+              hintText: context.l10n.uiSearchHelpArticles,
             ),
             onChanged: (value) => setState(() => _query = value),
           ),
           const SizedBox(height: 30),
           Text(
-            'POPULAR QUESTIONS',
+            context.l10n.uiPOPULARQUESTIONS,
             style: Theme.of(context).textTheme.labelSmall,
           ),
           const SizedBox(height: 16),
           if (filtered.isEmpty)
             Text(
-              'No help articles match your search.',
+              context.l10n.uiNoHelpArticlesMatchYourSearch,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           for (final article in filtered) ...[
@@ -280,7 +276,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           ],
           const SizedBox(height: 24),
           Text(
-            'For questions about your health or test results, speak with a qualified healthcare professional.',
+            context.l10n.uiForQuestionsAboutYourHealthOrTest,
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
@@ -330,18 +326,18 @@ class AboutDoclyzerScreen extends StatelessWidget {
         const SizedBox(height: 8),
         Center(
           child: Text(
-            'Your reports. A clearer picture.',
+            context.l10n.uiYourReportsAClearerPicture,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
         const SizedBox(height: 40),
         Text(
-          'Keep your health history together.',
+          context.l10n.uiKeepYourHealthHistoryTogether,
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 12),
         Text(
-          'Store reports, review results, follow changes and share with your clinician.',
+          context.l10n.uiStoreReportsReviewResultsFollowChangesAnd,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 28),
@@ -351,11 +347,11 @@ class AboutDoclyzerScreen extends StatelessWidget {
             color: Theme.of(context).colorScheme.primaryContainer,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Educational information only',
+                context.l10n.uiEducationalInformationOnly,
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
               SizedBox(height: 8),
@@ -366,12 +362,12 @@ class AboutDoclyzerScreen extends StatelessWidget {
         const SizedBox(height: 28),
         _SettingsLink(
           icon: Icons.description_outlined,
-          title: 'Terms of Use',
+          title: context.l10n.uiTermsOfUse,
           onTap: onTerms,
         ),
         _SettingsLink(
           icon: Icons.policy_outlined,
-          title: 'Privacy Policy',
+          title: context.l10n.uiPrivacyPolicy,
           onTap: onPrivacy,
         ),
       ],
@@ -396,36 +392,42 @@ class LegalSummaryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final privacy = kind == LegalSummaryKind.privacy;
     final sections = privacy
-        ? const [
+        ? [
             (
-              'Information you provide',
-              'Account details and family profiles identify whose records you manage. Uploaded documents may contain sensitive health information.',
+              context.l10n.uiInformationYouProvide,
+              context.l10n.uiAccountDetailsAndFamilyProfilesIdentifyWhose,
             ),
             (
-              'Sharing controls',
-              'Review the contents, expiry and access settings of each link. Manage active links from your account settings.',
+              context.l10n.uiSharingControls,
+              context.l10n.uiReviewTheContentsExpiryAndAccessSettings,
             ),
             (
-              'Export and account choices',
-              'Use settings to export records or start an account deletion request. Retention details belong in the complete policy.',
+              context.l10n.uiExportAndAccountChoices,
+              context.l10n.uiUseSettingsToExportRecordsOrStart,
             ),
           ]
-        : const [
+        : [
             (
-              'Educational scope',
-              'Doclyzer organizes reports and shows results over time. Educational explanations are not medical advice or a diagnosis.',
+              context.l10n.uiEducationalScope,
+              context.l10n.uiDoclyzerOrganizesReportsAndShowsResultsOver,
             ),
             (
-              'Review your records',
-              'Check extracted values, units and dates against the original report. Ask a healthcare professional about your results.',
+              context.l10n.uiReviewYourRecords,
+              context.l10n.uiCheckExtractedValuesUnitsAndDatesAgainst,
             ),
             (
-              'Manage and share responsibly',
-              'Only manage records you are authorized to access. Check the selected information and recipient before sharing.',
+              context.l10n.uiManageAndShareResponsibly,
+              context.l10n.uiOnlyManageRecordsYouAreAuthorizedTo,
             ),
           ];
     return Scaffold(
-      appBar: AppBar(title: Text(privacy ? 'Privacy policy' : 'Terms of use')),
+      appBar: AppBar(
+        title: Text(
+          privacy
+              ? context.l10n.uiPrivacyPolicy7ceacd
+              : context.l10n.uiTermsOfUse8a069e,
+        ),
+      ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(24, 12, 24, 20),
         child: Column(
@@ -434,15 +436,17 @@ class LegalSummaryScreen extends StatelessWidget {
             FilledButton(
               onPressed: onPrimary,
               child: Text(
-                privacy ? 'Open privacy controls' : 'Get help with the app',
+                privacy
+                    ? context.l10n.uiOpenPrivacyControls
+                    : context.l10n.uiGetHelpWithTheApp,
               ),
             ),
             TextButton(
               onPressed: onSecondary,
               child: Text(
                 privacy
-                    ? 'Export your data in account settings'
-                    : 'Read the Privacy Policy',
+                    ? context.l10n.uiExportYourDataInAccountSettings
+                    : context.l10n.uiReadThePrivacyPolicy,
               ),
             ),
           ],
@@ -452,7 +456,9 @@ class LegalSummaryScreen extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         children: [
           Text(
-            privacy ? 'YOUR DATA & CHOICES' : 'USING DOCLYZER',
+            privacy
+                ? context.l10n.uiYOURDATACHOICES
+                : context.l10n.uiUSINGDOCLYZER,
             style: Theme.of(
               context,
             ).textTheme.labelSmall?.copyWith(letterSpacing: 1.2),
@@ -460,8 +466,8 @@ class LegalSummaryScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             privacy
-                ? 'Understand the information\nyou keep in Doclyzer.'
-                : 'A clear understanding\nof the app’s role.',
+                ? context.l10n.uiUnderstandTheInformationYouKeepInDoclyzer
+                : context.l10n.uiAClearUnderstandingOfTheAppsRole,
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 28),

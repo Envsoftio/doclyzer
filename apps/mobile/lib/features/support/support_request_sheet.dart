@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/feedback/status_messenger.dart';
@@ -11,7 +12,7 @@ Future<void> showSupportRequestSheet({
   String? errorMessage,
 }) async {
   final controller = TextEditingController(
-    text: _buildPrefillText(supportContext, errorMessage),
+    text: _buildPrefillText(context, supportContext, errorMessage),
   );
   String? errorText;
   bool submitting = false;
@@ -35,13 +36,13 @@ Future<void> showSupportRequestSheet({
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Request support',
+                  context.l10n.uiRequestSupport,
                   style: Theme.of(ctx).textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'We will include diagnostic IDs so the team can investigate.',
+                  context.l10n.uiWeWillIncludeDiagnosticIDsSoThe,
                   style: Theme.of(ctx).textTheme.bodySmall,
                   textAlign: TextAlign.center,
                 ),
@@ -49,8 +50,8 @@ Future<void> showSupportRequestSheet({
                 TextField(
                   controller: controller,
                   maxLines: 5,
-                  decoration: const InputDecoration(
-                    labelText: 'What happened? (optional)',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.uiWhatHappenedOptional,
                     alignLabelWithHint: true,
                   ),
                 ),
@@ -82,16 +83,16 @@ Future<void> showSupportRequestSheet({
                             Navigator.of(ctx).pop();
                             StatusMessenger.showSuccess(
                               context,
-                              'Support request sent.',
+                              context.l10n.uiSupportRequestSent,
                             );
                           } catch (e) {
                             if (!ctx.mounted) return;
                             setState(() {
                               submitting = false;
                               errorText = e.toString().replaceFirst(
-                                    'Exception: ',
-                                    '',
-                                  );
+                                'Exception: ',
+                                '',
+                              );
                             });
                           }
                         },
@@ -101,7 +102,7 @@ Future<void> showSupportRequestSheet({
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Send request'),
+                      : Text(context.l10n.uiSendRequest),
                 ),
               ],
             ),
@@ -115,24 +116,38 @@ Future<void> showSupportRequestSheet({
 }
 
 String _buildPrefillText(
-  SupportRequestContext context,
+  BuildContext buildContext,
+  SupportRequestContext supportContext,
   String? errorMessage,
 ) {
   final buffer = StringBuffer();
-  buffer.writeln('Action: ${supportActionTypeValue(context.actionType)}');
-  if (context.correlationId != null && context.correlationId!.isNotEmpty) {
-    buffer.writeln('Correlation ID: ${context.correlationId}');
+  buffer.writeln(
+    buildContext.l10n.uiSupportAction(
+      supportActionTypeValue(supportContext.actionType),
+    ),
+  );
+  if (supportContext.correlationId != null &&
+      supportContext.correlationId!.isNotEmpty) {
+    buffer.writeln(
+      buildContext.l10n.uiSupportCorrelationId(supportContext.correlationId!),
+    );
   }
-  if (context.clientActionId != null && context.clientActionId!.isNotEmpty) {
-    buffer.writeln('Client Action ID: ${context.clientActionId}');
+  if (supportContext.clientActionId != null &&
+      supportContext.clientActionId!.isNotEmpty) {
+    buffer.writeln(
+      buildContext.l10n.uiSupportClientActionId(supportContext.clientActionId!),
+    );
   }
-  if (context.errorCode != null && context.errorCode!.isNotEmpty) {
-    buffer.writeln('Error Code: ${context.errorCode}');
+  if (supportContext.errorCode != null &&
+      supportContext.errorCode!.isNotEmpty) {
+    buffer.writeln(
+      buildContext.l10n.uiSupportErrorCode(supportContext.errorCode!),
+    );
   }
   if (errorMessage != null && errorMessage.trim().isNotEmpty) {
-    buffer.writeln('Error: ${errorMessage.trim()}');
+    buffer.writeln(buildContext.l10n.uiSupportError(errorMessage.trim()));
   }
   buffer.writeln('');
-  buffer.write('Additional details: ');
+  buffer.write(buildContext.l10n.uiAdditionalDetails);
   return buffer.toString();
 }

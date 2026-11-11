@@ -7,9 +7,13 @@ import 'package:mobile/core/token_storage.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/features/account/api_account_repository.dart';
 import 'package:mobile/features/auth/api_auth_repository.dart';
+import 'package:mobile/features/auth/screens/onboarding_screen.dart';
 import 'package:mobile/features/auth/screens/signup_screen.dart';
 import 'package:mobile/features/reports/api_reports_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/l10n/app_localizations_hi.dart';
+import 'package:mobile/l10n/app_localizations_en.dart';
+import 'package:mobile/shared/app_date_format.dart';
 import 'package:mobile/shared/localized_description.dart';
 import 'package:mobile/shared/language_selector.dart';
 
@@ -101,6 +105,71 @@ void main() {
         );
       await loader.load();
     }
+  });
+  testWidgets('Hindi onboarding pages and relative dates use the catalog', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(() => AppDateFormat.configure(null));
+    final hindi = AppLocalizationsHi();
+    expect(
+      hindi.onboardingStoreTitle,
+      isNot(AppLocalizationsEn().onboardingStoreTitle),
+    );
+    await tester.pumpWidget(
+      app('hi', OnboardingScreen(onComplete: () {}), scale: 1.3),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(hindi.onboardingStoreTitle), findsOneWidget);
+    await tester.tap(find.text(hindi.onboardingNext));
+    await tester.pumpAndSettle();
+    expect(find.text(hindi.onboardingUnderstandTitle), findsOneWidget);
+    await tester.tap(find.text(hindi.onboardingNext));
+    await tester.pumpAndSettle();
+    expect(find.text(hindi.onboardingTrackTitle), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    AppDateFormat.configure(hindi);
+    expect(
+      AppDateFormat.fromRawWithRelative(
+        '2026-11-11',
+        now: DateTime(2026, 11, 11, 12),
+      ),
+      startsWith(hindi.uiToday),
+    );
+    expect(AppDateFormat.date(DateTime(2026, 11, 11)), contains('नव'));
+  });
+  testWidgets('the app builder configures date labels from its locale', (
+    tester,
+  ) async {
+    addTearDown(() => AppDateFormat.configure(null));
+    final hindi = AppLocalizationsHi();
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('hi'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        builder: (context, child) {
+          AppDateFormat.configure(context.l10n);
+          return child!;
+        },
+        home: Scaffold(
+          body: Builder(
+            builder: (_) => Text(
+              AppDateFormat.relativeDate(
+                DateTime(2026, 11, 11),
+                now: DateTime(2026, 11, 11, 12),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(hindi.uiToday), findsOneWidget);
   });
   testWidgets(
     'Settings sheet remains usable on a small phone with enlarged text',

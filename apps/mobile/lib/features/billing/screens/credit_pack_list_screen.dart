@@ -80,7 +80,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Failed to load credit packs. Please try again.';
+          _error = context.l10n.uiFailedToLoadCreditPacksPleaseTry;
           _loading = false;
           _supportContext = buildSupportRequestContext(
             actionType: SupportActionType.billingEntitlement,
@@ -93,10 +93,11 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
 
   Future<void> _startPurchase(CreditPack pack, {String? promoCode}) async {
     if (_purchasingPackId != null) return;
+    final description = context.l10n.uiCreditPackDescription(pack.name);
     if (_latestPendingOrder != null) {
       setState(() {
         _statusBannerMessage =
-            'A payment is pending capture. Refresh status before starting another checkout.';
+            context.l10n.uiAPaymentIsPendingCaptureRefreshStatus;
       });
       return;
     }
@@ -114,10 +115,11 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
         if (mounted) {
           setState(() {
             _purchasingPackId = null;
-            _statusBannerMessage = 'Credits were applied successfully.';
+            _statusBannerMessage =
+                context.l10n.uiCreditsWereAppliedSuccessfully;
           });
           ConfettiBurst.show(context);
-          StatusMessenger.showSuccess(context, 'Credits added!');
+          StatusMessenger.showSuccess(context, context.l10n.uiCreditsAdded);
           widget.onPurchaseComplete();
         }
         return;
@@ -133,7 +135,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
         'currency': order.currency,
         'order_id': order.razorpayOrderId,
         'name': 'Doclyzer',
-        'description': 'Credit Pack - ${pack.name}',
+        'description': description,
       });
     } catch (e) {
       if (mounted) {
@@ -141,11 +143,11 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
         _supportContext = buildSupportRequestContext(
           actionType: SupportActionType.billingCheckout,
         );
-        _supportErrorMessage = 'Failed to create order. Please try again.';
+        _supportErrorMessage = context.l10n.uiFailedToCreateOrderPleaseTryAgain;
         StatusMessenger.showError(
           context,
-          'Failed to create order. Please try again.',
-          actionLabel: 'Need help?',
+          context.l10n.uiFailedToCreateOrderPleaseTryAgain,
+          actionLabel: context.l10n.uiNeedHelp,
           onAction: _openSupportSheet,
         );
       }
@@ -244,7 +246,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
                   final code = promoController.text.trim();
                   if (code.isEmpty) {
                     setModalState(() {
-                      promoError = 'Enter a promo code to apply.';
+                      promoError = context.l10n.uiEnterAPromoCodeToApply;
                     });
                     return;
                   }
@@ -270,7 +272,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
                       ConfettiBurst.show(context);
                       StatusMessenger.showSuccess(
                         context,
-                        'Promo code applied.',
+                        context.l10n.uiPromoCodeApplied,
                       );
                     }
                   } catch (e) {
@@ -294,7 +296,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            'Checkout',
+                            context.l10n.uiCheckout,
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -315,7 +317,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${pack.credits} credits',
+                      context.l10n.uiCreditsCount(pack.credits.toString()),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w700,
@@ -325,9 +327,9 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
                     TextField(
                       controller: promoController,
                       textCapitalization: TextCapitalization.characters,
-                      decoration: const InputDecoration(
-                        labelText: 'Promo code',
-                        hintText: 'Enter promo code',
+                      decoration: InputDecoration(
+                        labelText: context.l10n.uiPromoCode,
+                        hintText: context.l10n.uiEnterPromoCode,
                       ),
                     ),
                     if (promoError != null) ...[
@@ -351,7 +353,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text('Apply'),
+                                : Text(context.l10n.uiApply),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -367,26 +369,26 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
                                       promoController.clear();
                                     });
                                   },
-                            child: const Text('Clear'),
+                            child: Text(context.l10n.uiClear),
                           ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     _buildAmountRow(
                       theme,
-                      label: 'Subtotal',
+                      label: context.l10n.uiSubtotal,
                       value: _formatInr(pack.priceInr),
                     ),
                     if (hasPromo)
                       _buildAmountRow(
                         theme,
-                        label: 'Discount',
+                        label: context.l10n.uiDiscount,
                         value: '- ${_formatInr(discountAmount)}',
                       ),
                     const SizedBox(height: 4),
                     _buildAmountRow(
                       theme,
-                      label: 'Total',
+                      label: context.l10n.uiTotal,
                       value: _formatInr(finalAmount),
                       isEmphasis: true,
                     ),
@@ -405,7 +407,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
                                       : null,
                                 );
                               },
-                        child: const Text('Pay'),
+                        child: Text(context.l10n.uiPay),
                       ),
                     ),
                   ],
@@ -424,20 +426,20 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
     if (error is ApiException) {
       switch (error.code) {
         case 'BILLING_PROMO_NOT_FOUND':
-          return 'Promo code not found.';
+          return context.l10n.uiPromoCodeNotFound;
         case 'BILLING_PROMO_INACTIVE':
-          return 'Promo code is inactive.';
+          return context.l10n.uiPromoCodeIsInactive;
         case 'BILLING_PROMO_EXPIRED':
-          return 'Promo code has expired.';
+          return context.l10n.uiPromoCodeHasExpired;
         case 'BILLING_PROMO_NOT_APPLICABLE':
-          return 'Promo code is not applicable to this pack.';
+          return context.l10n.uiPromoCodeIsNotApplicableToThis;
         case 'BILLING_PROMO_CAP_REACHED':
-          return 'Promo code usage limit reached.';
+          return context.l10n.uiPromoCodeUsageLimitReached;
         case 'BILLING_PROMO_USER_CAP_REACHED':
-          return 'You have already used this promo code.';
+          return context.l10n.uiYouHaveAlreadyUsedThisPromoCode;
       }
     }
-    return 'Failed to apply promo code. Please try again.';
+    return context.l10n.uiFailedToApplyPromoCodePleaseTry;
   }
 
   Widget _buildAmountRow(
@@ -484,7 +486,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
       if (mounted) {
         if (verification.orderStatus == BillingOrderStatus.reconciled) {
           ConfettiBurst.show(context);
-          StatusMessenger.showSuccess(context, 'Credits added!');
+          StatusMessenger.showSuccess(context, context.l10n.uiCreditsAdded);
           widget.onPurchaseComplete();
         } else if (orderId != null) {
           final polled = await _pollOrderStatus(orderId);
@@ -492,48 +494,50 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
           if (!mounted) return;
           if (polled?.isReconciled ?? false) {
             ConfettiBurst.show(context);
-            StatusMessenger.showSuccess(context, 'Credits added!');
+            StatusMessenger.showSuccess(context, context.l10n.uiCreditsAdded);
             widget.onPurchaseComplete();
           } else if (polled?.needsReview ?? false) {
             setState(() {
               _statusBannerMessage =
                   polled?.reviewReason ??
-                  'This order was flagged for review before credits could be added.';
+                  context.l10n.uiThisOrderWasFlaggedForReviewBefore;
             });
             StatusMessenger.showWarning(
               context,
-              'Payment received, but this order is pending review.',
+              context.l10n.uiPaymentReceivedButThisOrderIsPending,
               duration: const Duration(seconds: 5),
             );
           } else if (polled?.canRetry ?? false) {
             setState(() {
               _statusBannerMessage =
                   polled?.failureReason ??
-                  'Payment failed during reconciliation. You can retry safely.';
+                  context.l10n.uiPaymentFailedDuringReconciliationYouCanRetry;
             });
             StatusMessenger.showWarning(
               context,
-              'Payment failed during reconciliation.',
+              context.l10n.uiPaymentFailedDuringReconciliation,
             );
           } else {
             setState(() {
-              _statusBannerMessage =
-                  'Payment received. Awaiting server reconciliation before credits are added.';
+              _statusBannerMessage = context
+                  .l10n
+                  .uiPaymentReceivedAwaitingServerReconciliationBeforeCredits;
             });
             StatusMessenger.showWarning(
               context,
-              'Payment confirmed. Server reconciliation is still pending.',
+              context.l10n.uiPaymentConfirmedServerReconciliationIsStillPending,
               duration: const Duration(seconds: 5),
             );
           }
         } else {
           setState(() {
-            _statusBannerMessage =
-                'Payment received. Awaiting server reconciliation before credits are added.';
+            _statusBannerMessage = context
+                .l10n
+                .uiPaymentReceivedAwaitingServerReconciliationBeforeCredits;
           });
           StatusMessenger.showWarning(
             context,
-            'Payment verified. Reconciliation is pending, please refresh shortly.',
+            context.l10n.uiPaymentVerifiedReconciliationIsPendingPleaseRefresh,
           );
         }
       }
@@ -542,7 +546,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
       if (mounted) {
         StatusMessenger.showWarning(
           context,
-          'Payment received but verification is still pending. Please refresh status.',
+          context.l10n.uiPaymentReceivedButVerificationIsStillPending,
           duration: const Duration(seconds: 5),
         );
       }
@@ -557,17 +561,17 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
       setState(() {
         _purchasingPackId = null;
         _statusBannerMessage =
-            'Payment failed. You can retry checkout when ready.';
+            context.l10n.uiPaymentFailedYouCanRetryCheckoutWhen;
       });
       unawaited(_refreshOrderStatuses());
       _supportContext = buildSupportRequestContext(
         actionType: SupportActionType.billingCheckout,
       );
-      _supportErrorMessage = 'Payment failed. Try again.';
+      _supportErrorMessage = context.l10n.uiPaymentFailedTryAgain;
       StatusMessenger.showError(
         context,
-        'Payment failed. Try again.',
-        actionLabel: 'Need help?',
+        context.l10n.uiPaymentFailedTryAgain,
+        actionLabel: context.l10n.uiNeedHelp,
         onAction: _openSupportSheet,
       );
     }
@@ -601,7 +605,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Buy Credits'),
+        title: Text(context.l10n.uiBuyCredits),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: widget.onBack,
@@ -661,8 +665,8 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
   Widget _buildPackList(ThemeData theme) {
     final packs = _packs ?? [];
     if (packs.isEmpty) {
-      return const Center(
-        child: Text('No credit packs available at this time.'),
+      return Center(
+        child: Text(context.l10n.uiNoCreditPacksAvailableAtThisTime),
       );
     }
 
@@ -710,7 +714,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${pack.credits} credits',
+                    context.l10n.uiCreditsCount(pack.credits.toString()),
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w700,
@@ -737,7 +741,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Buy'),
+                  : Text(context.l10n.uiBuy),
             ),
           ],
         ),
@@ -749,12 +753,17 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
     final pending = _latestPendingOrder;
     final failed = _latestFailedOrder;
     final isPending = pending != null;
-    final heading = isPending ? 'Awaiting capture' : 'Last payment failed';
+    final heading = isPending
+        ? context.l10n.uiAwaitingCapture
+        : context.l10n.uiLastPaymentFailed;
     final description =
         _statusBannerMessage ??
         (isPending
-            ? 'Order ${_shortOrderId(pending.razorpayOrderId ?? pending.id)} is waiting for reconciliation. Buying is paused until status is clear.'
-            : failed?.failureReason ?? 'You can retry checkout safely.');
+            ? context.l10n.uiPendingOrderReconciliation(
+                _shortOrderId(pending.razorpayOrderId ?? pending.id),
+              )
+            : failed?.failureReason ??
+                  context.l10n.uiYouCanRetryCheckoutSafely);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -798,7 +807,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
               children: [
                 OutlinedButton(
                   onPressed: _refreshingStatuses ? null : _refreshOrderStatuses,
-                  child: const Text('Refresh status'),
+                  child: Text(context.l10n.uiRefreshStatus),
                 ),
                 if (!isPending)
                   FilledButton.tonal(
@@ -808,7 +817,7 @@ class _CreditPackListScreenState extends State<CreditPackListScreen> {
                         _openCheckoutSheet(packs.first);
                       }
                     },
-                    child: const Text('Retry payment'),
+                    child: Text(context.l10n.uiRetryPayment),
                   ),
               ],
             ),

@@ -1,3 +1,4 @@
+import '../auth_error_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -78,7 +79,11 @@ class _SignupScreenState extends State<SignupScreen> {
     } on AuthException catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = error.message;
+        _error = localizedAuthError(
+          context,
+          error,
+          fallback: context.l10n.signupFailed,
+        );
         _isLoading = false;
       });
     } catch (e) {

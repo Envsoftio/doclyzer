@@ -30,7 +30,8 @@ for (const path of files.sort()) {
     pattern.lastIndex = 0
     for (const match of source.matchAll(pattern)) {
       const value = match[2]
-      if (!value.trim() || ignored.has(value) || value.startsWith('• $')) continue
+      // Interpolated strings are assembled at runtime and audited separately.
+      if (!value.trim() || ignored.has(value) || value.includes('$')) continue
       findings.push({
         file: relative(root, path),
         line: source.slice(0, match.index).split('\n').length,

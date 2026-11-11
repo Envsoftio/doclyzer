@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/design_components.dart';
@@ -14,28 +15,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _page = 0;
 
-  static const _pages = [
-    (
-      eyebrow: '01 / STORE',
-      title: 'Every report,\none familiar place.',
-      body:
-          'Keep PDFs and photos together, for you and the people you care for.',
-      icon: Icons.folder_copy_outlined,
-    ),
-    (
-      eyebrow: '02 / UNDERSTAND',
-      title: 'The numbers,\nmade easier to read.',
-      body:
-          'See each test, its unit and the interval from your report. Check the original anytime.',
-      icon: Icons.fact_check_outlined,
-    ),
-    (
-      eyebrow: '03 / TRACK & SHARE',
-      title: 'See the changes.\nShare the context.',
-      body:
-          'Follow results over time and choose exactly what your clinician can see.',
-      icon: Icons.show_chart_rounded,
-    ),
+  static const _pageIcons = [
+    Icons.folder_copy_outlined,
+    Icons.fact_check_outlined,
+    Icons.show_chart_rounded,
   ];
 
   @override
@@ -45,7 +28,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _next() {
-    if (_page == _pages.length - 1) {
+    if (_page == _pageIcons.length - 1) {
       widget.onComplete();
       return;
     }
@@ -61,6 +44,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final pages = [
+      (
+        eyebrow: l10n.onboardingStoreEyebrow,
+        title: l10n.onboardingStoreTitle,
+        body: l10n.onboardingStoreBody,
+        icon: _pageIcons[0],
+      ),
+      (
+        eyebrow: l10n.onboardingUnderstandEyebrow,
+        title: l10n.onboardingUnderstandTitle,
+        body: l10n.onboardingUnderstandBody,
+        icon: _pageIcons[1],
+      ),
+      (
+        eyebrow: l10n.onboardingTrackEyebrow,
+        title: l10n.onboardingTrackTitle,
+        body: l10n.onboardingTrackBody,
+        icon: _pageIcons[2],
+      ),
+    ];
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
@@ -76,7 +80,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const Spacer(),
                   TextButton(
                     onPressed: widget.onComplete,
-                    child: const Text('Skip'),
+                    child: Text(context.l10n.uiSkip),
                   ),
                 ],
               ),
@@ -84,10 +88,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _controller,
-                itemCount: _pages.length,
+                itemCount: pages.length,
                 onPageChanged: (value) => setState(() => _page = value),
                 itemBuilder: (context, index) {
-                  final page = _pages[index];
+                  final page = pages[index];
                   return Padding(
                     padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
                     child: Column(
@@ -175,7 +179,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      for (var index = 0; index < _pages.length; index++)
+                      for (var index = 0; index < pages.length; index++)
                         AnimatedContainer(
                           duration: MediaQuery.disableAnimationsOf(context)
                               ? Duration.zero
@@ -196,7 +200,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   FilledButton(
                     onPressed: _next,
                     child: Text(
-                      _page == _pages.length - 1 ? 'Get started' : 'Next',
+                      _page == pages.length - 1
+                          ? l10n.onboardingGetStarted
+                          : l10n.onboardingNext,
                     ),
                   ),
                 ],

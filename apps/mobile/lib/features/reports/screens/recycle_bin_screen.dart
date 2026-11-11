@@ -1,3 +1,4 @@
+import 'package:mobile/core/localized_error.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../shared/app_date_format.dart';
@@ -50,7 +51,11 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
       if (!mounted) return;
       setState(() {
         _state = _RecycleBinState.error;
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _errorMessage = localizedError(
+          context,
+          e,
+          fallback: context.l10n.genericError,
+        );
       });
     }
   }
@@ -64,13 +69,16 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Report restored')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.uiReportRestored)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.toString().replaceFirst('Exception: ', 'Unable to restore: '),
+            e.toString().replaceFirst(
+              'Exception: ',
+              context.l10n.uiUnableToRestore,
+            ),
           ),
         ),
       );
@@ -83,9 +91,9 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete report permanently?'),
+        title: Text(context.l10n.uiDeleteReportPermanently),
         content: Text(
-          'Delete ${report.originalFileName} and its stored file? This cannot be undone.',
+          context.l10n.uiDeleteReportAndStoredFile(report.originalFileName),
         ),
         actions: [
           TextButton(
@@ -94,7 +102,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Delete permanently'),
+            child: Text(context.l10n.uiDeletePermanently),
           ),
         ],
       ),
@@ -107,13 +115,15 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
       await _load();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Report permanently deleted')),
+        SnackBar(content: Text(context.l10n.uiReportPermanentlyDeleted)),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Unable to delete report: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.uiUnableDeleteReportDetail(e.toString())),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -124,9 +134,9 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Empty Recycle Bin?'),
+        title: Text(context.l10n.uiEmptyRecycleBin),
         content: Text(
-          'Permanently delete all $count reports and their stored files? This cannot be undone.',
+          context.l10n.uiDeleteAllReportsAndFiles(count.toString()),
         ),
         actions: [
           TextButton(
@@ -135,7 +145,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Delete all'),
+            child: Text(context.l10n.uiDeleteAll),
           ),
         ],
       ),
@@ -148,15 +158,22 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
       await _load();
       if (!mounted) return;
       final message = result.failedCount == 0
-          ? 'Recycle Bin emptied'
-          : 'Deleted ${result.deletedCount} reports. ${result.failedCount} could not be deleted; try again.';
+          ? context.l10n.uiRecycleBinEmptied
+          : context.l10n.uiSomeReportsDeleteFailed(
+              result.deletedCount.toString(),
+              result.failedCount.toString(),
+            );
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to empty Recycle Bin: $e')),
+        SnackBar(
+          content: Text(
+            context.l10n.uiUnableEmptyRecycleBinDetail(e.toString()),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -185,7 +202,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
             IconButton(
               key: const Key('recycle-bin-empty'),
               onPressed: _busy ? null : _emptyBin,
-              tooltip: 'Empty recycle bin',
+              tooltip: context.l10n.uiEmptyRecycleBind657e2,
               icon: const Icon(Icons.delete_forever_outlined),
             ),
         ],
@@ -214,7 +231,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              _errorMessage ?? 'Something went wrong',
+              _errorMessage ?? context.l10n.somethingWrong,
               style: TextStyle(color: Colors.red.shade700),
               textAlign: TextAlign.center,
             ),
@@ -236,12 +253,12 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Recycle bin is empty.',
+              context.l10n.uiRecycleBinIsEmpty,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 6),
             Text(
-              'Deleted reports will appear here before removal.',
+              context.l10n.uiDeletedReportsWillAppearHereBeforeRemoval,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
@@ -272,21 +289,33 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       if (report.profileName != null)
-                        Text('Profile: ${report.profileName}'),
+                        Text(context.l10n.uiProfileName(report.profileName!)),
                       const SizedBox(height: 8),
                       Text(
-                        'Collected: ${report.collectionDateStatus == 'multiple'
-                            ? 'Multiple collection dates'
-                            : report.collectionDate == null || report.collectionDate!.trim().isEmpty
-                            ? 'Unknown'
-                            : AppDateFormat.fromRaw(report.collectionDate!)}',
+                        context.l10n.uiCollectedDate(
+                          report.collectionDateStatus == 'multiple'
+                              ? context.l10n.multipleCollectionDates
+                              : report.collectionDate == null ||
+                                    report.collectionDate!.trim().isEmpty
+                              ? context.l10n.unknownCollectionDate
+                              : AppDateFormat.fromRaw(report.collectionDate!),
+                        ),
                       ),
-                      Text('Uploaded: ${_formatDate(report.createdAt)}'),
+                      Text(
+                        context.l10n.uiUploadedDate(
+                          _formatDate(report.createdAt),
+                        ),
+                      ),
                       if (deleted != null)
-                        Text('Deleted on: ${_formatDate(deleted)}'),
+                        Text(context.l10n.uiDeletedOn(_formatDate(deleted))),
                       if (purgeAfter != null)
-                        Text('Permanent delete on: ${_formatDate(purgeAfter)}'),
-                      if (daysLeft != null) Text('Days left: $daysLeft'),
+                        Text(
+                          context.l10n.uiPermanentDeleteOn(
+                            _formatDate(purgeAfter),
+                          ),
+                        ),
+                      if (daysLeft != null)
+                        Text(context.l10n.uiDaysLeft(daysLeft.toString())),
                       const SizedBox(height: 10),
                       Wrap(
                         alignment: WrapAlignment.end,
@@ -303,7 +332,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                                 ? null
                                 : () => _permanentlyDelete(report),
                             icon: const Icon(Icons.delete_forever_outlined),
-                            label: const Text('Delete permanently'),
+                            label: Text(context.l10n.uiDeletePermanently),
                           ),
                         ],
                       ),

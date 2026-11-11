@@ -199,7 +199,7 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                   const SizedBox(height: 10),
                   if (position == RangePosition.unknown) ...[
                     Text(
-                      unavailableRangeReason(result),
+                      unavailableRangeReason(result, l10n: context.l10n),
                       key: const Key('result-insight-range-reason'),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colors.onSurfaceVariant,
@@ -221,7 +221,12 @@ class _ResultInsightScreenState extends State<ResultInsightScreen> {
                   if (result.sourceSnapshot?['rangeSource'] ==
                       'ai_suggestion') ...[
                     Text(
-                      'AI read this range as ${result.referenceRange}. Printed text: ${result.sourceSnapshot?['originalReferenceRange']}. Check the original report before relying on this comparison.',
+                      context.l10n.uiAiSuggestedRange(
+                        result.referenceRange ?? context.l10n.resultUnavailable,
+                        result.sourceSnapshot?['originalReferenceRange']
+                                ?.toString() ??
+                            context.l10n.resultUnavailable,
+                      ),
                       key: const Key('result-range-suggestion'),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colors.onSurfaceVariant,

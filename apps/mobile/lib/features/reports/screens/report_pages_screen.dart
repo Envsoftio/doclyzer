@@ -1,3 +1,4 @@
+import 'package:mobile/l10n/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -83,7 +84,9 @@ class _ReportPagesScreenState extends State<ReportPagesScreen> {
         if (mounted && image != null) setState(() => _pages.add(image.path));
       }
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not open photos or camera.');
+      if (mounted) {
+        setState(() => _error = context.l10n.uiCouldNotOpenPhotosOrCamera);
+      }
     }
   }
 
@@ -95,7 +98,7 @@ class _ReportPagesScreenState extends State<ReportPagesScreen> {
       );
       if (mounted && image != null) setState(() => _pages[index] = image.path);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not open camera.');
+      if (mounted) setState(() => _error = context.l10n.uiCouldNotOpenCamera);
     }
   }
 
@@ -135,8 +138,7 @@ class _ReportPagesScreenState extends State<ReportPagesScreen> {
       if (mounted) {
         setState(() {
           _preparing = false;
-          _error =
-              'Could not prepare these pages. Retake an unreadable page and try again.';
+          _error = context.l10n.uiCouldNotPrepareThesePagesRetakeAn;
         });
       }
     }
@@ -146,7 +148,7 @@ class _ReportPagesScreenState extends State<ReportPagesScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Your report pages')),
+      appBar: AppBar(title: Text(context.l10n.uiYourReportPages)),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(24, 12, 24, 20),
         child: Column(
@@ -158,14 +160,18 @@ class _ReportPagesScreenState extends State<ReportPagesScreen> {
               child: _preparing
                   ? const CircularProgressIndicator()
                   : Text(
-                      'Analyze ${_pages.length} ${_pages.length == 1 ? 'page' : 'pages'}',
+                      _pages.length == 1
+                          ? context.l10n.uiAnalyzeOnePage
+                          : context.l10n.uiAnalyzePages(
+                              _pages.length.toString(),
+                            ),
                     ),
             ),
             const SizedBox(height: 8),
             Text(
               _reordering
-                  ? 'Drag pages into the order shown in your report'
-                  : 'Check every page before analyzing',
+                  ? context.l10n.uiDragPagesIntoOrder
+                  : context.l10n.uiCheckEveryPage,
               style: theme.textTheme.bodySmall,
             ),
           ],
@@ -187,7 +193,9 @@ class _ReportPagesScreenState extends State<ReportPagesScreen> {
             children: [
               Expanded(
                 child: Text(
-                  '${_pages.length} ${_pages.length == 1 ? 'page' : 'pages'} added',
+                  _pages.length == 1
+                      ? context.l10n.uiOnePageAdded
+                      : context.l10n.uiPagesAdded(_pages.length.toString()),
                   style: theme.textTheme.headlineSmall,
                 ),
               ),
@@ -195,12 +203,14 @@ class _ReportPagesScreenState extends State<ReportPagesScreen> {
                 onPressed: _pages.length < 2
                     ? null
                     : () => setState(() => _reordering = !_reordering),
-                child: Text(_reordering ? 'Done' : 'Reorder'),
+                child: Text(
+                  _reordering ? context.l10n.done : context.l10n.uiReorder,
+                ),
               ),
             ],
           ),
           Text(
-            'Keep pages in the same order as the report.',
+            context.l10n.uiKeepPagesInTheSameOrderAs,
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 20),
@@ -227,12 +237,12 @@ class _ReportPagesScreenState extends State<ReportPagesScreen> {
           TextButton.icon(
             onPressed: () => _add(ImageSource.camera),
             icon: const Icon(Icons.add_a_photo_outlined),
-            label: const Text('Add another page'),
+            label: Text(context.l10n.uiAddAnotherPage),
           ),
           TextButton.icon(
             onPressed: () => _add(ImageSource.gallery),
             icon: const Icon(Icons.photo_library_outlined),
-            label: const Text('Choose pages from gallery'),
+            label: Text(context.l10n.uiChoosePagesFromGallery),
           ),
         ],
       ),
@@ -267,22 +277,22 @@ class _ReportPagesScreenState extends State<ReportPagesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Page ${index + 1}',
+                    context.l10n.uiPageNumber((index + 1).toString()),
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   TextButton(
                     onPressed: () => _adjust(index),
-                    child: const Text('Adjust page'),
+                    child: Text(context.l10n.uiAdjustPage),
                   ),
                   TextButton(
                     onPressed: () => _retake(index),
-                    child: const Text('Retake'),
+                    child: Text(context.l10n.uiRetake),
                   ),
                 ],
               ),
             ),
             IconButton(
-              tooltip: 'Remove page ${index + 1}',
+              tooltip: context.l10n.uiRemovePage((index + 1).toString()),
               onPressed: () => setState(() => _pages.removeAt(index)),
               icon: const Icon(Icons.delete_outline),
             ),
@@ -343,7 +353,7 @@ class _AdjustReportPageScreenState extends State<AdjustReportPageScreen> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'Could not adjust this page.';
+          _error = context.l10n.uiCouldNotAdjustThisPage;
         });
       }
     }
@@ -363,13 +373,13 @@ class _AdjustReportPageScreenState extends State<AdjustReportPageScreen> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not open camera.');
+      if (mounted) setState(() => _error = context.l10n.uiCouldNotOpenCamera);
     }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Adjust page')),
+    appBar: AppBar(title: Text(context.l10n.uiAdjustPage)),
     bottomNavigationBar: SafeArea(
       minimum: const EdgeInsets.fromLTRB(24, 12, 24, 20),
       child: Column(
@@ -379,14 +389,14 @@ class _AdjustReportPageScreenState extends State<AdjustReportPageScreen> {
             onPressed: _saving ? null : _save,
             child: _saving
                 ? const CircularProgressIndicator()
-                : const Text('Use adjusted page'),
+                : Text(context.l10n.uiUseAdjustedPage),
           ),
           TextButton(
             onPressed: () => setState(() {
               _rotation = 0;
               _crop = 0;
             }),
-            child: const Text('Reset changes'),
+            child: Text(context.l10n.uiResetChanges),
           ),
         ],
       ),
@@ -395,11 +405,16 @@ class _AdjustReportPageScreenState extends State<AdjustReportPageScreen> {
       padding: const EdgeInsets.all(24),
       children: [
         Text(
-          'Keep every result inside the corners.',
+          context.l10n.uiKeepEveryResultInsideTheCorners,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 20),
-        Text('${widget.profileName} · Page ${widget.pageNumber}'),
+        Text(
+          context.l10n.uiProfilePage(
+            widget.profileName,
+            widget.pageNumber.toString(),
+          ),
+        ),
         const SizedBox(height: 16),
         AspectRatio(
           aspectRatio: .75,
@@ -421,7 +436,7 @@ class _AdjustReportPageScreenState extends State<AdjustReportPageScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Text('Crop edges: ${(_crop * 100).round()}%'),
+        Text(context.l10n.uiCropEdges((_crop * 100).round().toString())),
         Slider(
           value: _crop,
           min: 0,
@@ -433,13 +448,13 @@ class _AdjustReportPageScreenState extends State<AdjustReportPageScreen> {
         OutlinedButton.icon(
           onPressed: () => setState(() => _rotation = (_rotation + 90) % 360),
           icon: const Icon(Icons.rotate_right),
-          label: const Text('Rotate'),
+          label: Text(context.l10n.uiRotate),
         ),
         const SizedBox(height: 10),
         OutlinedButton.icon(
           onPressed: _retake,
           icon: const Icon(Icons.photo_camera_outlined),
-          label: const Text('Retake'),
+          label: Text(context.l10n.uiRetake),
         ),
         if (_error != null)
           Text(

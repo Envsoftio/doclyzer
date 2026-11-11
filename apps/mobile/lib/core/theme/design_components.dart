@@ -117,12 +117,12 @@ class DesignReportCard extends StatelessWidget {
         report.status == 'parsed' &&
         report.structuredReport?.extractionReview?.required != true;
     final status = switch (report.status) {
-      'parsed' when reviewed => 'Reviewed',
-      'parsed' => 'Needs review',
-      'uploading' || 'queued' || 'parsing' => 'Processing',
-      'unparsed' => 'Original only',
-      'failed_transient' || 'failed_terminal' => 'Upload paused',
-      _ => 'Uploaded',
+      'parsed' when reviewed => context.l10n.filterReviewed,
+      'parsed' => context.l10n.filterNeedsReview,
+      'uploading' || 'queued' || 'parsing' => context.l10n.filterProcessing,
+      'unparsed' => context.l10n.filterOriginalOnly,
+      'failed_transient' || 'failed_terminal' => context.l10n.uiUploadPaused,
+      _ => context.l10n.uiUploadedStatus,
     };
     return Card(
       child: InkWell(

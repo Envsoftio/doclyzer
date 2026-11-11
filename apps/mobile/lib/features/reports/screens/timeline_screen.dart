@@ -1,3 +1,4 @@
+import 'package:mobile/core/localized_error.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'dart:async';
 
@@ -161,7 +162,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
       if (mounted && version == _loadVersion && profileId == widget.profileId) {
         setState(() {
           _state = _TimelineState.error;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = localizedError(
+            context,
+            e,
+            fallback: context.l10n.reportsLoadFailed,
+          );
         });
       }
     }
@@ -208,7 +213,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                '${laboratory.reports.length} ${laboratory.reports.length == 1 ? 'report' : 'reports'} from ${laboratory.name}',
+                context.l10n.uiReportsFromLab(
+                  context.l10n.reportCount(laboratory.reports.length),
+                  laboratory.name,
+                ),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 24),
@@ -508,14 +516,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
         reportsByLab.putIfAbsent(key, () => []).add(report);
       }
       if (reportsByLab.isNotEmpty) {
-        entries.add('LABORATORIES');
+        entries.add(context.l10n.uiLaboratories);
         for (final key in reportsByLab.keys.toList()..sort()) {
           final reports = reportsByLab[key]!
             ..sort((a, b) => _reportDate(b).compareTo(_reportDate(a)));
           entries.add(_LaboratorySearchHit(displayNames[key]!, reports));
         }
       }
-      if (visible.isNotEmpty) entries.add('REPORTS');
+      if (visible.isNotEmpty) entries.add(context.l10n.reports);
       entries.addAll(visible);
     } else {
       String? previous;
@@ -647,8 +655,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   key: const Key('timeline-empty'),
                   icon: Icons.folder_open_outlined,
                   title: context.l10n.noReportsYet,
-                  message:
-                      'Upload a report for ${widget.profileName} to start this library.',
+                  message: context.l10n.uiUploadReportForProfile(
+                    widget.profileName,
+                  ),
                   action: widget.onUploadReport == null
                       ? null
                       : context.l10n.uploadReport,
@@ -694,7 +703,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
                           leading: const Icon(Icons.business_outlined),
                           title: Text(entry.name),
                           subtitle: Text(
-                            '${entry.reports.length} ${entry.reports.length == 1 ? 'report' : 'reports'} · Latest ${_formatDate(_reportDate(entry.reports.first))}',
+                            context.l10n.uiReportsLatestDate(
+                              context.l10n.reportCount(entry.reports.length),
+                              _formatDate(_reportDate(entry.reports.first)),
+                            ),
                           ),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => _openLaboratory(entry),
@@ -720,11 +732,15 @@ class _TimelineScreenState extends State<TimelineScreen> {
                               crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
                                 Text(
-                                  'Collected: ${_collectionLabel(report)}',
+                                  context.l10n.uiCollectedDate(
+                                    _collectionLabel(report),
+                                  ),
                                   style: theme.textTheme.bodySmall,
                                 ),
                                 Text(
-                                  'Uploaded: ${_formatDate(report.createdAt)}',
+                                  context.l10n.uiUploadedDate(
+                                    _formatDate(report.createdAt),
+                                  ),
                                   style: theme.textTheme.bodySmall,
                                 ),
                                 TextButton(

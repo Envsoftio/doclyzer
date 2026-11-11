@@ -1,4 +1,5 @@
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/core/localized_error.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -13,6 +14,14 @@ import '../../reports/reports_repository.dart';
 import '../../../core/theme/app_theme.dart';
 
 enum DataRightsMode { combined, export, delete }
+
+String _exportStatusLabel(BuildContext context, String status) =>
+    switch (status) {
+      'pending' => context.l10n.uiPending,
+      'completed' => context.l10n.uiCompleted,
+      'failed' => context.l10n.uiFailed,
+      _ => status,
+    };
 
 class DataRightsScreen extends StatefulWidget {
   const DataRightsScreen({
@@ -41,6 +50,22 @@ class DataRightsScreen extends StatefulWidget {
 }
 
 class _DataRightsScreenState extends State<DataRightsScreen> {
+  String _dataRightsError(DataRightsException error, String fallback) {
+    if (error.message == context.l10n.uiSelectOriginalReportsOrTestResults) {
+      return error.message;
+    }
+    return switch (error.message) {
+      'Scoped export is unavailable.' => context.l10n.uiScopedExportUnavailable,
+      'Restoration is unavailable.' => context.l10n.uiRestorationUnavailable,
+      'Export request not found' => context.l10n.uiExportRequestNotFound,
+      'confirmClosure must be true to proceed' =>
+        context.l10n.uiClosureConfirmationRequired,
+      'Current password is incorrect.' =>
+        context.l10n.uiCurrentPasswordIncorrect,
+      _ => fallback,
+    };
+  }
+
   DataExportRequest? _exportRequest;
   bool _exportLoading = false;
   String? _exportError;
@@ -148,7 +173,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
     } catch (_) {
       if (mounted) {
         setState(
-          () => _exportError = 'Could not download the export. Try again.',
+          () => _exportError = context.l10n.uiCouldNotDownloadTheExportTryAgain,
         );
       }
     } finally {
@@ -183,7 +208,11 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
       if (mounted) {
         setState(() {
           _closureLoading = false;
-          _closureError = error.toString();
+          _closureError = localizedError(
+            context,
+            error,
+            fallback: context.l10n.uiRestorationUnavailable,
+          );
         });
       }
     }
@@ -199,8 +228,8 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
       if (widget.mode == DataRightsMode.export &&
           !_includeOriginals &&
           !_includeResults) {
-        throw const DataRightsException(
-          'Select original reports or test results.',
+        throw DataRightsException(
+          context.l10n.uiSelectOriginalReportsOrTestResults,
         );
       }
       final req = widget.mode == DataRightsMode.export
@@ -222,20 +251,26 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
               includeResults: _includeResults,
             )
           : await widget.dataRightsRepository.createExportRequest();
+      if (!mounted) return;
       setState(() {
         _exportRequest = req;
         _exportLoading = false;
-        _exportSuccess = 'Export requested. Tap "Check Status" to refresh.';
+        _exportSuccess = context.l10n.uiExportRequestedTapCheckStatusToRefresh;
       });
     } on DataRightsException catch (e) {
+      if (!mounted) return;
       setState(() {
         _exportLoading = false;
-        _exportError = e.message;
+        _exportError = _dataRightsError(
+          e,
+          context.l10n.uiFailedToRequestExportPleaseTryAgain,
+        );
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _exportLoading = false;
-        _exportError = 'Failed to request export. Please try again.';
+        _exportError = context.l10n.uiFailedToRequestExportPleaseTryAgain;
       });
     }
   }
@@ -251,22 +286,28 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
       final updated = await widget.dataRightsRepository.getExportRequest(
         current.requestId,
       );
+      if (!mounted) return;
       setState(() {
         _exportRequest = updated;
         _exportLoading = false;
         if (updated.status == 'completed') {
-          _exportSuccess = 'Export ready. Download URL available.';
+          _exportSuccess = context.l10n.uiExportReadyDownloadURLAvailable;
         }
       });
     } on DataRightsException catch (e) {
+      if (!mounted) return;
       setState(() {
         _exportLoading = false;
-        _exportError = e.message;
+        _exportError = _dataRightsError(
+          e,
+          context.l10n.uiFailedToCheckExportStatusPleaseTry,
+        );
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _exportLoading = false;
-        _exportError = 'Failed to check export status. Please try again.';
+        _exportError = context.l10n.uiFailedToCheckExportStatusPleaseTry;
       });
     }
   }
@@ -284,14 +325,19 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
       await widget.onAccountClosed();
       if (mounted) setState(() => _closureLoading = false);
     } on DataRightsException catch (e) {
+      if (!mounted) return;
       setState(() {
         _closureLoading = false;
-        _closureError = e.message;
+        _closureError = _dataRightsError(
+          e,
+          context.l10n.uiFailedToCloseAccountPleaseTryAgain,
+        );
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _closureLoading = false;
-        _closureError = 'Failed to close account. Please try again.';
+        _closureError = context.l10n.uiFailedToCloseAccountPleaseTryAgain;
       });
     }
   }
@@ -307,15 +353,17 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Access stops immediately. You can sign in and restore within 30 days. After that, your account and stored files are deleted from active storage.',
+              Text(
+                context.l10n.uiAccessStopsImmediatelyYouCanSignIn,
                 key: Key('closure-impact-text'),
               ),
               const SizedBox(height: 12),
               TextField(
                 obscureText: true,
                 onChanged: (value) => setDialogState(() => password = value),
-                decoration: InputDecoration(labelText: 'Current password'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.uiCurrentPassword,
+                ),
               ),
             ],
           ),
@@ -336,7 +384,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                       Navigator.of(dialogContext).pop();
                       _confirmClosure(password);
                     },
-              child: const Text('Close My Account'),
+              child: Text(context.l10n.uiCloseMyAccount),
             ),
           ],
         ),
@@ -368,17 +416,17 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                   ? const CircularProgressIndicator()
                   : Text(
                       _exportRequest == null
-                          ? 'Prepare export'
+                          ? context.l10n.uiPrepareExport
                           : _exportRequest!.status == 'completed'
-                          ? 'Save export'
+                          ? context.l10n.uiSaveExport
                           : _exportRequest!.status == 'failed'
-                          ? 'Prepare export again'
-                          : 'Check status',
+                          ? context.l10n.uiPrepareExportAgain
+                          : context.l10n.uiCheckStatus,
                     ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Your records stay in Doclyzer.',
+              context.l10n.uiYourRecordsStayInDoclyzer,
               style: theme.textTheme.bodySmall,
             ),
           ],
@@ -388,32 +436,34 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
         padding: const EdgeInsets.all(24),
         children: [
           Text(
-            'Take a copy of your records.',
+            context.l10n.uiTakeACopyOfYourRecords,
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 28),
-          Text('Whose records?', style: theme.textTheme.titleSmall),
+          Text(context.l10n.uiWhoseRecords, style: theme.textTheme.titleSmall),
           const SizedBox(height: 8),
           FutureBuilder<List<Profile>>(
             future: _profilesFuture,
             builder: (context, snapshot) {
               if (snapshot.hasError) {
-                return const Card(
-                  child: ListTile(title: Text('Could not load profiles')),
+                return Card(
+                  child: ListTile(
+                    title: Text(context.l10n.uiCouldNotLoadProfiles),
+                  ),
                 );
               }
               if (!snapshot.hasData) {
-                return const Card(
-                  child: ListTile(title: Text('Loading profiles…')),
+                return Card(
+                  child: ListTile(title: Text(context.l10n.uiLoadingProfiles)),
                 );
               }
               return DropdownButtonFormField<String?>(
                 key: const Key('export-profile'),
                 initialValue: _selectedProfileId,
                 items: [
-                  const DropdownMenuItem<String?>(
+                  DropdownMenuItem<String?>(
                     value: null,
-                    child: Text('All profiles'),
+                    child: Text(context.l10n.uiAllProfiles),
                   ),
                   for (final profile in snapshot.data!)
                     DropdownMenuItem<String?>(
@@ -431,14 +481,14 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
             },
           ),
           const SizedBox(height: 20),
-          Text('Date range', style: theme.textTheme.titleSmall),
+          Text(context.l10n.uiDateRange, style: theme.textTheme.titleSmall),
           const SizedBox(height: 8),
           Card(
             child: ListTile(
               key: const Key('export-date-range'),
               title: Text(
                 _dateRange == null
-                    ? 'All dates'
+                    ? context.l10n.uiAllDates
                     : '${MaterialLocalizations.of(context).formatMediumDate(_dateRange!.start)} – ${MaterialLocalizations.of(context).formatMediumDate(_dateRange!.end)}',
               ),
               trailing: const Icon(Icons.calendar_today_outlined),
@@ -464,11 +514,11 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                 _dateRange = null;
                 _refreshCounts();
               },
-              child: const Text('Use all dates'),
+              child: Text(context.l10n.uiUseAllDates),
             ),
           const SizedBox(height: 28),
           Text(
-            'INCLUDE IN THIS EXPORT',
+            context.l10n.uiINCLUDEINTHISEXPORT,
             style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 1.1),
           ),
           const SizedBox(height: 16),
@@ -483,8 +533,8 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                       ? null
                       : (value) =>
                             setState(() => _includeOriginals = value ?? false),
-                  title: const Text('Original reports'),
-                  subtitle: const Text('PDFs and images you uploaded'),
+                  title: Text(context.l10n.uiOriginalReports),
+                  subtitle: Text(context.l10n.uiPDFsAndImagesYouUploaded),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 CheckboxListTile(
@@ -495,9 +545,9 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                       ? null
                       : (value) =>
                             setState(() => _includeResults = value ?? false),
-                  title: const Text('Test results'),
-                  subtitle: const Text(
-                    'Results as CSV, with their review state',
+                  title: Text(context.l10n.uiTestResults),
+                  subtitle: Text(
+                    context.l10n.uiResultsAsCSVWithTheirReviewState,
                   ),
                 ),
               ],
@@ -515,19 +565,21 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
               child: Text(
                 snapshot.hasData
                     ? '${snapshot.data!.$1} ${snapshot.data!.$1 == 1 ? 'profile' : 'profiles'} · ${snapshot.data!.$2} ${snapshot.data!.$2 == 1 ? 'report' : 'reports'} in your account'
-                    : 'Preparing account details',
+                    : context.l10n.uiPreparingAccountDetails,
               ),
             ),
           ),
           const SizedBox(height: 28),
           Text(
-            'Exports contain personal information. Store them somewhere you trust.',
+            context.l10n.uiExportsContainPersonalInformationStoreThemSomewhere,
             style: theme.textTheme.bodySmall,
           ),
           if (_exportRequest != null) ...[
             const SizedBox(height: 16),
             Text(
-              'Status: ${_exportRequest!.status}',
+              context.l10n.uiStatusWithValue(
+                _exportStatusLabel(context, _exportRequest!.status),
+              ),
               key: const Key('export-status'),
             ),
           ],
@@ -549,7 +601,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
   Widget _buildDeleteScreen(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Delete account')),
+      appBar: AppBar(title: Text(context.l10n.uiDeleteAccount)),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(24, 12, 24, 20),
         child: Column(
@@ -563,11 +615,11 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
               onPressed: _closureLoading ? null : _showClosureDialog,
               child: _closureLoading
                   ? const CircularProgressIndicator()
-                  : const Text('Continue to deletion'),
+                  : Text(context.l10n.uiContinueToDeletion),
             ),
             TextButton(
               onPressed: widget.onBack,
-              child: const Text('Keep my account'),
+              child: Text(context.l10n.uiKeepMyAccount),
             ),
           ],
         ),
@@ -581,25 +633,25 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
               color: const Color(0xFFFBEDEE),
               borderRadius: BorderRadius.circular(18),
             ),
-            child: const ListTile(
+            child: ListTile(
               contentPadding: EdgeInsets.zero,
               leading: Icon(Icons.delete_outline, color: AppColors.destructive),
               title: Text(
-                'Before you leave',
+                context.l10n.uiBeforeYouLeave,
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
-              subtitle: Text('Please read what this will remove.'),
+              subtitle: Text(context.l10n.uiPleaseReadWhatThisWillRemove),
             ),
           ),
           const SizedBox(height: 36),
           Text(
-            'Deleting your account affects all profiles you manage.',
+            context.l10n.uiDeletingYourAccountAffectsAllProfilesYou,
             style: theme.textTheme.headlineSmall,
           ),
           const SizedBox(height: 28),
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.person_outline),
-            title: Text('Your account and personal profile'),
+            title: Text(context.l10n.uiYourAccountAndPersonalProfile),
           ),
           FutureBuilder<(int, int)>(
             future: _recordCounts,
@@ -610,7 +662,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                   title: Text(
                     snapshot.hasData
                         ? '${snapshot.data!.$1} family member profiles'
-                        : 'Family member profiles',
+                        : context.l10n.uiFamilyMemberProfiles,
                   ),
                 ),
                 ListTile(
@@ -618,35 +670,33 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                   title: Text(
                     snapshot.hasData
                         ? '${snapshot.data!.$2} uploaded reports'
-                        : 'Uploaded reports',
+                        : context.l10n.uiUploadedReports,
                   ),
                 ),
               ],
             ),
           ),
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.link_off_outlined),
-            title: Text('Access through your shared links'),
+            title: Text(context.l10n.uiAccessThroughYourSharedLinks),
           ),
           const SizedBox(height: 28),
           Card(
             color: theme.colorScheme.primaryContainer,
             child: ListTile(
               leading: const Icon(Icons.download_outlined),
-              title: const Text('Keep a copy first'),
-              subtitle: const Text(
-                'Export the information you want to retain.',
+              title: Text(context.l10n.uiKeepACopyFirst),
+              subtitle: Text(
+                context.l10n.uiExportTheInformationYouWantToRetain,
               ),
               trailing: TextButton(
                 onPressed: widget.onOpenExport,
-                child: const Text('Export data'),
+                child: Text(context.l10n.uiExportData),
               ),
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Access stops immediately. You can restore within 30 days. After that, your data is removed from active storage.',
-          ),
+          Text(context.l10n.uiAccessStopsImmediatelyYouCanRestoreWithin),
           if (_closureError != null) ...[
             const SizedBox(height: 12),
             Text(
@@ -687,18 +737,21 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (_closureRequest?.status == 'pending') ...[
-                const Text(
-                  'Account pending deletion',
+                Text(
+                  context.l10n.uiAccountPendingDeletion,
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Restore before ${_closureRequest!.purgeAfterAt ?? 'the 30-day deadline'} to keep your reports and profiles.',
+                  context.l10n.uiRestoreBeforeDate(
+                    _closureRequest!.purgeAfterAt ??
+                        context.l10n.uiThirtyDayDeadline,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 FilledButton(
                   onPressed: _closureLoading ? null : _restoreClosure,
-                  child: const Text('Restore my account'),
+                  child: Text(context.l10n.uiRestoreMyAccount),
                 ),
                 if (_closureError != null)
                   Text(
@@ -711,9 +764,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Download a copy of your account data including your profile, profiles, and consent records.',
-                ),
+                Text(context.l10n.uiDownloadACopyOfYourAccountData),
                 const SizedBox(height: 12),
                 if (exportRequest == null)
                   FilledButton(
@@ -731,7 +782,9 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                 else ...[
                   Text(
                     key: const Key('export-status'),
-                    'Status: ${exportRequest.status}',
+                    context.l10n.uiStatusWithValue(
+                      _exportStatusLabel(context, exportRequest.status),
+                    ),
                   ),
                   if (exportRequest.status == 'pending') ...[
                     const SizedBox(height: 8),
@@ -753,7 +806,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                     const SizedBox(height: 8),
                     Text(
                       key: const Key('export-download-ready'),
-                      'Download ready',
+                      context.l10n.uiDownloadReady,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.bold,
@@ -787,9 +840,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Your account is disabled immediately. You can restore it within 30 days. After that, your data is permanently deleted.',
-                ),
+                Text(context.l10n.uiYourAccountIsDisabledImmediatelyYouCan),
                 const SizedBox(height: 12),
                 FilledButton(
                   key: const Key('close-account-button'),
@@ -804,7 +855,7 @@ class _DataRightsScreenState extends State<DataRightsScreen> {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Close My Account'),
+                      : Text(context.l10n.uiCloseMyAccount),
                 ),
                 if (_closureError != null) ...[
                   const SizedBox(height: 8),

@@ -1,3 +1,4 @@
+import 'package:mobile/core/localized_error.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -155,7 +156,9 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       if (result == null || result.files.isEmpty || !mounted) return;
       _selectPath(result.files.single.path);
     } catch (_) {
-      _showPickerError('Could not open files. Check access and try again.');
+      if (mounted) {
+        _showPickerError(context.l10n.uiCouldNotOpenFilesCheckAccessAnd);
+      }
     }
   }
 
@@ -167,9 +170,9 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       );
       if (image != null && mounted) await _reviewPages([image.path]);
     } catch (_) {
-      _showPickerError(
-        'Could not open camera. Check permission and try again.',
-      );
+      if (mounted) {
+        _showPickerError(context.l10n.uiCouldNotOpenCameraCheckPermissionAnd);
+      }
     }
   }
 
@@ -180,9 +183,9 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         await _reviewPages(images.map((image) => image.path).toList());
       }
     } catch (_) {
-      _showPickerError(
-        'Could not open photos. Check permission and try again.',
-      );
+      if (mounted) {
+        _showPickerError(context.l10n.uiCouldNotOpenPhotosCheckPermissionAnd);
+      }
     }
   }
 
@@ -221,7 +224,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
   void _selectPath(String? path) {
     if (!mounted) return;
     if (path == null || path.isEmpty) {
-      _showPickerError('Could not access selected file.');
+      _showPickerError(context.l10n.uiCouldNotAccessSelectedFile);
       return;
     }
     setState(() {
@@ -236,7 +239,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       if (mounted) {
         setState(() {
           _state = _UploadState.error;
-          _errorMessage = 'Could not access selected file';
+          _errorMessage = context.l10n.uiCouldNotAccessSelectedFile45effa;
         });
       }
       return;
@@ -288,8 +291,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         final data = e.data?['data'] as Map<String, dynamic>?;
         setState(() {
           _state = _UploadState.limit;
-          _limitMessage = e.message;
-          _limitUpgradeHint = data?['upgradeHint'] as String?;
+          _limitMessage = context.l10n.reportLimitHelp;
+          _limitUpgradeHint = context.l10n.uiSeePlanCreditsOptions;
           final current = data?['current'];
           final max = data?['limit'];
           _limitCurrent = current is num ? current.toInt() : null;
@@ -307,8 +310,8 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         setState(() {
           _state = _UploadState.error;
           _errorMessage = e.code == 'NETWORK_ERROR'
-              ? 'Connection lost. The upload may have reached the server. Retry the same file safely.'
-              : e.message;
+              ? context.l10n.uiConnectionLostTheUploadMayHaveReached
+              : localizedError(context, e, fallback: context.l10n.uploadFailed);
           _supportContext = buildSupportRequestContext(
             actionType: SupportActionType.reportUpload,
             apiException: e,
@@ -320,7 +323,11 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       if (mounted) {
         setState(() {
           _state = _UploadState.error;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = localizedError(
+            context,
+            e,
+            fallback: context.l10n.uploadFailed,
+          );
           _supportContext = buildSupportRequestContext(
             actionType: SupportActionType.reportUpload,
           );
@@ -363,7 +370,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       if (mounted) {
         setState(() {
           _state = _UploadState.duplicate;
-          _errorMessage = 'Could not load existing report';
+          _errorMessage = context.l10n.uiCouldNotLoadExistingReport;
         });
       }
     }
@@ -396,7 +403,11 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       if (mounted) {
         setState(() {
           _state = _UploadState.error;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = localizedError(
+            context,
+            e,
+            fallback: context.l10n.uploadFailed,
+          );
         });
       }
     } finally {
@@ -436,7 +447,11 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       if (mounted) {
         setState(() {
           _state = _UploadState.duplicate;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = localizedError(
+            context,
+            e,
+            fallback: context.l10n.uploadFailed,
+          );
         });
       }
     }
@@ -530,7 +545,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
               TextSpan(
                 children: [
                   TextSpan(
-                    text: 'Adding to  ',
+                    text: context.l10n.uiAddingTo,
                     style: TextStyle(color: colors.onSurfaceVariant),
                   ),
                   TextSpan(
@@ -736,7 +751,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       children: [
         _buildStateIcon(Icons.description_outlined),
         const SizedBox(height: AppSpacing.md),
-        Text('Check your report', style: theme.textTheme.titleLarge),
+        Text(context.l10n.uiCheckYourReport, style: theme.textTheme.titleLarge),
         const SizedBox(height: AppSpacing.xs),
         Text(
           context.l10n.confirmFile,
@@ -828,9 +843,9 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       return context.l10n.processingRetryHelp;
     }
     if (status == 'content_not_recognized') {
-      return 'Some results need review. Your original report is saved.';
+      return context.l10n.uiSomeResultsNeedReviewYourOriginalReport;
     }
-    return 'We couldn\'t read this format. Your file is saved.';
+    return context.l10n.uiWeCouldnTReadThisFormatYour;
   }
 
   Future<void> _onRetry() async {
@@ -870,7 +885,11 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
       if (mounted) {
         setState(() {
           _state = _UploadState.success; // keep parse-failure UI
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = localizedError(
+            context,
+            e,
+            fallback: context.l10n.uploadFailed,
+          );
           _supportContext = buildSupportRequestContext(
             actionType: SupportActionType.reportParse,
             apiException: e is ApiException ? e : null,
@@ -904,8 +923,9 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     } catch (error) {
       if (mounted) {
         setState(
-          () => _errorMessage =
-              'Could not save the original yet. ${error.toString().replaceFirst('Exception: ', '')}',
+          () => _errorMessage = context.l10n.uiCouldNotSaveOriginal(
+            localizedError(context, error),
+          ),
         );
       }
     }
@@ -1014,7 +1034,11 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
           if (_verifiedResultCount > 0) ...[
             const SizedBox(height: 8),
             Text(
-              '$_verifiedResultCount verified result${_verifiedResultCount == 1 ? '' : 's'} saved.',
+              _verifiedResultCount == 1
+                  ? context.l10n.uiOneVerifiedResult
+                  : context.l10n.uiVerifiedResultsCount(
+                      _verifiedResultCount.toString(),
+                    ),
             ),
           ],
         ],
@@ -1087,14 +1111,12 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     final processingInProgress =
         status == 'uploading' || status == 'queued' || status == 'parsing';
     final statusMessage = switch (status) {
-      'parsed' =>
-        'Report parsed successfully. Results and trends are available.',
-      'uploading' || 'queued' || 'parsing' =>
-        'Your report is still being analyzed. Open it to check its status.',
-      'failed_transient' =>
-        'Processing stopped. Your file is saved. You can retry.',
-      'unparsed' =>
-        'No extracted test values were added. You can still open and share the document. Your trends are unchanged.',
+      'parsed' => context.l10n.uiReportParsedSuccessfullyResultsAndTrendsAre,
+      'uploading' ||
+      'queued' ||
+      'parsing' => context.l10n.uiYourReportIsStillBeingAnalyzedOpen,
+      'failed_transient' => context.l10n.uiProcessingStoppedYourFileIsSavedYou,
+      'unparsed' => context.l10n.uiNoExtractedTestValuesWereAddedYou,
       _ => null,
     };
     final theme = Theme.of(context);
@@ -1111,10 +1133,10 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
         const SizedBox(height: AppSpacing.md),
         Text(
           originalOnly
-              ? 'Your original is saved.'
+              ? context.l10n.uiYourOriginalIsSaved
               : r?.reused == true
-              ? 'Report already in ${widget.activeProfileName}'
-              : 'Report added to ${widget.activeProfileName}',
+              ? context.l10n.uiReportAlreadyInProfile(widget.activeProfileName)
+              : context.l10n.uiReportAddedToProfile(widget.activeProfileName),
           style: theme.textTheme.titleLarge,
         ),
         if (r != null) ...[
@@ -1207,7 +1229,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     final name = existing?['originalFileName'] as String? ?? 'existing report';
     final createdAt = existing?['createdAt'] as String?;
     final subtitle = createdAt != null
-        ? 'Added ${AppDateFormat.fromRawWithRelative(createdAt)}'
+        ? context.l10n.uiAddedOn(AppDateFormat.fromRawWithRelative(createdAt))
         : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1279,7 +1301,7 @@ class _UploadReportScreenState extends State<UploadReportScreen> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final usageText = (_limitCurrent != null && _limitMax != null)
-        ? 'Using $_limitCurrent of $_limitMax reports.'
+        ? context.l10n.uiUsingReportsLimit('$_limitCurrent', '$_limitMax')
         : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

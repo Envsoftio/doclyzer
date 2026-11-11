@@ -1,5 +1,5 @@
 {
-  "note": "Automated review does not certify medical or linguistic accuracy. Native clinical review remains pending.",
+  "note": "This earlier automated review covers the catalog versions identified by the hashes below. Mobile ARBs now also contain 672 newer machine-drafted UI strings; see mobile-ui-draft-review.json. Neither review certifies medical or linguistic accuracy. Native clinical review remains pending.",
   "languages": [
     {
       "locale": "kn",

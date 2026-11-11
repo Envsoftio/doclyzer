@@ -1,3 +1,4 @@
+import 'package:mobile/core/localized_error.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/design_components.dart';
@@ -78,7 +79,11 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
       if (mounted) {
         setState(() {
           _state = _HealthHistoryState.error;
-          _errorMessage = e.toString().replaceFirst('Exception: ', '');
+          _errorMessage = localizedError(
+            context,
+            e,
+            fallback: context.l10n.uiUnableToLoadReportsTryAgain,
+          );
         });
       }
     }
@@ -136,7 +141,7 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
           children: [
             if (widget.profileName != null) ...[
               Text(
-                'Results for ${widget.profileName}',
+                context.l10n.uiResultsFor(widget.profileName!),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 12),
@@ -266,17 +271,20 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
                       if (latest != null) ...[
                         _InfoBadge(
                           icon: Icons.monitor_heart_outlined,
-                          label:
-                              'Latest: ${latest.value}${param.unit != null ? ' ${param.unit}' : ''}',
+                          label: context.l10n.uiLatestValue(
+                            '${latest.value}${param.unit != null ? ' ${param.unit}' : ''}',
+                          ),
                         ),
                         _InfoBadge(
                           icon: Icons.event,
-                          label: 'Collected: ${_formatDate(latest.date)}',
+                          label: context.l10n.uiCollectedOn(
+                            _formatDate(latest.date),
+                          ),
                         ),
                       ] else
-                        const _InfoBadge(
+                        _InfoBadge(
                           icon: Icons.info_outline,
-                          label: 'No chartable result yet',
+                          label: context.l10n.uiNoChartableResultYet,
                         ),
                       if (param.unit == null)
                         _InfoBadge(
@@ -335,7 +343,7 @@ class _HistoryHeader extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              '$parameterCount lab parameters tracked',
+              context.l10n.uiLabParametersTracked(parameterCount.toString()),
               style: Theme.of(context).textTheme.titleSmall,
             ),
           ),
