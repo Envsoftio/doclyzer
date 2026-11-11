@@ -10,11 +10,11 @@ import type {
   IncidentSeverity,
   IncidentStatus,
   IncidentSurface,
-} from '../../../../../packages/contracts/state/incident-status';
+} from '../../modules/audit-incident/incident-status.types';
 import {
   INCIDENT_SEVERITIES,
   INCIDENT_STATUSES,
-} from '../../../../../packages/contracts/state/incident-status';
+} from '../../modules/audit-incident/incident-status.types';
 
 @Entity('service_incidents')
 export class ServiceIncidentEntity {

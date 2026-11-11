@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
 
-import type { PublicIncidentStatus } from '../../../../../packages/contracts/state/incident-status';
+import type { PublicIncidentStatus } from './incident-status.types';
 import { ServiceIncidentEntity } from '../../database/entities/service-incident.entity';
 import {
   ServiceIncidentInvalidStatusException,

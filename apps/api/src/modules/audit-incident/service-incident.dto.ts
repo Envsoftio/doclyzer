@@ -14,7 +14,7 @@ import {
   INCIDENT_SEVERITIES,
   INCIDENT_STATUSES,
   INCIDENT_SURFACES,
-} from '../../../../../packages/contracts/state/incident-status';
+} from './incident-status.types';
 
 export class CreateServiceIncidentDto {
   @IsOptional()
